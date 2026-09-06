@@ -37,6 +37,24 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    flavorDimensions += "env"
+    productFlavors {
+        create("mock") {
+            dimension = "env"
+            applicationIdSuffix = ".mock"
+            resValue("string", "app_name", "CuyCash Mock")
+        }
+        create("local") {
+            dimension = "env"
+            applicationIdSuffix = ".local"
+            resValue("string", "app_name", "CuyCash Local")
+        }
+        create("production") {
+            dimension = "env"
+            resValue("string", "app_name", "CuyCash")
+        }
+    }
 }
 
 flutter {
