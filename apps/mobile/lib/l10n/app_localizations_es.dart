@@ -99,7 +99,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get errorIdentifierTaken => 'Este DNI ya está registrado.';
 
   @override
-  String get errorWeakPin => 'El PIN debe tener 4 dígitos.';
+  String get errorWeakPin => 'El PIN debe tener 6 dígitos.';
 
   @override
   String get errorGeneric => 'Ocurrió un error. Intenta de nuevo.';

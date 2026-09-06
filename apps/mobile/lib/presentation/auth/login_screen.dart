@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: CuyCashSpacing.stackLg),
                 CuyCashTextField(
                   label: l10n.pinLabel,
-                  hint: '****',
+                  hint: '••••••',
                   controller: _pin,
                   obscure: true,
                   keyboardType: TextInputType.number,

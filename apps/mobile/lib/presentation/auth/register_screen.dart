@@ -28,12 +28,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    context.read<AuthBloc>().add(AuthEvent.registerSubmitted(
-          dni: _dni.text.trim(),
-          pin: _pin.text.trim(),
-        ));
-  }
+  // TODO(register-wizard): _submit será manejado por RegisterBloc (Task 3+).
+  void _submit() {}
 
   @override
   Widget build(BuildContext context) {

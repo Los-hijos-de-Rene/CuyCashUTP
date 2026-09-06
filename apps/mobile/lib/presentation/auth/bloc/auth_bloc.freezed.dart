@@ -55,12 +55,11 @@ extension AuthEventPatterns on AuthEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthLoginSubmitted value)?  loginSubmitted,TResult Function( AuthRegisterSubmitted value)?  registerSubmitted,TResult Function( AuthSignedOut value)?  signedOut,TResult Function( _AuthSessionChanged value)?  sessionChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthLoginSubmitted value)?  loginSubmitted,TResult Function( AuthSignedOut value)?  signedOut,TResult Function( _AuthSessionChanged value)?  sessionChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that);case AuthRegisterSubmitted() when registerSubmitted != null:
-return registerSubmitted(_that);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that);case AuthSignedOut() when signedOut != null:
 return signedOut(_that);case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that);case _:
   return orElse();
@@ -80,12 +79,11 @@ return sessionChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthLoginSubmitted value)  loginSubmitted,required TResult Function( AuthRegisterSubmitted value)  registerSubmitted,required TResult Function( AuthSignedOut value)  signedOut,required TResult Function( _AuthSessionChanged value)  sessionChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthLoginSubmitted value)  loginSubmitted,required TResult Function( AuthSignedOut value)  signedOut,required TResult Function( _AuthSessionChanged value)  sessionChanged,}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted():
-return loginSubmitted(_that);case AuthRegisterSubmitted():
-return registerSubmitted(_that);case AuthSignedOut():
+return loginSubmitted(_that);case AuthSignedOut():
 return signedOut(_that);case _AuthSessionChanged():
 return sessionChanged(_that);}
 }
@@ -101,12 +99,11 @@ return sessionChanged(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthLoginSubmitted value)?  loginSubmitted,TResult? Function( AuthRegisterSubmitted value)?  registerSubmitted,TResult? Function( AuthSignedOut value)?  signedOut,TResult? Function( _AuthSessionChanged value)?  sessionChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthLoginSubmitted value)?  loginSubmitted,TResult? Function( AuthSignedOut value)?  signedOut,TResult? Function( _AuthSessionChanged value)?  sessionChanged,}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that);case AuthRegisterSubmitted() when registerSubmitted != null:
-return registerSubmitted(_that);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that);case AuthSignedOut() when signedOut != null:
 return signedOut(_that);case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that);case _:
   return null;
@@ -125,11 +122,10 @@ return sessionChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function( String dni,  String? alias,  String pin)?  registerSubmitted,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that.identifier,_that.pin);case AuthRegisterSubmitted() when registerSubmitted != null:
-return registerSubmitted(_that.dni,_that.alias,_that.pin);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return orElse();
@@ -149,11 +145,10 @@ return sessionChanged(_that.session);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function( String dni,  String? alias,  String pin)  registerSubmitted,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted():
-return loginSubmitted(_that.identifier,_that.pin);case AuthRegisterSubmitted():
-return registerSubmitted(_that.dni,_that.alias,_that.pin);case AuthSignedOut():
+return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut():
 return signedOut();case _AuthSessionChanged():
 return sessionChanged(_that.session);}
 }
@@ -169,11 +164,10 @@ return sessionChanged(_that.session);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function( String dni,  String? alias,  String pin)?  registerSubmitted,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that.identifier,_that.pin);case AuthRegisterSubmitted() when registerSubmitted != null:
-return registerSubmitted(_that.dni,_that.alias,_that.pin);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return null;
@@ -244,76 +238,6 @@ class _$AuthLoginSubmittedCopyWithImpl<$Res>
   return _then(AuthLoginSubmitted(
 identifier: null == identifier ? _self.identifier : identifier // ignore: cast_nullable_to_non_nullable
 as String,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class AuthRegisterSubmitted implements AuthEvent {
-  const AuthRegisterSubmitted({required this.dni, this.alias, required this.pin});
-  
-
- final  String dni;
- final  String? alias;
- final  String pin;
-
-/// Create a copy of AuthEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$AuthRegisterSubmittedCopyWith<AuthRegisterSubmitted> get copyWith => _$AuthRegisterSubmittedCopyWithImpl<AuthRegisterSubmitted>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthRegisterSubmitted&&(identical(other.dni, dni) || other.dni == dni)&&(identical(other.alias, alias) || other.alias == alias)&&(identical(other.pin, pin) || other.pin == pin));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,dni,alias,pin);
-
-@override
-String toString() {
-  return 'AuthEvent.registerSubmitted(dni: $dni, alias: $alias, pin: $pin)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $AuthRegisterSubmittedCopyWith<$Res> implements $AuthEventCopyWith<$Res> {
-  factory $AuthRegisterSubmittedCopyWith(AuthRegisterSubmitted value, $Res Function(AuthRegisterSubmitted) _then) = _$AuthRegisterSubmittedCopyWithImpl;
-@useResult
-$Res call({
- String dni, String? alias, String pin
-});
-
-
-
-
-}
-/// @nodoc
-class _$AuthRegisterSubmittedCopyWithImpl<$Res>
-    implements $AuthRegisterSubmittedCopyWith<$Res> {
-  _$AuthRegisterSubmittedCopyWithImpl(this._self, this._then);
-
-  final AuthRegisterSubmitted _self;
-  final $Res Function(AuthRegisterSubmitted) _then;
-
-/// Create a copy of AuthEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? dni = null,Object? alias = freezed,Object? pin = null,}) {
-  return _then(AuthRegisterSubmitted(
-dni: null == dni ? _self.dni : dni // ignore: cast_nullable_to_non_nullable
-as String,alias: freezed == alias ? _self.alias : alias // ignore: cast_nullable_to_non_nullable
-as String?,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

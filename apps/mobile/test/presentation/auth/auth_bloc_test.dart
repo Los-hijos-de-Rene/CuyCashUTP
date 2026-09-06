@@ -26,7 +26,7 @@ void main() {
     'login correcto → submitting, luego AuthAuthenticated (vía stream)',
     build: () => buildBloc(MemoryAuthRepository()),
     act: (bloc) => bloc.add(
-        const AuthEvent.loginSubmitted(identifier: '12345678', pin: '0000')),
+        const AuthEvent.loginSubmitted(identifier: '12345678', pin: '000000')),
     wait: const Duration(milliseconds: 10),
     expect: () => [isA<AuthUnauthenticated>(), isA<AuthAuthenticated>()],
   );
@@ -41,15 +41,6 @@ void main() {
       isA<AuthUnauthenticated>()
           .having((s) => s.error, 'error', AuthError.invalidCredentials),
     ],
-  );
-
-  blocTest<AuthBloc, AuthState>(
-    'register correcto → AuthAuthenticated',
-    build: () => buildBloc(MemoryAuthRepository()),
-    act: (bloc) => bloc
-        .add(const AuthEvent.registerSubmitted(dni: '87654321', pin: '0000')),
-    wait: const Duration(milliseconds: 10),
-    expect: () => [isA<AuthUnauthenticated>(), isA<AuthAuthenticated>()],
   );
 
   blocTest<AuthBloc, AuthState>(

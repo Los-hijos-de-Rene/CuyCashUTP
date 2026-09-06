@@ -29,6 +29,6 @@
   "navProfile": "Perfil",
   "errorInvalidCredentials": "DNI/Alias o PIN incorrectos.",
   "errorIdentifierTaken": "Este DNI ya está registrado.",
-  "errorWeakPin": "El PIN debe tener 4 dígitos.",
+  "errorWeakPin": "El PIN debe tener 6 dígitos.",
   "errorGeneric": "Ocurrió un error. Intenta de nuevo."
 }

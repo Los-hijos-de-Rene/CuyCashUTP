@@ -271,7 +271,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorWeakPin.
   ///
   /// In es, this message translates to:
-  /// **'El PIN debe tener 4 dígitos.'**
+  /// **'El PIN debe tener 6 dígitos.'**
   String get errorWeakPin;
 
   /// No description provided for @errorGeneric.

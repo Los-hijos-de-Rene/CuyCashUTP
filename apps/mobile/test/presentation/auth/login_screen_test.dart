@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, '12345678');
-    await tester.enterText(find.byType(TextField).last, '0000');
+    await tester.enterText(find.byType(TextField).last, '000000');
     await tester.tap(find.byType(PrimaryButton));
     await tester.pumpAndSettle();
 
