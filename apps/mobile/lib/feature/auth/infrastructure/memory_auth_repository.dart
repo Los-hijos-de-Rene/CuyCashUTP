@@ -8,9 +8,9 @@ import '../domain/auth_repository.dart';
 import '../domain/auth_session.dart';
 
 /// Memory* FUNCIONAL de auth (backend del flavor `mock` + contrato de tests).
-/// [validPin] (default '0000') es el PIN que se acepta.
+/// [validPin] (default '000000') es el PIN que se acepta.
 class MemoryAuthRepository implements AuthRepository {
-  MemoryAuthRepository({AuthSession? initial, this.validPin = '0000'})
+  MemoryAuthRepository({AuthSession? initial, this.validPin = '000000'})
       : _session = initial {
     if (initial != null) _registered.add(initial.identifier);
   }
@@ -20,7 +20,7 @@ class MemoryAuthRepository implements AuthRepository {
   final Set<String> _registered = {};
   final _controller = StreamController<AuthSession?>.broadcast();
 
-  static final _pinFormat = RegExp(r'^\d{4}$');
+  static final _pinFormat = RegExp(r'^\d{6}$');
 
   @override
   AuthSession? get currentSession => _session;
@@ -45,7 +45,9 @@ class MemoryAuthRepository implements AuthRepository {
   @override
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
-    String? alias,
+    required String nombres,
+    required String apellidos,
+    required String email,
     required String pin,
   }) async {
     if (!_pinFormat.hasMatch(pin)) {
@@ -56,7 +58,7 @@ class MemoryAuthRepository implements AuthRepository {
     }
     _registered.add(dni);
     final session =
-        AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni, alias: alias);
+        AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni);
     _emit(session);
     return right(session);
   }

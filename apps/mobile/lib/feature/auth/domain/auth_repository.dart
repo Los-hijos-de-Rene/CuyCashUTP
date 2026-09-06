@@ -19,10 +19,12 @@ abstract interface class AuthRepository {
     required String pin,
   });
 
-  /// Registra una cuenta nueva (DNI + PIN, alias opcional).
+  /// Registra una cuenta nueva con el perfil completo (DNI + datos + PIN 6).
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
-    String? alias,
+    required String nombres,
+    required String apellidos,
+    required String email,
     required String pin,
   });
 
