@@ -1,0 +1,11 @@
+name: cuycash_workspace
+description: Monorepo de CuyCash (app móvil + paquetes compartidos).
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+workspace:
+  - apps/mobile
+  - packages/core_kernel
+  - packages/design_system
