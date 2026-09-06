@@ -32,4 +32,11 @@ abstract final class CuyCashColors {
 
   // Sombra ambiental verde de cards
   static const ambientShadow = Color(0x0D2B4034);   // rgba(43,64,52,0.05)
+
+  // Paso inmersivo (reconocimiento facial): tema oscuro local, DESIGN.md.
+  static const immersiveDark = Color(0xFF121712);
+  static const immersiveOnDark = Color(0xFFF3F1EA);
+  static const immersiveMuted = Color(0xFFA3ACA0);
+  static const immersiveOcre = Color(0xFFE5A34E);
+  static const immersivePanel = Color(0xFF1D2620);
 }

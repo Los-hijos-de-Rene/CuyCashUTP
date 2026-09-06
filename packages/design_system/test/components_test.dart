@@ -34,6 +34,18 @@ void main() {
     expect(find.text('Requerido'), findsOneWidget);
   });
 
+  testWidgets('CuyCashTextField muestra prefixIcon y helperText', (tester) async {
+    await tester.pumpWidget(_wrap(
+      const CuyCashTextField(
+        label: 'Número de DNI',
+        prefixIcon: Icons.badge_outlined,
+        helperText: '8 dígitos',
+      ),
+    ));
+    expect(find.byIcon(Icons.badge_outlined), findsOneWidget);
+    expect(find.text('8 dígitos'), findsOneWidget);
+  });
+
   testWidgets('PageDotsIndicator renderiza count dots', (tester) async {
     await tester.pumpWidget(_wrap(
       const PageDotsIndicator(count: 3, activeIndex: 1),
