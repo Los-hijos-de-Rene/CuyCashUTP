@@ -1,0 +1,17 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# Config con credenciales (solo la plantilla se commitea)
+apps/mobile/config.local.json
+apps/mobile/config.production.json
+
+# OS
+.DS_Store
+
+# Scratch dir del execution ledger (no commitear)
+.superpowers/

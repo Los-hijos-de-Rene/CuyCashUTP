@@ -1,0 +1,40 @@
+# CuyCash — app móvil (banca digital · Perú)
+
+Monorepo Flutter. Sprint 1 = base: splash → onboarding → (login | registro) →
+home → perfil (cerrar sesión). Backend real y dashboard web se difieren.
+
+## Estructura
+- `apps/mobile` — app Flutter (Bloc).
+- `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).
+- `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
+
+Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
+Flutter); UI + Bloc en `presentation/<x>/`.
+
+## Flavors
+- `mock` — repos en memoria (PIN válido `0000`). Default de desarrollo + tests.
+- `local` — Supabase local (`config.local.json`).
+- `production` — Supabase prod (`config.production.json`).
+
+## Comandos
+```sh
+flutter pub get                       # en la raíz, resuelve el workspace
+flutter analyze                       # cero issues antes de commit
+flutter test                          # toda la suite
+dart run build_runner build --delete-conflicting-outputs   # freezed
+flutter gen-l10n                      # regenera ARB (en apps/mobile)
+
+# Ejecutar (en apps/mobile)
+flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.mock.json
+```
+
+## Reglas duras
+1. Errores como valores (`Either`+`GlobalFailure`); ningún `throw` cruza capas.
+2. Failures sellados (factory nombrado + subclase para pattern-match).
+3. Toda interfaz nace con su `Memory*` funcional (backend `mock` + contrato de tests).
+4. Estados sealed + `switch` exhaustivo; prohibido `when`/`maybeWhen`/`!`.
+5. El Bloc consume `application` (Actions/UseCase) por constructor, nunca el repo.
+6. Colores/tipografía solo desde `design_system`; cero hex sueltos.
+7. Copy es-PE en ARB; cero strings de UI hardcodeados.
+8. Un widget público por archivo; `.freezed.dart`/l10n generados se commitean.
+9. `auth` es la feature plantilla — cópiala para features nuevas.
