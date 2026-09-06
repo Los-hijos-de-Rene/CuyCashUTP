@@ -15,3 +15,6 @@ apps/mobile/config.production.json
 
 # Scratch dir del execution ledger (no commitear)
 .superpowers/
+
+# Descarga cruda de fuentes (las usadas viven en packages/design_system/assets/fonts)
+Inter,Manrope/

@@ -22,6 +22,7 @@ abstract final class CuyCashTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: CuyCashTypography.fontFamily,
       scaffoldBackgroundColor: CuyCashColors.surface,
       dividerColor: CuyCashColors.divider,
       appBarTheme: const AppBarTheme(

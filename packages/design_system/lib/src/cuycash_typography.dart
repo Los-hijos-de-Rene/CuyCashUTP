@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import 'cuycash_colors.dart';
 
-/// Escala tipográfica (DESIGN.md). Inter cuando esté en assets; hasta entonces
-/// `fontFamily` = null (cae al system font). Un solo lugar para activar Inter.
+/// Escala tipográfica (DESIGN.md). Usa Inter (fuente variable) empaquetada en
+/// design_system. Al referenciar una fuente definida en un package, Flutter
+/// exige el prefijo `packages/<package>/<familia>` — de ahí el valor de
+/// [fontFamily]. Un solo lugar para la familia de toda la app.
 abstract final class CuyCashTypography {
-  static const _family = null; // 'Inter' cuando el .ttf esté en assets/fonts/
+  /// Familia Inter empaquetada. Constante pública para que el theme la reuse
+  /// como `fontFamily` global.
+  static const fontFamily = 'packages/design_system/Inter';
+  static const _family = fontFamily;
 
   static const displayLg = TextStyle(
     fontFamily: _family, fontSize: 36, fontWeight: FontWeight.w700,
