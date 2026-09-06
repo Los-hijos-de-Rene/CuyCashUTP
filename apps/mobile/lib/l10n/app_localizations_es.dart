@@ -103,4 +103,201 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Ocurrió un error. Intenta de nuevo.';
+
+  @override
+  String get registerFlowTitle => 'Crear cuenta';
+
+  @override
+  String get identityTitle => 'Verifica tu identidad';
+
+  @override
+  String get faceTitle => 'Reconocimiento facial';
+
+  @override
+  String get securityTitle => 'Protege tu cuenta';
+
+  @override
+  String stepData(int n) {
+    return 'Paso $n de 4 · Datos';
+  }
+
+  @override
+  String stepDocument(int n) {
+    return 'Paso $n de 4 · Documento';
+  }
+
+  @override
+  String stepFace(int n) {
+    return 'Paso $n de 4 · Rostro';
+  }
+
+  @override
+  String stepSecurity(int n) {
+    return 'Paso $n de 4 · Seguridad';
+  }
+
+  @override
+  String get dataHeadline => 'Empecemos por ti';
+
+  @override
+  String get dataSubtitle => 'Ingresa tus datos tal como figuran en tu DNI.';
+
+  @override
+  String get dniFieldLabel => 'Número de DNI';
+
+  @override
+  String get dniHint => '12345678';
+
+  @override
+  String get dniHelper => '8 dígitos';
+
+  @override
+  String get nombresLabel => 'Nombres';
+
+  @override
+  String get nombresHint => 'Ej. Juan Carlos';
+
+  @override
+  String get apellidosLabel => 'Apellidos';
+
+  @override
+  String get apellidosHint => 'Ej. Pérez García';
+
+  @override
+  String get emailLabel => 'Correo electrónico';
+
+  @override
+  String get emailHint => 'ejemplo@correo.com';
+
+  @override
+  String get emailHelper =>
+      'Aquí te enviaremos tus constancias y el código para recuperar tu PIN.';
+
+  @override
+  String errorFixFields(int n) {
+    return 'Revisa $n campos para continuar';
+  }
+
+  @override
+  String get fieldRequired => 'Este campo es obligatorio.';
+
+  @override
+  String get errorDniLength => 'El DNI debe tener 8 dígitos numéricos.';
+
+  @override
+  String get errorEmailInvalid => 'Ingresa un correo válido.';
+
+  @override
+  String get identityInfo =>
+      'Validaremos tu identidad con una foto de tu DNI y reconocimiento facial.';
+
+  @override
+  String get continueCta => 'Continuar';
+
+  @override
+  String get termsNote =>
+      'Al continuar aceptas los Términos y la Política de Privacidad';
+
+  @override
+  String get documentHeadline => 'Escanea tu DNI';
+
+  @override
+  String get documentSubtitle =>
+      'Coloca el documento sobre una superficie plana, sin reflejos y con buena luz.';
+
+  @override
+  String capturesCount(int n) {
+    return '$n de 2 capturas';
+  }
+
+  @override
+  String get dniFront => 'Frente del DNI';
+
+  @override
+  String get dniFrontHint => 'Foto y datos personales';
+
+  @override
+  String get dniBack => 'Reverso del DNI';
+
+  @override
+  String get dniBackHint => 'Código y firma';
+
+  @override
+  String get takePhoto => 'Tomar foto';
+
+  @override
+  String get retakePhoto => 'Volver a tomar';
+
+  @override
+  String get captured => 'Capturado';
+
+  @override
+  String get notReadable => 'No legible';
+
+  @override
+  String get documentError => 'No pudimos leer tu DNI';
+
+  @override
+  String get documentTip1 => 'Evita reflejos y sombras sobre el documento.';
+
+  @override
+  String get documentTip2 =>
+      'Apoya el DNI en una superficie plana, sin doblarlo.';
+
+  @override
+  String get documentTip3 => 'Encuadra las cuatro esquinas dentro del marco.';
+
+  @override
+  String get documentSecure =>
+      'Tus documentos se cifran y solo se usan para validar tu identidad.';
+
+  @override
+  String get faceHeadline => 'Centra tu rostro en el círculo';
+
+  @override
+  String get faceInstruction => 'Gira lentamente la cabeza hacia la derecha';
+
+  @override
+  String get faceCheckLight => 'Buena iluminación';
+
+  @override
+  String get faceCheckUncovered => 'Rostro descubierto';
+
+  @override
+  String get faceCheckLiveness => 'Prueba de vida';
+
+  @override
+  String get faceInProgress => '(En proceso)';
+
+  @override
+  String get faceCaption => 'No cierres la app durante la verificación.';
+
+  @override
+  String get faceSimulate => 'Simular verificación';
+
+  @override
+  String get pinHeadline => 'Crea tu PIN de seguridad';
+
+  @override
+  String get pinRule6 => '6 dígitos';
+
+  @override
+  String get pinRuleNoSequence => 'Sin secuencias como 123456';
+
+  @override
+  String get pinRuleNoBirthdate => 'No uses tu fecha de nacimiento';
+
+  @override
+  String get biometricTitle => 'Activar acceso biométrico';
+
+  @override
+  String get biometricSubtitle =>
+      'Entra con tu huella o rostro sin escribir el PIN.';
+
+  @override
+  String get securityNote =>
+      'CuyCash usa un solo factor de verificación por operación.';
+
+  @override
+  String get finishRegister => 'Finalizar registro';
 }

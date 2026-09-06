@@ -279,6 +279,360 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ocurrió un error. Intenta de nuevo.'**
   String get errorGeneric;
+
+  /// No description provided for @registerFlowTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear cuenta'**
+  String get registerFlowTitle;
+
+  /// No description provided for @identityTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu identidad'**
+  String get identityTitle;
+
+  /// No description provided for @faceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconocimiento facial'**
+  String get faceTitle;
+
+  /// No description provided for @securityTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Protege tu cuenta'**
+  String get securityTitle;
+
+  /// No description provided for @stepData.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {n} de 4 · Datos'**
+  String stepData(int n);
+
+  /// No description provided for @stepDocument.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {n} de 4 · Documento'**
+  String stepDocument(int n);
+
+  /// No description provided for @stepFace.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {n} de 4 · Rostro'**
+  String stepFace(int n);
+
+  /// No description provided for @stepSecurity.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {n} de 4 · Seguridad'**
+  String stepSecurity(int n);
+
+  /// No description provided for @dataHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Empecemos por ti'**
+  String get dataHeadline;
+
+  /// No description provided for @dataSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tus datos tal como figuran en tu DNI.'**
+  String get dataSubtitle;
+
+  /// No description provided for @dniFieldLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de DNI'**
+  String get dniFieldLabel;
+
+  /// No description provided for @dniHint.
+  ///
+  /// In es, this message translates to:
+  /// **'12345678'**
+  String get dniHint;
+
+  /// No description provided for @dniHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'8 dígitos'**
+  String get dniHelper;
+
+  /// No description provided for @nombresLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombres'**
+  String get nombresLabel;
+
+  /// No description provided for @nombresHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Juan Carlos'**
+  String get nombresHint;
+
+  /// No description provided for @apellidosLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Apellidos'**
+  String get apellidosLabel;
+
+  /// No description provided for @apellidosHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Pérez García'**
+  String get apellidosHint;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get emailLabel;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In es, this message translates to:
+  /// **'ejemplo@correo.com'**
+  String get emailHint;
+
+  /// No description provided for @emailHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Aquí te enviaremos tus constancias y el código para recuperar tu PIN.'**
+  String get emailHelper;
+
+  /// No description provided for @errorFixFields.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa {n} campos para continuar'**
+  String errorFixFields(int n);
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Este campo es obligatorio.'**
+  String get fieldRequired;
+
+  /// No description provided for @errorDniLength.
+  ///
+  /// In es, this message translates to:
+  /// **'El DNI debe tener 8 dígitos numéricos.'**
+  String get errorDniLength;
+
+  /// No description provided for @errorEmailInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un correo válido.'**
+  String get errorEmailInvalid;
+
+  /// No description provided for @identityInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Validaremos tu identidad con una foto de tu DNI y reconocimiento facial.'**
+  String get identityInfo;
+
+  /// No description provided for @continueCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get continueCta;
+
+  /// No description provided for @termsNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Al continuar aceptas los Términos y la Política de Privacidad'**
+  String get termsNote;
+
+  /// No description provided for @documentHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanea tu DNI'**
+  String get documentHeadline;
+
+  /// No description provided for @documentSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Coloca el documento sobre una superficie plana, sin reflejos y con buena luz.'**
+  String get documentSubtitle;
+
+  /// No description provided for @capturesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} de 2 capturas'**
+  String capturesCount(int n);
+
+  /// No description provided for @dniFront.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente del DNI'**
+  String get dniFront;
+
+  /// No description provided for @dniFrontHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto y datos personales'**
+  String get dniFrontHint;
+
+  /// No description provided for @dniBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Reverso del DNI'**
+  String get dniBack;
+
+  /// No description provided for @dniBackHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Código y firma'**
+  String get dniBackHint;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Tomar foto'**
+  String get takePhoto;
+
+  /// No description provided for @retakePhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a tomar'**
+  String get retakePhoto;
+
+  /// No description provided for @captured.
+  ///
+  /// In es, this message translates to:
+  /// **'Capturado'**
+  String get captured;
+
+  /// No description provided for @notReadable.
+  ///
+  /// In es, this message translates to:
+  /// **'No legible'**
+  String get notReadable;
+
+  /// No description provided for @documentError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos leer tu DNI'**
+  String get documentError;
+
+  /// No description provided for @documentTip1.
+  ///
+  /// In es, this message translates to:
+  /// **'Evita reflejos y sombras sobre el documento.'**
+  String get documentTip1;
+
+  /// No description provided for @documentTip2.
+  ///
+  /// In es, this message translates to:
+  /// **'Apoya el DNI en una superficie plana, sin doblarlo.'**
+  String get documentTip2;
+
+  /// No description provided for @documentTip3.
+  ///
+  /// In es, this message translates to:
+  /// **'Encuadra las cuatro esquinas dentro del marco.'**
+  String get documentTip3;
+
+  /// No description provided for @documentSecure.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus documentos se cifran y solo se usan para validar tu identidad.'**
+  String get documentSecure;
+
+  /// No description provided for @faceHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Centra tu rostro en el círculo'**
+  String get faceHeadline;
+
+  /// No description provided for @faceInstruction.
+  ///
+  /// In es, this message translates to:
+  /// **'Gira lentamente la cabeza hacia la derecha'**
+  String get faceInstruction;
+
+  /// No description provided for @faceCheckLight.
+  ///
+  /// In es, this message translates to:
+  /// **'Buena iluminación'**
+  String get faceCheckLight;
+
+  /// No description provided for @faceCheckUncovered.
+  ///
+  /// In es, this message translates to:
+  /// **'Rostro descubierto'**
+  String get faceCheckUncovered;
+
+  /// No description provided for @faceCheckLiveness.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba de vida'**
+  String get faceCheckLiveness;
+
+  /// No description provided for @faceInProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'(En proceso)'**
+  String get faceInProgress;
+
+  /// No description provided for @faceCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'No cierres la app durante la verificación.'**
+  String get faceCaption;
+
+  /// No description provided for @faceSimulate.
+  ///
+  /// In es, this message translates to:
+  /// **'Simular verificación'**
+  String get faceSimulate;
+
+  /// No description provided for @pinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu PIN de seguridad'**
+  String get pinHeadline;
+
+  /// No description provided for @pinRule6.
+  ///
+  /// In es, this message translates to:
+  /// **'6 dígitos'**
+  String get pinRule6;
+
+  /// No description provided for @pinRuleNoSequence.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin secuencias como 123456'**
+  String get pinRuleNoSequence;
+
+  /// No description provided for @pinRuleNoBirthdate.
+  ///
+  /// In es, this message translates to:
+  /// **'No uses tu fecha de nacimiento'**
+  String get pinRuleNoBirthdate;
+
+  /// No description provided for @biometricTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar acceso biométrico'**
+  String get biometricTitle;
+
+  /// No description provided for @biometricSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Entra con tu huella o rostro sin escribir el PIN.'**
+  String get biometricSubtitle;
+
+  /// No description provided for @securityNote.
+  ///
+  /// In es, this message translates to:
+  /// **'CuyCash usa un solo factor de verificación por operación.'**
+  String get securityNote;
+
+  /// No description provided for @finishRegister.
+  ///
+  /// In es, this message translates to:
+  /// **'Finalizar registro'**
+  String get finishRegister;
 }
 
 class _AppLocalizationsDelegate
