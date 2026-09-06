@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CuyCash · mock",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "program": "lib/main_mock.dart",
+      "args": [
+        "--flavor",
+        "mock",
+        "--dart-define-from-file=config.mock.json"
+      ]
+    },
+    {
+      "name": "CuyCash · local",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "program": "lib/main_local.dart",
+      "args": [
+        "--flavor",
+        "local",
+        "--dart-define-from-file=config.local.json"
+      ]
+    },
+    {
+      "name": "CuyCash · production",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/mobile",
+      "program": "lib/main_production.dart",
+      "args": [
+        "--flavor",
+        "production",
+        "--dart-define-from-file=config.production.json"
+      ]
+    },
+    {
+      "name": "CuyCash · mock (profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "cwd": "apps/mobile",
+      "program": "lib/main_mock.dart",
+      "args": [
+        "--flavor",
+        "mock",
+        "--dart-define-from-file=config.mock.json"
+      ]
+    }
+  ]
+}
