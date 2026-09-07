@@ -6,5 +6,6 @@ abstract final class AppRoutes {
   static const registro = '/registro';
   static const home = '/home';
   static const perfil = '/perfil';
+  static const quickAccess = '/acceso-rapido';
   static const blocked = '/bloqueado';
 }

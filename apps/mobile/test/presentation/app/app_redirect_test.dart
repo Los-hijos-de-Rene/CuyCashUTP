@@ -25,4 +25,13 @@ void main() {
   test('autenticado en /home → sin redirect', () {
     expect(appRedirect(authed, AppRoutes.home), isNull);
   });
+
+  test('no autenticado en acceso rápido / bloqueado → sin redirect', () {
+    expect(appRedirect(unauthed, AppRoutes.quickAccess), isNull);
+    expect(appRedirect(unauthed, AppRoutes.blocked), isNull);
+  });
+
+  test('autenticado en acceso rápido → /home', () {
+    expect(appRedirect(authed, AppRoutes.quickAccess), AppRoutes.home);
+  });
 }

@@ -1,6 +1,8 @@
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
+import 'package:cuycash/feature/device/application/device_actions.dart';
+import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/auth/bloc/auth_bloc.dart';
 import 'package:cuycash/presentation/profile/profile_screen.dart';
@@ -28,16 +30,23 @@ void main() {
     await bloc.close();
   });
 
-  testWidgets('muestra el identificador y cerrar sesión dispara signOut',
+  testWidgets('muestra el identificador y cerrar sesión abre diálogo y signOut',
       (tester) async {
+    final device = DeviceActions(MemoryDeviceStore());
+
     await tester.pumpWidget(
-      BlocProvider.value(
-        value: bloc,
-        child: MaterialApp(
-          theme: CuyCashTheme.light(),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const ProfileScreen(),
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<DeviceActions>.value(value: device),
+        ],
+        child: BlocProvider.value(
+          value: bloc,
+          child: MaterialApp(
+            theme: CuyCashTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const ProfileScreen(),
+          ),
         ),
       ),
     );
@@ -45,7 +54,16 @@ void main() {
 
     expect(find.text('12345678'), findsOneWidget);
 
+    // Tocar "Cerrar sesión" abre el diálogo de confirmación
     await tester.tap(find.byType(SecondaryButton));
+    await tester.pumpAndSettle();
+
+    // El diálogo debe ser visible; confirmar con el botón primary del diálogo
+    expect(find.byType(Dialog), findsOneWidget);
+
+    // Tap the confirm button (PrimaryButton inside the dialog)
+    final primaryButtons = find.byType(PrimaryButton);
+    await tester.tap(primaryButtons.first);
     await tester.pumpAndSettle();
 
     expect(repo.currentSession, isNull);

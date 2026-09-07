@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const user = RememberedUser(dni: '12345678', fullName: 'Juan Pérez', alias: '@juan');
-  final clock = () => DateTime(2026, 1, 1, 10);
+  DateTime clock() => DateTime(2026, 1, 1, 10);
 
   QuickAccessBloc build({MemoryAuthRepository? auth, MemoryDeviceStore? device}) =>
       QuickAccessBloc(

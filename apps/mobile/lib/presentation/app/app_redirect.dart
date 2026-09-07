@@ -6,6 +6,8 @@ const _gateLocations = {
   AppRoutes.onboarding,
   AppRoutes.login,
   AppRoutes.registro,
+  AppRoutes.quickAccess,
+  AppRoutes.blocked,
 };
 
 /// Gate del router según auth.
