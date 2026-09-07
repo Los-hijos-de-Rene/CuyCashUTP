@@ -71,7 +71,9 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
           ));
         }
       },
-      (_) async => _device.resetLockout(), // éxito → sesión por el stream → home
+      (_) async {
+        await _device.resetLockout();
+      }, // éxito → sesión por el stream → home
     );
   }
 

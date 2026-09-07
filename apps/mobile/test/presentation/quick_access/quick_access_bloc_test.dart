@@ -96,20 +96,20 @@ void main() {
     verify: (b) => expect(b.state.lockedUntil, isNotNull),
   );
 
+  late MemoryAuthRepository biometricRepo;
   blocTest<QuickAccessBloc, QuickAccessState>(
     'biométrico autentica (activa sesión del recordado)',
     build: () {
-      final auth = MemoryAuthRepository();
-      final bloc = QuickAccessBloc(
-        auth: AuthActions(auth),
+      biometricRepo = MemoryAuthRepository();
+      return QuickAccessBloc(
+        auth: AuthActions(biometricRepo),
         device: DeviceActions(MemoryDeviceStore()),
         user: user,
         clock: clock,
       );
-      return bloc;
     },
     act: (b) => b.add(const QuickAccessEvent.biometric()),
     wait: const Duration(milliseconds: 10),
-    verify: (b) => expect(b.state.status, QuickAccessStatus.idle),
+    verify: (_) => expect(biometricRepo.currentSession?.identifier, user.dni),
   );
 }
