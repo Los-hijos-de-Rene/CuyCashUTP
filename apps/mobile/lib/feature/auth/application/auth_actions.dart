@@ -34,5 +34,8 @@ class AuthActions {
       _repo.register(
         dni: dni, nombres: nombres, apellidos: apellidos, email: email, pin: pin);
 
+  /// Activa (inicia sesión) una sesión creada por `register`.
+  Future<void> activate(AuthSession session) => _repo.activate(session);
+
   FutureResult<AuthFailure, Unit> signOut() => _repo.signOut();
 }

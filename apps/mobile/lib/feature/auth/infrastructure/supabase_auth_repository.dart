@@ -32,5 +32,10 @@ class SupabaseAuthRepository implements AuthRepository {
       left(const GlobalFailure.server(AuthFailure.authUnavailable()));
 
   @override
+  Future<void> activate(AuthSession session) async {
+    // TODO(backend): la sesión real la entrega Supabase Auth.
+  }
+
+  @override
   FutureResult<AuthFailure, Unit> signOut() async => right(unit);
 }

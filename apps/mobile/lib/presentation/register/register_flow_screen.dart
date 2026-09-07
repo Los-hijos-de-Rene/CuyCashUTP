@@ -13,6 +13,7 @@ import 'widgets/register_document_step.dart';
 import 'widgets/register_face_step.dart';
 import 'widgets/register_pin_step.dart';
 import 'widgets/register_progress_bar.dart';
+import 'widgets/register_success_screen.dart';
 
 /// Wizard de registro. Chrome compartido + IndexedStack de 4 pasos. El paso 3
 /// (Rostro) usa fondo oscuro inmersivo. En éxito no navega: el gate del router
@@ -72,6 +73,15 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
       },
       child: BlocBuilder<RegisterBloc, RegisterState>(
         builder: (context, state) {
+          final createdSession = state.createdSession;
+          if (createdSession != null) {
+            return RegisterSuccessScreen(
+              session: createdSession,
+              onOpenAccount: () => context
+                  .read<RegisterBloc>()
+                  .add(const RegisterEvent.accountOpened()),
+            );
+          }
           final dark = state.step == 2;
           final title = switch (state.step) {
             0 => l10n.registerFlowTitle,

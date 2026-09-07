@@ -26,7 +26,8 @@ void main() {
     );
   });
 
-  test('register perfil completo con PIN 6 → sesión (identifier = dni)', () async {
+  test('register crea la cuenta (identifier=dni, alias) pero NO inicia sesión',
+      () async {
     final repo = MemoryAuthRepository();
     final result = await repo.register(
       dni: '87654321',
@@ -35,8 +36,27 @@ void main() {
       email: 'juan@correo.com',
       pin: '024689',
     );
-    expect(result.isRight(), isTrue);
-    expect(repo.currentSession?.identifier, '87654321');
+    final session = result.getRight().toNullable();
+    expect(session?.identifier, '87654321');
+    expect(session?.alias, '@juan'); // derivado del primer nombre
+    // No auto-login: la sesión se activa aparte.
+    expect(repo.currentSession, isNull);
+  });
+
+  test('activate inicia la sesión creada y la emite', () async {
+    final repo = MemoryAuthRepository();
+    final emissions = <AuthSession?>[];
+    repo.sessionChanges().listen(emissions.add);
+    final created = (await repo.register(
+      dni: '87654321', nombres: 'Juan', apellidos: 'Pérez',
+      email: 'j@p.pe', pin: '024689',
+    )).getRight().toNullable()!;
+
+    await repo.activate(created);
+
+    expect(repo.currentSession, created);
+    await Future<void>.delayed(Duration.zero);
+    expect(emissions.single, created);
   });
 
   test('register con PIN de 5 dígitos → WeakPin', () async {

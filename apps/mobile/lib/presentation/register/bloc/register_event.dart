@@ -14,4 +14,7 @@ sealed class RegisterEvent with _$RegisterEvent {
   const factory RegisterEvent.stepAdvanced() = RegisterStepAdvanced;
   const factory RegisterEvent.stepBack() = RegisterStepBack;
   const factory RegisterEvent.submitted() = RegisterSubmitted;
+
+  /// "Ir a mi cuenta" en la pantalla de éxito: activa la sesión creada.
+  const factory RegisterEvent.accountOpened() = RegisterAccountOpened;
 }

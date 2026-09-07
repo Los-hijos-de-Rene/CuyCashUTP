@@ -20,6 +20,8 @@ abstract interface class AuthRepository {
   });
 
   /// Registra una cuenta nueva con el perfil completo (DNI + datos + PIN 6).
+  /// Crea la cuenta y devuelve la sesión (con alias) pero NO inicia sesión:
+  /// usar [activate] para autenticar (tras la pantalla de éxito).
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
     required String nombres,
@@ -27,6 +29,9 @@ abstract interface class AuthRepository {
     required String email,
     required String pin,
   });
+
+  /// Activa (inicia sesión) una sesión ya creada por [register] y la emite.
+  Future<void> activate(AuthSession session);
 
   FutureResult<AuthFailure, Unit> signOut();
 }

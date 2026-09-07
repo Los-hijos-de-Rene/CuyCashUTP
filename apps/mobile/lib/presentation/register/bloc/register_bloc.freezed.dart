@@ -55,7 +55,7 @@ extension RegisterEventPatterns on RegisterEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinChanged value)?  pinChanged,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinChanged value)?  pinChanged,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,TResult Function( RegisterAccountOpened value)?  accountOpened,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -68,7 +68,8 @@ return pinChanged(_that);case RegisterBiometricToggled() when biometricToggled !
 return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != null:
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
-return submitted(_that);case _:
+return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
+return accountOpened(_that);case _:
   return orElse();
 
 }
@@ -86,7 +87,7 @@ return submitted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinChanged value)  pinChanged,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinChanged value)  pinChanged,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,required TResult Function( RegisterAccountOpened value)  accountOpened,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
@@ -99,7 +100,8 @@ return pinChanged(_that);case RegisterBiometricToggled():
 return biometricToggled(_that);case RegisterStepAdvanced():
 return stepAdvanced(_that);case RegisterStepBack():
 return stepBack(_that);case RegisterSubmitted():
-return submitted(_that);}
+return submitted(_that);case RegisterAccountOpened():
+return accountOpened(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -113,7 +115,7 @@ return submitted(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinChanged value)?  pinChanged,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinChanged value)?  pinChanged,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,TResult? Function( RegisterAccountOpened value)?  accountOpened,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -126,7 +128,8 @@ return pinChanged(_that);case RegisterBiometricToggled() when biometricToggled !
 return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != null:
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
-return submitted(_that);case _:
+return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
+return accountOpened(_that);case _:
   return null;
 
 }
@@ -143,7 +146,7 @@ return submitted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( String pin)?  pinChanged,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( String pin)?  pinChanged,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,TResult Function()?  accountOpened,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -155,7 +158,8 @@ return pinChanged(_that.pin);case RegisterBiometricToggled() when biometricToggl
 return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanced != null:
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
-return submitted();case _:
+return submitted();case RegisterAccountOpened() when accountOpened != null:
+return accountOpened();case _:
   return orElse();
 
 }
@@ -173,7 +177,7 @@ return submitted();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( String pin)  pinChanged,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( String pin)  pinChanged,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,required TResult Function()  accountOpened,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
 return fieldChanged(_that.field,_that.value);case RegisterCaptured():
@@ -185,7 +189,8 @@ return pinChanged(_that.pin);case RegisterBiometricToggled():
 return biometricToggled(_that.value);case RegisterStepAdvanced():
 return stepAdvanced();case RegisterStepBack():
 return stepBack();case RegisterSubmitted():
-return submitted();}
+return submitted();case RegisterAccountOpened():
+return accountOpened();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -199,7 +204,7 @@ return submitted();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( String pin)?  pinChanged,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( String pin)?  pinChanged,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,TResult? Function()?  accountOpened,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -211,7 +216,8 @@ return pinChanged(_that.pin);case RegisterBiometricToggled() when biometricToggl
 return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanced != null:
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
-return submitted();case _:
+return submitted();case RegisterAccountOpened() when accountOpened != null:
+return accountOpened();case _:
   return null;
 
 }
@@ -703,6 +709,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'RegisterEvent.submitted()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class RegisterAccountOpened implements RegisterEvent {
+  const RegisterAccountOpened();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAccountOpened);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEvent.accountOpened()';
 }
 
 
@@ -1264,7 +1302,9 @@ as bool,
 /// @nodoc
 mixin _$RegisterState {
 
- int get step; RegisterDraft get draft; RegisterErrors get errors; RegisterStatus get status; AuthError? get submitError;
+ int get step; RegisterDraft get draft; RegisterErrors get errors; RegisterStatus get status; AuthError? get submitError;// Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
+// pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
+ AuthSession? get createdSession;
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1275,16 +1315,16 @@ $RegisterStateCopyWith<RegisterState> get copyWith => _$RegisterStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,draft,errors,status,submitError);
+int get hashCode => Object.hash(runtimeType,step,draft,errors,status,submitError,createdSession);
 
 @override
 String toString() {
-  return 'RegisterState(step: $step, draft: $draft, errors: $errors, status: $status, submitError: $submitError)';
+  return 'RegisterState(step: $step, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession)';
 }
 
 
@@ -1295,7 +1335,7 @@ abstract mixin class $RegisterStateCopyWith<$Res>  {
   factory $RegisterStateCopyWith(RegisterState value, $Res Function(RegisterState) _then) = _$RegisterStateCopyWithImpl;
 @useResult
 $Res call({
- int step, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError
+ int step, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession
 });
 
 
@@ -1312,14 +1352,15 @@ class _$RegisterStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as int,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterDraft,errors: null == errors ? _self.errors : errors // ignore: cast_nullable_to_non_nullable
 as RegisterErrors,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as RegisterStatus,submitError: freezed == submitError ? _self.submitError : submitError // ignore: cast_nullable_to_non_nullable
-as AuthError?,
+as AuthError?,createdSession: freezed == createdSession ? _self.createdSession : createdSession // ignore: cast_nullable_to_non_nullable
+as AuthSession?,
   ));
 }
 /// Create a copy of RegisterState
@@ -1422,10 +1463,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterState() when $default != null:
-return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError);case _:
+return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
   return orElse();
 
 }
@@ -1443,10 +1484,10 @@ return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitErr
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterState():
-return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError);case _:
+return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1463,10 +1504,10 @@ return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitErr
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int step,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterState() when $default != null:
-return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError);case _:
+return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
   return null;
 
 }
@@ -1478,7 +1519,7 @@ return $default(_that.step,_that.draft,_that.errors,_that.status,_that.submitErr
 
 
 class _RegisterState extends RegisterState {
-  const _RegisterState({this.step = 0, this.draft = const RegisterDraft(), this.errors = const RegisterErrors(), this.status = RegisterStatus.editing, this.submitError}): super._();
+  const _RegisterState({this.step = 0, this.draft = const RegisterDraft(), this.errors = const RegisterErrors(), this.status = RegisterStatus.editing, this.submitError, this.createdSession}): super._();
   
 
 @override@JsonKey() final  int step;
@@ -1486,6 +1527,9 @@ class _RegisterState extends RegisterState {
 @override@JsonKey() final  RegisterErrors errors;
 @override@JsonKey() final  RegisterStatus status;
 @override final  AuthError? submitError;
+// Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
+// pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
+@override final  AuthSession? createdSession;
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
@@ -1497,16 +1541,16 @@ _$RegisterStateCopyWith<_RegisterState> get copyWith => __$RegisterStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,draft,errors,status,submitError);
+int get hashCode => Object.hash(runtimeType,step,draft,errors,status,submitError,createdSession);
 
 @override
 String toString() {
-  return 'RegisterState(step: $step, draft: $draft, errors: $errors, status: $status, submitError: $submitError)';
+  return 'RegisterState(step: $step, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession)';
 }
 
 
@@ -1517,7 +1561,7 @@ abstract mixin class _$RegisterStateCopyWith<$Res> implements $RegisterStateCopy
   factory _$RegisterStateCopyWith(_RegisterState value, $Res Function(_RegisterState) _then) = __$RegisterStateCopyWithImpl;
 @override @useResult
 $Res call({
- int step, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError
+ int step, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession
 });
 
 
@@ -1534,14 +1578,15 @@ class __$RegisterStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,}) {
   return _then(_RegisterState(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as int,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterDraft,errors: null == errors ? _self.errors : errors // ignore: cast_nullable_to_non_nullable
 as RegisterErrors,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as RegisterStatus,submitError: freezed == submitError ? _self.submitError : submitError // ignore: cast_nullable_to_non_nullable
-as AuthError?,
+as AuthError?,createdSession: freezed == createdSession ? _self.createdSession : createdSession // ignore: cast_nullable_to_non_nullable
+as AuthSession?,
   ));
 }
 

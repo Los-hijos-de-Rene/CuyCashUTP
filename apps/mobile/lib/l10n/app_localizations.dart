@@ -94,6 +94,66 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('es')];
 
+  /// No description provided for @successTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tu cuenta está activa!'**
+  String get successTitle;
+
+  /// No description provided for @successSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya puedes empezar a mover tu dinero con CuyCash.'**
+  String get successSubtitle;
+
+  /// No description provided for @successAliasLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu alias en CuyCash'**
+  String get successAliasLabel;
+
+  /// No description provided for @successWalletLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu billetera'**
+  String get successWalletLabel;
+
+  /// No description provided for @successIdentityVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada'**
+  String get successIdentityVerified;
+
+  /// No description provided for @successShareHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparte tu alias para que te envíen dinero.'**
+  String get successShareHint;
+
+  /// No description provided for @goToAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Ir a mi cuenta'**
+  String get goToAccount;
+
+  /// No description provided for @shareMyAlias.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir mi alias'**
+  String get shareMyAlias;
+
+  /// No description provided for @aliasCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Alias copiado'**
+  String get aliasCopied;
+
+  /// No description provided for @shareAliasMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Envíame dinero a mi alias de CuyCash: {alias}'**
+  String shareAliasMessage(String alias);
+
   /// No description provided for @createAccount.
   ///
   /// In es, this message translates to:

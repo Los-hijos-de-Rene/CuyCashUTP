@@ -57,17 +57,31 @@ class MemoryAuthRepository implements AuthRepository {
       return left(const GlobalFailure.server(AuthFailure.identifierTaken()));
     }
     _registered.add(dni);
-    final session =
-        AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni);
-    _emit(session);
-    return right(session);
+    // Crea la cuenta pero NO inicia sesión: la sesión se activa cuando el
+    // usuario toca "Ir a mi cuenta" en la pantalla de éxito.
+    return right(AuthSession(
+      userId: 'mem-${dni.hashCode}',
+      identifier: dni,
+      alias: _aliasFor(nombres, dni),
+    ));
   }
+
+  @override
+  Future<void> activate(AuthSession session) async => _emit(session);
 
   @override
   FutureResult<AuthFailure, Unit> signOut() async {
     _session = null;
     _controller.add(null);
     return right(unit);
+  }
+
+  /// Alias mock derivado del primer nombre (ascii, minúsculas); si no queda
+  /// nada usable, cae al DNI.
+  static String _aliasFor(String nombres, String dni) {
+    final first = nombres.trim().split(RegExp(r'\s+')).first.toLowerCase();
+    final slug = first.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return slug.isEmpty ? '@$dni' : '@$slug';
   }
 
   void _emit(AuthSession session) {

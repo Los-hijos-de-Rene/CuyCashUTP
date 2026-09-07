@@ -51,6 +51,9 @@ abstract class RegisterState with _$RegisterState {
     @Default(RegisterErrors()) RegisterErrors errors,
     @Default(RegisterStatus.editing) RegisterStatus status,
     AuthError? submitError,
+    // Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
+    // pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
+    AuthSession? createdSession,
   }) = _RegisterState;
 
   /// ¿El paso actual permite avanzar / finalizar?

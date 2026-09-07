@@ -90,7 +90,7 @@ void main() {
   );
 
   blocTest<RegisterBloc, RegisterState>(
-    'submit con PIN válido registra (repo tiene sesión)',
+    'submit con PIN válido crea la cuenta (createdSession) sin autenticar aún',
     build: () {
       final repo = MemoryAuthRepository();
       return RegisterBloc(AuthActions(repo));
@@ -104,8 +104,28 @@ void main() {
     ),
     act: (b) => b.add(const RegisterEvent.submitted()),
     wait: const Duration(milliseconds: 10),
-    verify: (b) => expect(b.state.status, RegisterStatus.editing),
+    verify: (b) {
+      expect(b.state.status, RegisterStatus.editing);
+      expect(b.state.createdSession?.identifier, '87654321');
+    },
   );
+
+  test('accountOpened activa la sesión creada (repo.currentSession)', () async {
+    final repo = MemoryAuthRepository();
+    final bloc = RegisterBloc(AuthActions(repo));
+    addTearDown(bloc.close);
+    bloc.add(const RegisterEvent.fieldChanged(RegisterField.dni, '87654321'));
+    bloc.add(const RegisterEvent.fieldChanged(RegisterField.nombres, 'Juan'));
+    bloc.add(const RegisterEvent.fieldChanged(RegisterField.apellidos, 'Pérez'));
+    bloc.add(const RegisterEvent.fieldChanged(RegisterField.email, 'j@p.pe'));
+    bloc.add(const RegisterEvent.pinChanged('024689'));
+    bloc.add(const RegisterEvent.submitted());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(repo.currentSession, isNull); // aún no autenticado
+    bloc.add(const RegisterEvent.accountOpened());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(repo.currentSession?.identifier, '87654321');
+  });
 
   blocTest<RegisterBloc, RegisterState>(
     'submit con DNI duplicado → submitError identifierTaken',

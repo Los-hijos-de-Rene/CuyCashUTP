@@ -6,6 +6,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_failure.dart';
+import '../../../feature/auth/domain/auth_session.dart';
 import '../../auth/bloc/auth_bloc.dart' show AuthError;
 
 part 'register_bloc.freezed.dart';
@@ -68,6 +69,10 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       if (state.step > 0) emit(state.copyWith(step: state.step - 1));
     });
     on<RegisterSubmitted>(_onSubmitted);
+    on<RegisterAccountOpened>((event, emit) {
+      final session = state.createdSession;
+      if (session != null) _actions.activate(session);
+    });
   }
 
   final AuthActions _actions;
@@ -131,8 +136,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     result.match(
       (failure) => emit(state.copyWith(
           status: RegisterStatus.editing, submitError: _errorFor(failure))),
-      (_) => emit(
-          state.copyWith(status: RegisterStatus.editing)), // éxito → sesión por el stream → AuthBloc → gate → /home
+      (session) => emit(state.copyWith(
+          status: RegisterStatus.editing,
+          createdSession: session)), // éxito → pantalla de éxito (aún sin login)
     );
   }
 

@@ -9,6 +9,39 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get successTitle => '¡Tu cuenta está activa!';
+
+  @override
+  String get successSubtitle =>
+      'Ya puedes empezar a mover tu dinero con CuyCash.';
+
+  @override
+  String get successAliasLabel => 'Tu alias en CuyCash';
+
+  @override
+  String get successWalletLabel => 'Tu billetera';
+
+  @override
+  String get successIdentityVerified => 'Identidad verificada';
+
+  @override
+  String get successShareHint => 'Comparte tu alias para que te envíen dinero.';
+
+  @override
+  String get goToAccount => 'Ir a mi cuenta';
+
+  @override
+  String get shareMyAlias => 'Compartir mi alias';
+
+  @override
+  String get aliasCopied => 'Alias copiado';
+
+  @override
+  String shareAliasMessage(String alias) {
+    return 'Envíame dinero a mi alias de CuyCash: $alias';
+  }
+
+  @override
   String get createAccount => 'Crear mi cuenta';
 
   @override
