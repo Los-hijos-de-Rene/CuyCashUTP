@@ -21,8 +21,10 @@ class SecureDeviceStore implements DeviceStore {
     final raw = await _storage.read(key: _userKey);
     if (raw == null) return null;
     try {
-      return RememberedUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } on FormatException {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return null;
+      return RememberedUser.fromJson(decoded);
+    } catch (_) {
       return null;
     }
   }
@@ -39,8 +41,10 @@ class SecureDeviceStore implements DeviceStore {
     final raw = await _storage.read(key: _lockoutKey);
     if (raw == null) return const LockoutState();
     try {
-      return LockoutState.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } on FormatException {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return const LockoutState();
+      return LockoutState.fromJson(decoded);
+    } catch (_) {
       return const LockoutState();
     }
   }
