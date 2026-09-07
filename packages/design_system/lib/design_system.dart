@@ -9,5 +9,6 @@ export 'src/cuycash_theme.dart';
 export 'src/cuycash_typography.dart';
 export 'src/ghost_button.dart';
 export 'src/page_dots_indicator.dart';
+export 'src/pin_boxes.dart';
 export 'src/primary_button.dart';
 export 'src/secondary_button.dart';

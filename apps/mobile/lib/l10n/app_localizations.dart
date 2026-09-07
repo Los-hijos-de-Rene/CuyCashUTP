@@ -151,13 +151,13 @@ abstract class AppLocalizations {
   /// No description provided for @loginHeadline.
   ///
   /// In es, this message translates to:
-  /// **'Te extrañábamos'**
+  /// **'Bienvenido de vuelta'**
   String get loginHeadline;
 
   /// No description provided for @loginSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Ingresa tus datos para continuar.'**
+  /// **'Ingresa con tu DNI y tu PIN de seguridad.'**
   String get loginSubtitle;
 
   /// No description provided for @identifierLabel.
@@ -177,6 +177,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ingresar'**
   String get loginCta;
+
+  /// No description provided for @forgotPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Olvidé mi PIN'**
+  String get forgotPin;
 
   /// No description provided for @goToRegister.
   ///

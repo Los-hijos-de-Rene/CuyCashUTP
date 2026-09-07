@@ -39,10 +39,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loginTitle => 'Iniciar sesión';
 
   @override
-  String get loginHeadline => 'Te extrañábamos';
+  String get loginHeadline => 'Bienvenido de vuelta';
 
   @override
-  String get loginSubtitle => 'Ingresa tus datos para continuar.';
+  String get loginSubtitle => 'Ingresa con tu DNI y tu PIN de seguridad.';
 
   @override
   String get identifierLabel => 'DNI o Alias';
@@ -52,6 +52,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get loginCta => 'Ingresar';
+
+  @override
+  String get forgotPin => 'Olvidé mi PIN';
 
   @override
   String get goToRegister => '¿No tienes cuenta? Regístrate';

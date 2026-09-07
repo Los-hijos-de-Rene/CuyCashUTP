@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../bloc/register_bloc.dart';
-import 'pin_boxes.dart';
 
 /// Paso 4 · Seguridad. PIN de 6 dígitos + reglas + toggle biométrico.
 class RegisterPinStep extends StatefulWidget {

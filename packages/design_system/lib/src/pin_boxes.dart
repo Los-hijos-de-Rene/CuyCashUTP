@@ -1,7 +1,10 @@
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
-/// Casillas visuales del PIN (una por dígito). Refleja cuántos dígitos hay.
+import 'cuycash_colors.dart';
+import 'cuycash_spacing.dart';
+
+/// Casillas visuales del PIN (una por dígito). Refleja cuántos dígitos hay:
+/// dígito ingresado = punto lleno; siguiente casilla = borde activo.
 class PinBoxes extends StatelessWidget {
   const PinBoxes({required this.pin, this.length = 6, super.key});
 
