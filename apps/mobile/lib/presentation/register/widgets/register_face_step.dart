@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,34 +6,11 @@ import '../../../l10n/app_localizations.dart';
 import '../bloc/register_bloc.dart';
 import 'face_scan_ring.dart';
 
-/// Paso 3 · Rostro. Pantalla inmersiva oscura. En mock: al montar inicia el
-/// escaneo y tras un delay lo completa (simulación de prueba de vida).
-class RegisterFaceStep extends StatefulWidget {
+/// Paso 3 · Rostro. Pantalla inmersiva oscura. Widget puramente display:
+/// no arranca el escaneo por sí mismo — RegisterFlowScreen lo dispara cuando
+/// este paso se vuelve el paso activo.
+class RegisterFaceStep extends StatelessWidget {
   const RegisterFaceStep({super.key});
-
-  @override
-  State<RegisterFaceStep> createState() => _RegisterFaceStepState();
-}
-
-class _RegisterFaceStepState extends State<RegisterFaceStep> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    final bloc = context.read<RegisterBloc>();
-    if (bloc.state.draft.faceStatus == FaceScanStatus.idle) {
-      bloc.add(const RegisterEvent.faceScanStarted());
-      _timer = Timer(const Duration(seconds: 3),
-          () => bloc.add(const RegisterEvent.faceScanCompleted()));
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
