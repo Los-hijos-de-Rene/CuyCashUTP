@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const BrandMark(size: 96),
+            Image.asset('assets/cuycash.png', width: 112, height: 112),
             const SizedBox(height: CuyCashSpacing.stackLg),
             Text('CuyCash',
                 style: CuyCashTypography.headlineMd
