@@ -63,6 +63,7 @@ class MemoryAuthRepository implements AuthRepository {
       userId: 'mem-${dni.hashCode}',
       identifier: dni,
       alias: _aliasFor(nombres, dni),
+      fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
     ));
   }
 
