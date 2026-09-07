@@ -18,38 +18,51 @@ class RegisterFaceStep extends StatelessWidget {
     return BlocBuilder<RegisterBloc, RegisterState>(
       builder: (context, state) {
         final done = state.draft.faceStatus == FaceScanStatus.success;
-        return Column(
-          children: [
-            const SizedBox(height: CuyCashSpacing.stackXl),
-            Text(l10n.faceHeadline,
-                textAlign: TextAlign.center,
-                style: CuyCashTypography.titleMd
-                    .copyWith(color: CuyCashColors.immersiveOnDark)),
-            const SizedBox(height: CuyCashSpacing.stackXl),
-            FaceScanRing(active: !done),
-            const SizedBox(height: CuyCashSpacing.stackLg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.rotate_right,
-                    size: 18, color: CuyCashColors.immersiveOcre),
-                const SizedBox(width: CuyCashSpacing.stackSm),
-                Flexible(
-                  child: Text(l10n.faceInstruction,
-                      style: CuyCashTypography.bodyLg
-                          .copyWith(color: CuyCashColors.immersiveOcre)),
+        // Scrollable con altura mínima = viewport: el Spacer empuja el caption
+        // abajo cuando sobra espacio y hace scroll cuando la pantalla es corta.
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: CuyCashSpacing.stackLg),
+                      Text(l10n.faceHeadline,
+                          textAlign: TextAlign.center,
+                          style: CuyCashTypography.titleMd
+                              .copyWith(color: CuyCashColors.immersiveOnDark)),
+                      const SizedBox(height: CuyCashSpacing.stackLg),
+                      FaceScanRing(active: !done),
+                      const SizedBox(height: CuyCashSpacing.stackLg),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.rotate_right,
+                              size: 18, color: CuyCashColors.immersiveOcre),
+                          const SizedBox(width: CuyCashSpacing.stackSm),
+                          Flexible(
+                            child: Text(l10n.faceInstruction,
+                                style: CuyCashTypography.bodyLg.copyWith(
+                                    color: CuyCashColors.immersiveOcre)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: CuyCashSpacing.stackLg),
+                      _Checklist(livenessDone: done),
+                      const Spacer(),
+                      Text(l10n.faceCaption,
+                          textAlign: TextAlign.center,
+                          style: CuyCashTypography.labelSm
+                              .copyWith(color: CuyCashColors.immersiveMuted)),
+                      const SizedBox(height: CuyCashSpacing.stackLg),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: CuyCashSpacing.stackXl),
-            _Checklist(livenessDone: done),
-            const Spacer(),
-            Text(l10n.faceCaption,
-                textAlign: TextAlign.center,
-                style: CuyCashTypography.labelSm
-                    .copyWith(color: CuyCashColors.immersiveMuted)),
-            const SizedBox(height: CuyCashSpacing.stackLg),
-          ],
+              ),
+            );
+          },
         );
       },
     );
