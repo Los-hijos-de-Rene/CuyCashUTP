@@ -21,7 +21,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       : _actions = actions,
         super(_resolve(actions.currentSession)) {
     on<AuthLoginSubmitted>(_onLoginSubmitted);
-    on<AuthRegisterSubmitted>(_onRegisterSubmitted);
     on<AuthSignedOut>((event, emit) => _actions.signOut());
     on<_AuthSessionChanged>((event, emit) => emit(_resolve(event.session)));
     _sub = _actions.sessionChanges().listen(
@@ -43,19 +42,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthState.unauthenticated(status: FormStatus.submitting));
     final result =
         await _actions.signIn(identifier: event.identifier, pin: event.pin);
-    result.match(
-      (failure) => emit(AuthState.unauthenticated(error: _errorFor(failure))),
-      (_) {}, // éxito → sessionChanged por el stream
-    );
-  }
-
-  Future<void> _onRegisterSubmitted(
-    AuthRegisterSubmitted event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(const AuthState.unauthenticated(status: FormStatus.submitting));
-    final result = await _actions.register(
-        dni: event.dni, alias: event.alias, pin: event.pin);
     result.match(
       (failure) => emit(AuthState.unauthenticated(error: _errorFor(failure))),
       (_) {}, // éxito → sessionChanged por el stream

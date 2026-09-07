@@ -1,14 +1,17 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/injection/app_dependencies.dart';
+import '../../core/injection/modules/register_module.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../home/home_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../profile/profile_screen.dart';
+import '../register/bloc/register_bloc.dart';
+import '../register/register_flow_screen.dart';
 import '../shell/app_shell.dart';
 import '../splash/splash_screen.dart';
 import '../auth/login_screen.dart';
-import '../auth/register_screen.dart';
 import 'app_redirect.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
@@ -33,8 +36,12 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           path: AppRoutes.login,
           builder: (context, state) => const LoginScreen()),
       GoRoute(
-          path: AppRoutes.registro,
-          builder: (context, state) => const RegisterScreen()),
+        path: AppRoutes.registro,
+        builder: (context, state) => BlocProvider<RegisterBloc>(
+          create: (_) => RegisterModule.create(deps),
+          child: const RegisterFlowScreen(),
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),

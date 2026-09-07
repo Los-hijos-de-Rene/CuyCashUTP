@@ -24,7 +24,9 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
-    String? alias,
+    required String nombres,
+    required String apellidos,
+    required String email,
     required String pin,
   }) async =>
       left(const GlobalFailure.server(AuthFailure.authUnavailable()));

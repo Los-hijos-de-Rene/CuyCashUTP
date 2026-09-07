@@ -26,10 +26,13 @@ class AuthActions {
 
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
-    String? alias,
+    required String nombres,
+    required String apellidos,
+    required String email,
     required String pin,
   }) =>
-      _repo.register(dni: dni, alias: alias, pin: pin);
+      _repo.register(
+        dni: dni, nombres: nombres, apellidos: apellidos, email: email, pin: pin);
 
   FutureResult<AuthFailure, Unit> signOut() => _repo.signOut();
 }

@@ -19,7 +19,7 @@ final class IdentifierTaken extends AuthFailure {
   const IdentifierTaken();
 }
 
-/// El PIN no cumple el formato (4 dígitos).
+/// El PIN no cumple el formato (6 dígitos).
 final class WeakPin extends AuthFailure {
   const WeakPin();
 }
