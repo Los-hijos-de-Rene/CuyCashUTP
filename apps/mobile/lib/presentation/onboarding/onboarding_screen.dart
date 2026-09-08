@@ -43,6 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (index) => setState(() => _index = index),
                 itemCount: slides.length,
                 itemBuilder: (_, index) => OnboardingSlide(
+                  illustrationIndex: index,
                   title: slides[index].title,
                   description: slides[index].description,
                 ),
@@ -50,13 +51,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: CuyCashSpacing.marginMobile),
+                horizontal: CuyCashSpacing.marginMobile,
+              ),
               child: Column(
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
                     child: PageDotsIndicator(
-                        count: slides.length, activeIndex: _index),
+                      count: slides.length,
+                      activeIndex: _index,
+                    ),
                   ),
                   const SizedBox(height: CuyCashSpacing.stackLg),
                   PrimaryButton(
