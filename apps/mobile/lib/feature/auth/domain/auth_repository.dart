@@ -13,7 +13,15 @@ abstract interface class AuthRepository {
   /// Emite la sesión vigente ante cambios (login/register/logout).
   Stream<AuthSession?> sessionChanges();
 
-  /// Inicia sesión con DNI/Alias + PIN.
+  /// Valida DNI/Alias + PIN y devuelve la sesión SIN iniciarla. Es el paso que
+  /// permite intercalar la verificación de un teléfono nuevo antes de dar
+  /// acceso: quien la llama decide si `activate` o si manda al OTP.
+  FutureResult<AuthFailure, AuthSession> authenticate({
+    required String identifier,
+    required String pin,
+  });
+
+  /// Inicia sesión con DNI/Alias + PIN (valida y activa en un solo paso).
   FutureResult<AuthFailure, AuthSession> signIn({
     required String identifier,
     required String pin,
@@ -32,6 +40,24 @@ abstract interface class AuthRepository {
 
   /// Activa (inicia sesión) una sesión ya creada por [register] y la emite.
   Future<void> activate(AuthSession session);
+
+  /// ¿El PIN propuesto es el que la cuenta ya tiene? Permite rechazarlo al
+  /// terminar de escribirlo, sin esperar a que el usuario teclee doce dígitos.
+  ///
+  /// Solo debe existir DENTRO de una recuperación ya verificada por OTP y con
+  /// límite de intentos: preguntado a discreción sería un oráculo del PIN.
+  FutureResult<AuthFailure, bool> isCurrentPin({
+    required String identifier,
+    required String pin,
+  });
+
+  /// Cambia el PIN tras una recuperación verificada por OTP. NO inicia sesión:
+  /// restablecer no otorga acceso, el usuario debe entrar con el PIN nuevo.
+  /// Invalida además las sesiones de los demás dispositivos.
+  FutureResult<AuthFailure, Unit> resetPin({
+    required String identifier,
+    required String newPin,
+  });
 
   FutureResult<AuthFailure, Unit> signOut();
 }

@@ -10,12 +10,26 @@ import '../domain/auth_session.dart';
 /// Memory* FUNCIONAL de auth (backend del flavor `mock` + contrato de tests).
 /// [validPin] (default '000000') es el PIN que se acepta.
 class MemoryAuthRepository implements AuthRepository {
-  MemoryAuthRepository({AuthSession? initial, this.validPin = '000000'})
-      : _session = initial {
+  MemoryAuthRepository({
+    AuthSession? initial,
+    String validPin = '000000',
+    List<String> otherDeviceTokens = const [],
+  })  : _session = initial,
+        _validPin = validPin,
+        _otherDeviceTokens = [...otherDeviceTokens] {
     if (initial != null) _registered.add(initial.identifier);
   }
 
-  final String validPin;
+  String _validPin;
+
+  /// PIN aceptado por `signIn`. Cambia con `resetPin`.
+  String get validPin => _validPin;
+
+  /// Tokens simulados de OTROS dispositivos. `resetPin` los invalida: cambiar
+  /// el PIN cierra las sesiones abiertas en el resto de teléfonos.
+  final List<String> _otherDeviceTokens;
+  List<String> get otherDeviceTokens => List.unmodifiable(_otherDeviceTokens);
+
   AuthSession? _session;
   final Set<String> _registered = {};
   final _controller = StreamController<AuthSession?>.broadcast();
@@ -29,17 +43,52 @@ class MemoryAuthRepository implements AuthRepository {
   Stream<AuthSession?> sessionChanges() => _controller.stream;
 
   @override
+  FutureResult<AuthFailure, AuthSession> authenticate({
+    required String identifier,
+    required String pin,
+  }) async {
+    if (pin != _validPin) {
+      return left(const GlobalFailure.server(AuthFailure.invalidCredentials()));
+    }
+    return right(AuthSession(
+        userId: 'mem-${identifier.hashCode}', identifier: identifier));
+  }
+
+  @override
   FutureResult<AuthFailure, AuthSession> signIn({
     required String identifier,
     required String pin,
   }) async {
-    if (pin != validPin) {
-      return left(const GlobalFailure.server(AuthFailure.invalidCredentials()));
+    final result = await authenticate(identifier: identifier, pin: pin);
+    return result.map((session) {
+      _emit(session);
+      return session;
+    });
+  }
+
+  @override
+  FutureResult<AuthFailure, bool> isCurrentPin({
+    required String identifier,
+    required String pin,
+  }) async =>
+      right(pin == _validPin);
+
+  @override
+  FutureResult<AuthFailure, Unit> resetPin({
+    required String identifier,
+    required String newPin,
+  }) async {
+    if (!_pinFormat.hasMatch(newPin)) {
+      return left(const GlobalFailure.server(AuthFailure.weakPin()));
     }
-    final session =
-        AuthSession(userId: 'mem-${identifier.hashCode}', identifier: identifier);
-    _emit(session);
-    return right(session);
+    if (newPin == _validPin) {
+      return left(const GlobalFailure.server(AuthFailure.pinUnchanged()));
+    }
+    _validPin = newPin;
+    // Cambiar el PIN cierra las sesiones del resto de dispositivos. La de este
+    // teléfono tampoco queda abierta: restablecer no otorga sesión.
+    _otherDeviceTokens.clear();
+    return right(unit);
   }
 
   @override

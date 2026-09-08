@@ -6,6 +6,7 @@ sealed class AuthFailure {
   const factory AuthFailure.invalidCredentials() = InvalidCredentials;
   const factory AuthFailure.identifierTaken() = IdentifierTaken;
   const factory AuthFailure.weakPin() = WeakPin;
+  const factory AuthFailure.pinUnchanged() = PinUnchanged;
   const factory AuthFailure.authUnavailable() = AuthUnavailable;
 }
 
@@ -22,6 +23,11 @@ final class IdentifierTaken extends AuthFailure {
 /// El PIN no cumple el formato (6 dígitos).
 final class WeakPin extends AuthFailure {
   const WeakPin();
+}
+
+/// El PIN nuevo es igual al que ya tenía la cuenta.
+final class PinUnchanged extends AuthFailure {
+  const PinUnchanged();
 }
 
 /// No se pudo contactar al proveedor de auth (sin backend real aún).

@@ -18,11 +18,29 @@ class AuthActions {
 
   Stream<AuthSession?> sessionChanges() => _repo.sessionChanges();
 
+  FutureResult<AuthFailure, AuthSession> authenticate({
+    required String identifier,
+    required String pin,
+  }) =>
+      _repo.authenticate(identifier: identifier, pin: pin);
+
   FutureResult<AuthFailure, AuthSession> signIn({
     required String identifier,
     required String pin,
   }) =>
       _repo.signIn(identifier: identifier, pin: pin);
+
+  FutureResult<AuthFailure, bool> isCurrentPin({
+    required String identifier,
+    required String pin,
+  }) =>
+      _repo.isCurrentPin(identifier: identifier, pin: pin);
+
+  FutureResult<AuthFailure, Unit> resetPin({
+    required String identifier,
+    required String newPin,
+  }) =>
+      _repo.resetPin(identifier: identifier, newPin: newPin);
 
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,

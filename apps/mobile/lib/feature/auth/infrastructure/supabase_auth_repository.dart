@@ -15,6 +15,27 @@ class SupabaseAuthRepository implements AuthRepository {
   Stream<AuthSession?> sessionChanges() => const Stream.empty();
 
   @override
+  FutureResult<AuthFailure, AuthSession> authenticate({
+    required String identifier,
+    required String pin,
+  }) async =>
+      left(const GlobalFailure.server(AuthFailure.authUnavailable()));
+
+  @override
+  FutureResult<AuthFailure, bool> isCurrentPin({
+    required String identifier,
+    required String pin,
+  }) async =>
+      left(const GlobalFailure.server(AuthFailure.authUnavailable()));
+
+  @override
+  FutureResult<AuthFailure, Unit> resetPin({
+    required String identifier,
+    required String newPin,
+  }) async =>
+      left(const GlobalFailure.server(AuthFailure.authUnavailable()));
+
+  @override
   FutureResult<AuthFailure, AuthSession> signIn({
     required String identifier,
     required String pin,
