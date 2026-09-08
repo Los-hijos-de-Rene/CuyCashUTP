@@ -8,6 +8,14 @@ const _gateLocations = {
   AppRoutes.registro,
   AppRoutes.quickAccess,
   AppRoutes.blocked,
+  // Recuperación y verificación de dispositivo: ocurren ANTES de tener sesión.
+  AppRoutes.recuperar,
+  AppRoutes.recuperarCodigo,
+  AppRoutes.recuperarPin,
+  AppRoutes.recuperarListo,
+  AppRoutes.recuperarCancelado,
+  AppRoutes.ingresarDispositivo,
+  AppRoutes.ingresarCancelado,
 };
 
 /// Gate del router según auth.
