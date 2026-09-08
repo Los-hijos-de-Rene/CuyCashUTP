@@ -1,4 +1,4 @@
-import 'package:cuycash/feature/device/domain/lockout_state.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_state.dart';
 import 'package:cuycash/feature/device/domain/remembered_user.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:flutter_test/flutter_test.dart';

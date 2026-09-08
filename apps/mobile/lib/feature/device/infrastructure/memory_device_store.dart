@@ -1,5 +1,5 @@
 import '../domain/device_store.dart';
-import '../domain/lockout_state.dart';
+import '../../lockout/domain/lockout_state.dart';
 import '../domain/remembered_user.dart';
 
 /// DeviceStore en memoria (tests / fake).

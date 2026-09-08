@@ -1,4 +1,4 @@
-import 'lockout_state.dart';
+import '../../lockout/domain/lockout_state.dart';
 import 'remembered_user.dart';
 
 /// Almacén local del dispositivo (usuario recordado + bloqueo). Nunca lanza:

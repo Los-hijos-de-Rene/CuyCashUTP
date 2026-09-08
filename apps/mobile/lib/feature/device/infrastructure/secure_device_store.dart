@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../domain/device_store.dart';
-import '../domain/lockout_state.dart';
+import '../../lockout/domain/lockout_state.dart';
 import '../domain/remembered_user.dart';
 
 /// DeviceStore cifrado (Keychain / EncryptedSharedPreferences). Usado en todos

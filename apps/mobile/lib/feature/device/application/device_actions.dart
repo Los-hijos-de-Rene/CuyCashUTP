@@ -1,14 +1,17 @@
 import '../domain/device_store.dart';
-import '../domain/lockout_policy.dart';
-import '../domain/lockout_state.dart';
+import '../../lockout/domain/lockout_policy.dart';
+import '../../lockout/domain/lockout_state.dart';
 import '../domain/remembered_user.dart';
 
 /// Capa de aplicación del dispositivo. `registerFailedAttempt` encapsula el
 /// escalonado de bloqueo (reloj inyectado por el llamador).
 class DeviceActions {
-  const DeviceActions(this._store);
+  const DeviceActions(this._store, {this.policy = const LockoutPolicy()});
 
   final DeviceStore _store;
+
+  /// Escalonado de bloqueo vigente (el flavor `mock` inyecta uno corto).
+  final LockoutPolicy policy;
 
   Future<RememberedUser?> readUser() => _store.readUser();
   Future<void> saveUser(RememberedUser user) => _store.saveUser(user);
@@ -26,7 +29,7 @@ class DeviceActions {
       next = LockoutState(
         failedAttempts: 0,
         level: level,
-        lockedUntil: now.add(LockoutPolicy.durationForLevel(level)),
+        lockedUntil: now.add(policy.durationForLevel(level)),
       );
     } else {
       next = current.copyWith(failedAttempts: attempts);

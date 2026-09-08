@@ -1,4 +1,6 @@
 import 'package:cuycash/feature/device/application/device_actions.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_policy.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_state.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,5 +49,24 @@ void main() {
     final s = await actions.readLockout();
     expect(s.failedAttempts, 0);
     expect(s.lockedUntil, isNull);
+  });
+
+  test('la política mock bloquea 10 s (nivel 1) sin tocar la de producción',
+      () async {
+    final actions = DeviceActions(MemoryDeviceStore(),
+        policy: const LockoutPolicy.mock());
+
+    LockoutState? state;
+    for (var i = 0; i < 3; i++) {
+      state = await actions.registerFailedAttempt(t0);
+    }
+
+    expect(state!.level, 1);
+    expect(state.lockedUntil, t0.add(const Duration(seconds: 10)));
+    expect(state.isLocked(t0.add(const Duration(seconds: 9))), isTrue);
+    expect(state.isLocked(t0.add(const Duration(seconds: 11))), isFalse);
+    // El escalonado por defecto sigue siendo el de producción.
+    expect(const LockoutPolicy().durationForLevel(1),
+        const Duration(minutes: 15));
   });
 }
