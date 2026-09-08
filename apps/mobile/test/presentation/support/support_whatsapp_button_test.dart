@@ -1,3 +1,4 @@
+import 'package:cuycash/core/config/support_channel.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/lockout/access_blocked_screen.dart';
 import 'package:cuycash/presentation/lockout/blocked_args.dart';
@@ -62,5 +63,12 @@ void main() {
 
     expect(find.byType(SupportWhatsAppButton), findsNothing);
     expect(find.text('Intentar de nuevo'), findsOneWidget);
+  });
+
+  test('el canal de soporte apunta al número de CuyCash', () {
+    expect(SupportChannel.whatsAppNumber, '51954269667');
+    // Enlace universal: si WhatsApp no está instalado, abre la versión web en
+    // vez de fallar en silencio.
+    expect(SupportChannel.whatsAppUri.toString(), 'https://wa.me/51954269667');
   });
 }

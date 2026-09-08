@@ -142,6 +142,7 @@
   "blockedCountdownLabel": "Podrás intentarlo de nuevo en",
   "blockedRecoverPin": "Recuperar mi PIN",
   "blockedSupport": "Escribir a soporte por WhatsApp",
+  "supportUnavailable": "No pudimos abrir WhatsApp. Escríbenos al +51 954 269 667.",
   "switchUserTitle": "¿Salir de esta cuenta?",
   "switchUserBody": "{name} tendrá que ingresar su DNI y su PIN de seguridad para volver a entrar en este teléfono.",
   "@switchUserBody": { "placeholders": { "name": { "type": "String" } } },

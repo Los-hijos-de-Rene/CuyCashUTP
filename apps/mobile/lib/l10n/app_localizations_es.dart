@@ -455,6 +455,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get blockedSupport => 'Escribir a soporte por WhatsApp';
 
   @override
+  String get supportUnavailable =>
+      'No pudimos abrir WhatsApp. Escríbenos al +51 954 269 667.';
+
+  @override
   String get switchUserTitle => '¿Salir de esta cuenta?';
 
   @override

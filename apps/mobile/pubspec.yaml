@@ -25,6 +25,7 @@ dependencies:
     path: ../../packages/core_kernel
   design_system:
     path: ../../packages/design_system
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   bloc_test: ^9.1.7

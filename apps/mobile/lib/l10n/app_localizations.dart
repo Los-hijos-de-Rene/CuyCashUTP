@@ -844,6 +844,12 @@ abstract class AppLocalizations {
   /// **'Escribir a soporte por WhatsApp'**
   String get blockedSupport;
 
+  /// No description provided for @supportUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos abrir WhatsApp. Escríbenos al +51 954 269 667.'**
+  String get supportUnavailable;
+
   /// No description provided for @switchUserTitle.
   ///
   /// In es, this message translates to:
