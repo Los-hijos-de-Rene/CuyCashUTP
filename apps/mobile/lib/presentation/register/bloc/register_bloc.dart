@@ -34,16 +34,27 @@ abstract final class RegisterValidators {
   static FieldError? emailError(String value) =>
       _email.hasMatch(value.trim()) ? null : FieldError.emailInvalid;
 
-  /// PIN válido: 6 dígitos, no todos iguales, no secuencia trivial ascendente
-  /// o descendente (123456 / 654321).
-  static bool pinValid(String pin) {
-    if (!_pin.hasMatch(pin)) return false;
-    if (pin.split('').toSet().length == 1) return false; // 000000
+  /// Cada condición del PIN se expone por separado, y no solo agregada en
+  /// [pinValid], para que la checklist pueda mostrar EXACTAMENTE cuál falta.
+  /// Una regla que se comprueba en silencio deja al usuario atascado sin saber
+  /// qué corregir.
+  static bool hasSixDigits(String pin) => _pin.hasMatch(pin);
+
+  /// Descarta 000000, 111111… (los seis dígitos iguales).
+  static bool hasNoRepeatedDigit(String pin) =>
+      hasSixDigits(pin) && pin.split('').toSet().length > 1;
+
+  /// Descarta secuencias triviales, ascendentes o descendentes (123456 /
+  /// 654321).
+  static bool hasNoSequence(String pin) {
+    if (!hasSixDigits(pin)) return false;
     const asc = '0123456789';
     const desc = '9876543210';
-    if (asc.contains(pin) || desc.contains(pin)) return false;
-    return true;
+    return !asc.contains(pin) && !desc.contains(pin);
   }
+
+  static bool pinValid(String pin) =>
+      hasSixDigits(pin) && hasNoRepeatedDigit(pin) && hasNoSequence(pin);
 }
 
 /// Bloc del wizard de registro. Consume `AuthActions` por constructor. En el
@@ -60,14 +71,12 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         emit(state.copyWith(draft: state.draft.copyWith(faceStatus: FaceScanStatus.scanning))));
     on<RegisterFaceScanCompleted>((event, emit) =>
         emit(state.copyWith(draft: state.draft.copyWith(faceStatus: FaceScanStatus.success))));
-    on<RegisterPinChanged>((event, emit) =>
-        emit(state.copyWith(draft: state.draft.copyWith(pin: event.pin), submitError: null)));
+    on<RegisterPinDigitPressed>(_onPinDigit);
+    on<RegisterPinBackspace>(_onPinBackspace);
     on<RegisterBiometricToggled>((event, emit) =>
         emit(state.copyWith(draft: state.draft.copyWith(biometricEnabled: event.value))));
     on<RegisterStepAdvanced>(_onStepAdvanced);
-    on<RegisterStepBack>((event, emit) {
-      if (state.step > 0) emit(state.copyWith(step: state.step - 1));
-    });
+    on<RegisterStepBack>(_onStepBack);
     on<RegisterSubmitted>(_onSubmitted);
     on<RegisterAccountOpened>((event, emit) {
       final session = state.createdSession;
@@ -76,6 +85,98 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   }
 
   final AuthActions _actions;
+
+  /// Escribe en el grupo activo. Al sexto dígito, cada subpaso decide solo:
+  /// crear valida las reglas y pasa a confirmar; confirmar compara y pasa a
+  /// biometría. No hay botón que tocar.
+  void _onPinDigit(RegisterPinDigitPressed event, Emitter<RegisterState> emit) {
+    if (state.status == RegisterStatus.submitting) return;
+    switch (state.securityStep) {
+      case SecurityStep.crear:
+        if (state.draft.pin.length >= 6) return;
+        final pin = '${state.draft.pin}${event.digit}';
+        final next = state.copyWith(
+            draft: state.draft.copyWith(pin: pin),
+            pinMismatch: false,
+            submitError: null);
+        // Con seis dígitos que incumplen una regla NO se avanza: la checklist
+        // ya dice cuál falta y el usuario corrige ahí mismo.
+        emit(pin.length == 6 && RegisterValidators.pinValid(pin)
+            ? next.copyWith(securityStep: SecurityStep.confirmar)
+            : next);
+      case SecurityStep.confirmar:
+        if (state.draft.confirmPin.length >= 6) return;
+        final confirm = '${state.draft.confirmPin}${event.digit}';
+        if (confirm.length < 6) {
+          emit(state.copyWith(
+              draft: state.draft.copyWith(confirmPin: confirm),
+              pinMismatch: false));
+          return;
+        }
+        if (confirm == state.draft.pin) {
+          emit(state.copyWith(
+            draft: state.draft.copyWith(confirmPin: confirm),
+            securityStep: SecurityStep.biometria,
+            pinMismatch: false,
+          ));
+        } else {
+          // Se limpia SOLO la confirmación; el PIN elegido se conserva.
+          emit(state.copyWith(
+            draft: state.draft.copyWith(confirmPin: ''),
+            pinMismatch: true,
+          ));
+        }
+      case SecurityStep.biometria:
+        return;
+    }
+  }
+
+  void _onPinBackspace(
+    RegisterPinBackspace event,
+    Emitter<RegisterState> emit,
+  ) {
+    if (state.status == RegisterStatus.submitting) return;
+    switch (state.securityStep) {
+      case SecurityStep.crear:
+        final pin = state.draft.pin;
+        if (pin.isEmpty) return;
+        emit(state.copyWith(
+            draft: state.draft.copyWith(pin: pin.substring(0, pin.length - 1)),
+            pinMismatch: false));
+      case SecurityStep.confirmar:
+        final confirm = state.draft.confirmPin;
+        if (confirm.isEmpty) return;
+        emit(state.copyWith(
+            draft: state.draft
+                .copyWith(confirmPin: confirm.substring(0, confirm.length - 1)),
+            pinMismatch: false));
+      case SecurityStep.biometria:
+        return;
+    }
+  }
+
+  /// Atrás dentro del paso 4 retrocede de subpaso; solo desde `crear` sale al
+  /// paso anterior del wizard.
+  void _onStepBack(RegisterStepBack event, Emitter<RegisterState> emit) {
+    if (state.step == 3 && state.securityStep != SecurityStep.crear) {
+      emit(state.copyWith(
+        securityStep: switch (state.securityStep) {
+          SecurityStep.biometria => SecurityStep.confirmar,
+          _ => SecurityStep.crear,
+        },
+        // Volver deja las casillas del subpaso vacías: se reescriben.
+        draft: state.draft.copyWith(
+          confirmPin: '',
+          pin: state.securityStep == SecurityStep.confirmar
+              ? ''
+              : state.draft.pin,
+        ),
+        pinMismatch: false,
+      ));
+      return;
+    }
+    if (state.step > 0) emit(state.copyWith(step: state.step - 1));
+  }
 
   RegisterState _setSide(DocSide side, CaptureStatus status) => state.copyWith(
         draft: side == DocSide.front

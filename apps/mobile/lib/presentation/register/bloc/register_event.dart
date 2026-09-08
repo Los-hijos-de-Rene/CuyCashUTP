@@ -8,7 +8,9 @@ sealed class RegisterEvent with _$RegisterEvent {
   const factory RegisterEvent.captureFailed(DocSide side) = RegisterCaptureFailed;
   const factory RegisterEvent.faceScanStarted() = RegisterFaceScanStarted;
   const factory RegisterEvent.faceScanCompleted() = RegisterFaceScanCompleted;
-  const factory RegisterEvent.pinChanged(String pin) = RegisterPinChanged;
+  const factory RegisterEvent.pinDigitPressed(int digit) =
+      RegisterPinDigitPressed;
+  const factory RegisterEvent.pinBackspace() = RegisterPinBackspace;
   const factory RegisterEvent.biometricToggled(bool value) =
       RegisterBiometricToggled;
   const factory RegisterEvent.stepAdvanced() = RegisterStepAdvanced;

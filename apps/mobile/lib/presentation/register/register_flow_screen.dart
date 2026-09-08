@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/security/secure_screen_scope.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import 'bloc/register_bloc.dart';
 import 'widgets/register_data_step.dart';
 import 'widgets/register_document_step.dart';
+import 'widgets/register_biometric_step.dart';
 import 'widgets/register_face_step.dart';
+import 'widgets/register_pin_confirm_step.dart';
 import 'widgets/register_pin_step.dart';
 import 'widgets/register_progress_bar.dart';
 import 'widgets/register_success_screen.dart';
@@ -77,9 +80,9 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
           if (createdSession != null) {
             return RegisterSuccessScreen(
               session: createdSession,
-              onOpenAccount: () => context
-                  .read<RegisterBloc>()
-                  .add(const RegisterEvent.accountOpened()),
+              onOpenAccount: () => context.read<RegisterBloc>().add(
+                const RegisterEvent.accountOpened(),
+              ),
             );
           }
           final dark = state.step == 2;
@@ -99,72 +102,84 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
               ? CuyCashColors.immersiveOnDark
               : CuyCashColors.onSurface;
 
-          return PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (didPop, _) {
-              if (didPop) return;
-              _handleBack(context, state.step);
-            },
-            child: Scaffold(
-              backgroundColor: dark
-                  ? CuyCashColors.immersiveDark
-                  : CuyCashColors.surfaceContainerLow,
-              appBar: AppBar(
+          return SecureScreenScope(
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, _) {
+                if (didPop) return;
+                _handleBack(context, state.step);
+              },
+              child: Scaffold(
                 backgroundColor: dark
                     ? CuyCashColors.immersiveDark
                     : CuyCashColors.surfaceContainerLow,
-                foregroundColor: onSurface,
-                title: Text(
-                  title,
-                  style: CuyCashTypography.titleMd.copyWith(
-                    color: onSurface,
-                    fontSize: 18,
+                appBar: AppBar(
+                  backgroundColor: dark
+                      ? CuyCashColors.immersiveDark
+                      : CuyCashColors.surfaceContainerLow,
+                  foregroundColor: onSurface,
+                  title: Text(
+                    title,
+                    style: CuyCashTypography.titleMd.copyWith(
+                      color: onSurface,
+                      fontSize: 18,
+                    ),
+                  ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => _handleBack(context, state.step),
                   ),
                 ),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => _handleBack(context, state.step),
-                ),
-              ),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        CuyCashSpacing.marginMobile,
-                        0,
-                        CuyCashSpacing.marginMobile,
-                        CuyCashSpacing.stackLg,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          RegisterProgressBar(step: state.step, dark: dark),
-                          const SizedBox(height: CuyCashSpacing.stackSm),
-                          Text(
-                            stepLabel,
-                            style: CuyCashTypography.labelSm.copyWith(
-                              color: dark
-                                  ? CuyCashColors.immersiveMuted
-                                  : CuyCashColors.secondaryText,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          CuyCashSpacing.marginMobile,
+                          0,
+                          CuyCashSpacing.marginMobile,
+                          CuyCashSpacing.stackLg,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RegisterProgressBar(step: state.step, dark: dark),
+                            const SizedBox(height: CuyCashSpacing.stackSm),
+                            Text(
+                              stepLabel,
+                              style: CuyCashTypography.labelSm.copyWith(
+                                color: dark
+                                    ? CuyCashColors.immersiveMuted
+                                    : CuyCashColors.secondaryText,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: IndexedStack(
-                        index: state.step,
-                        children: const [
-                          RegisterDataStep(),
-                          RegisterDocumentStep(),
-                          RegisterFaceStep(),
-                          RegisterPinStep(),
-                        ],
+                      Expanded(
+                        child: IndexedStack(
+                          index: state.step,
+                          children: [
+                            const RegisterDataStep(),
+                            const RegisterDocumentStep(),
+                            const RegisterFaceStep(),
+                            switch (state.securityStep) {
+                              SecurityStep.crear => const RegisterPinStep(),
+                              SecurityStep.confirmar =>
+                                const RegisterPinConfirmStep(),
+                              SecurityStep.biometria =>
+                                const RegisterBiometricStep(),
+                            },
+                          ],
+                        ),
                       ),
-                    ),
-                    _Footer(state: state, dark: dark),
-                  ],
+                      // Crear y confirmar el PIN avanzan con el sexto dígito: el
+                      // botón solo aparece donde de verdad hay algo que pulsar.
+                      if (state.step != 3 ||
+                          state.securityStep == SecurityStep.biometria)
+                        _Footer(state: state, dark: dark),
+                    ],
+                  ),
                 ),
               ),
             ),

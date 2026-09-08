@@ -118,7 +118,9 @@ void main() {
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.nombres, 'Juan'));
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.apellidos, 'Pérez'));
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.email, 'j@p.pe'));
-    bloc.add(const RegisterEvent.pinChanged('024689'));
+    for (final d in '024689'.split('')) {
+      bloc.add(RegisterEvent.pinDigitPressed(int.parse(d)));
+    }
     bloc.add(const RegisterEvent.submitted());
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(repo.currentSession, isNull); // aún no autenticado

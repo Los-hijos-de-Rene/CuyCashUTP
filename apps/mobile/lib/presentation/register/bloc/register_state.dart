@@ -12,6 +12,11 @@ enum FieldError { dniLength, requiredField, emailInvalid }
 
 enum RegisterStatus { editing, submitting }
 
+/// Subpasos del paso 4. El indicador sigue marcando "Paso 4 de 4": los
+/// macro-pasos siguen siendo cuatro; esto solo evita meter dos filas de
+/// casillas, una checklist, una tarjeta y un teclado en la misma pantalla.
+enum SecurityStep { crear, confirmar, biometria }
+
 @freezed
 abstract class RegisterDraft with _$RegisterDraft {
   const factory RegisterDraft({
@@ -23,6 +28,10 @@ abstract class RegisterDraft with _$RegisterDraft {
     @Default(CaptureStatus.empty) CaptureStatus dniBack,
     @Default(FaceScanStatus.idle) FaceScanStatus faceStatus,
     @Default('') String pin,
+
+    /// Segunda escritura del PIN. Sin ella, un error de tecleo deja al usuario
+    /// fuera de la cuenta que acaba de abrir.
+    @Default('') String confirmPin,
     @Default(true) bool biometricEnabled,
   }) = _RegisterDraft;
 }
@@ -47,6 +56,8 @@ abstract class RegisterState with _$RegisterState {
   const RegisterState._();
   const factory RegisterState({
     @Default(0) int step,
+    @Default(SecurityStep.crear) SecurityStep securityStep,
+    @Default(false) bool pinMismatch,
     @Default(RegisterDraft()) RegisterDraft draft,
     @Default(RegisterErrors()) RegisterErrors errors,
     @Default(RegisterStatus.editing) RegisterStatus status,
@@ -62,6 +73,19 @@ abstract class RegisterState with _$RegisterState {
         1 => draft.dniFront == CaptureStatus.captured &&
             draft.dniBack == CaptureStatus.captured,
         2 => draft.faceStatus == FaceScanStatus.success,
-        _ => RegisterValidators.pinValid(draft.pin),
+        // En el paso 4 solo hay botón al final: crear y confirmar avanzan
+        // solos con el sexto dígito.
+        _ => securityStep == SecurityStep.biometria &&
+            RegisterValidators.pinValid(draft.pin),
       };
+
+  /// Una regla por cada condición que el sistema comprueba, ni más ni menos.
+  /// Ninguna puede darse por cumplida antes de tiempo: un indicador que se
+  /// adelanta miente, y una condición sin regla deja al usuario atascado.
+  bool get pinHasSixDigits => RegisterValidators.hasSixDigits(draft.pin);
+
+  bool get pinHasNoRepeatedDigit =>
+      RegisterValidators.hasNoRepeatedDigit(draft.pin);
+
+  bool get pinHasNoSequence => RegisterValidators.hasNoSequence(draft.pin);
 }
