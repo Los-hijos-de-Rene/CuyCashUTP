@@ -6,10 +6,18 @@ import 'cuycash_spacing.dart';
 /// Casillas visuales del PIN (una por dígito). Refleja cuántos dígitos hay:
 /// dígito ingresado = punto lleno; siguiente casilla = borde activo.
 class PinBoxes extends StatelessWidget {
-  const PinBoxes({required this.pin, this.length = 6, super.key});
+  const PinBoxes({
+    required this.pin,
+    this.length = 6,
+    this.hasError = false,
+    super.key,
+  });
 
   final String pin;
   final int length;
+
+  /// Pinta las casillas en carmín (PIN rechazado).
+  final bool hasError;
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +33,12 @@ class PinBoxes extends StatelessWidget {
             color: CuyCashColors.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(CuyCashRadii.input),
             border: Border.all(
-              color: active
-                  ? CuyCashColors.primaryContainer
-                  : CuyCashColors.outlineVariant,
-              width: active ? 2 : 1,
+              color: hasError
+                  ? CuyCashColors.error
+                  : active
+                      ? CuyCashColors.primaryContainer
+                      : CuyCashColors.outlineVariant,
+              width: hasError ? 1.5 : (active ? 2 : 1),
             ),
           ),
           child: Center(
@@ -36,8 +46,10 @@ class PinBoxes extends StatelessWidget {
                 ? Container(
                     width: 10,
                     height: 10,
-                    decoration: const BoxDecoration(
-                        color: CuyCashColors.primaryContainer,
+                    decoration: BoxDecoration(
+                        color: hasError
+                            ? CuyCashColors.error
+                            : CuyCashColors.primaryContainer,
                         shape: BoxShape.circle))
                 : const SizedBox.shrink(),
           ),

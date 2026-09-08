@@ -19,6 +19,8 @@ class CuyCashTextField extends StatelessWidget {
     this.prefixIcon,
     this.maxLength,
     this.helperText,
+    this.autofocus = false,
+    this.onSubmitted,
     super.key,
   });
 
@@ -32,6 +34,10 @@ class CuyCashTextField extends StatelessWidget {
   final IconData? prefixIcon;
   final int? maxLength;
   final String? helperText;
+  final bool autofocus;
+
+  /// Acción de confirmación del teclado del sistema.
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,8 @@ class CuyCashTextField extends StatelessWidget {
           obscureText: obscure,
           keyboardType: keyboardType,
           onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          autofocus: autofocus,
           maxLength: maxLength,
           inputFormatters: keyboardType == TextInputType.number
               ? [FilteringTextInputFormatter.digitsOnly]

@@ -25,6 +25,8 @@ abstract final class CuyCashTheme {
       fontFamily: CuyCashTypography.fontFamily,
       scaffoldBackgroundColor: CuyCashColors.surface,
       dividerColor: CuyCashColors.divider,
+      // Foco visible en todo control (navegación por teclado / accesibilidad).
+      focusColor: CuyCashColors.primaryContainer,
       appBarTheme: const AppBarTheme(
         backgroundColor: CuyCashColors.surface,
         foregroundColor: CuyCashColors.onSurface,

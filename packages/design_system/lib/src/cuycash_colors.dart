@@ -29,6 +29,9 @@ abstract final class CuyCashColors {
   static const error = Color(0xFFB31D3F);           // Carmín
   static const onError = Color(0xFFFFFFFF);
   static const errorContainer = Color(0xFFFFDAD6);
+  static const errorSoft = Color(0xFFFAE8EC);       // Fondo suave de carmín
+  static const success = Color(0xFF1B7A55);         // Verde de confirmación
+  static const successSoft = Color(0xFFE4F0EA);     // Fondo suave de éxito
 
   // Sombra ambiental verde de cards
   static const ambientShadow = Color(0x0D2B4034);   // rgba(43,64,52,0.05)
