@@ -7,11 +7,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_mock.dart",
-      "args": [
-        "--flavor",
-        "mock",
-        "--dart-define-from-file=config.mock.json"
-      ]
+      "args": ["--flavor", "mock", "--dart-define-from-file=config.mock.json"]
     },
     {
       "name": "CuyCash · local (Android)",
@@ -19,11 +15,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_local.dart",
-      "args": [
-        "--flavor",
-        "local",
-        "--dart-define-from-file=config.local.json"
-      ]
+      "args": ["--flavor", "local", "--dart-define-from-file=config.local.json"]
     },
     {
       "name": "CuyCash · production (Android)",
@@ -43,9 +35,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_mock.dart",
-      "args": [
-        "--dart-define-from-file=config.mock.json"
-      ]
+      "args": ["--dart-define-from-file=config.mock.json"]
     },
     {
       "name": "CuyCash · local (iOS/sim)",
@@ -53,9 +43,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_local.dart",
-      "args": [
-        "--dart-define-from-file=config.local.json"
-      ]
+      "args": ["--dart-define-from-file=config.local.json"]
     },
     {
       "name": "CuyCash · production (iOS/sim)",
@@ -63,9 +51,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_production.dart",
-      "args": [
-        "--dart-define-from-file=config.production.json"
-      ]
+      "args": ["--dart-define-from-file=config.production.json"]
     }
   ]
 }
