@@ -39,6 +39,7 @@ void main() {
     final session = result.getRight().toNullable();
     expect(session?.identifier, '87654321');
     expect(session?.alias, '@juan'); // derivado del primer nombre
+    expect(session?.fullName, 'Juan Carlos Pérez García');
     // No auto-login: la sesión se activa aparte.
     expect(repo.currentSession, isNull);
   });

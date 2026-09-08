@@ -1,13 +1,15 @@
-import 'dart:async';
-
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../feature/device/application/device_actions.dart';
 import '../app/app_routes.dart';
 
-/// Splash breve: muestra la marca y luego navega a onboarding (el gate del
-/// router lo reenviará a /home si ya hay sesión).
+/// Splash breve: lee DeviceActions para decidir la ruta inicial.
+/// - Bloqueado → /bloqueado
+/// - Usuario recordado → /acceso-rapido
+/// - Sin usuario → /onboarding (el gate redirigirá a /home si hay sesión)
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -16,20 +18,25 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1400), () {
-      if (mounted) context.go(AppRoutes.onboarding);
-    });
+    _decide();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _decide() async {
+    final device = context.read<DeviceActions>();
+    final lockout = await device.readLockout();
+    final user = await device.readUser();
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    if (lockout.isLocked(DateTime.now())) {
+      context.go(AppRoutes.blocked);
+    } else if (user != null) {
+      context.go(AppRoutes.quickAccess);
+    } else {
+      context.go(AppRoutes.onboarding);
+    }
   }
 
   @override

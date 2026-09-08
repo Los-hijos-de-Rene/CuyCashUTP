@@ -336,4 +336,67 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get finishRegister => 'Finalizar registro';
+
+  @override
+  String quickAccessGreeting(String name) {
+    return 'Hola, $name';
+  }
+
+  @override
+  String get quickAccessPrompt => 'Ingresa tu PIN de seguridad';
+
+  @override
+  String notYou(String name) {
+    return '¿No eres $name?';
+  }
+
+  @override
+  String get forgotPinAction => 'Olvidé mi PIN';
+
+  @override
+  String pinWrongAttempts(int n) {
+    return 'PIN incorrecto. Te quedan $n intentos.';
+  }
+
+  @override
+  String get pinWrongHint =>
+      'Tras 3 intentos fallidos tu acceso se bloqueará por 15 minutos.';
+
+  @override
+  String get blockedTitle => 'Tu acceso está bloqueado';
+
+  @override
+  String get blockedSubtitle =>
+      'Por tu seguridad bloqueamos el ingreso tras 3 intentos fallidos.';
+
+  @override
+  String get blockedCountdownLabel => 'Podrás intentarlo de nuevo en';
+
+  @override
+  String get blockedRecoverPin => 'Recuperar mi PIN';
+
+  @override
+  String get blockedSupport => 'Escribir a soporte por WhatsApp';
+
+  @override
+  String get switchUserTitle => '¿Salir de esta cuenta?';
+
+  @override
+  String switchUserBody(String name) {
+    return '$name tendrá que ingresar su DNI y su PIN de seguridad para volver a entrar en este teléfono.';
+  }
+
+  @override
+  String get switchUserConsequenceBiometric =>
+      'Se desactivará el acceso con huella.';
+
+  @override
+  String get switchUserConsequenceSession =>
+      'Se cerrará la sesión guardada en este dispositivo.';
+
+  @override
+  String get switchUserConfirm => 'Salir de esta cuenta';
+
+  @override
+  String get cancel => 'Cancelar';
 }

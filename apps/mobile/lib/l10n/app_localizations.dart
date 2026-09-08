@@ -699,6 +699,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Finalizar registro'**
   String get finishRegister;
+
+  /// No description provided for @quickAccessGreeting.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, {name}'**
+  String quickAccessGreeting(String name);
+
+  /// No description provided for @quickAccessPrompt.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu PIN de seguridad'**
+  String get quickAccessPrompt;
+
+  /// No description provided for @notYou.
+  ///
+  /// In es, this message translates to:
+  /// **'¿No eres {name}?'**
+  String notYou(String name);
+
+  /// No description provided for @forgotPinAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Olvidé mi PIN'**
+  String get forgotPinAction;
+
+  /// No description provided for @pinWrongAttempts.
+  ///
+  /// In es, this message translates to:
+  /// **'PIN incorrecto. Te quedan {n} intentos.'**
+  String pinWrongAttempts(int n);
+
+  /// No description provided for @pinWrongHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Tras 3 intentos fallidos tu acceso se bloqueará por 15 minutos.'**
+  String get pinWrongHint;
+
+  /// No description provided for @blockedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu acceso está bloqueado'**
+  String get blockedTitle;
+
+  /// No description provided for @blockedSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Por tu seguridad bloqueamos el ingreso tras 3 intentos fallidos.'**
+  String get blockedSubtitle;
+
+  /// No description provided for @blockedCountdownLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Podrás intentarlo de nuevo en'**
+  String get blockedCountdownLabel;
+
+  /// No description provided for @blockedRecoverPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperar mi PIN'**
+  String get blockedRecoverPin;
+
+  /// No description provided for @blockedSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir a soporte por WhatsApp'**
+  String get blockedSupport;
+
+  /// No description provided for @switchUserTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir de esta cuenta?'**
+  String get switchUserTitle;
+
+  /// No description provided for @switchUserBody.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} tendrá que ingresar su DNI y su PIN de seguridad para volver a entrar en este teléfono.'**
+  String switchUserBody(String name);
+
+  /// No description provided for @switchUserConsequenceBiometric.
+  ///
+  /// In es, this message translates to:
+  /// **'Se desactivará el acceso con huella.'**
+  String get switchUserConsequenceBiometric;
+
+  /// No description provided for @switchUserConsequenceSession.
+  ///
+  /// In es, this message translates to:
+  /// **'Se cerrará la sesión guardada en este dispositivo.'**
+  String get switchUserConsequenceSession;
+
+  /// No description provided for @switchUserConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir de esta cuenta'**
+  String get switchUserConfirm;
+
+  /// No description provided for @cancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate
