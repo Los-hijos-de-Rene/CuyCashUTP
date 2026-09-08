@@ -4,18 +4,39 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../support/support_whatsapp_button.dart';
+import 'blocked_args.dart';
 
-/// Pantalla de acceso bloqueado con cuenta regresiva hasta [lockedUntil].
-/// Al expirar invoca [onExpired] (el router decide a dónde volver).
+/// ÚNICA pantalla de bloqueo del sistema: sirve a los dos orígenes, fallar el
+/// PIN en acceso rápido o fallarlo en iniciar sesión. Lo que se bloqueó es
+/// distinto en cada caso ([BlockedOrigin]), y de ahí depende a dónde se vuelve.
+///
+/// Al llegar a 00:00 NO se queda con el contador en cero y un botón muerto:
+/// avisa por [onExpired] con su origen para regresar al punto de entrada.
 class AccessBlockedScreen extends StatefulWidget {
   const AccessBlockedScreen({
     required this.lockedUntil,
+    required this.origin,
     this.onExpired,
+    this.onRecoverPin,
+    this.clock,
     super.key,
   });
 
   final DateTime lockedUntil;
-  final VoidCallback? onExpired;
+
+  /// De dónde vino el bloqueo; decide el regreso al expirar.
+  final BlockedOrigin origin;
+
+  /// Se invoca una sola vez, al agotarse la cuenta regresiva.
+  final ValueChanged<BlockedOrigin>? onExpired;
+
+  /// Reloj de la cuenta regresiva. Inyectable para poder adelantarlo en los
+  /// tests sin esperar el bloqueo real.
+  final DateTime Function()? clock;
+
+  /// Única salida real mientras corre el bloqueo: recuperar el PIN.
+  final VoidCallback? onRecoverPin;
 
   @override
   State<AccessBlockedScreen> createState() => _AccessBlockedScreenState();
@@ -33,14 +54,16 @@ class _AccessBlockedScreenState extends State<AccessBlockedScreen> {
       final left = _computeRemaining();
       if (left <= Duration.zero) {
         _timer?.cancel();
-        widget.onExpired?.call();
+        widget.onExpired?.call(widget.origin);
       }
       if (mounted) setState(() => _remaining = left);
     });
   }
 
+  DateTime _now() => (widget.clock ?? DateTime.now)();
+
   Duration _computeRemaining() {
-    final left = widget.lockedUntil.difference(DateTime.now());
+    final left = widget.lockedUntil.difference(_now());
     return left.isNegative ? Duration.zero : left;
   }
 
@@ -114,9 +137,11 @@ class _AccessBlockedScreenState extends State<AccessBlockedScreen> {
                 ),
               ),
               const Spacer(),
-              PrimaryButton(label: l10n.blockedRecoverPin, onPressed: () {}),
+              PrimaryButton(
+                  label: l10n.blockedRecoverPin,
+                  onPressed: widget.onRecoverPin),
               const SizedBox(height: CuyCashSpacing.stackSm),
-              GhostButton(label: l10n.blockedSupport, onPressed: () {}),
+              const SupportWhatsAppButton(),
             ],
           ),
         ),

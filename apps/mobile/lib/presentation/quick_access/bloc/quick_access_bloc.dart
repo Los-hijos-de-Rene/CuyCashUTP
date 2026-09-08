@@ -6,7 +6,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_session.dart';
 import '../../../feature/device/application/device_actions.dart';
-import '../../../feature/device/domain/lockout_policy.dart';
+import '../../../feature/lockout/domain/lockout_policy.dart';
 import '../../../feature/device/domain/remembered_user.dart';
 
 part 'quick_access_bloc.freezed.dart';
@@ -68,6 +68,7 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
             pin: '',
             lastWrong: true,
             attemptsLeft: LockoutPolicy.maxAttempts - lockout.failedAttempts,
+            nextLockout: _device.policy.nextLockoutFor(lockout.level),
           ));
         }
       },

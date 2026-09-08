@@ -11,5 +11,7 @@ abstract class QuickAccessState with _$QuickAccessState {
     @Default(LockoutPolicy.maxAttempts) int attemptsLeft,
     @Default(false) bool lastWrong,
     DateTime? lockedUntil,
+    /// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
+    Duration? nextLockout,
   }) = _QuickAccessState;
 }

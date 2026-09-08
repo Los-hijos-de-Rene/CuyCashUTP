@@ -310,7 +310,8 @@ String toString() {
 /// @nodoc
 mixin _$QuickAccessState {
 
- RememberedUser get user; String get pin; QuickAccessStatus get status; int get attemptsLeft; bool get lastWrong; DateTime? get lockedUntil;
+ RememberedUser get user; String get pin; QuickAccessStatus get status; int get attemptsLeft; bool get lastWrong; DateTime? get lockedUntil;/// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
+ Duration? get nextLockout;
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -321,16 +322,16 @@ $QuickAccessStateCopyWith<QuickAccessState> get copyWith => _$QuickAccessStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,lockedUntil);
+int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,lockedUntil,nextLockout);
 
 @override
 String toString() {
-  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, lockedUntil: $lockedUntil)';
+  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
 }
 
 
@@ -341,7 +342,7 @@ abstract mixin class $QuickAccessStateCopyWith<$Res>  {
   factory $QuickAccessStateCopyWith(QuickAccessState value, $Res Function(QuickAccessState) _then) = _$QuickAccessStateCopyWithImpl;
 @useResult
 $Res call({
- RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, DateTime? lockedUntil
+ RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, DateTime? lockedUntil, Duration? nextLockout
 });
 
 
@@ -358,7 +359,7 @@ class _$QuickAccessStateCopyWithImpl<$Res>
 
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? lockedUntil = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
   return _then(_self.copyWith(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as RememberedUser,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
@@ -366,7 +367,8 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as QuickAccessStatus,attemptsLeft: null == attemptsLeft ? _self.attemptsLeft : attemptsLeft // ignore: cast_nullable_to_non_nullable
 as int,lastWrong: null == lastWrong ? _self.lastWrong : lastWrong // ignore: cast_nullable_to_non_nullable
 as bool,lockedUntil: freezed == lockedUntil ? _self.lockedUntil : lockedUntil // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,nextLockout: freezed == nextLockout ? _self.nextLockout : nextLockout // ignore: cast_nullable_to_non_nullable
+as Duration?,
   ));
 }
 
@@ -451,10 +453,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuickAccessState() when $default != null:
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil,_that.nextLockout);case _:
   return orElse();
 
 }
@@ -472,10 +474,10 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil,  Duration? nextLockout)  $default,) {final _that = this;
 switch (_that) {
 case _QuickAccessState():
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil,_that.nextLockout);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -492,10 +494,10 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,) {final _that = this;
 switch (_that) {
 case _QuickAccessState() when $default != null:
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.lockedUntil,_that.nextLockout);case _:
   return null;
 
 }
@@ -507,7 +509,7 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 
 
 class _QuickAccessState implements QuickAccessState {
-  const _QuickAccessState({required this.user, this.pin = '', this.status = QuickAccessStatus.idle, this.attemptsLeft = LockoutPolicy.maxAttempts, this.lastWrong = false, this.lockedUntil});
+  const _QuickAccessState({required this.user, this.pin = '', this.status = QuickAccessStatus.idle, this.attemptsLeft = LockoutPolicy.maxAttempts, this.lastWrong = false, this.lockedUntil, this.nextLockout});
   
 
 @override final  RememberedUser user;
@@ -516,6 +518,8 @@ class _QuickAccessState implements QuickAccessState {
 @override@JsonKey() final  int attemptsLeft;
 @override@JsonKey() final  bool lastWrong;
 @override final  DateTime? lockedUntil;
+/// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
+@override final  Duration? nextLockout;
 
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
@@ -527,16 +531,16 @@ _$QuickAccessStateCopyWith<_QuickAccessState> get copyWith => __$QuickAccessStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,lockedUntil);
+int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,lockedUntil,nextLockout);
 
 @override
 String toString() {
-  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, lockedUntil: $lockedUntil)';
+  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
 }
 
 
@@ -547,7 +551,7 @@ abstract mixin class _$QuickAccessStateCopyWith<$Res> implements $QuickAccessSta
   factory _$QuickAccessStateCopyWith(_QuickAccessState value, $Res Function(_QuickAccessState) _then) = __$QuickAccessStateCopyWithImpl;
 @override @useResult
 $Res call({
- RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, DateTime? lockedUntil
+ RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, DateTime? lockedUntil, Duration? nextLockout
 });
 
 
@@ -564,7 +568,7 @@ class __$QuickAccessStateCopyWithImpl<$Res>
 
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? lockedUntil = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
   return _then(_QuickAccessState(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as RememberedUser,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
@@ -572,7 +576,8 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as QuickAccessStatus,attemptsLeft: null == attemptsLeft ? _self.attemptsLeft : attemptsLeft // ignore: cast_nullable_to_non_nullable
 as int,lastWrong: null == lastWrong ? _self.lastWrong : lastWrong // ignore: cast_nullable_to_non_nullable
 as bool,lockedUntil: freezed == lockedUntil ? _self.lockedUntil : lockedUntil // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,nextLockout: freezed == nextLockout ? _self.nextLockout : nextLockout // ignore: cast_nullable_to_non_nullable
+as Duration?,
   ));
 }
 

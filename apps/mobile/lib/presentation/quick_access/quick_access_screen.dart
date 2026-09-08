@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/security/secure_screen_scope.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/device/application/device_actions.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
+import '../lockout/blocked_args.dart';
+import '../lockout/lockout_duration_text.dart';
 import 'bloc/quick_access_bloc.dart';
 import 'widgets/switch_user_dialog.dart';
 
@@ -28,67 +31,95 @@ class QuickAccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: CuyCashColors.surfaceContainerLow,
-      body: SafeArea(
-        child: BlocConsumer<QuickAccessBloc, QuickAccessState>(
-          listenWhen: (p, c) => p.lockedUntil != c.lockedUntil && c.lockedUntil != null,
-          listener: (context, state) => context.go(AppRoutes.blocked),
-          builder: (context, state) {
-            final bloc = context.read<QuickAccessBloc>();
-            final user = state.user;
-            return Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(CuyCashSpacing.stackSm),
-                    child: GhostButton(
-                      label: l10n.notYou(user.firstName),
-                      onPressed: () => _switchUser(context, user.firstName),
+    return SecureScreenScope(
+      child: Scaffold(
+        backgroundColor: CuyCashColors.surfaceContainerLow,
+        body: SafeArea(
+          child: BlocConsumer<QuickAccessBloc, QuickAccessState>(
+            listenWhen: (p, c) =>
+                p.lockedUntil != c.lockedUntil && c.lockedUntil != null,
+            listener: (context, state) {
+              final lockedUntil = state.lockedUntil;
+              if (lockedUntil == null) return;
+              context.go(
+                AppRoutes.blocked,
+                // Aquí lo bloqueado es ESTE teléfono, no la cuenta.
+                extra: BlockedArgs(
+                  origin: BlockedOrigin.quickAccess,
+                  lockedUntil: lockedUntil,
+                ),
+              );
+            },
+            builder: (context, state) {
+              final bloc = context.read<QuickAccessBloc>();
+              final user = state.user;
+              return Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(CuyCashSpacing.stackSm),
+                      child: GhostButton(
+                        label: l10n.notYou(user.firstName),
+                        onPressed: () => _switchUser(context, user.firstName),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: CuyCashSpacing.stackLg),
-                InitialsAvatar(initials: user.initials),
-                const SizedBox(height: CuyCashSpacing.stackMd),
-                Text(l10n.quickAccessGreeting(user.firstName),
-                    style: CuyCashTypography.headlineSm),
-                const SizedBox(height: CuyCashSpacing.stackXs),
-                Text(l10n.quickAccessPrompt,
-                    style: CuyCashTypography.bodyMd
-                        .copyWith(color: CuyCashColors.secondaryText)),
-                const SizedBox(height: CuyCashSpacing.stackXl),
-                PinDots(filled: state.pin.length),
-                const SizedBox(height: CuyCashSpacing.stackLg),
-                if (state.lastWrong)
+                  const SizedBox(height: CuyCashSpacing.stackLg),
+                  InitialsAvatar(initials: user.initials),
+                  const SizedBox(height: CuyCashSpacing.stackMd),
+                  Text(
+                    l10n.quickAccessGreeting(user.firstName),
+                    style: CuyCashTypography.headlineSm,
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackXs),
+                  Text(
+                    l10n.quickAccessPrompt,
+                    style: CuyCashTypography.bodyMd.copyWith(
+                      color: CuyCashColors.secondaryText,
+                    ),
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackXl),
+                  PinDots(filled: state.pin.length),
+                  const SizedBox(height: CuyCashSpacing.stackLg),
+                  if (state.lastWrong)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: _ErrorBanner(
+                        title: l10n.pinWrongAttempts(state.attemptsLeft),
+                        // Sin duración conocida no se inventa una: mejor sin
+                        // aviso que prometiendo una espera equivocada.
+                        hint: switch (state.nextLockout) {
+                          final next? => l10n.pinWrongHint(
+                            lockoutDurationText(l10n, next),
+                          ),
+                          null => null,
+                        },
+                      ),
+                    ),
+                  const Spacer(),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: CuyCashSpacing.marginMobile),
-                    child: _ErrorBanner(
-                      title: l10n.pinWrongAttempts(state.attemptsLeft),
-                      hint: l10n.pinWrongHint,
+                      horizontal: CuyCashSpacing.stackLg,
+                    ),
+                    child: PinKeypad(
+                      onDigit: (d) =>
+                          bloc.add(QuickAccessEvent.digitPressed(d)),
+                      onBackspace: () =>
+                          bloc.add(const QuickAccessEvent.backspace()),
+                      onBiometric: () =>
+                          bloc.add(const QuickAccessEvent.biometric()),
                     ),
                   ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: CuyCashSpacing.stackLg),
-                  child: PinKeypad(
-                    onDigit: (d) =>
-                        bloc.add(QuickAccessEvent.digitPressed(d)),
-                    onBackspace: () =>
-                        bloc.add(const QuickAccessEvent.backspace()),
-                    onBiometric: () =>
-                        bloc.add(const QuickAccessEvent.biometric()),
-                  ),
-                ),
-                const SizedBox(height: CuyCashSpacing.stackSm),
-                GhostButton(label: l10n.forgotPinAction, onPressed: () {}),
-                const SizedBox(height: CuyCashSpacing.stackSm),
-              ],
-            );
-          },
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                  GhostButton(label: l10n.forgotPinAction, onPressed: () {}),
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -96,9 +127,9 @@ class QuickAccessScreen extends StatelessWidget {
 }
 
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.title, required this.hint});
+  const _ErrorBanner({required this.title, this.hint});
   final String title;
-  final String hint;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -113,22 +144,33 @@ class _ErrorBanner extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline,
-                  size: 18, color: CuyCashColors.error),
+              const Icon(
+                Icons.error_outline,
+                size: 18,
+                color: CuyCashColors.error,
+              ),
               const SizedBox(width: CuyCashSpacing.stackSm),
               Flexible(
-                child: Text(title,
-                    style: CuyCashTypography.bodyMd.copyWith(
-                        color: CuyCashColors.error,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  title,
+                  style: CuyCashTypography.bodyMd.copyWith(
+                    color: CuyCashColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: CuyCashSpacing.stackXs),
-          Text(hint,
+          if (hint case final hint?) ...[
+            const SizedBox(height: CuyCashSpacing.stackXs),
+            Text(
+              hint,
               textAlign: TextAlign.center,
-              style: CuyCashTypography.labelSm
-                  .copyWith(color: CuyCashColors.secondaryText)),
+              style: CuyCashTypography.labelSm.copyWith(
+                color: CuyCashColors.secondaryText,
+              ),
+            ),
+          ],
         ],
       ),
     );
