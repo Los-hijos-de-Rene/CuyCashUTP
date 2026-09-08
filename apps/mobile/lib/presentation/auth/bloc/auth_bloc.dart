@@ -7,20 +7,41 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_failure.dart';
 import '../../../feature/auth/domain/auth_session.dart';
+import '../../../feature/device/application/device_actions.dart';
+import '../../../feature/lockout/application/identifier_lockout_actions.dart';
+import '../../../feature/lockout/domain/lockout_policy.dart';
+import '../../../feature/device/domain/remembered_user.dart';
 
 part 'auth_bloc.freezed.dart';
 part 'auth_event.dart';
 part 'auth_state.dart';
 
-/// Bloc de auth. Consume `AuthActions` por constructor — nunca el repo directo.
-/// Estado inicial sincrónico desde `currentSession`; se mueve con el stream. En
-/// éxito de login/register NO emite directo: la sesión llega por el stream →
-/// `AuthAuthenticated`.
+/// Bloc de auth. Consume `AuthActions` y `DeviceActions` por constructor —
+/// nunca los repos directos. Estado inicial sincrónico desde `currentSession`;
+/// se mueve con el stream.
+///
+/// El login valida el PIN SIN iniciar sesión (`authenticate`): si el teléfono
+/// no está vinculado a esa cuenta, la sesión queda pendiente en
+/// `pendingDeviceSession` y la pantalla manda a verificar el dispositivo. Solo
+/// tras el OTP se llama a `activate`.
+///
+/// El bloqueo por PIN fallido se lleva contra el DNI (`IdentifierLockoutActions`),
+/// NO contra el teléfono: si se atara al dispositivo, bastaría con probar desde
+/// otro para saltárselo. El bloqueo local del acceso rápido es otro contador,
+/// con otro alcance (ver `DeviceActions`).
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc(AuthActions actions)
-      : _actions = actions,
+  AuthBloc(
+    AuthActions actions,
+    DeviceActions device,
+    IdentifierLockoutActions lockout, {
+    DateTime Function()? clock,
+  })  : _actions = actions,
+        _device = device,
+        _lockout = lockout,
+        _now = clock ?? DateTime.now,
         super(_resolve(actions.currentSession)) {
     on<AuthLoginSubmitted>(_onLoginSubmitted);
+    on<AuthDeviceVerified>(_onDeviceVerified);
     on<AuthSignedOut>((event, emit) => _actions.signOut());
     on<_AuthSessionChanged>((event, emit) => emit(_resolve(event.session)));
     _sub = _actions.sessionChanges().listen(
@@ -29,6 +50,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   final AuthActions _actions;
+  final DeviceActions _device;
+  final IdentifierLockoutActions _lockout;
+  final DateTime Function() _now;
   late final StreamSubscription<AuthSession?> _sub;
 
   static AuthState _resolve(AuthSession? session) => session == null
@@ -39,13 +63,63 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    // Bloqueo vigente sobre ESE DNI: ni se intenta. La pantalla va a
+    // /bloqueado.
+    final current = await _lockout.read(event.identifier);
+    if (current.isLocked(_now())) {
+      emit(AuthState.unauthenticated(lockedUntil: current.lockedUntil));
+      return;
+    }
+
     emit(const AuthState.unauthenticated(status: FormStatus.submitting));
-    final result =
-        await _actions.signIn(identifier: event.identifier, pin: event.pin);
-    result.match(
-      (failure) => emit(AuthState.unauthenticated(error: _errorFor(failure))),
-      (_) {}, // éxito → sessionChanged por el stream
+    final result = await _actions.authenticate(
+        identifier: event.identifier, pin: event.pin);
+    await result.match(
+      (failure) async {
+        final error = _errorFor(failure);
+        // Solo el PIN equivocado cuenta como intento fallido; un error de red
+        // no debe acercar al usuario al bloqueo.
+        if (error != AuthError.invalidCredentials) {
+          emit(AuthState.unauthenticated(error: error));
+          return;
+        }
+        final lockout =
+            await _lockout.registerFailedAttempt(event.identifier, _now());
+        emit(lockout.isLocked(_now())
+            ? AuthState.unauthenticated(lockedUntil: lockout.lockedUntil)
+            : AuthState.unauthenticated(
+                error: error,
+                attemptsLeft:
+                    LockoutPolicy.maxAttempts - lockout.failedAttempts,
+                nextLockout: _lockout.policy.nextLockoutFor(lockout.level),
+              ));
+      },
+      (session) async {
+        await _lockout.reset(event.identifier);
+        final remembered = await _device.readUser();
+        if (remembered?.dni == session.identifier) {
+          // Teléfono ya vinculado → adentro (sessionChanged por el stream).
+          await _actions.activate(session);
+        } else {
+          emit(AuthState.unauthenticated(pendingDeviceSession: session));
+        }
+      },
     );
+  }
+
+  /// El OTP del dispositivo salió bien: se vincula el teléfono y recién ahí se
+  /// abre la sesión.
+  Future<void> _onDeviceVerified(
+    AuthDeviceVerified event,
+    Emitter<AuthState> emit,
+  ) async {
+    final session = event.session;
+    await _device.saveUser(RememberedUser(
+      dni: session.identifier,
+      fullName: session.fullName ?? session.identifier,
+      alias: session.alias ?? '@${session.identifier}',
+    ));
+    await _actions.activate(session);
   }
 
   @override
@@ -61,5 +135,6 @@ AuthError _errorFor(GlobalFailure<AuthFailure> failure) => switch (failure) {
         AuthError.invalidCredentials,
       ServerFailure(failure: IdentifierTaken()) => AuthError.identifierTaken,
       ServerFailure(failure: WeakPin()) => AuthError.weakPin,
+      ServerFailure(failure: PinUnchanged()) => AuthError.pinUnchanged,
       _ => AuthError.generic,
     };

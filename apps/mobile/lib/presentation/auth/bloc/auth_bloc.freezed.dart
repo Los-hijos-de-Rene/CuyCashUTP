@@ -55,11 +55,12 @@ extension AuthEventPatterns on AuthEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthLoginSubmitted value)?  loginSubmitted,TResult Function( AuthSignedOut value)?  signedOut,TResult Function( _AuthSessionChanged value)?  sessionChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthLoginSubmitted value)?  loginSubmitted,TResult Function( AuthDeviceVerified value)?  deviceVerified,TResult Function( AuthSignedOut value)?  signedOut,TResult Function( _AuthSessionChanged value)?  sessionChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that);case AuthDeviceVerified() when deviceVerified != null:
+return deviceVerified(_that);case AuthSignedOut() when signedOut != null:
 return signedOut(_that);case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that);case _:
   return orElse();
@@ -79,11 +80,12 @@ return sessionChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthLoginSubmitted value)  loginSubmitted,required TResult Function( AuthSignedOut value)  signedOut,required TResult Function( _AuthSessionChanged value)  sessionChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthLoginSubmitted value)  loginSubmitted,required TResult Function( AuthDeviceVerified value)  deviceVerified,required TResult Function( AuthSignedOut value)  signedOut,required TResult Function( _AuthSessionChanged value)  sessionChanged,}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted():
-return loginSubmitted(_that);case AuthSignedOut():
+return loginSubmitted(_that);case AuthDeviceVerified():
+return deviceVerified(_that);case AuthSignedOut():
 return signedOut(_that);case _AuthSessionChanged():
 return sessionChanged(_that);}
 }
@@ -99,11 +101,12 @@ return sessionChanged(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthLoginSubmitted value)?  loginSubmitted,TResult? Function( AuthSignedOut value)?  signedOut,TResult? Function( _AuthSessionChanged value)?  sessionChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthLoginSubmitted value)?  loginSubmitted,TResult? Function( AuthDeviceVerified value)?  deviceVerified,TResult? Function( AuthSignedOut value)?  signedOut,TResult? Function( _AuthSessionChanged value)?  sessionChanged,}){
 final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that);case AuthDeviceVerified() when deviceVerified != null:
+return deviceVerified(_that);case AuthSignedOut() when signedOut != null:
 return signedOut(_that);case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that);case _:
   return null;
@@ -122,10 +125,11 @@ return sessionChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function( AuthSession session)?  deviceVerified,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified() when deviceVerified != null:
+return deviceVerified(_that.session);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return orElse();
@@ -145,10 +149,11 @@ return sessionChanged(_that.session);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function( AuthSession session)  deviceVerified,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted():
-return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut():
+return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified():
+return deviceVerified(_that.session);case AuthSignedOut():
 return signedOut();case _AuthSessionChanged():
 return sessionChanged(_that.session);}
 }
@@ -164,10 +169,11 @@ return sessionChanged(_that.session);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function( AuthSession session)?  deviceVerified,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
-return loginSubmitted(_that.identifier,_that.pin);case AuthSignedOut() when signedOut != null:
+return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified() when deviceVerified != null:
+return deviceVerified(_that.session);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return null;
@@ -239,6 +245,72 @@ class _$AuthLoginSubmittedCopyWithImpl<$Res>
 identifier: null == identifier ? _self.identifier : identifier // ignore: cast_nullable_to_non_nullable
 as String,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
 as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AuthDeviceVerified implements AuthEvent {
+  const AuthDeviceVerified(this.session);
+  
+
+ final  AuthSession session;
+
+/// Create a copy of AuthEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AuthDeviceVerifiedCopyWith<AuthDeviceVerified> get copyWith => _$AuthDeviceVerifiedCopyWithImpl<AuthDeviceVerified>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthDeviceVerified&&(identical(other.session, session) || other.session == session));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,session);
+
+@override
+String toString() {
+  return 'AuthEvent.deviceVerified(session: $session)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AuthDeviceVerifiedCopyWith<$Res> implements $AuthEventCopyWith<$Res> {
+  factory $AuthDeviceVerifiedCopyWith(AuthDeviceVerified value, $Res Function(AuthDeviceVerified) _then) = _$AuthDeviceVerifiedCopyWithImpl;
+@useResult
+$Res call({
+ AuthSession session
+});
+
+
+
+
+}
+/// @nodoc
+class _$AuthDeviceVerifiedCopyWithImpl<$Res>
+    implements $AuthDeviceVerifiedCopyWith<$Res> {
+  _$AuthDeviceVerifiedCopyWithImpl(this._self, this._then);
+
+  final AuthDeviceVerified _self;
+  final $Res Function(AuthDeviceVerified) _then;
+
+/// Create a copy of AuthEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? session = null,}) {
+  return _then(AuthDeviceVerified(
+null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
+as AuthSession,
   ));
 }
 
@@ -451,10 +523,10 @@ return authenticated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FormStatus status,  AuthError? error)?  unauthenticated,TResult Function( AuthSession session)?  authenticated,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FormStatus status,  int attemptsLeft,  AuthError? error,  AuthSession? pendingDeviceSession,  DateTime? lockedUntil,  Duration? nextLockout)?  unauthenticated,TResult Function( AuthSession session)?  authenticated,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthUnauthenticated() when unauthenticated != null:
-return unauthenticated(_that.status,_that.error);case AuthAuthenticated() when authenticated != null:
+return unauthenticated(_that.status,_that.attemptsLeft,_that.error,_that.pendingDeviceSession,_that.lockedUntil,_that.nextLockout);case AuthAuthenticated() when authenticated != null:
 return authenticated(_that.session);case _:
   return orElse();
 
@@ -473,10 +545,10 @@ return authenticated(_that.session);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FormStatus status,  AuthError? error)  unauthenticated,required TResult Function( AuthSession session)  authenticated,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FormStatus status,  int attemptsLeft,  AuthError? error,  AuthSession? pendingDeviceSession,  DateTime? lockedUntil,  Duration? nextLockout)  unauthenticated,required TResult Function( AuthSession session)  authenticated,}) {final _that = this;
 switch (_that) {
 case AuthUnauthenticated():
-return unauthenticated(_that.status,_that.error);case AuthAuthenticated():
+return unauthenticated(_that.status,_that.attemptsLeft,_that.error,_that.pendingDeviceSession,_that.lockedUntil,_that.nextLockout);case AuthAuthenticated():
 return authenticated(_that.session);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -491,10 +563,10 @@ return authenticated(_that.session);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FormStatus status,  AuthError? error)?  unauthenticated,TResult? Function( AuthSession session)?  authenticated,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FormStatus status,  int attemptsLeft,  AuthError? error,  AuthSession? pendingDeviceSession,  DateTime? lockedUntil,  Duration? nextLockout)?  unauthenticated,TResult? Function( AuthSession session)?  authenticated,}) {final _that = this;
 switch (_that) {
 case AuthUnauthenticated() when unauthenticated != null:
-return unauthenticated(_that.status,_that.error);case AuthAuthenticated() when authenticated != null:
+return unauthenticated(_that.status,_that.attemptsLeft,_that.error,_that.pendingDeviceSession,_that.lockedUntil,_that.nextLockout);case AuthAuthenticated() when authenticated != null:
 return authenticated(_that.session);case _:
   return null;
 
@@ -507,11 +579,16 @@ return authenticated(_that.session);case _:
 
 
 class AuthUnauthenticated implements AuthState {
-  const AuthUnauthenticated({this.status = FormStatus.idle, this.error});
+  const AuthUnauthenticated({this.status = FormStatus.idle, this.attemptsLeft = LockoutPolicy.maxAttempts, this.error, this.pendingDeviceSession, this.lockedUntil, this.nextLockout});
   
 
 @JsonKey() final  FormStatus status;
+@JsonKey() final  int attemptsLeft;
  final  AuthError? error;
+ final  AuthSession? pendingDeviceSession;
+ final  DateTime? lockedUntil;
+/// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
+ final  Duration? nextLockout;
 
 /// Create a copy of AuthState
 /// with the given fields replaced by the non-null parameter values.
@@ -523,16 +600,16 @@ $AuthUnauthenticatedCopyWith<AuthUnauthenticated> get copyWith => _$AuthUnauthen
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthUnauthenticated&&(identical(other.status, status) || other.status == status)&&(identical(other.error, error) || other.error == error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthUnauthenticated&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.error, error) || other.error == error)&&(identical(other.pendingDeviceSession, pendingDeviceSession) || other.pendingDeviceSession == pendingDeviceSession)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,error);
+int get hashCode => Object.hash(runtimeType,status,attemptsLeft,error,pendingDeviceSession,lockedUntil,nextLockout);
 
 @override
 String toString() {
-  return 'AuthState.unauthenticated(status: $status, error: $error)';
+  return 'AuthState.unauthenticated(status: $status, attemptsLeft: $attemptsLeft, error: $error, pendingDeviceSession: $pendingDeviceSession, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
 }
 
 
@@ -543,7 +620,7 @@ abstract mixin class $AuthUnauthenticatedCopyWith<$Res> implements $AuthStateCop
   factory $AuthUnauthenticatedCopyWith(AuthUnauthenticated value, $Res Function(AuthUnauthenticated) _then) = _$AuthUnauthenticatedCopyWithImpl;
 @useResult
 $Res call({
- FormStatus status, AuthError? error
+ FormStatus status, int attemptsLeft, AuthError? error, AuthSession? pendingDeviceSession, DateTime? lockedUntil, Duration? nextLockout
 });
 
 
@@ -560,11 +637,15 @@ class _$AuthUnauthenticatedCopyWithImpl<$Res>
 
 /// Create a copy of AuthState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? status = null,Object? error = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? status = null,Object? attemptsLeft = null,Object? error = freezed,Object? pendingDeviceSession = freezed,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
   return _then(AuthUnauthenticated(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as FormStatus,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as AuthError?,
+as FormStatus,attemptsLeft: null == attemptsLeft ? _self.attemptsLeft : attemptsLeft // ignore: cast_nullable_to_non_nullable
+as int,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as AuthError?,pendingDeviceSession: freezed == pendingDeviceSession ? _self.pendingDeviceSession : pendingDeviceSession // ignore: cast_nullable_to_non_nullable
+as AuthSession?,lockedUntil: freezed == lockedUntil ? _self.lockedUntil : lockedUntil // ignore: cast_nullable_to_non_nullable
+as DateTime?,nextLockout: freezed == nextLockout ? _self.nextLockout : nextLockout // ignore: cast_nullable_to_non_nullable
+as Duration?,
   ));
 }
 

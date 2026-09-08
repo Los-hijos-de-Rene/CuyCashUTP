@@ -1,6 +1,8 @@
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
+import 'package:cuycash/feature/lockout/application/identifier_lockout_actions.dart';
+import 'package:cuycash/feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import 'package:cuycash/feature/device/application/device_actions.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
@@ -23,7 +25,11 @@ void main() {
     repo = MemoryAuthRepository(
       initial: const AuthSession(userId: 'u', identifier: '12345678'),
     );
-    bloc = AuthBloc(AuthActions(repo));
+    bloc = AuthBloc(
+      AuthActions(repo),
+      DeviceActions(MemoryDeviceStore()),
+      IdentifierLockoutActions(MemoryIdentifierLockoutStore()),
+    );
   });
 
   tearDown(() async {
