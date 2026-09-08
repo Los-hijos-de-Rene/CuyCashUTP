@@ -217,8 +217,44 @@ abstract class AppLocalizations {
   /// No description provided for @loginSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Ingresa con tu DNI y tu PIN de seguridad.'**
+  /// **'Ingresa tu número de DNI para continuar.'**
   String get loginSubtitle;
+
+  /// No description provided for @loginPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu PIN'**
+  String get loginPinHeadline;
+
+  /// No description provided for @loginPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'PIN de 6 dígitos de tu cuenta.'**
+  String get loginPinSubtitle;
+
+  /// No description provided for @loginDniSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'DNI {dni}'**
+  String loginDniSummary(String dni);
+
+  /// No description provided for @changeAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get changeAction;
+
+  /// No description provided for @loginDniInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'El DNI debe tener 8 dígitos.'**
+  String get loginDniInvalid;
+
+  /// No description provided for @loginWrongCredentials.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{Los datos no son correctos. Te queda 1 intento.} other{Los datos no son correctos. Te quedan {n} intentos.}}'**
+  String loginWrongCredentials(int n);
 
   /// No description provided for @identifierLabel.
   ///
@@ -658,11 +694,35 @@ abstract class AppLocalizations {
   /// **'Crea tu PIN de seguridad'**
   String get pinHeadline;
 
+  /// No description provided for @pinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo usarás para entrar y para autorizar tus operaciones.'**
+  String get pinSubtitle;
+
+  /// No description provided for @pinConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confírmalo'**
+  String get pinConfirmHeadline;
+
+  /// No description provided for @pinConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelve a escribir los 6 dígitos.'**
+  String get pinConfirmSubtitle;
+
   /// No description provided for @pinRule6.
   ///
   /// In es, this message translates to:
   /// **'6 dígitos'**
   String get pinRule6;
+
+  /// No description provided for @pinRuleNoRepeats.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin repetir el mismo dígito seis veces'**
+  String get pinRuleNoRepeats;
 
   /// No description provided for @pinRuleNoSequence.
   ///
@@ -670,29 +730,23 @@ abstract class AppLocalizations {
   /// **'Sin secuencias como 123456'**
   String get pinRuleNoSequence;
 
-  /// No description provided for @pinRuleNoBirthdate.
-  ///
-  /// In es, this message translates to:
-  /// **'No uses tu fecha de nacimiento'**
-  String get pinRuleNoBirthdate;
-
   /// No description provided for @biometricTitle.
   ///
   /// In es, this message translates to:
   /// **'Activar acceso biométrico'**
   String get biometricTitle;
 
-  /// No description provided for @biometricSubtitle.
+  /// No description provided for @biometricHeadline.
   ///
   /// In es, this message translates to:
-  /// **'Entra con tu huella o rostro sin escribir el PIN.'**
-  String get biometricSubtitle;
+  /// **'¿Quieres entrar con tu huella?'**
+  String get biometricHeadline;
 
-  /// No description provided for @securityNote.
+  /// No description provided for @biometricBody.
   ///
   /// In es, this message translates to:
-  /// **'CuyCash usa un solo factor de verificación por operación.'**
-  String get securityNote;
+  /// **'Podrás abrir la app y autorizar tus operaciones sin escribir el PIN.'**
+  String get biometricBody;
 
   /// No description provided for @finishRegister.
   ///
@@ -733,8 +787,32 @@ abstract class AppLocalizations {
   /// No description provided for @pinWrongHint.
   ///
   /// In es, this message translates to:
-  /// **'Tras 3 intentos fallidos tu acceso se bloqueará por 15 minutos.'**
-  String get pinWrongHint;
+  /// **'Tras 3 intentos fallidos tu acceso se bloqueará por {duration}.'**
+  String pinWrongHint(String duration);
+
+  /// No description provided for @loginWrongHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Tras 3 intentos fallidos bloquearemos el ingreso por {duration}.'**
+  String loginWrongHint(String duration);
+
+  /// No description provided for @durationSeconds.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{1 segundo} other{{n} segundos}}'**
+  String durationSeconds(int n);
+
+  /// No description provided for @durationMinutes.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{1 minuto} other{{n} minutos}}'**
+  String durationMinutes(int n);
+
+  /// No description provided for @durationHours.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{1 hora} other{{n} horas}}'**
+  String durationHours(int n);
 
   /// No description provided for @blockedTitle.
   ///
@@ -801,6 +879,294 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cancelar'**
   String get cancel;
+
+  /// No description provided for @errorPinUnchanged.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu nuevo PIN debe ser distinto al anterior.'**
+  String get errorPinUnchanged;
+
+  /// No description provided for @otpSubmit.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar'**
+  String get otpSubmit;
+
+  /// No description provided for @otpRequestNewCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar otro código'**
+  String get otpRequestNewCode;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar otro código en {time}'**
+  String otpResendIn(String time);
+
+  /// No description provided for @otpResendNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar otro código'**
+  String get otpResendNow;
+
+  /// No description provided for @otpSpamHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa tu carpeta de spam.'**
+  String get otpSpamHint;
+
+  /// No description provided for @otpChangeEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar correo'**
+  String get otpChangeEmail;
+
+  /// No description provided for @otpWrongCode.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{Código incorrecto. Te queda 1 intento.} other{Código incorrecto. Te quedan {n} intentos.}}'**
+  String otpWrongCode(int n);
+
+  /// No description provided for @otpExpiredMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Este código venció. Los códigos duran 10 minutos.'**
+  String get otpExpiredMessage;
+
+  /// No description provided for @otpAttemptsWarningRecovery.
+  ///
+  /// In es, this message translates to:
+  /// **'Tras 3 intentos cancelaremos la recuperación.'**
+  String get otpAttemptsWarningRecovery;
+
+  /// No description provided for @otpAttemptsWarningDevice.
+  ///
+  /// In es, this message translates to:
+  /// **'Tras 3 intentos cancelaremos el ingreso.'**
+  String get otpAttemptsWarningDevice;
+
+  /// No description provided for @otpRecoveryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar código'**
+  String get otpRecoveryTitle;
+
+  /// No description provided for @otpRecoveryHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa tu correo'**
+  String get otpRecoveryHeading;
+
+  /// No description provided for @otpRecoverySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviamos un código de 6 dígitos a {email}'**
+  String otpRecoverySubtitle(String email);
+
+  /// No description provided for @otpDeviceTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar dispositivo'**
+  String get otpDeviceTitle;
+
+  /// No description provided for @otpDeviceHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa tu correo'**
+  String get otpDeviceHeading;
+
+  /// No description provided for @otpDeviceSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Detectamos un ingreso desde un teléfono que no reconocemos. Enviamos un código de 6 dígitos a {email}'**
+  String otpDeviceSubtitle(String email);
+
+  /// No description provided for @otpDeviceNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Al verificar, vincularemos este teléfono a tu cuenta.'**
+  String get otpDeviceNotice;
+
+  /// No description provided for @recoverTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperar PIN'**
+  String get recoverTitle;
+
+  /// No description provided for @recoverHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Con qué correo te registraste?'**
+  String get recoverHeadline;
+
+  /// No description provided for @recoverSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviaremos un código de 6 dígitos para que crees un PIN nuevo.'**
+  String get recoverSubtitle;
+
+  /// No description provided for @recoverCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar código'**
+  String get recoverCta;
+
+  /// No description provided for @recoverNeutralNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Si el correo está registrado, te enviamos un código'**
+  String get recoverNeutralNotice;
+
+  /// No description provided for @resetPinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Restablecer PIN'**
+  String get resetPinTitle;
+
+  /// No description provided for @resetPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu nuevo PIN'**
+  String get resetPinHeadline;
+
+  /// No description provided for @resetPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'6 dígitos, distinto al que usabas antes.'**
+  String get resetPinSubtitle;
+
+  /// No description provided for @resetPinConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu PIN'**
+  String get resetPinConfirmHeadline;
+
+  /// No description provided for @resetPinConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelve a escribir los 6 dígitos.'**
+  String get resetPinConfirmSubtitle;
+
+  /// No description provided for @resetPinSamePin.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese es tu PIN actual. Elige uno distinto.'**
+  String get resetPinSamePin;
+
+  /// No description provided for @resetPinNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu PIN es personal. Nadie de CuyCash te lo pedirá nunca.'**
+  String get resetPinNotice;
+
+  /// No description provided for @resetPinMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'No coincide con el PIN que elegiste.'**
+  String get resetPinMismatch;
+
+  /// No description provided for @resetPinExitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir sin cambiar tu PIN?'**
+  String get resetPinExitTitle;
+
+  /// No description provided for @resetPinExitBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tendrás que pedir un código nuevo'**
+  String get resetPinExitBody;
+
+  /// No description provided for @resetPinExitConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir'**
+  String get resetPinExitConfirm;
+
+  /// No description provided for @pinUpdatedHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'PIN actualizado'**
+  String get pinUpdatedHeadline;
+
+  /// No description provided for @pinUpdatedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya puedes ingresar con tu nuevo PIN de seguridad.'**
+  String get pinUpdatedBody;
+
+  /// No description provided for @pinUpdatedSessionsNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerramos la sesión en los demás dispositivos por seguridad.'**
+  String get pinUpdatedSessionsNotice;
+
+  /// No description provided for @pinUpdatedCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresar con mi nuevo PIN'**
+  String get pinUpdatedCta;
+
+  /// No description provided for @cancelledEmailNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviamos un aviso al correo registrado.'**
+  String get cancelledEmailNotice;
+
+  /// No description provided for @cancelledLoginHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelamos el ingreso'**
+  String get cancelledLoginHeadline;
+
+  /// No description provided for @cancelledLoginBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresaste 3 códigos incorrectos, así que detuvimos la vinculación de este teléfono.'**
+  String get cancelledLoginBody;
+
+  /// No description provided for @cancelledLoginReassurance.
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie entró a tu cuenta y tu dinero está intacto.'**
+  String get cancelledLoginReassurance;
+
+  /// No description provided for @cancelledLoginPrimary.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a iniciar sesión'**
+  String get cancelledLoginPrimary;
+
+  /// No description provided for @cancelledRecoveryHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelamos la recuperación'**
+  String get cancelledRecoveryHeadline;
+
+  /// No description provided for @cancelledRecoveryBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresaste 3 códigos incorrectos, así que detuvimos el cambio de tu PIN.'**
+  String get cancelledRecoveryBody;
+
+  /// No description provided for @cancelledRecoveryReassurance.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu PIN actual no cambió y tu cuenta sigue segura.'**
+  String get cancelledRecoveryReassurance;
+
+  /// No description provided for @cancelledRecoveryPrimary.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get cancelledRecoveryPrimary;
+
+  /// No description provided for @cancelledRecoverySecondary.
+  ///
+  /// In es, this message translates to:
+  /// **'Intentar de nuevo'**
+  String get cancelledRecoverySecondary;
 }
 
 class _AppLocalizationsDelegate

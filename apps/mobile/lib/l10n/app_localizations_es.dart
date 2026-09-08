@@ -75,7 +75,35 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loginHeadline => 'Bienvenido de vuelta';
 
   @override
-  String get loginSubtitle => 'Ingresa con tu DNI y tu PIN de seguridad.';
+  String get loginSubtitle => 'Ingresa tu número de DNI para continuar.';
+
+  @override
+  String get loginPinHeadline => 'Ingresa tu PIN';
+
+  @override
+  String get loginPinSubtitle => 'PIN de 6 dígitos de tu cuenta.';
+
+  @override
+  String loginDniSummary(String dni) {
+    return 'DNI $dni';
+  }
+
+  @override
+  String get changeAction => 'Cambiar';
+
+  @override
+  String get loginDniInvalid => 'El DNI debe tener 8 dígitos.';
+
+  @override
+  String loginWrongCredentials(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Los datos no son correctos. Te quedan $n intentos.',
+      one: 'Los datos no son correctos. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get identifierLabel => 'DNI o Alias';
@@ -315,24 +343,33 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pinHeadline => 'Crea tu PIN de seguridad';
 
   @override
+  String get pinSubtitle =>
+      'Lo usarás para entrar y para autorizar tus operaciones.';
+
+  @override
+  String get pinConfirmHeadline => 'Confírmalo';
+
+  @override
+  String get pinConfirmSubtitle => 'Vuelve a escribir los 6 dígitos.';
+
+  @override
   String get pinRule6 => '6 dígitos';
+
+  @override
+  String get pinRuleNoRepeats => 'Sin repetir el mismo dígito seis veces';
 
   @override
   String get pinRuleNoSequence => 'Sin secuencias como 123456';
 
   @override
-  String get pinRuleNoBirthdate => 'No uses tu fecha de nacimiento';
-
-  @override
   String get biometricTitle => 'Activar acceso biométrico';
 
   @override
-  String get biometricSubtitle =>
-      'Entra con tu huella o rostro sin escribir el PIN.';
+  String get biometricHeadline => '¿Quieres entrar con tu huella?';
 
   @override
-  String get securityNote =>
-      'CuyCash usa un solo factor de verificación por operación.';
+  String get biometricBody =>
+      'Podrás abrir la app y autorizar tus operaciones sin escribir el PIN.';
 
   @override
   String get finishRegister => 'Finalizar registro';
@@ -359,8 +396,47 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get pinWrongHint =>
-      'Tras 3 intentos fallidos tu acceso se bloqueará por 15 minutos.';
+  String pinWrongHint(String duration) {
+    return 'Tras 3 intentos fallidos tu acceso se bloqueará por $duration.';
+  }
+
+  @override
+  String loginWrongHint(String duration) {
+    return 'Tras 3 intentos fallidos bloquearemos el ingreso por $duration.';
+  }
+
+  @override
+  String durationSeconds(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n segundos',
+      one: '1 segundo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationMinutes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n minutos',
+      one: '1 minuto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationHours(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n horas',
+      one: '1 hora',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get blockedTitle => 'Tu acceso está bloqueado';
@@ -399,4 +475,175 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cancel => 'Cancelar';
+
+  @override
+  String get errorPinUnchanged => 'Tu nuevo PIN debe ser distinto al anterior.';
+
+  @override
+  String get otpSubmit => 'Verificar';
+
+  @override
+  String get otpRequestNewCode => 'Enviar otro código';
+
+  @override
+  String otpResendIn(String time) {
+    return 'Enviar otro código en $time';
+  }
+
+  @override
+  String get otpResendNow => 'Enviar otro código';
+
+  @override
+  String get otpSpamHint => 'Revisa tu carpeta de spam.';
+
+  @override
+  String get otpChangeEmail => 'Cambiar correo';
+
+  @override
+  String otpWrongCode(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Código incorrecto. Te quedan $n intentos.',
+      one: 'Código incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get otpExpiredMessage =>
+      'Este código venció. Los códigos duran 10 minutos.';
+
+  @override
+  String get otpAttemptsWarningRecovery =>
+      'Tras 3 intentos cancelaremos la recuperación.';
+
+  @override
+  String get otpAttemptsWarningDevice =>
+      'Tras 3 intentos cancelaremos el ingreso.';
+
+  @override
+  String get otpRecoveryTitle => 'Verificar código';
+
+  @override
+  String get otpRecoveryHeading => 'Revisa tu correo';
+
+  @override
+  String otpRecoverySubtitle(String email) {
+    return 'Enviamos un código de 6 dígitos a $email';
+  }
+
+  @override
+  String get otpDeviceTitle => 'Verificar dispositivo';
+
+  @override
+  String get otpDeviceHeading => 'Revisa tu correo';
+
+  @override
+  String otpDeviceSubtitle(String email) {
+    return 'Detectamos un ingreso desde un teléfono que no reconocemos. Enviamos un código de 6 dígitos a $email';
+  }
+
+  @override
+  String get otpDeviceNotice =>
+      'Al verificar, vincularemos este teléfono a tu cuenta.';
+
+  @override
+  String get recoverTitle => 'Recuperar PIN';
+
+  @override
+  String get recoverHeadline => '¿Con qué correo te registraste?';
+
+  @override
+  String get recoverSubtitle =>
+      'Te enviaremos un código de 6 dígitos para que crees un PIN nuevo.';
+
+  @override
+  String get recoverCta => 'Enviar código';
+
+  @override
+  String get recoverNeutralNotice =>
+      'Si el correo está registrado, te enviamos un código';
+
+  @override
+  String get resetPinTitle => 'Restablecer PIN';
+
+  @override
+  String get resetPinHeadline => 'Crea tu nuevo PIN';
+
+  @override
+  String get resetPinSubtitle => '6 dígitos, distinto al que usabas antes.';
+
+  @override
+  String get resetPinConfirmHeadline => 'Confirma tu PIN';
+
+  @override
+  String get resetPinConfirmSubtitle => 'Vuelve a escribir los 6 dígitos.';
+
+  @override
+  String get resetPinSamePin => 'Ese es tu PIN actual. Elige uno distinto.';
+
+  @override
+  String get resetPinNotice =>
+      'Tu PIN es personal. Nadie de CuyCash te lo pedirá nunca.';
+
+  @override
+  String get resetPinMismatch => 'No coincide con el PIN que elegiste.';
+
+  @override
+  String get resetPinExitTitle => '¿Salir sin cambiar tu PIN?';
+
+  @override
+  String get resetPinExitBody => 'Tendrás que pedir un código nuevo';
+
+  @override
+  String get resetPinExitConfirm => 'Salir';
+
+  @override
+  String get pinUpdatedHeadline => 'PIN actualizado';
+
+  @override
+  String get pinUpdatedBody =>
+      'Ya puedes ingresar con tu nuevo PIN de seguridad.';
+
+  @override
+  String get pinUpdatedSessionsNotice =>
+      'Cerramos la sesión en los demás dispositivos por seguridad.';
+
+  @override
+  String get pinUpdatedCta => 'Ingresar con mi nuevo PIN';
+
+  @override
+  String get cancelledEmailNotice => 'Enviamos un aviso al correo registrado.';
+
+  @override
+  String get cancelledLoginHeadline => 'Cancelamos el ingreso';
+
+  @override
+  String get cancelledLoginBody =>
+      'Ingresaste 3 códigos incorrectos, así que detuvimos la vinculación de este teléfono.';
+
+  @override
+  String get cancelledLoginReassurance =>
+      'Nadie entró a tu cuenta y tu dinero está intacto.';
+
+  @override
+  String get cancelledLoginPrimary => 'Volver a iniciar sesión';
+
+  @override
+  String get cancelledRecoveryHeadline => 'Cancelamos la recuperación';
+
+  @override
+  String get cancelledRecoveryBody =>
+      'Ingresaste 3 códigos incorrectos, así que detuvimos el cambio de tu PIN.';
+
+  @override
+  String get cancelledRecoveryReassurance =>
+      'Tu PIN actual no cambió y tu cuenta sigue segura.';
+
+  @override
+  String get cancelledRecoveryPrimary => 'Volver al inicio';
+
+  @override
+  String get cancelledRecoverySecondary => 'Intentar de nuevo';
 }
