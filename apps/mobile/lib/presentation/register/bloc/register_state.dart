@@ -26,6 +26,11 @@ abstract class RegisterDraft with _$RegisterDraft {
     @Default('') String email,
     @Default(CaptureStatus.empty) CaptureStatus dniFront,
     @Default(CaptureStatus.empty) CaptureStatus dniBack,
+
+    /// Bytes de las capturas. Viven en memoria hasta la verificación y se
+    /// sueltan ahí: son datos de identidad, no van a disco.
+    Uint8List? dniFrontImage,
+    Uint8List? dniBackImage,
     @Default(FaceScanStatus.idle) FaceScanStatus faceStatus,
     @Default('') String pin,
 

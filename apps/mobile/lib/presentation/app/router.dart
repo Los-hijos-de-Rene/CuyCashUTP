@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/injection/app_dependencies.dart';
 import '../../core/injection/modules/device_module.dart';
+import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
 import '../../core/injection/modules/register_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/auth/domain/auth_session.dart';
 import '../../feature/device/application/device_actions.dart';
+import '../../feature/kyc/application/kyc_actions.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../home/home_screen.dart';
@@ -59,9 +61,13 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       ),
       GoRoute(
         path: AppRoutes.registro,
-        builder: (context, state) => BlocProvider<RegisterBloc>(
-          create: (_) => RegisterModule.create(deps),
-          child: const RegisterFlowScreen(),
+        builder: (context, state) => RepositoryProvider<KycActions>.value(
+          // El paso 3 arma su propio bloc de liveness con estas acciones.
+          value: KycModule.create(deps),
+          child: BlocProvider<RegisterBloc>(
+            create: (_) => RegisterModule.create(deps),
+            child: const RegisterFlowScreen(),
+          ),
         ),
       ),
       GoRoute(

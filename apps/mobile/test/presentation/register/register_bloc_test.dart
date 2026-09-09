@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
@@ -54,8 +56,8 @@ void main() {
     build: build,
     seed: () => const RegisterState(step: 1),
     act: (b) => b
-      ..add(const RegisterEvent.captured(DocSide.front))
-      ..add(const RegisterEvent.captured(DocSide.back))
+      ..add(RegisterEvent.captured(DocSide.front, Uint8List.fromList([1])))
+      ..add(RegisterEvent.captured(DocSide.back, Uint8List.fromList([1])))
       ..add(const RegisterEvent.stepAdvanced()),
     verify: (b) => expect(b.state.step, 2),
   );
@@ -65,7 +67,7 @@ void main() {
     build: build,
     seed: () => const RegisterState(step: 1),
     act: (b) => b
-      ..add(const RegisterEvent.captured(DocSide.front))
+      ..add(RegisterEvent.captured(DocSide.front, Uint8List.fromList([1])))
       ..add(const RegisterEvent.captureFailed(DocSide.back))
       ..add(const RegisterEvent.stepAdvanced()),
     verify: (b) => expect(b.state.step, 1),

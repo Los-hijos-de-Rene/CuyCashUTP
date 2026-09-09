@@ -4,4 +4,10 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- El microservicio de KYC corre en http://<ip>:8000 durante el
+         desarrollo, y Android bloquea el tráfico en claro desde API 28.
+         Se habilita SOLO en debug: la build de release sigue exigiendo HTTPS,
+         que es lo correcto para datos biométricos. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

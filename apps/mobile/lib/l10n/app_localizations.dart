@@ -646,6 +646,126 @@ abstract class AppLocalizations {
   /// **'Centra tu rostro en el círculo'**
   String get faceHeadline;
 
+  /// No description provided for @cameraDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitamos la cámara para verificar tu identidad. Actívala desde los ajustes del teléfono.'**
+  String get cameraDenied;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos usar la cámara de este teléfono.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @faceNeedsDocument.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero captura el frente de tu DNI: comparamos tu rostro con esa foto.'**
+  String get faceNeedsDocument;
+
+  /// No description provided for @livenessPreparing.
+  ///
+  /// In es, this message translates to:
+  /// **'Preparando la verificación…'**
+  String get livenessPreparing;
+
+  /// No description provided for @livenessProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {done} de {total}'**
+  String livenessProgress(int done, int total);
+
+  /// No description provided for @livenessStepArriba.
+  ///
+  /// In es, this message translates to:
+  /// **'Levanta la cabeza, despacio'**
+  String get livenessStepArriba;
+
+  /// No description provided for @livenessStepAbajo.
+  ///
+  /// In es, this message translates to:
+  /// **'Baja la cabeza, despacio'**
+  String get livenessStepAbajo;
+
+  /// No description provided for @livenessStepIzquierda.
+  ///
+  /// In es, this message translates to:
+  /// **'Gira la cabeza a tu izquierda'**
+  String get livenessStepIzquierda;
+
+  /// No description provided for @livenessStepDerecha.
+  ///
+  /// In es, this message translates to:
+  /// **'Gira la cabeza a tu derecha'**
+  String get livenessStepDerecha;
+
+  /// No description provided for @livenessStepParpadeo.
+  ///
+  /// In es, this message translates to:
+  /// **'Parpadea dos veces mirando a la cámara'**
+  String get livenessStepParpadeo;
+
+  /// No description provided for @livenessCapture.
+  ///
+  /// In es, this message translates to:
+  /// **'Estoy listo'**
+  String get livenessCapture;
+
+  /// No description provided for @livenessCapturing.
+  ///
+  /// In es, this message translates to:
+  /// **'No te muevas del gesto…'**
+  String get livenessCapturing;
+
+  /// No description provided for @livenessEvaluating.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificando…'**
+  String get livenessEvaluating;
+
+  /// No description provided for @livenessVerifying.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmando tu identidad…'**
+  String get livenessVerifying;
+
+  /// No description provided for @livenessRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Repetir este paso'**
+  String get livenessRetry;
+
+  /// No description provided for @livenessApproved.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada'**
+  String get livenessApproved;
+
+  /// No description provided for @livenessRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos verificar tu identidad. Vuelve a intentarlo con buena luz y el rostro descubierto.'**
+  String get livenessRejected;
+
+  /// No description provided for @livenessExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'El tiempo se agotó. Empecemos de nuevo.'**
+  String get livenessExpired;
+
+  /// No description provided for @livenessRestart.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar de nuevo'**
+  String get livenessRestart;
+
+  /// No description provided for @errorServiceUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos conectar con el servicio de verificación. Revisa tu conexión.'**
+  String get errorServiceUnavailable;
+
   /// No description provided for @faceInstruction.
   ///
   /// In es, this message translates to:

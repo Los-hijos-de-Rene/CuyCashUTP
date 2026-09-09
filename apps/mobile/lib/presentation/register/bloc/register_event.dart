@@ -4,7 +4,8 @@ part of 'register_bloc.dart';
 sealed class RegisterEvent with _$RegisterEvent {
   const factory RegisterEvent.fieldChanged(RegisterField field, String value) =
       RegisterFieldChanged;
-  const factory RegisterEvent.captured(DocSide side) = RegisterCaptured;
+  const factory RegisterEvent.captured(DocSide side, Uint8List image) =
+      RegisterCaptured;
   const factory RegisterEvent.captureFailed(DocSide side) = RegisterCaptureFailed;
   const factory RegisterEvent.faceScanStarted() = RegisterFaceScanStarted;
   const factory RegisterEvent.faceScanCompleted() = RegisterFaceScanCompleted;

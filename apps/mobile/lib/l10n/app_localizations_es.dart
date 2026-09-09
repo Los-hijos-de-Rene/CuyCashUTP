@@ -319,6 +319,72 @@ class AppLocalizationsEs extends AppLocalizations {
   String get faceHeadline => 'Centra tu rostro en el círculo';
 
   @override
+  String get cameraDenied =>
+      'Necesitamos la cámara para verificar tu identidad. Actívala desde los ajustes del teléfono.';
+
+  @override
+  String get cameraUnavailable => 'No pudimos usar la cámara de este teléfono.';
+
+  @override
+  String get faceNeedsDocument =>
+      'Primero captura el frente de tu DNI: comparamos tu rostro con esa foto.';
+
+  @override
+  String get livenessPreparing => 'Preparando la verificación…';
+
+  @override
+  String livenessProgress(int done, int total) {
+    return 'Paso $done de $total';
+  }
+
+  @override
+  String get livenessStepArriba => 'Levanta la cabeza, despacio';
+
+  @override
+  String get livenessStepAbajo => 'Baja la cabeza, despacio';
+
+  @override
+  String get livenessStepIzquierda => 'Gira la cabeza a tu izquierda';
+
+  @override
+  String get livenessStepDerecha => 'Gira la cabeza a tu derecha';
+
+  @override
+  String get livenessStepParpadeo => 'Parpadea dos veces mirando a la cámara';
+
+  @override
+  String get livenessCapture => 'Estoy listo';
+
+  @override
+  String get livenessCapturing => 'No te muevas del gesto…';
+
+  @override
+  String get livenessEvaluating => 'Verificando…';
+
+  @override
+  String get livenessVerifying => 'Confirmando tu identidad…';
+
+  @override
+  String get livenessRetry => 'Repetir este paso';
+
+  @override
+  String get livenessApproved => 'Identidad verificada';
+
+  @override
+  String get livenessRejected =>
+      'No pudimos verificar tu identidad. Vuelve a intentarlo con buena luz y el rostro descubierto.';
+
+  @override
+  String get livenessExpired => 'El tiempo se agotó. Empecemos de nuevo.';
+
+  @override
+  String get livenessRestart => 'Empezar de nuevo';
+
+  @override
+  String get errorServiceUnavailable =>
+      'No pudimos conectar con el servicio de verificación. Revisa tu conexión.';
+
+  @override
   String get faceInstruction => 'Gira lentamente la cabeza hacia la derecha';
 
   @override

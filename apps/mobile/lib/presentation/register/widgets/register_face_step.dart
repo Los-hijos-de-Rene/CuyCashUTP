@@ -1,14 +1,27 @@
+import 'dart:typed_data';
+
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../l10n/app_localizations.dart';
-import '../bloc/register_bloc.dart';
-import 'face_scan_ring.dart';
+import 'package:camera/camera.dart';
 
-/// Paso 3 · Rostro. Pantalla inmersiva oscura. Widget puramente display:
-/// no arranca el escaneo por sí mismo — RegisterFlowScreen lo dispara cuando
-/// este paso se vuelve el paso activo.
+import '../../../feature/kyc/application/kyc_actions.dart';
+import '../../../feature/kyc/infrastructure/camera_frame_source.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../kyc/bloc/liveness_bloc.dart';
+import '../../kyc/liveness_view.dart';
+import '../../kyc/widgets/camera_scope.dart';
+import '../bloc/register_bloc.dart';
+
+/// Paso 3 · Rostro. Pantalla inmersiva con el liveness guiado por el servidor.
+///
+/// Ya no hay simulación: cada tarea se graba con la cámara frontal y la valida
+/// el servicio. El paso se marca hecho solo cuando la verificación completa
+/// —documento + liveness + match— resulta aprobada.
+///
+/// Necesita el frente del DNI capturado en el paso 2: es la imagen contra la
+/// que se compara el rostro.
 class RegisterFaceStep extends StatelessWidget {
   const RegisterFaceStep({super.key});
 
@@ -16,102 +29,85 @@ class RegisterFaceStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return BlocBuilder<RegisterBloc, RegisterState>(
+      buildWhen: (previous, current) =>
+          previous.draft.dniFrontImage != current.draft.dniFrontImage ||
+          previous.draft.faceStatus != current.draft.faceStatus,
       builder: (context, state) {
-        final done = state.draft.faceStatus == FaceScanStatus.success;
-        // Scrollable con altura mínima = viewport: el Spacer empuja el caption
-        // abajo cuando sobra espacio y hace scroll cuando la pantalla es corta.
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: CuyCashSpacing.stackLg),
-                      Text(l10n.faceHeadline,
-                          textAlign: TextAlign.center,
-                          style: CuyCashTypography.titleMd
-                              .copyWith(color: CuyCashColors.immersiveOnDark)),
-                      const SizedBox(height: CuyCashSpacing.stackLg),
-                      FaceScanRing(active: !done),
-                      const SizedBox(height: CuyCashSpacing.stackLg),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.rotate_right,
-                              size: 18, color: CuyCashColors.immersiveOcre),
-                          const SizedBox(width: CuyCashSpacing.stackSm),
-                          Flexible(
-                            child: Text(l10n.faceInstruction,
-                                style: CuyCashTypography.bodyLg.copyWith(
-                                    color: CuyCashColors.immersiveOcre)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: CuyCashSpacing.stackLg),
-                      _Checklist(livenessDone: done),
-                      const Spacer(),
-                      Text(l10n.faceCaption,
-                          textAlign: TextAlign.center,
-                          style: CuyCashTypography.labelSm
-                              .copyWith(color: CuyCashColors.immersiveMuted)),
-                      const SizedBox(height: CuyCashSpacing.stackLg),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
+        final documento = state.draft.dniFrontImage;
+        if (documento == null) {
+          // Sin el frente del DNI no hay contra qué comparar el rostro.
+          return _Aviso(text: l10n.faceNeedsDocument);
+        }
+        if (state.draft.faceStatus == FaceScanStatus.success) {
+          return _Aviso(text: l10n.livenessApproved, success: true);
+        }
+        return _LivenessScope(documento: documento);
       },
     );
   }
 }
 
-class _Checklist extends StatelessWidget {
-  const _Checklist({required this.livenessDone});
-  final bool livenessDone;
+/// Monta la cámara frontal y, con ella, el bloc del liveness.
+///
+/// El bloc se crea DENTRO del `CameraScope` porque necesita el controller ya
+/// inicializado: crearlo antes obligaría a un `FrameSource` que todavía no
+/// puede capturar.
+class _LivenessScope extends StatelessWidget {
+  const _LivenessScope({required this.documento});
+  final Uint8List documento;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
-      decoration: BoxDecoration(
-        color: CuyCashColors.immersivePanel,
-        borderRadius: BorderRadius.circular(CuyCashRadii.card),
-      ),
-      child: Column(
-        children: [
-          _row(l10n.faceCheckLight, true, null),
-          const SizedBox(height: CuyCashSpacing.stackMd),
-          _row(l10n.faceCheckUncovered, true, null),
-          const SizedBox(height: CuyCashSpacing.stackMd),
-          _row(l10n.faceCheckLiveness, livenessDone,
-              livenessDone ? null : l10n.faceInProgress),
-        ],
+    final actions = context.read<KycActions>();
+    final registerBloc = context.read<RegisterBloc>();
+    return CameraScope(
+      lens: CameraLensDirection.front,
+      builder: (context, controller) => BlocProvider(
+        create: (_) => LivenessBloc(
+          actions: actions,
+          frameSource: CameraFrameSource(controller),
+          documentImage: documento,
+        )..add(const LivenessEvent.started()),
+        child: LivenessView(
+          onVerified: () =>
+              registerBloc.add(const RegisterEvent.faceScanCompleted()),
+          controller: controller,
+        ),
       ),
     );
   }
+}
 
-  Widget _row(String label, bool done, String? suffix) => Row(
-        children: [
-          Icon(done ? Icons.check_circle : Icons.hourglass_empty,
-              size: 20,
-              color: done
-                  ? CuyCashColors.immersiveOcre
-                  : CuyCashColors.immersiveMuted),
-          const SizedBox(width: CuyCashSpacing.stackMd),
-          Text(label,
-              style: CuyCashTypography.bodyMd
-                  .copyWith(color: CuyCashColors.immersiveOnDark)),
-          if (suffix != null) ...[
-            const SizedBox(width: 6),
-            Text(suffix,
-                style: CuyCashTypography.labelSm
-                    .copyWith(color: CuyCashColors.immersiveMuted)),
+class _Aviso extends StatelessWidget {
+  const _Aviso({required this.text, this.success = false});
+  final String text;
+  final bool success;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              success ? Icons.verified_user_outlined : Icons.badge_outlined,
+              size: 40,
+              color: success
+                  ? CuyCashColors.success
+                  : CuyCashColors.immersiveOcre,
+            ),
+            const SizedBox(height: CuyCashSpacing.stackMd),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: CuyCashTypography.titleMd
+                  .copyWith(color: CuyCashColors.immersiveOnDark),
+            ),
           ],
-        ],
-      );
+        ),
+      ),
+    );
+  }
 }

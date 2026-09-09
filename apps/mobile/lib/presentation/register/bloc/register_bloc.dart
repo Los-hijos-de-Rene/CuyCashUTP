@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -65,7 +66,8 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       : _actions = actions,
         super(const RegisterState()) {
     on<RegisterFieldChanged>(_onFieldChanged);
-    on<RegisterCaptured>((event, emit) => emit(_setSide(event.side, CaptureStatus.captured)));
+    on<RegisterCaptured>((event, emit) =>
+        emit(_setSide(event.side, CaptureStatus.captured, event.image)));
     on<RegisterCaptureFailed>((event, emit) => emit(_setSide(event.side, CaptureStatus.unreadable)));
     on<RegisterFaceScanStarted>((event, emit) =>
         emit(state.copyWith(draft: state.draft.copyWith(faceStatus: FaceScanStatus.scanning))));
@@ -178,10 +180,12 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     if (state.step > 0) emit(state.copyWith(step: state.step - 1));
   }
 
-  RegisterState _setSide(DocSide side, CaptureStatus status) => state.copyWith(
+  RegisterState _setSide(DocSide side, CaptureStatus status,
+          [Uint8List? image]) =>
+      state.copyWith(
         draft: side == DocSide.front
-            ? state.draft.copyWith(dniFront: status)
-            : state.draft.copyWith(dniBack: status),
+            ? state.draft.copyWith(dniFront: status, dniFrontImage: image)
+            : state.draft.copyWith(dniBack: status, dniBackImage: image),
       );
 
   void _onFieldChanged(RegisterFieldChanged event, Emitter<RegisterState> emit) {

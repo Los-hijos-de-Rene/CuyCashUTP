@@ -2,6 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>CuyCash usa la cámara para escanear tu DNI y verificar tu identidad al abrir la cuenta.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Permite hablar con el microservicio de KYC en la red local durante el
+		     desarrollo, sin desactivar ATS para el resto del tráfico. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
