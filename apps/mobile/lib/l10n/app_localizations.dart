@@ -1305,6 +1305,228 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Intentar de nuevo'**
   String get cancelledRecoverySecondary;
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In es, this message translates to:
+  /// **'Buenos días,'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingAfternoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Buenas tardes,'**
+  String get homeGreetingAfternoon;
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In es, this message translates to:
+  /// **'Buenas noches,'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeNotifications.
+  ///
+  /// In es, this message translates to:
+  /// **'Notificaciones'**
+  String get homeNotifications;
+
+  /// No description provided for @homeDemoBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos de demostración'**
+  String get homeDemoBadge;
+
+  /// No description provided for @homeBalanceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo disponible'**
+  String get homeBalanceLabel;
+
+  /// No description provided for @homeBalanceHidden.
+  ///
+  /// In es, this message translates to:
+  /// **'S/ ••••••'**
+  String get homeBalanceHidden;
+
+  /// No description provided for @homeShowBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Mostrar saldo'**
+  String get homeShowBalance;
+
+  /// No description provided for @homeHideBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocultar saldo'**
+  String get homeHideBalance;
+
+  /// No description provided for @homeWalletMask.
+  ///
+  /// In es, this message translates to:
+  /// **'Billetera •••• {last4}'**
+  String homeWalletMask(String last4);
+
+  /// No description provided for @homeActionSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar'**
+  String get homeActionSend;
+
+  /// No description provided for @homeActionCharge.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrar'**
+  String get homeActionCharge;
+
+  /// No description provided for @homeActionTopUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Recargar'**
+  String get homeActionTopUp;
+
+  /// No description provided for @homeActionWithdraw.
+  ///
+  /// In es, this message translates to:
+  /// **'Retirar'**
+  String get homeActionWithdraw;
+
+  /// No description provided for @homeBotName.
+  ///
+  /// In es, this message translates to:
+  /// **'WasiBot'**
+  String get homeBotName;
+
+  /// No description provided for @homeBotInsight.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes llevas S/ 340.00 en gastos, 12 % menos que en agosto.'**
+  String get homeBotInsight;
+
+  /// No description provided for @homeMovementsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Últimos movimientos'**
+  String get homeMovementsTitle;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todo'**
+  String get homeSeeAll;
+
+  /// No description provided for @homeMovementCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Completada'**
+  String get homeMovementCompleted;
+
+  /// No description provided for @homeToday.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy'**
+  String get homeToday;
+
+  /// No description provided for @homeYesterday.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayer'**
+  String get homeYesterday;
+
+  /// No description provided for @homeDateTime.
+  ///
+  /// In es, this message translates to:
+  /// **'{day} · {time}'**
+  String homeDateTime(String day, String time);
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible en una próxima versión.'**
+  String get comingSoon;
+
+  /// No description provided for @profileHeadlineFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta'**
+  String get profileHeadlineFallback;
+
+  /// No description provided for @profileAliasLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu alias'**
+  String get profileAliasLabel;
+
+  /// No description provided for @profileDniLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'DNI'**
+  String get profileDniLabel;
+
+  /// No description provided for @profileVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada'**
+  String get profileVerified;
+
+  /// No description provided for @profileSectionAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get profileSectionAccount;
+
+  /// No description provided for @profileSectionSecurity.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguridad'**
+  String get profileSectionSecurity;
+
+  /// No description provided for @profileSectionSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda'**
+  String get profileSectionSupport;
+
+  /// No description provided for @profileItemPersonalData.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos personales'**
+  String get profileItemPersonalData;
+
+  /// No description provided for @profileItemAlias.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar mi alias'**
+  String get profileItemAlias;
+
+  /// No description provided for @profileItemChangePin.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar mi PIN'**
+  String get profileItemChangePin;
+
+  /// No description provided for @profileItemBiometrics.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso biométrico'**
+  String get profileItemBiometrics;
+
+  /// No description provided for @profileItemDevices.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivos vinculados'**
+  String get profileItemDevices;
+
+  /// No description provided for @profileItemHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Centro de ayuda'**
+  String get profileItemHelp;
+
+  /// No description provided for @profileItemTerms.
+  ///
+  /// In es, this message translates to:
+  /// **'Términos y privacidad'**
+  String get profileItemTerms;
 }
 
 class _AppLocalizationsDelegate

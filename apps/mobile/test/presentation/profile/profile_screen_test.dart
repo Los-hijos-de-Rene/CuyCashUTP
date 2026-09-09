@@ -60,6 +60,11 @@ void main() {
 
     expect(find.text('12345678'), findsOneWidget);
 
+    // El perfil ahora scrollea: "Cerrar sesión" cierra la lista, así que hay
+    // que traerlo a pantalla antes de tocarlo.
+    await tester.scrollUntilVisible(find.byType(SecondaryButton), 300);
+    await tester.pumpAndSettle();
+
     // Tocar "Cerrar sesión" abre el diálogo de confirmación
     await tester.tap(find.byType(SecondaryButton));
     await tester.pumpAndSettle();

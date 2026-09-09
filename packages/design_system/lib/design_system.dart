@@ -18,3 +18,4 @@ export 'src/pin_keypad.dart';
 export 'src/primary_button.dart';
 export 'src/secondary_button.dart';
 export 'src/step_segments.dart';
+export 'src/surface_card.dart';

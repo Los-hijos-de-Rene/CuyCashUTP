@@ -9,6 +9,10 @@ abstract final class CuyCashColors {
   static const onPrimary = Color(0xFFFFFFFF);
   static const secondary = Color(0xFFD98C2B);        // Ocre (fills/acentos)
   static const accentText = Color(0xFF9B5F12);       // Ocre oscuro (texto legible)
+  // Sobre Eucalipto: el ocre de marca no contrasta lo suficiente y el blanco
+  // apaga la jerarquía. Estos dos son los únicos permitidos sobre `primary*`.
+  static const onPrimaryContainer = Color(0xFF94AB9C); // Texto secundario
+  static const accentOnDark = Color(0xFFE9A64E);       // Cifra destacada
 
   // Superficies
   static const surface = Color(0xFFFBF9F4);                 // Stone (fondo app)

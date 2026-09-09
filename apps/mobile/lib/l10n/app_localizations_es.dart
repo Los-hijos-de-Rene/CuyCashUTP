@@ -722,4 +722,120 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cancelledRecoverySecondary => 'Intentar de nuevo';
+
+  @override
+  String get homeGreetingMorning => 'Buenos días,';
+
+  @override
+  String get homeGreetingAfternoon => 'Buenas tardes,';
+
+  @override
+  String get homeGreetingEvening => 'Buenas noches,';
+
+  @override
+  String get homeNotifications => 'Notificaciones';
+
+  @override
+  String get homeDemoBadge => 'Datos de demostración';
+
+  @override
+  String get homeBalanceLabel => 'Saldo disponible';
+
+  @override
+  String get homeBalanceHidden => 'S/ ••••••';
+
+  @override
+  String get homeShowBalance => 'Mostrar saldo';
+
+  @override
+  String get homeHideBalance => 'Ocultar saldo';
+
+  @override
+  String homeWalletMask(String last4) {
+    return 'Billetera •••• $last4';
+  }
+
+  @override
+  String get homeActionSend => 'Enviar';
+
+  @override
+  String get homeActionCharge => 'Cobrar';
+
+  @override
+  String get homeActionTopUp => 'Recargar';
+
+  @override
+  String get homeActionWithdraw => 'Retirar';
+
+  @override
+  String get homeBotName => 'WasiBot';
+
+  @override
+  String get homeBotInsight =>
+      'Este mes llevas S/ 340.00 en gastos, 12 % menos que en agosto.';
+
+  @override
+  String get homeMovementsTitle => 'Últimos movimientos';
+
+  @override
+  String get homeSeeAll => 'Ver todo';
+
+  @override
+  String get homeMovementCompleted => 'Completada';
+
+  @override
+  String get homeToday => 'Hoy';
+
+  @override
+  String get homeYesterday => 'Ayer';
+
+  @override
+  String homeDateTime(String day, String time) {
+    return '$day · $time';
+  }
+
+  @override
+  String get comingSoon => 'Disponible en una próxima versión.';
+
+  @override
+  String get profileHeadlineFallback => 'Tu cuenta';
+
+  @override
+  String get profileAliasLabel => 'Tu alias';
+
+  @override
+  String get profileDniLabel => 'DNI';
+
+  @override
+  String get profileVerified => 'Identidad verificada';
+
+  @override
+  String get profileSectionAccount => 'Cuenta';
+
+  @override
+  String get profileSectionSecurity => 'Seguridad';
+
+  @override
+  String get profileSectionSupport => 'Ayuda';
+
+  @override
+  String get profileItemPersonalData => 'Datos personales';
+
+  @override
+  String get profileItemAlias => 'Editar mi alias';
+
+  @override
+  String get profileItemChangePin => 'Cambiar mi PIN';
+
+  @override
+  String get profileItemBiometrics => 'Acceso biométrico';
+
+  @override
+  String get profileItemDevices => 'Dispositivos vinculados';
+
+  @override
+  String get profileItemHelp => 'Centro de ayuda';
+
+  @override
+  String get profileItemTerms => 'Términos y privacidad';
 }
