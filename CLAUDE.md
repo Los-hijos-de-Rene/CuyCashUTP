@@ -25,6 +25,8 @@ Config en `config.<env>.json`: `KYC_BASE_URL` (emulador Android: `10.0.2.2`;
 teléfono físico: IP del PC) y `KYC_API_KEY`. Sin ellas se cae al
 `MemoryKycRepository` en vez de romper el arranque.
 
+Contrato, riesgos y acuerdos con el servicio: `docs/adr/0001-integracion-kyc-facial.md`.
+
 **La `KYC_API_KEY` en la app es un atajo de demo.** Todo lo compilado en el
 binario es extraíble, así que esa clave debe tratarse como pública. El destino
 es un backend propio que la guarde y llame al servicio; hasta entonces, no
