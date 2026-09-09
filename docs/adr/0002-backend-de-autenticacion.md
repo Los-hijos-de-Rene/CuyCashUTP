@@ -1,6 +1,6 @@
 # ADR-0002 · Backend de autenticación
 
-- **Estado:** propuesto
+- **Estado:** aceptado
 - **Fecha:** 2026-09-09
 - **Ámbito:** servicio nuevo ↔ `apps/mobile` (features `auth`, `otp`, `lockout`)
 
@@ -64,7 +64,7 @@ estable que la app guarda en el almacén cifrado.
 ### `authenticate` devuelve uno de tres resultados
 
 ```json
-{"result": "session",  "access_token": "...", "refresh_token": "..."}
+{"result": "session", "session_token": "...", "expires_at": "..."}
 {"result": "device_verification_required", "pending_token": "...", "masked_email": "j•••••@gmail.com"}
 {"result": "rejected", "attempts_left": 2, "next_lockout_seconds": 900}
 ```
@@ -98,8 +98,14 @@ login_attempts (id, dni, device_id, ip, succeeded, created_at)
 otp_challenges (id, purpose, identifier, user_id NULL, code_hash,
                 expires_at, cooldown_until, attempts_left, resends_left,
                 consumed_at, cancelled_reason)
+kyc_verifications (id, user_id, verdict, provider_request_id,
+                document_valid, is_live, face_match, face_distance,
+                created_at)
 audit_log      (id, user_id NULL, event, metadata, ip, created_at)
 ```
+
+`kyc_verifications` guarda el veredicto y las distancias, NO las imágenes. El
+porqué está en la decisión 4.
 
 `lockouts.subject_type` es `dni`, `device` o `ip`: es lo que permite tener los
 dos contadores que hoy faltan sin duplicar tablas.
@@ -136,12 +142,29 @@ esperar doce dígitos. Preguntado a discreción **es un oráculo del PIN**: hay 
 exigir un `otp_ticket` válido y limitarlo a unos pocos intentos por ticket. Si
 no se puede garantizar, es preferible quitarlo y volver a validar al guardar.
 
-## Sesiones: tokens opacos, no JWT
+## Sesiones: un token opaco, sin refresh
 
 La revocación es un requisito duro (garantía 6), y un JWT autocontenido no se
-puede revocar sin una lista de bloqueo que anula su ventaja. Se recomiendan
-**tokens opacos guardados hasheados** en `sessions`, validados contra la base.
-El volumen de este proyecto lo permite de sobra.
+puede revocar sin una lista de bloqueo que anula su ventaja. Se usan **tokens
+opacos guardados hasheados** en `sessions` y validados contra la base. El
+volumen de este proyecto lo permite de sobra.
+
+**Un solo token de sesión, con expiración deslizante** (se renueva mientras haya
+actividad). NO se implementa el par access/refresh todavía.
+
+El par existe para un problema que aquí no se tiene: con un JWT no revocable, se
+compensa dándole vida corta al que viaja siempre. Con sesiones en base de datos,
+cualquier token se corta en el acto, así que la segunda credencial solo añade
+piezas.
+
+Y la rotación del refresh —entregar uno nuevo en cada uso e invalidar el
+anterior— trae una trampa cara: con red inestable, el cliente reintenta con el
+token viejo y el servidor lo lee como un robo, expulsando al usuario sin motivo.
+Evitarlo exige una ventana de gracia y pruebas que hoy no se justifican.
+
+Cuando haya razones para el par (varios clientes, tokens que no puedan
+consultar la base en cada petición), se añade con rotación y revocación de toda
+la familia al detectar reúso.
 
 ## Consecuencias para la app
 
@@ -157,12 +180,76 @@ Sí cambian tres cosas:
 - La app pasa a mandar `X-Device-Id`.
 - `supabase_flutter` sale de las dependencias.
 
-## Decisiones abiertas
+## Decisiones cerradas
 
-- **Proveedor de correo** para el OTP (hoy no se envía nada).
-- **Dónde vive el proxy del KYC**: dentro de este servicio o como uno tercero.
-  Lo simple es aquí.
-- **Rotación del refresh token** y su vida útil.
-- **Qué se guarda del KYC**: aprobado/rechazado basta. Guardar los frames sería
-  almacenar datos biométricos, con todo lo que eso implica; la recomendación es
-  no hacerlo.
+### 1 · El envío del OTP es una interfaz, no un proveedor
+
+El backend define un `OtpNotifier` y elige la implementación por configuración:
+
+| Implementación | Cuándo |
+|---|---|
+| `LogNotifier` — escribe el código en el log del servidor | desarrollo (por defecto) |
+| `SmtpNotifier` contra Mailtrap | pruebas de integración y QA |
+| `TelegramNotifier` | demostración en vivo |
+| `SmtpNotifier` contra el proveedor real | producción |
+
+Se elige **Mailtrap para desarrollo**: es un buzón SMTP falso, así que el correo
+llega de verdad, con su formato, sin dominio ni configuración de SPF/DKIM y sin
+riesgo de que caiga en spam. Mantiene la semántica de "correo" intacta, de modo
+que el copy de la app (`j•••••@gmail.com`) sigue siendo cierto y pasar a
+producción es cambiar credenciales, no cambiar canal.
+
+**Telegram queda solo para la demo**, y con dos advertencias escritas: cambia el
+factor de posesión (un chat no es el correo que el titular registró) y, si todos
+los códigos caen en un mismo chat, cualquier asistente ve el de cualquiera. El
+token del bot es un secreto del servidor, de la misma clase que la API key del
+KYC.
+
+### 2 · El proxy del KYC vive dentro de este servicio
+
+Bajo `/v1/kyc/*`. Es lo que cierra el R1 del ADR-0001: la app deja de conocer la
+`X-API-Key`.
+
+Se descarta un tercer servicio: aislaría el KYC del login, pero son tres cosas
+que desplegar y vigilar para un equipo de dos personas, y el beneficio no
+compensa hoy.
+
+**Requisito de implementación:** el cuerpo se reenvía como stream, sin cargarlo
+entero en memoria. `verify-full` sube ~50 fotogramas, de varios MB por petición;
+acumularlos en RAM tumba el servicio con pocos usuarios simultáneos.
+
+**Evolución prevista:** que el servicio de KYC acepte un token corto firmado por
+este backend en lugar de una clave compartida, y que la app suba los frames
+directo. Ahorra transportarlos dos veces. Es viable ahora que ambos servicios
+son del mismo equipo, pero exige tocar los dos repos, así que no entra en la
+primera versión.
+
+### 3 · Rotación del refresh token: no aplica
+
+Queda resuelta por la sección de sesiones: no hay refresh token que rotar.
+
+### 4 · Del KYC se guarda el veredicto, nunca las imágenes
+
+Se persisten veredicto, fecha, id de la petición al servicio y las distancias
+del match. Las distancias sirven para ajustar umbrales y entender rechazos, y no
+identifican a nadie por sí solas.
+
+**Los fotogramas del rostro no se guardan.** Un PIN robado se cambia; una cara,
+no. Si esa base se filtra, el daño es permanente e irreparable para esas
+personas. Además, en Perú los datos biométricos se consideran datos sensibles
+bajo la Ley de Protección de Datos Personales, con exigencias reforzadas de
+consentimiento y resguardo.
+
+La regla que se aplica: **el mejor dato biométrico es el que no se guardó**. Los
+fotogramas existen para responder una pregunta —¿es esta persona?—; respondida,
+sobran.
+
+**La foto del documento** solo se conserva si alguien del equipo puede
+justificar por escrito para qué, y entonces cifrada en reposo y con un plazo de
+borrado definido. En la primera versión no se guarda.
+
+## Qué queda por decidir
+
+Nada que bloquee escribir código. Al desplegar habrá que fijar el proveedor SMTP
+de producción y el plazo de vida de la sesión; ninguna de las dos cosas cambia
+el diseño.
