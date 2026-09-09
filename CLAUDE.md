@@ -7,6 +7,9 @@ home → perfil (cerrar sesión). Backend real y dashboard web se difieren.
 - `apps/mobile` — app Flutter (Bloc).
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).
 - `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
+- `services/auth` — backend de identidad (FastAPI + Postgres). Fuera del
+  workspace de Flutter: `flutter analyze` y `flutter test` lo ignoran. Vive en
+  este repo para poder cambiar app y contrato en un mismo commit.
 
 Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
 Flutter); UI + Bloc en `presentation/<x>/`.

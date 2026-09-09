@@ -56,8 +56,9 @@ class LivenessView extends StatelessWidget {
             Text(
               l10n.faceCaption,
               textAlign: TextAlign.center,
-              style: CuyCashTypography.labelSm
-                  .copyWith(color: CuyCashColors.immersiveMuted),
+              style: CuyCashTypography.labelSm.copyWith(
+                color: CuyCashColors.immersiveMuted,
+              ),
             ),
           ],
         );
@@ -82,10 +83,11 @@ class _Instruction extends StatelessWidget {
       LivenessPhase.done =>
         state.isApproved ? l10n.livenessApproved : l10n.livenessRejected,
       LivenessPhase.failed => livenessErrorText(l10n, state.error),
-      LivenessPhase.waiting || LivenessPhase.retry =>
-        livenessStepText(l10n, state.currentStep),
+      LivenessPhase.waiting ||
+      LivenessPhase.retry => livenessStepText(l10n, state.currentStep),
     };
-    final destacaError = state.phase == LivenessPhase.failed ||
+    final destacaError =
+        state.phase == LivenessPhase.failed ||
         (state.phase == LivenessPhase.done && !state.isApproved);
 
     return Column(
@@ -93,8 +95,9 @@ class _Instruction extends StatelessWidget {
         if (state.steps.isNotEmpty && state.phase != LivenessPhase.failed)
           Text(
             l10n.livenessProgress(state.completedSteps, state.steps.length),
-            style: CuyCashTypography.labelSm
-                .copyWith(color: CuyCashColors.immersiveMuted),
+            style: CuyCashTypography.labelSm.copyWith(
+              color: CuyCashColors.immersiveMuted,
+            ),
           ),
         const SizedBox(height: CuyCashSpacing.stackSm),
         Text(
@@ -113,8 +116,9 @@ class _Instruction extends StatelessWidget {
           Text(
             state.lastReason!,
             textAlign: TextAlign.center,
-            style: CuyCashTypography.labelSm
-                .copyWith(color: CuyCashColors.immersiveOcre),
+            style: CuyCashTypography.labelSm.copyWith(
+              color: CuyCashColors.immersiveOcre,
+            ),
           ),
         ],
       ],
@@ -136,19 +140,30 @@ class _Action extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return switch (state.phase) {
-      LivenessPhase.waiting => PrimaryButton(
-          label: l10n.livenessCapture, onPressed: onCapture),
-      LivenessPhase.retry =>
-        PrimaryButton(label: l10n.livenessRetry, onPressed: onCapture),
-      LivenessPhase.failed =>
-        PrimaryButton(label: l10n.livenessRestart, onPressed: onRestart),
-      LivenessPhase.done when !state.isApproved =>
-        PrimaryButton(label: l10n.livenessRestart, onPressed: onRestart),
-      // Capturando, evaluando o verificando: el botón no debe estar disponible,
-      // porque una segunda ráfaga llegaría fuera de orden.
-      _ => const PrimaryButton(label: '', loading: true),
-    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: switch (state.phase) {
+        LivenessPhase.waiting => PrimaryButton(
+          label: l10n.livenessCapture,
+          onPressed: onCapture,
+        ),
+        LivenessPhase.retry => PrimaryButton(
+          label: l10n.livenessRetry,
+          onPressed: onCapture,
+        ),
+        LivenessPhase.failed => PrimaryButton(
+          label: l10n.livenessRestart,
+          onPressed: onRestart,
+        ),
+        LivenessPhase.done when !state.isApproved => PrimaryButton(
+          label: l10n.livenessRestart,
+          onPressed: onRestart,
+        ),
+        // Capturando, evaluando o verificando: el botón no debe estar disponible,
+        // porque una segunda ráfaga llegaría fuera de orden.
+        _ => const PrimaryButton(label: '', loading: true),
+      },
+    );
   }
 }
 
@@ -169,6 +184,7 @@ String livenessErrorText(AppLocalizations l10n, LivenessError? error) =>
       LivenessError.camera => l10n.cameraUnavailable,
       LivenessError.serviceUnavailable => l10n.errorServiceUnavailable,
       LivenessError.rejected => l10n.livenessRejected,
-      LivenessError.unauthorized || LivenessError.generic || null =>
-        l10n.errorGeneric,
+      LivenessError.unauthorized ||
+      LivenessError.generic ||
+      null => l10n.errorGeneric,
     };

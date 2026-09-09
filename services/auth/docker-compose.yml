@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cuycash
+      POSTGRES_PASSWORD: cuycash
+      POSTGRES_DB: cuycash
+    ports:
+      - "5432:5432"
+    volumes:
+      - cuycash_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cuycash"]
+      interval: 5s
+      retries: 10
+
+  auth:
+    build: .
+    # 8001 para no chocar con el servicio de KYC, que usa el 8000.
+    ports:
+      - "0.0.0.0:8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cuycash:cuycash@db:5432/cuycash
+      OTP_NOTIFIER: ${OTP_NOTIFIER:-log}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      KYC_BASE_URL: ${KYC_BASE_URL:-}
+      KYC_API_KEY: ${KYC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  cuycash_pgdata:

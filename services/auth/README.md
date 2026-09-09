@@ -1,0 +1,79 @@
+# CuyCash · servicio de autenticación
+
+Backend de identidad de CuyCash: registro, ingreso con DNI + PIN, verificación
+de dispositivo, recuperación de PIN y proxy del servicio de KYC.
+
+Diseño y razones: [`docs/adr/0002-backend-de-autenticacion.md`](../../docs/adr/0002-backend-de-autenticacion.md).
+
+## Por qué existe
+
+Casi todo lo que hace este servicio estaba **simulado en la app**, y buena parte
+no puede vivir ahí ni en teoría: un contador de intentos que guarda el propio
+teléfono se borra reinstalando, y una API key compilada en el binario es
+extraíble.
+
+## Levantar
+
+```sh
+cp .env.example .env
+docker compose up --build          # API en :8001, Postgres en :5432
+```
+
+Documentación interactiva: `http://localhost:8001/docs`.
+
+Sin Docker:
+
+```sh
+python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/uvicorn app.main:app --reload --port 8001
+```
+
+Desde el emulador de Android la IP del host es `10.0.2.2`; desde un teléfono
+físico, la IP del PC en la red local.
+
+## Tests
+
+```sh
+.venv/bin/python -m pytest
+```
+
+Corren sobre **SQLite en memoria**: no hace falta Postgres levantado. El
+esquema es el mismo, y lo que se prueba es la lógica, no el motor.
+
+## El código del OTP durante el desarrollo
+
+Con `OTP_NOTIFIER=log` (por defecto) el código aparece en la consola:
+
+```
+WARNING [OTP:recovery] juan@correo.com -> 482167
+```
+
+Para demostrar en vivo, `OTP_NOTIFIER=telegram` con el token y el chat. **No es
+equivalente al correo**: cambia el factor de posesión y, si todos los códigos
+caen en el mismo chat, cualquier asistente ve el de cualquiera.
+
+## Decisiones que conviene no revertir sin leer el ADR
+
+- **Las respuestas tardan lo mismo** exista o no el DNI (`UNIFORM_RESPONSE_SECONDS`),
+  y se verifica un hash de descarte cuando no hay usuario. Sin eso, el tiempo
+  de respuesta revela qué DNI están registrados y reabre la enumeración de
+  cuentas que la app cerró con el mensaje genérico.
+- **Dos contadores de intentos.** Por DNI, consecutivo y escalonado
+  (15 min → 1 h → 24 h): protege una cuenta contra muchos teléfonos. Por
+  dispositivo, con **ventana deslizante**: protege contra barrer muchas cuentas
+  desde uno. La ventana no se reinicia con un login correcto, porque si no
+  bastaría con intercalar una entrada válida cada 9 intentos.
+- **Tokens opacos, no JWT.** Cambiar el PIN revoca todas las sesiones, y eso con
+  un JWT autocontenido exige una lista de bloqueo que anula su ventaja.
+- **`pin/check-current` exige un ticket de OTP y tiene tope.** Sin eso sería un
+  oráculo del PIN.
+- **Del KYC se guarda el veredicto, nunca las imágenes.** Un PIN robado se
+  cambia; una cara, no.
+
+## Pendiente
+
+- Migraciones con Alembic: hoy el esquema se crea al arrancar, lo que sirve
+  para la demo pero no para una base con datos.
+- Proveedor SMTP real (Mailtrap para QA).
+- El proxy del KYC devuelve la respuesta completa; para respuestas grandes
+  convendría también transmitirla en stream.
