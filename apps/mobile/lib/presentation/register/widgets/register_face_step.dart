@@ -25,8 +25,17 @@ import '../bloc/register_bloc.dart';
 ///
 /// Necesita el frente del DNI capturado en el paso 2: es la imagen contra la
 /// que se compara el rostro.
+///
+/// [active] importa más de lo que parece: el wizard usa `IndexedStack`, que
+/// monta TODOS los pasos a la vez. Sin esta condición, la cámara frontal se
+/// abriría en cuanto hay foto del DNI —con el usuario todavía en el paso 2— y
+/// chocaría con la trasera al fotografiar el reverso: dos controllers vivos a
+/// la vez fallan en la mayoría de teléfonos. Además la libera al retroceder.
 class RegisterFaceStep extends StatelessWidget {
-  const RegisterFaceStep({super.key});
+  const RegisterFaceStep({required this.active, super.key});
+
+  /// Si este paso es el que el usuario está viendo.
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +45,9 @@ class RegisterFaceStep extends StatelessWidget {
           previous.draft.dniFrontImage != current.draft.dniFrontImage ||
           previous.draft.faceStatus != current.draft.faceStatus,
       builder: (context, state) {
+        // Fuera de foco no se toca la cámara: el widget se va del árbol y el
+        // controller se libera.
+        if (!active) return const SizedBox.shrink();
         final documento = state.draft.dniFrontImage;
         if (documento == null) {
           // Sin el frente del DNI no hay contra qué comparar el rostro.

@@ -135,7 +135,7 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
                         children: [
                           const RegisterDataStep(),
                           const RegisterDocumentStep(),
-                          const RegisterFaceStep(),
+                          RegisterFaceStep(active: state.step == 2),
                           switch (state.securityStep) {
                             SecurityStep.crear => const RegisterPinStep(),
                             SecurityStep.confirmar =>
