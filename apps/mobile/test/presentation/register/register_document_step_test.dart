@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cuycash/core/env/app_flavor.dart';
@@ -86,4 +87,27 @@ void main() {
     expect(find.text('Capturado'), findsOneWidget);
     expect(find.text('1 de 2 capturas'), findsOneWidget);
   });
+
+  testWidgets('la foto tomada se muestra, no solo un sello de capturado',
+      (tester) async {
+    await pumpStep(tester);
+    expect(find.byType(Image), findsNothing);
+
+    bloc.add(RegisterEvent.captured(DocSide.front, _jpegMinimo));
+    await tester.pumpAndSettle();
+
+    // Verla es lo que permite repetirla antes de que el servicio la rechace
+    // por borrosa o mal encuadrada.
+    expect(find.byType(Image), findsOneWidget);
+    // El reverso sigue sin foto: cada lado muestra la suya.
+    expect(find.text('Tomar foto'), findsOneWidget);
+    expect(find.text('Volver a tomar'), findsOneWidget);
+  });
 }
+
+/// JPEG 1x1 real, para que `Image.memory` pueda decodificarlo.
+final _jpegMinimo = base64Decode(
+  '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a'
+  'HBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAA'
+  'AAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+);

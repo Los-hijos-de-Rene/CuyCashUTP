@@ -1,15 +1,27 @@
+import 'dart:typed_data';
+
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../bloc/register_bloc.dart';
 
-/// Card de captura de un lado del DNI. Simulado: onCapture marca capturado.
+/// Card de captura de un lado del DNI.
+///
+/// Muestra la foto tomada, no solo un sello de "capturado": el servicio rechaza
+/// documentos borrosos, cortados o con reflejos, y sin verla el usuario se
+/// entera del problema recién cuando lo rechazan. Verla le permite repetirla
+/// antes de gastar un intento.
+///
+/// Es su propio documento en sus propias manos, y el wizard corre con la
+/// ventana marcada como segura, así que no aparece en capturas ni en la vista
+/// de apps recientes.
 class DocumentCaptureCard extends StatelessWidget {
   const DocumentCaptureCard({
     required this.title,
     required this.hint,
     required this.status,
+    this.image,
     required this.onCapture,
     required this.onRetake,
     super.key,
@@ -18,6 +30,9 @@ class DocumentCaptureCard extends StatelessWidget {
   final String title;
   final String hint;
   final CaptureStatus status;
+
+  /// Bytes de la foto tomada, si ya hay una.
+  final Uint8List? image;
   final VoidCallback onCapture;
   final VoidCallback onRetake;
 
@@ -58,19 +73,40 @@ class DocumentCaptureCard extends StatelessWidget {
                   width: unreadable || captured ? 1.5 : 1,
                 ),
               ),
-              child: Center(
-                child: captured
-                    ? _Pill(
-                        label: l10n.captured,
-                        color: CuyCashColors.primaryContainer,
-                        icon: Icons.check_circle)
-                    : unreadable
-                        ? _Pill(
-                            label: l10n.notReadable,
-                            color: CuyCashColors.error,
-                            icon: Icons.error)
-                        : const Icon(Icons.photo_camera_outlined,
-                            size: 28, color: CuyCashColors.secondaryText),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (image case final image?)
+                    Image.memory(
+                      image,
+                      fit: BoxFit.cover,
+                      // La foto llega a resolución de cámara; decodificarla
+                      // entera para una miniatura desperdicia memoria.
+                      cacheWidth: 800,
+                    ),
+                  Align(
+                    alignment: image == null
+                        ? Alignment.center
+                        : Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(CuyCashSpacing.stackSm),
+                      child: captured
+                          ? _Pill(
+                              label: l10n.captured,
+                              color: CuyCashColors.primaryContainer,
+                              icon: Icons.check_circle)
+                          : unreadable
+                              ? _Pill(
+                                  label: l10n.notReadable,
+                                  color: CuyCashColors.error,
+                                  icon: Icons.error)
+                              : const Icon(Icons.photo_camera_outlined,
+                                  size: 28,
+                                  color: CuyCashColors.secondaryText),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
