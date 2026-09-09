@@ -1,4 +1,3 @@
-import 'package:camera/camera.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,13 +14,14 @@ import 'bloc/liveness_bloc.dart';
 /// dar por verificado a quien no hizo el gesto.
 class LivenessView extends StatelessWidget {
   const LivenessView({
-    required this.controller,
+    required this.preview,
     required this.onVerified,
     super.key,
   });
 
-  /// Cámara ya inicializada por quien monta esta vista.
-  final CameraController controller;
+  /// Lo que se ve arriba: el preview de la cámara real, o un relleno cuando el
+  /// flavor `mock` corre sin cámara.
+  final Widget preview;
 
   /// Se llama cuando el servicio aprueba la identidad.
   final VoidCallback onVerified;
@@ -40,7 +40,7 @@ class LivenessView extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(CuyCashRadii.card),
-                child: CameraPreview(controller),
+                child: preview,
               ),
             ),
             const SizedBox(height: CuyCashSpacing.stackLg),

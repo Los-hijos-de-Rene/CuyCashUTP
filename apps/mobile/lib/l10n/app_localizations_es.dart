@@ -326,6 +326,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cameraUnavailable => 'No pudimos usar la cámara de este teléfono.';
 
   @override
+  String get cameraSimulated => 'Cámara simulada (entorno de pruebas)';
+
+  @override
+  String get useSampleDocument => 'Usar una foto de ejemplo';
+
+  @override
   String get faceNeedsDocument =>
       'Primero captura el frente de tu DNI: comparamos tu rostro con esa foto.';
 

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cuycash/core/env/app_flavor.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
@@ -11,20 +12,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _wrap(RegisterBloc bloc) => BlocProvider.value(
-      value: bloc,
-      child: MaterialApp(
-        theme: CuyCashTheme.light(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: RegisterDocumentStep()),
+/// El flavor viaja por el árbol igual que en la app: la pantalla de captura lo
+/// consulta para decidir si ofrece la salida sin cámara.
+Widget _wrap(RegisterBloc bloc, {AppFlavor flavor = AppFlavor.local}) =>
+    RepositoryProvider<AppFlavor>.value(
+      value: flavor,
+      child: BlocProvider.value(
+        value: bloc,
+        child: MaterialApp(
+          theme: CuyCashTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: RegisterDocumentStep()),
+        ),
       ),
     );
 
 void main() {
   late RegisterBloc bloc;
 
-  Future<void> pumpStep(WidgetTester tester) async {
+  Future<void> pumpStep(
+    WidgetTester tester, {
+    AppFlavor flavor = AppFlavor.local,
+  }) async {
     // La card tiene AspectRatio 16/10 que al ancho de test (800px) genera ~500px
     // de alto; el botón queda fuera del frame por defecto (600px). Se amplía el
     // frame para que el primer SecondaryButton quede completamente visible.
@@ -35,12 +45,13 @@ void main() {
 
     bloc = RegisterBloc(AuthActions(MemoryAuthRepository()));
     addTearDown(bloc.close);
-    await tester.pumpWidget(_wrap(bloc));
+    await tester.pumpWidget(_wrap(bloc, flavor: flavor));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('"Tomar foto" abre la cámara, ya no simula la captura',
-      (tester) async {
+  testWidgets('"Tomar foto" abre la cámara, ya no simula la captura', (
+    tester,
+  ) async {
     await pumpStep(tester);
     expect(find.text('0 de 2 capturas'), findsOneWidget);
 
@@ -62,8 +73,12 @@ void main() {
 
     // Los bytes son los que después se mandan a verificar: si el evento solo
     // marcara el estado, el paso 3 se quedaría sin documento que comparar.
-    bloc.add(RegisterEvent.captured(
-        DocSide.front, Uint8List.fromList([0xFF, 0xD8, 0xFF])));
+    bloc.add(
+      RegisterEvent.captured(
+        DocSide.front,
+        Uint8List.fromList([0xFF, 0xD8, 0xFF]),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(bloc.state.draft.dniFront, CaptureStatus.captured);

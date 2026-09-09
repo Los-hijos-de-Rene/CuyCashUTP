@@ -103,6 +103,8 @@
   "faceHeadline": "Centra tu rostro en el círculo",
   "cameraDenied": "Necesitamos la cámara para verificar tu identidad. Actívala desde los ajustes del teléfono.",
   "cameraUnavailable": "No pudimos usar la cámara de este teléfono.",
+  "cameraSimulated": "Cámara simulada (entorno de pruebas)",
+  "useSampleDocument": "Usar una foto de ejemplo",
   "faceNeedsDocument": "Primero captura el frente de tu DNI: comparamos tu rostro con esa foto.",
   "livenessPreparing": "Preparando la verificación…",
   "livenessProgress": "Paso {done} de {total}",

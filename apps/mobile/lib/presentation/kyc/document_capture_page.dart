@@ -3,7 +3,10 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/env/app_flavor.dart';
+import '../../feature/kyc/infrastructure/simulated_frame_source.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/camera_scope.dart';
 
@@ -46,10 +49,44 @@ class DocumentCapturePage extends StatelessWidget {
             hint: l10n.documentSubtitle,
             label: l10n.takePhoto,
           ),
+          // En `mock` se puede seguir sin cámara: el paso 3 necesita SÍ o SÍ
+          // una imagen de documento contra la que comparar el rostro.
+          unavailableBuilder:
+              context.read<AppFlavor>() == AppFlavor.mock ? _sample : null,
         ),
       ),
     );
   }
+}
+
+/// Salida del flavor `mock`: entrega una imagen de relleno como si se hubiera
+/// fotografiado el documento.
+Widget _sample(BuildContext context, CameraStatus status) {
+  final l10n = AppLocalizations.of(context);
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.cameraSimulated,
+            textAlign: TextAlign.center,
+            style: CuyCashTypography.bodyLg
+                .copyWith(color: CuyCashColors.immersiveMuted),
+          ),
+          const SizedBox(height: CuyCashSpacing.stackLg),
+          PrimaryButton(
+            label: l10n.useSampleDocument,
+            onPressed: () async {
+              final bytes = await SimulatedFrameSource.sampleDocument();
+              if (context.mounted) Navigator.of(context).pop(bytes);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Capture extends StatefulWidget {

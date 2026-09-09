@@ -658,6 +658,18 @@ abstract class AppLocalizations {
   /// **'No pudimos usar la cámara de este teléfono.'**
   String get cameraUnavailable;
 
+  /// No description provided for @cameraSimulated.
+  ///
+  /// In es, this message translates to:
+  /// **'Cámara simulada (entorno de pruebas)'**
+  String get cameraSimulated;
+
+  /// No description provided for @useSampleDocument.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar una foto de ejemplo'**
+  String get useSampleDocument;
+
   /// No description provided for @faceNeedsDocument.
   ///
   /// In es, this message translates to:

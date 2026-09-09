@@ -20,6 +20,7 @@ class CameraScope extends StatefulWidget {
   const CameraScope({
     required this.lens,
     required this.builder,
+    this.unavailableBuilder,
     this.resolution = ResolutionPreset.medium,
     super.key,
   });
@@ -29,6 +30,11 @@ class CameraScope extends StatefulWidget {
   /// Recibe el controller ya inicializado.
   final Widget Function(BuildContext context, CameraController controller)
       builder;
+
+  /// Alternativa cuando no hay cámara utilizable. El flavor `mock` la usa para
+  /// no dejar el flujo encallado en el simulador; sin ella se muestra el aviso.
+  final Widget Function(BuildContext context, CameraStatus status)?
+      unavailableBuilder;
 
   final ResolutionPreset resolution;
 
@@ -101,8 +107,12 @@ class _CameraScopeState extends State<CameraScope> {
           child: CircularProgressIndicator(
               color: CuyCashColors.immersiveOnDark),
         ),
-      CameraStatus.denied => _Message(text: l10n.cameraDenied),
-      CameraStatus.unavailable => _Message(text: l10n.cameraUnavailable),
+      CameraStatus.denied => widget.unavailableBuilder
+              ?.call(context, CameraStatus.denied) ??
+          _Message(text: l10n.cameraDenied),
+      CameraStatus.unavailable => widget.unavailableBuilder
+              ?.call(context, CameraStatus.unavailable) ??
+          _Message(text: l10n.cameraUnavailable),
     };
   }
 }

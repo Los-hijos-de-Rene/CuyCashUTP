@@ -6,8 +6,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:camera/camera.dart';
 
+import '../../../core/env/app_flavor.dart';
 import '../../../feature/kyc/application/kyc_actions.dart';
+import '../../../feature/kyc/domain/frame_source.dart';
 import '../../../feature/kyc/infrastructure/camera_frame_source.dart';
+import '../../../feature/kyc/infrastructure/simulated_frame_source.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../kyc/bloc/liveness_bloc.dart';
 import '../../kyc/liveness_view.dart';
@@ -58,20 +61,80 @@ class _LivenessScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actions = context.read<KycActions>();
-    final registerBloc = context.read<RegisterBloc>();
+    final esMock = context.read<AppFlavor>() == AppFlavor.mock;
     return CameraScope(
       lens: CameraLensDirection.front,
-      builder: (context, controller) => BlocProvider(
-        create: (_) => LivenessBloc(
-          actions: actions,
-          frameSource: CameraFrameSource(controller),
-          documentImage: documento,
-        )..add(const LivenessEvent.started()),
-        child: LivenessView(
-          onVerified: () =>
-              registerBloc.add(const RegisterEvent.faceScanCompleted()),
-          controller: controller,
+      builder: (context, controller) => _Liveness(
+        documento: documento,
+        frameSource: CameraFrameSource(controller),
+        preview: CameraPreview(controller),
+      ),
+      // En `mock` el flujo sigue aunque no haya cámara (el simulador de iOS no
+      // tiene). Con backend real se muestra el aviso, como debe ser.
+      unavailableBuilder: esMock
+          ? (context, status) => _Liveness(
+                documento: documento,
+                frameSource: SimulatedFrameSource(),
+                preview: const _PreviewSimulado(),
+              )
+          : null,
+    );
+  }
+}
+
+/// Arma el bloc con la fuente de frames que corresponda.
+class _Liveness extends StatelessWidget {
+  const _Liveness({
+    required this.documento,
+    required this.frameSource,
+    required this.preview,
+  });
+
+  final Uint8List documento;
+  final FrameSource frameSource;
+  final Widget preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final registerBloc = context.read<RegisterBloc>();
+    return BlocProvider(
+      create: (_) => LivenessBloc(
+        actions: context.read<KycActions>(),
+        frameSource: frameSource,
+        documentImage: documento,
+      )..add(const LivenessEvent.started()),
+      child: LivenessView(
+        preview: preview,
+        onVerified: () =>
+            registerBloc.add(const RegisterEvent.faceScanCompleted()),
+      ),
+    );
+  }
+}
+
+/// Relleno del preview en `mock`: deja claro que no hay cámara detrás.
+class _PreviewSimulado extends StatelessWidget {
+  const _PreviewSimulado();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ColoredBox(
+      color: CuyCashColors.immersivePanel,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam_off_outlined,
+                size: 32, color: CuyCashColors.immersiveMuted),
+            const SizedBox(height: CuyCashSpacing.stackSm),
+            Text(
+              l10n.cameraSimulated,
+              textAlign: TextAlign.center,
+              style: CuyCashTypography.labelSm
+                  .copyWith(color: CuyCashColors.immersiveMuted),
+            ),
+          ],
         ),
       ),
     );
