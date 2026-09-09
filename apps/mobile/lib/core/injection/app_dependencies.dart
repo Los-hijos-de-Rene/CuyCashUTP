@@ -1,5 +1,6 @@
 import '../../feature/auth/domain/auth_repository.dart';
 import '../../feature/device/domain/device_store.dart';
+import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
 import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
@@ -14,6 +15,7 @@ class AppDependencies {
     required this.deviceStore,
     required this.otpRepository,
     required this.identifierLockoutStore,
+    required this.kycRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -25,5 +27,9 @@ class AppDependencies {
   /// Bloqueo por DNI (rate limit del login). Simula estado de servidor: una
   /// sola instancia para toda la app.
   final IdentifierLockoutStore identifierLockoutStore;
+
+  /// Verificación de identidad (documento + liveness). El análisis corre en el
+  /// servidor; el teléfono solo captura y pregunta.
+  final KycRepository kycRepository;
   final LockoutPolicy lockoutPolicy;
 }

@@ -2,6 +2,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../feature/auth/infrastructure/supabase_auth_repository.dart';
 import '../../../../feature/device/infrastructure/secure_device_store.dart';
+import '../../../../feature/kyc/domain/kyc_repository.dart';
+import '../../../../feature/kyc/infrastructure/http_kyc_repository.dart';
+import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../../feature/otp/infrastructure/memory_otp_repository.dart';
 import '../../../env/app_env.dart';
@@ -25,5 +28,16 @@ Future<AppDependencies> buildSharedSupabaseDependencies(
     otpRepository: MemoryOtpRepository(clock: DateTime.now),
     // TODO(backend): el rate limit por DNI lo aplicará el servidor.
     identifierLockoutStore: MemoryIdentifierLockoutStore(),
+    kycRepository: _kycRepository(),
   );
 }
+
+/// Sin `KYC_BASE_URL`/`KYC_API_KEY` se cae al Memory* en vez de romper el
+/// arranque: el resto de la app no depende del KYC para funcionar, y quedarse
+/// sin abrir por una variable de entorno ausente sería peor que simularlo.
+KycRepository _kycRepository() => AppEnv.hasKycConfig
+    ? HttpKycRepository.withConfig(
+        baseUrl: AppEnv.kycBaseUrl,
+        apiKey: AppEnv.kycApiKey,
+      )
+    : MemoryKycRepository(clock: DateTime.now);

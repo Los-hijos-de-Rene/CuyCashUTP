@@ -1,4 +1,6 @@
 {
   "SUPABASE_URL": "",
-  "SUPABASE_ANON_KEY": ""
+  "SUPABASE_ANON_KEY": "",
+  "KYC_BASE_URL": "http://10.0.2.2:8000",
+  "KYC_API_KEY": ""
 }
