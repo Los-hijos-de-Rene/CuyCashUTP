@@ -14,19 +14,28 @@ extraíble.
 
 ## Levantar
 
+### Sin instalar nada (SQLite)
+
+Es lo más rápido y alcanza para la demo y para que la app hable con el backend:
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
+  .venv/bin/uvicorn app.main:app --reload --port 8001
+```
+
+El esquema es el mismo que en Postgres; SQLAlchemy se encarga de la diferencia.
+Lo que cambia es la concurrencia y la durabilidad, que a esta escala no se
+notan. **Postgres es lo que va a producción.**
+
+### Con Postgres
+
 ```sh
 cp .env.example .env
 docker compose up --build          # API en :8001, Postgres en :5432
 ```
 
 Documentación interactiva: `http://localhost:8001/docs`.
-
-Sin Docker:
-
-```sh
-python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/uvicorn app.main:app --reload --port 8001
-```
 
 Desde el emulador de Android la IP del host es `10.0.2.2`; desde un teléfono
 físico, la IP del PC en la red local.

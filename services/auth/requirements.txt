@@ -8,6 +8,9 @@ SQLAlchemy==2.0.35
 # SQLAlchemy async lo necesita en tiempo de ejecución
 greenlet==3.1.1
 asyncpg==0.29.0
+# Alternativa sin infraestructura: permite levantar el servicio con
+# DATABASE_URL=sqlite+aiosqlite:///./cuycash.db, sin Postgres ni Docker.
+aiosqlite==0.20.0
 
 # Credenciales
 argon2-cffi==23.1.0

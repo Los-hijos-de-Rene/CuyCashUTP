@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     APP_NAME: str = "CuyCash Auth Service"
 
     # postgresql+asyncpg://usuario:clave@host:5432/base
+    #
+    # Acepta también sqlite+aiosqlite:///./cuycash.db, que levanta el servicio
+    # sin Postgres ni Docker. El esquema es el mismo; Postgres es lo que va a
+    # producción.
     DATABASE_URL: str = "postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash"
 
     # ---- Sesiones ----
