@@ -70,6 +70,7 @@ class MemoryAuthRepository implements AuthRepository {
   FutureResult<AuthFailure, bool> isCurrentPin({
     required String identifier,
     required String pin,
+    String? otpTicket,  // el backend real lo exige; aquí no hay a quién pedírselo
   }) async =>
       right(pin == _validPin);
 
@@ -77,6 +78,7 @@ class MemoryAuthRepository implements AuthRepository {
   FutureResult<AuthFailure, Unit> resetPin({
     required String identifier,
     required String newPin,
+    String? otpTicket,
   }) async {
     if (!_pinFormat.hasMatch(newPin)) {
       return left(const GlobalFailure.server(AuthFailure.weakPin()));
@@ -117,7 +119,8 @@ class MemoryAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> activate(AuthSession session) async => _emit(session);
+  Future<void> activate(AuthSession session, {String? otpTicket}) async =>
+      _emit(session);
 
   @override
   FutureResult<AuthFailure, Unit> signOut() async {

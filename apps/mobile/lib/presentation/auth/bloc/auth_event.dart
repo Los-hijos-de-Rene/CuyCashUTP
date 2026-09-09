@@ -9,7 +9,7 @@ sealed class AuthEvent with _$AuthEvent {
 
   /// El OTP de dispositivo nuevo se verificó: vincula el teléfono y activa la
   /// sesión que quedó pendiente.
-  const factory AuthEvent.deviceVerified(AuthSession session) =
+  const factory AuthEvent.deviceVerified(AuthSession session, String otpTicket) =
       AuthDeviceVerified;
 
   const factory AuthEvent.signedOut() = AuthSignedOut;

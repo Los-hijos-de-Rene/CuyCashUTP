@@ -61,7 +61,7 @@ class MemoryOtpRepository implements OtpRepository {
   }
 
   @override
-  FutureResult<OtpFailure, Unit> verify({
+  FutureResult<OtpFailure, String> verify({
     required String challengeId,
     required String code,
   }) async {
@@ -79,7 +79,7 @@ class MemoryOtpRepository implements OtpRepository {
     }
     if (code == validCode) {
       _challenges.remove(challengeId); // se consume
-      return right(unit);
+      return right('mem-ticket-${challenge.id}');
     }
     challenge.attemptsLeft -= 1;
     if (challenge.attemptsLeft <= 0) {

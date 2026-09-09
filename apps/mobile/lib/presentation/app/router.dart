@@ -21,6 +21,7 @@ import '../otp/otp_config.dart';
 import '../otp/otp_verification_screen.dart';
 import '../recover/bloc/reset_pin_bloc.dart';
 import '../recover/pin_actualizado_screen.dart';
+import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
 import '../profile/profile_screen.dart';
@@ -88,8 +89,10 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             )..add(const OtpEvent.started()),
             child: OtpVerificationScreen(
               config: OtpConfig.recuperacion(l10n, email),
-              onVerified: (_) =>
-                  context.go(AppRoutes.recuperarPin, extra: email),
+              onVerified: (ticket) => context.go(
+                AppRoutes.recuperarPin,
+                extra: RecoveryHandoff(email: email, otpTicket: ticket),
+              ),
               onChangeEmail: () => context.go(AppRoutes.recuperar),
             ),
           );
@@ -98,15 +101,19 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.recuperarPin,
         builder: (context, state) {
-          final email = state.extra as String?;
-          if (email == null) return const RecuperarAccesoScreen();
-          return BlocProvider(
-            create: (_) => ResetPinBloc(
-              actions: AuthActions(deps.authRepository),
-              identifier: email,
-            ),
-            child: const RestablecerPinScreen(),
-          );
+          // Sin ticket no se entra: el paso solo existe tras verificar el
+          // código.
+          if (state.extra case final RecoveryHandoff handoff) {
+            return BlocProvider(
+              create: (_) => ResetPinBloc(
+                actions: AuthActions(deps.authRepository),
+                identifier: handoff.email,
+                otpTicket: handoff.otpTicket,
+              ),
+              child: const RestablecerPinScreen(),
+            );
+          }
+          return const RecuperarAccesoScreen();
         },
       ),
       GoRoute(
@@ -134,8 +141,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             )..add(const OtpEvent.started()),
             child: OtpVerificationScreen(
               config: OtpConfig.dispositivo(l10n, session.identifier),
-              onVerified: (_) =>
-                  authBloc.add(AuthEvent.deviceVerified(session)),
+              onVerified: (ticket) =>
+                  authBloc.add(AuthEvent.deviceVerified(session, ticket)),
             ),
           );
         },

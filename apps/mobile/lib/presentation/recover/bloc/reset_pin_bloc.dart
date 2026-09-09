@@ -17,8 +17,11 @@ part 'reset_pin_state.dart';
 /// adelanta la validación — que el PIN elegido sea el actual se descubre al
 /// terminar el paso 1, no después de escribir doce dígitos.
 class ResetPinBloc extends Bloc<ResetPinEvent, ResetPinState> {
-  ResetPinBloc({required AuthActions actions, required String identifier})
-      : _actions = actions,
+  ResetPinBloc({
+    required AuthActions actions,
+    required String identifier,
+    this.otpTicket,
+  })  : _actions = actions,
         _identifier = identifier,
         super(const ResetPinState()) {
     on<ResetPinDigitPressed>(_onDigit);
@@ -28,6 +31,10 @@ class ResetPinBloc extends Bloc<ResetPinEvent, ResetPinState> {
 
   final AuthActions _actions;
   final String _identifier;
+
+  /// Prueba de haber verificado el código. El backend real la exige tanto para
+  /// consultar el PIN actual como para cambiarlo.
+  final String? otpTicket;
 
   Future<void> _onDigit(
     ResetPinDigitPressed event,
@@ -52,7 +59,8 @@ class ResetPinBloc extends Bloc<ResetPinEvent, ResetPinState> {
   Future<void> _finishFirstStep(String pin, Emitter<ResetPinState> emit) async {
     emit(state.copyWith(status: ResetPinStatus.submitting));
     final result =
-        await _actions.isCurrentPin(identifier: _identifier, pin: pin);
+        await _actions.isCurrentPin(
+            identifier: _identifier, pin: pin, otpTicket: otpTicket);
     emit(result.match(
       (failure) => state.copyWith(
         status: ResetPinStatus.idle,
@@ -89,7 +97,8 @@ class ResetPinBloc extends Bloc<ResetPinEvent, ResetPinState> {
 
     emit(state.copyWith(status: ResetPinStatus.submitting));
     final result =
-        await _actions.resetPin(identifier: _identifier, newPin: pin);
+        await _actions.resetPin(
+            identifier: _identifier, newPin: pin, otpTicket: otpTicket);
     emit(result.match(
       (failure) => state.copyWith(
         status: ResetPinStatus.idle,

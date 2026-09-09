@@ -8,6 +8,11 @@ abstract interface class DeviceStore {
   Future<void> saveUser(RememberedUser user);
   Future<void> clearUser();
 
+  /// Identificador estable de ESTE teléfono. Lo exige el backend para
+  /// reconocer dispositivos de confianza y para su contador de intentos.
+  /// Se genera una vez y sobrevive mientras la app siga instalada.
+  Future<String> deviceId();
+
   Future<LockoutState> readLockout();
   Future<void> saveLockout(LockoutState state);
   Future<void> clearLockout();

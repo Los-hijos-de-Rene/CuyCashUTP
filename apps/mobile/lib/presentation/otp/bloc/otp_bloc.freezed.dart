@@ -386,7 +386,9 @@ String toString() {
 /// @nodoc
 mixin _$OtpState {
 
- String? get challengeId; String get maskedEmail; String get code; OtpCodeState get codeState; OtpResendState get resendState; int get attemptsLeft; int get resendsLeft; Duration get cooldownRemaining; OtpStatus get status; bool get verified; bool get cancelled; OtpCancelReason? get cancelledReason; DateTime? get expiresAt; DateTime? get cooldownUntil;
+ String? get challengeId; String get maskedEmail; String get code; OtpCodeState get codeState; OtpResendState get resendState; int get attemptsLeft; int get resendsLeft; Duration get cooldownRemaining; OtpStatus get status; bool get verified;/// Prueba de haber pasado el código. Sin él, el backend no deja cambiar el
+/// PIN ni abrir sesión en un teléfono nuevo.
+ String? get otpTicket; bool get cancelled; OtpCancelReason? get cancelledReason; DateTime? get expiresAt; DateTime? get cooldownUntil;
 /// Create a copy of OtpState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -397,16 +399,16 @@ $OtpStateCopyWith<OtpState> get copyWith => _$OtpStateCopyWithImpl<OtpState>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OtpState&&(identical(other.challengeId, challengeId) || other.challengeId == challengeId)&&(identical(other.maskedEmail, maskedEmail) || other.maskedEmail == maskedEmail)&&(identical(other.code, code) || other.code == code)&&(identical(other.codeState, codeState) || other.codeState == codeState)&&(identical(other.resendState, resendState) || other.resendState == resendState)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.resendsLeft, resendsLeft) || other.resendsLeft == resendsLeft)&&(identical(other.cooldownRemaining, cooldownRemaining) || other.cooldownRemaining == cooldownRemaining)&&(identical(other.status, status) || other.status == status)&&(identical(other.verified, verified) || other.verified == verified)&&(identical(other.cancelled, cancelled) || other.cancelled == cancelled)&&(identical(other.cancelledReason, cancelledReason) || other.cancelledReason == cancelledReason)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.cooldownUntil, cooldownUntil) || other.cooldownUntil == cooldownUntil));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OtpState&&(identical(other.challengeId, challengeId) || other.challengeId == challengeId)&&(identical(other.maskedEmail, maskedEmail) || other.maskedEmail == maskedEmail)&&(identical(other.code, code) || other.code == code)&&(identical(other.codeState, codeState) || other.codeState == codeState)&&(identical(other.resendState, resendState) || other.resendState == resendState)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.resendsLeft, resendsLeft) || other.resendsLeft == resendsLeft)&&(identical(other.cooldownRemaining, cooldownRemaining) || other.cooldownRemaining == cooldownRemaining)&&(identical(other.status, status) || other.status == status)&&(identical(other.verified, verified) || other.verified == verified)&&(identical(other.otpTicket, otpTicket) || other.otpTicket == otpTicket)&&(identical(other.cancelled, cancelled) || other.cancelled == cancelled)&&(identical(other.cancelledReason, cancelledReason) || other.cancelledReason == cancelledReason)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.cooldownUntil, cooldownUntil) || other.cooldownUntil == cooldownUntil));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,challengeId,maskedEmail,code,codeState,resendState,attemptsLeft,resendsLeft,cooldownRemaining,status,verified,cancelled,cancelledReason,expiresAt,cooldownUntil);
+int get hashCode => Object.hash(runtimeType,challengeId,maskedEmail,code,codeState,resendState,attemptsLeft,resendsLeft,cooldownRemaining,status,verified,otpTicket,cancelled,cancelledReason,expiresAt,cooldownUntil);
 
 @override
 String toString() {
-  return 'OtpState(challengeId: $challengeId, maskedEmail: $maskedEmail, code: $code, codeState: $codeState, resendState: $resendState, attemptsLeft: $attemptsLeft, resendsLeft: $resendsLeft, cooldownRemaining: $cooldownRemaining, status: $status, verified: $verified, cancelled: $cancelled, cancelledReason: $cancelledReason, expiresAt: $expiresAt, cooldownUntil: $cooldownUntil)';
+  return 'OtpState(challengeId: $challengeId, maskedEmail: $maskedEmail, code: $code, codeState: $codeState, resendState: $resendState, attemptsLeft: $attemptsLeft, resendsLeft: $resendsLeft, cooldownRemaining: $cooldownRemaining, status: $status, verified: $verified, otpTicket: $otpTicket, cancelled: $cancelled, cancelledReason: $cancelledReason, expiresAt: $expiresAt, cooldownUntil: $cooldownUntil)';
 }
 
 
@@ -417,7 +419,7 @@ abstract mixin class $OtpStateCopyWith<$Res>  {
   factory $OtpStateCopyWith(OtpState value, $Res Function(OtpState) _then) = _$OtpStateCopyWithImpl;
 @useResult
 $Res call({
- String? challengeId, String maskedEmail, String code, OtpCodeState codeState, OtpResendState resendState, int attemptsLeft, int resendsLeft, Duration cooldownRemaining, OtpStatus status, bool verified, bool cancelled, OtpCancelReason? cancelledReason, DateTime? expiresAt, DateTime? cooldownUntil
+ String? challengeId, String maskedEmail, String code, OtpCodeState codeState, OtpResendState resendState, int attemptsLeft, int resendsLeft, Duration cooldownRemaining, OtpStatus status, bool verified, String? otpTicket, bool cancelled, OtpCancelReason? cancelledReason, DateTime? expiresAt, DateTime? cooldownUntil
 });
 
 
@@ -434,7 +436,7 @@ class _$OtpStateCopyWithImpl<$Res>
 
 /// Create a copy of OtpState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? challengeId = freezed,Object? maskedEmail = null,Object? code = null,Object? codeState = null,Object? resendState = null,Object? attemptsLeft = null,Object? resendsLeft = null,Object? cooldownRemaining = null,Object? status = null,Object? verified = null,Object? cancelled = null,Object? cancelledReason = freezed,Object? expiresAt = freezed,Object? cooldownUntil = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? challengeId = freezed,Object? maskedEmail = null,Object? code = null,Object? codeState = null,Object? resendState = null,Object? attemptsLeft = null,Object? resendsLeft = null,Object? cooldownRemaining = null,Object? status = null,Object? verified = null,Object? otpTicket = freezed,Object? cancelled = null,Object? cancelledReason = freezed,Object? expiresAt = freezed,Object? cooldownUntil = freezed,}) {
   return _then(_self.copyWith(
 challengeId: freezed == challengeId ? _self.challengeId : challengeId // ignore: cast_nullable_to_non_nullable
 as String?,maskedEmail: null == maskedEmail ? _self.maskedEmail : maskedEmail // ignore: cast_nullable_to_non_nullable
@@ -446,7 +448,8 @@ as int,resendsLeft: null == resendsLeft ? _self.resendsLeft : resendsLeft // ign
 as int,cooldownRemaining: null == cooldownRemaining ? _self.cooldownRemaining : cooldownRemaining // ignore: cast_nullable_to_non_nullable
 as Duration,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as OtpStatus,verified: null == verified ? _self.verified : verified // ignore: cast_nullable_to_non_nullable
-as bool,cancelled: null == cancelled ? _self.cancelled : cancelled // ignore: cast_nullable_to_non_nullable
+as bool,otpTicket: freezed == otpTicket ? _self.otpTicket : otpTicket // ignore: cast_nullable_to_non_nullable
+as String?,cancelled: null == cancelled ? _self.cancelled : cancelled // ignore: cast_nullable_to_non_nullable
 as bool,cancelledReason: freezed == cancelledReason ? _self.cancelledReason : cancelledReason // ignore: cast_nullable_to_non_nullable
 as OtpCancelReason?,expiresAt: freezed == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,cooldownUntil: freezed == cooldownUntil ? _self.cooldownUntil : cooldownUntil // ignore: cast_nullable_to_non_nullable
@@ -535,10 +538,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  String? otpTicket,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OtpState() when $default != null:
-return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
+return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.otpTicket,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
   return orElse();
 
 }
@@ -556,10 +559,10 @@ return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  String? otpTicket,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)  $default,) {final _that = this;
 switch (_that) {
 case _OtpState():
-return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
+return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.otpTicket,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -576,10 +579,10 @@ return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? challengeId,  String maskedEmail,  String code,  OtpCodeState codeState,  OtpResendState resendState,  int attemptsLeft,  int resendsLeft,  Duration cooldownRemaining,  OtpStatus status,  bool verified,  String? otpTicket,  bool cancelled,  OtpCancelReason? cancelledReason,  DateTime? expiresAt,  DateTime? cooldownUntil)?  $default,) {final _that = this;
 switch (_that) {
 case _OtpState() when $default != null:
-return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
+return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_that.resendState,_that.attemptsLeft,_that.resendsLeft,_that.cooldownRemaining,_that.status,_that.verified,_that.otpTicket,_that.cancelled,_that.cancelledReason,_that.expiresAt,_that.cooldownUntil);case _:
   return null;
 
 }
@@ -591,7 +594,7 @@ return $default(_that.challengeId,_that.maskedEmail,_that.code,_that.codeState,_
 
 
 class _OtpState extends OtpState {
-  const _OtpState({this.challengeId, this.maskedEmail = '', this.code = '', this.codeState = OtpCodeState.empty, this.resendState = OtpResendState.cooling, this.attemptsLeft = OtpPolicy.maxAttempts, this.resendsLeft = OtpPolicy.maxResends, this.cooldownRemaining = Duration.zero, this.status = OtpStatus.loading, this.verified = false, this.cancelled = false, this.cancelledReason, this.expiresAt, this.cooldownUntil}): super._();
+  const _OtpState({this.challengeId, this.maskedEmail = '', this.code = '', this.codeState = OtpCodeState.empty, this.resendState = OtpResendState.cooling, this.attemptsLeft = OtpPolicy.maxAttempts, this.resendsLeft = OtpPolicy.maxResends, this.cooldownRemaining = Duration.zero, this.status = OtpStatus.loading, this.verified = false, this.otpTicket, this.cancelled = false, this.cancelledReason, this.expiresAt, this.cooldownUntil}): super._();
   
 
 @override final  String? challengeId;
@@ -604,6 +607,9 @@ class _OtpState extends OtpState {
 @override@JsonKey() final  Duration cooldownRemaining;
 @override@JsonKey() final  OtpStatus status;
 @override@JsonKey() final  bool verified;
+/// Prueba de haber pasado el código. Sin él, el backend no deja cambiar el
+/// PIN ni abrir sesión en un teléfono nuevo.
+@override final  String? otpTicket;
 @override@JsonKey() final  bool cancelled;
 @override final  OtpCancelReason? cancelledReason;
 @override final  DateTime? expiresAt;
@@ -619,16 +625,16 @@ _$OtpStateCopyWith<_OtpState> get copyWith => __$OtpStateCopyWithImpl<_OtpState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtpState&&(identical(other.challengeId, challengeId) || other.challengeId == challengeId)&&(identical(other.maskedEmail, maskedEmail) || other.maskedEmail == maskedEmail)&&(identical(other.code, code) || other.code == code)&&(identical(other.codeState, codeState) || other.codeState == codeState)&&(identical(other.resendState, resendState) || other.resendState == resendState)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.resendsLeft, resendsLeft) || other.resendsLeft == resendsLeft)&&(identical(other.cooldownRemaining, cooldownRemaining) || other.cooldownRemaining == cooldownRemaining)&&(identical(other.status, status) || other.status == status)&&(identical(other.verified, verified) || other.verified == verified)&&(identical(other.cancelled, cancelled) || other.cancelled == cancelled)&&(identical(other.cancelledReason, cancelledReason) || other.cancelledReason == cancelledReason)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.cooldownUntil, cooldownUntil) || other.cooldownUntil == cooldownUntil));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtpState&&(identical(other.challengeId, challengeId) || other.challengeId == challengeId)&&(identical(other.maskedEmail, maskedEmail) || other.maskedEmail == maskedEmail)&&(identical(other.code, code) || other.code == code)&&(identical(other.codeState, codeState) || other.codeState == codeState)&&(identical(other.resendState, resendState) || other.resendState == resendState)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.resendsLeft, resendsLeft) || other.resendsLeft == resendsLeft)&&(identical(other.cooldownRemaining, cooldownRemaining) || other.cooldownRemaining == cooldownRemaining)&&(identical(other.status, status) || other.status == status)&&(identical(other.verified, verified) || other.verified == verified)&&(identical(other.otpTicket, otpTicket) || other.otpTicket == otpTicket)&&(identical(other.cancelled, cancelled) || other.cancelled == cancelled)&&(identical(other.cancelledReason, cancelledReason) || other.cancelledReason == cancelledReason)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.cooldownUntil, cooldownUntil) || other.cooldownUntil == cooldownUntil));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,challengeId,maskedEmail,code,codeState,resendState,attemptsLeft,resendsLeft,cooldownRemaining,status,verified,cancelled,cancelledReason,expiresAt,cooldownUntil);
+int get hashCode => Object.hash(runtimeType,challengeId,maskedEmail,code,codeState,resendState,attemptsLeft,resendsLeft,cooldownRemaining,status,verified,otpTicket,cancelled,cancelledReason,expiresAt,cooldownUntil);
 
 @override
 String toString() {
-  return 'OtpState(challengeId: $challengeId, maskedEmail: $maskedEmail, code: $code, codeState: $codeState, resendState: $resendState, attemptsLeft: $attemptsLeft, resendsLeft: $resendsLeft, cooldownRemaining: $cooldownRemaining, status: $status, verified: $verified, cancelled: $cancelled, cancelledReason: $cancelledReason, expiresAt: $expiresAt, cooldownUntil: $cooldownUntil)';
+  return 'OtpState(challengeId: $challengeId, maskedEmail: $maskedEmail, code: $code, codeState: $codeState, resendState: $resendState, attemptsLeft: $attemptsLeft, resendsLeft: $resendsLeft, cooldownRemaining: $cooldownRemaining, status: $status, verified: $verified, otpTicket: $otpTicket, cancelled: $cancelled, cancelledReason: $cancelledReason, expiresAt: $expiresAt, cooldownUntil: $cooldownUntil)';
 }
 
 
@@ -639,7 +645,7 @@ abstract mixin class _$OtpStateCopyWith<$Res> implements $OtpStateCopyWith<$Res>
   factory _$OtpStateCopyWith(_OtpState value, $Res Function(_OtpState) _then) = __$OtpStateCopyWithImpl;
 @override @useResult
 $Res call({
- String? challengeId, String maskedEmail, String code, OtpCodeState codeState, OtpResendState resendState, int attemptsLeft, int resendsLeft, Duration cooldownRemaining, OtpStatus status, bool verified, bool cancelled, OtpCancelReason? cancelledReason, DateTime? expiresAt, DateTime? cooldownUntil
+ String? challengeId, String maskedEmail, String code, OtpCodeState codeState, OtpResendState resendState, int attemptsLeft, int resendsLeft, Duration cooldownRemaining, OtpStatus status, bool verified, String? otpTicket, bool cancelled, OtpCancelReason? cancelledReason, DateTime? expiresAt, DateTime? cooldownUntil
 });
 
 
@@ -656,7 +662,7 @@ class __$OtpStateCopyWithImpl<$Res>
 
 /// Create a copy of OtpState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? challengeId = freezed,Object? maskedEmail = null,Object? code = null,Object? codeState = null,Object? resendState = null,Object? attemptsLeft = null,Object? resendsLeft = null,Object? cooldownRemaining = null,Object? status = null,Object? verified = null,Object? cancelled = null,Object? cancelledReason = freezed,Object? expiresAt = freezed,Object? cooldownUntil = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? challengeId = freezed,Object? maskedEmail = null,Object? code = null,Object? codeState = null,Object? resendState = null,Object? attemptsLeft = null,Object? resendsLeft = null,Object? cooldownRemaining = null,Object? status = null,Object? verified = null,Object? otpTicket = freezed,Object? cancelled = null,Object? cancelledReason = freezed,Object? expiresAt = freezed,Object? cooldownUntil = freezed,}) {
   return _then(_OtpState(
 challengeId: freezed == challengeId ? _self.challengeId : challengeId // ignore: cast_nullable_to_non_nullable
 as String?,maskedEmail: null == maskedEmail ? _self.maskedEmail : maskedEmail // ignore: cast_nullable_to_non_nullable
@@ -668,7 +674,8 @@ as int,resendsLeft: null == resendsLeft ? _self.resendsLeft : resendsLeft // ign
 as int,cooldownRemaining: null == cooldownRemaining ? _self.cooldownRemaining : cooldownRemaining // ignore: cast_nullable_to_non_nullable
 as Duration,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as OtpStatus,verified: null == verified ? _self.verified : verified // ignore: cast_nullable_to_non_nullable
-as bool,cancelled: null == cancelled ? _self.cancelled : cancelled // ignore: cast_nullable_to_non_nullable
+as bool,otpTicket: freezed == otpTicket ? _self.otpTicket : otpTicket // ignore: cast_nullable_to_non_nullable
+as String?,cancelled: null == cancelled ? _self.cancelled : cancelled // ignore: cast_nullable_to_non_nullable
 as bool,cancelledReason: freezed == cancelledReason ? _self.cancelledReason : cancelledReason // ignore: cast_nullable_to_non_nullable
 as OtpCancelReason?,expiresAt: freezed == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,cooldownUntil: freezed == cooldownUntil ? _self.cooldownUntil : cooldownUntil // ignore: cast_nullable_to_non_nullable

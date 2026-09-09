@@ -38,8 +38,12 @@ abstract interface class AuthRepository {
     required String pin,
   });
 
-  /// Activa (inicia sesión) una sesión ya creada por [register] y la emite.
-  Future<void> activate(AuthSession session);
+  /// Activa (inicia sesión) una sesión ya creada por [register] o validada por
+  /// [authenticate], y la emite.
+  ///
+  /// [otpTicket] es obligatorio contra el backend real cuando el teléfono aún
+  /// no es de confianza: es lo que acredita que se pasó por el código.
+  Future<void> activate(AuthSession session, {String? otpTicket});
 
   /// ¿El PIN propuesto es el que la cuenta ya tiene? Permite rechazarlo al
   /// terminar de escribirlo, sin esperar a que el usuario teclee doce dígitos.
@@ -49,6 +53,7 @@ abstract interface class AuthRepository {
   FutureResult<AuthFailure, bool> isCurrentPin({
     required String identifier,
     required String pin,
+    String? otpTicket,
   });
 
   /// Cambia el PIN tras una recuperación verificada por OTP. NO inicia sesión:
@@ -57,6 +62,7 @@ abstract interface class AuthRepository {
   FutureResult<AuthFailure, Unit> resetPin({
     required String identifier,
     required String newPin,
+    String? otpTicket,
   });
 
   FutureResult<AuthFailure, Unit> signOut();

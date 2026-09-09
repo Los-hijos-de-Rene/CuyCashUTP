@@ -1,7 +1,14 @@
+import 'dev_host.dart';
+
 /// Config de entorno leída de `--dart-define` (via `--dart-define-from-file`).
 abstract final class AppEnv {
-  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  /// Backend de identidad (`services/auth`). Si no se define, se asume que
+  /// corre en el PC anfitrión: sirve para emulador y simulador, NO para un
+  /// teléfono físico, donde hay que poner la IP de la red local.
+  static const _authBaseUrl = String.fromEnvironment('AUTH_BASE_URL');
+
+  static String get authBaseUrl =>
+      _authBaseUrl.isNotEmpty ? _authBaseUrl : DevHost.urlFor(8001);
 
   /// Microservicio de KYC facial. En emulador Android la IP del host es
   /// `10.0.2.2`; desde un teléfono físico, la IP del PC en la red local.
@@ -14,13 +21,4 @@ abstract final class AppEnv {
   static const kycApiKey = String.fromEnvironment('KYC_API_KEY');
 
   static bool get hasKycConfig => kycBaseUrl.isNotEmpty && kycApiKey.isNotEmpty;
-
-  /// Valida que existan credenciales (solo flavors local/production).
-  static void validate() {
-    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-      throw StateError(
-        'Faltan SUPABASE_URL / SUPABASE_ANON_KEY. Usá --dart-define-from-file.',
-      );
-    }
-  }
 }

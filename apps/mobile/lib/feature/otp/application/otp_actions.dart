@@ -1,6 +1,4 @@
 import 'package:core_kernel/core_kernel.dart';
-import 'package:fpdart/fpdart.dart';
-
 import '../domain/otp_challenge.dart';
 import '../domain/otp_failure.dart';
 import '../domain/otp_repository.dart';
@@ -15,7 +13,7 @@ class OtpActions {
   FutureResult<OtpFailure, OtpChallenge> request(String identifier) =>
       _repo.request(identifier);
 
-  FutureResult<OtpFailure, Unit> verify({
+  FutureResult<OtpFailure, String> verify({
     required String challengeId,
     required String code,
   }) =>

@@ -80,7 +80,11 @@ class OtpBloc extends Bloc<OtpEvent, OtpState> {
         await _actions.verify(challengeId: challengeId, code: state.code);
     emit(result.match(
       (failure) => _afterFailedVerify(failure),
-      (_) => state.copyWith(status: OtpStatus.idle, verified: true),
+      (ticket) => state.copyWith(
+        status: OtpStatus.idle,
+        verified: true,
+        otpTicket: ticket,
+      ),
     ));
   }
 

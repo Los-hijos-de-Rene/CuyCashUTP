@@ -15,9 +15,13 @@ Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
 Flutter); UI + Bloc en `presentation/<x>/`.
 
 ## Flavors
-- `mock` — repos en memoria (PIN válido `0000`). Default de desarrollo + tests.
-- `local` — Supabase local (`config.local.json`).
-- `production` — Supabase prod (`config.production.json`).
+- `mock` — repos en memoria (PIN válido `000000`). Default de desarrollo + tests.
+- `local` — contra `services/auth` (`config.local.json`).
+- `production` — contra el backend desplegado (`config.production.json`).
+
+`AUTH_BASE_URL` es opcional: sin él se asume el PC anfitrión (`10.0.2.2` en
+emulador Android, `127.0.0.1` en simulador iOS). En un teléfono FÍSICO hay que
+ponerlo con la IP del PC en la red local.
 
 ## KYC facial (servicio externo)
 `feature/kyc` consume el microservicio de documento + liveness guiado. El

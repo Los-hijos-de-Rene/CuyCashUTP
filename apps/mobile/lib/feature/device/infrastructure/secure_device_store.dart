@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -15,6 +16,7 @@ class SecureDeviceStore implements DeviceStore {
 
   static const _userKey = 'cuycash.remembered_user';
   static const _lockoutKey = 'cuycash.lockout';
+  static const _deviceIdKey = 'cuycash.device_id';
 
   @override
   Future<RememberedUser?> readUser() async {
@@ -35,6 +37,26 @@ class SecureDeviceStore implements DeviceStore {
 
   @override
   Future<void> clearUser() => _storage.delete(key: _userKey);
+
+  @override
+  Future<String> deviceId() async {
+    final existing = await _storage.read(key: _deviceIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+    // Se genera aquí y no en el servidor: identifica al teléfono, no a la
+    // cuenta, así que debe sobrevivir a un cambio de usuario.
+    final generated = _randomId();
+    await _storage.write(key: _deviceIdKey, value: generated);
+    return generated;
+  }
+
+  /// 128 bits al azar. No se usa un identificador del sistema (IMEI,
+  /// androidId) a propósito: son datos del aparato y su lectura está
+  /// restringida; para reconocer un teléfono basta con un valor propio.
+  static String _randomId() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
 
   @override
   Future<LockoutState> readLockout() async {

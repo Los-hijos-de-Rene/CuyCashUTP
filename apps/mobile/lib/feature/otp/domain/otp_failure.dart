@@ -13,6 +13,7 @@ sealed class OtpFailure {
       ChallengeCancelled;
   const factory OtpFailure.identifierLocked(DateTime until) = IdentifierLocked;
   const factory OtpFailure.challengeNotFound() = ChallengeNotFound;
+  const factory OtpFailure.serviceUnavailable() = OtpServiceUnavailable;
 }
 
 /// Código incorrecto; quedan [attemptsLeft] intentos.
@@ -37,6 +38,12 @@ final class ChallengeCancelled extends OtpFailure {
 final class IdentifierLocked extends OtpFailure {
   const IdentifierLocked(this.until);
   final DateTime until;
+}
+
+/// No se pudo contactar al backend, o respondió 5xx. Se distingue de los
+/// demás porque es reintentar, no rehacer el flujo.
+final class OtpServiceUnavailable extends OtpFailure {
+  const OtpServiceUnavailable();
 }
 
 /// No existe un reto con ese id (o ya se consumió).

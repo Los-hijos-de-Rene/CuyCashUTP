@@ -20,6 +20,13 @@ class MemoryDeviceStore implements DeviceStore {
   @override
   Future<void> clearUser() async => _user = null;
 
+  String? _deviceId;
+
+  @override
+  Future<String> deviceId() async => _deviceId ??= 'mem-device-${_seq++}';
+
+  static int _seq = 0;
+
   @override
   Future<LockoutState> readLockout() async => _lockout;
 

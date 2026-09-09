@@ -125,11 +125,11 @@ return sessionChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function( AuthSession session)?  deviceVerified,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier,  String pin)?  loginSubmitted,TResult Function( AuthSession session,  String otpTicket)?  deviceVerified,TResult Function()?  signedOut,TResult Function( AuthSession? session)?  sessionChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
 return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified() when deviceVerified != null:
-return deviceVerified(_that.session);case AuthSignedOut() when signedOut != null:
+return deviceVerified(_that.session,_that.otpTicket);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return orElse();
@@ -149,11 +149,11 @@ return sessionChanged(_that.session);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function( AuthSession session)  deviceVerified,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier,  String pin)  loginSubmitted,required TResult Function( AuthSession session,  String otpTicket)  deviceVerified,required TResult Function()  signedOut,required TResult Function( AuthSession? session)  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted():
 return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified():
-return deviceVerified(_that.session);case AuthSignedOut():
+return deviceVerified(_that.session,_that.otpTicket);case AuthSignedOut():
 return signedOut();case _AuthSessionChanged():
 return sessionChanged(_that.session);}
 }
@@ -169,11 +169,11 @@ return sessionChanged(_that.session);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function( AuthSession session)?  deviceVerified,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier,  String pin)?  loginSubmitted,TResult? Function( AuthSession session,  String otpTicket)?  deviceVerified,TResult? Function()?  signedOut,TResult? Function( AuthSession? session)?  sessionChanged,}) {final _that = this;
 switch (_that) {
 case AuthLoginSubmitted() when loginSubmitted != null:
 return loginSubmitted(_that.identifier,_that.pin);case AuthDeviceVerified() when deviceVerified != null:
-return deviceVerified(_that.session);case AuthSignedOut() when signedOut != null:
+return deviceVerified(_that.session,_that.otpTicket);case AuthSignedOut() when signedOut != null:
 return signedOut();case _AuthSessionChanged() when sessionChanged != null:
 return sessionChanged(_that.session);case _:
   return null;
@@ -255,10 +255,11 @@ as String,
 
 
 class AuthDeviceVerified implements AuthEvent {
-  const AuthDeviceVerified(this.session);
+  const AuthDeviceVerified(this.session, this.otpTicket);
   
 
  final  AuthSession session;
+ final  String otpTicket;
 
 /// Create a copy of AuthEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -270,16 +271,16 @@ $AuthDeviceVerifiedCopyWith<AuthDeviceVerified> get copyWith => _$AuthDeviceVeri
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthDeviceVerified&&(identical(other.session, session) || other.session == session));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthDeviceVerified&&(identical(other.session, session) || other.session == session)&&(identical(other.otpTicket, otpTicket) || other.otpTicket == otpTicket));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,session);
+int get hashCode => Object.hash(runtimeType,session,otpTicket);
 
 @override
 String toString() {
-  return 'AuthEvent.deviceVerified(session: $session)';
+  return 'AuthEvent.deviceVerified(session: $session, otpTicket: $otpTicket)';
 }
 
 
@@ -290,7 +291,7 @@ abstract mixin class $AuthDeviceVerifiedCopyWith<$Res> implements $AuthEventCopy
   factory $AuthDeviceVerifiedCopyWith(AuthDeviceVerified value, $Res Function(AuthDeviceVerified) _then) = _$AuthDeviceVerifiedCopyWithImpl;
 @useResult
 $Res call({
- AuthSession session
+ AuthSession session, String otpTicket
 });
 
 
@@ -307,10 +308,11 @@ class _$AuthDeviceVerifiedCopyWithImpl<$Res>
 
 /// Create a copy of AuthEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? session = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? session = null,Object? otpTicket = null,}) {
   return _then(AuthDeviceVerified(
 null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
-as AuthSession,
+as AuthSession,null == otpTicket ? _self.otpTicket : otpTicket // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

@@ -13,6 +13,8 @@ class DeviceActions {
   /// Escalonado de bloqueo vigente (el flavor `mock` inyecta uno corto).
   final LockoutPolicy policy;
 
+  Future<String> deviceId() => _store.deviceId();
+
   Future<RememberedUser?> readUser() => _store.readUser();
   Future<void> saveUser(RememberedUser user) => _store.saveUser(user);
   Future<void> clearUser() => _store.clearUser();

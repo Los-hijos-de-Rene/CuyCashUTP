@@ -30,11 +30,12 @@
       ]
     },
     {
-      "name": "CuyCash · mock (iOS/sim)",
+      "name": "CuyCash · mock (iOS/sim) release",
       "request": "launch",
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_mock.dart",
+      "flutterMode": "release",
       "args": ["--dart-define-from-file=config.mock.json"]
     },
     {

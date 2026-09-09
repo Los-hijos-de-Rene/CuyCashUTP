@@ -33,14 +33,18 @@ class AuthActions {
   FutureResult<AuthFailure, bool> isCurrentPin({
     required String identifier,
     required String pin,
+    String? otpTicket,
   }) =>
-      _repo.isCurrentPin(identifier: identifier, pin: pin);
+      _repo.isCurrentPin(
+          identifier: identifier, pin: pin, otpTicket: otpTicket);
 
   FutureResult<AuthFailure, Unit> resetPin({
     required String identifier,
     required String newPin,
+    String? otpTicket,
   }) =>
-      _repo.resetPin(identifier: identifier, newPin: newPin);
+      _repo.resetPin(
+          identifier: identifier, newPin: newPin, otpTicket: otpTicket);
 
   FutureResult<AuthFailure, AuthSession> register({
     required String dni,
@@ -53,7 +57,8 @@ class AuthActions {
         dni: dni, nombres: nombres, apellidos: apellidos, email: email, pin: pin);
 
   /// Activa (inicia sesión) una sesión creada por `register`.
-  Future<void> activate(AuthSession session) => _repo.activate(session);
+  Future<void> activate(AuthSession session, {String? otpTicket}) =>
+      _repo.activate(session, otpTicket: otpTicket);
 
   FutureResult<AuthFailure, Unit> signOut() => _repo.signOut();
 }

@@ -18,7 +18,6 @@ dependencies:
   fpdart: ^1.1.0
   freezed_annotation: ^3.0.0
   shared_preferences: ^2.3.0
-  supabase_flutter: ^2.8.0
   share_plus: ^11.0.0
   flutter_secure_storage: ^9.2.4
   core_kernel:

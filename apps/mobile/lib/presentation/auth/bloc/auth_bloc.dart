@@ -76,6 +76,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         identifier: event.identifier, pin: event.pin);
     await result.match(
       (failure) async {
+        // Con backend, el contador y el bloqueo los decide ÉL: llevarlos en el
+        // teléfono permitiría ponerlos a cero reinstalando la app.
+        if (failure case ServerFailure(failure: AccessLocked(:final until))) {
+          emit(AuthState.unauthenticated(lockedUntil: until));
+          return;
+        }
+        if (failure
+            case ServerFailure(failure: TooManyAttempts(:final attemptsLeft))) {
+          emit(AuthState.unauthenticated(
+            error: AuthError.invalidCredentials,
+            attemptsLeft: attemptsLeft,
+          ));
+          return;
+        }
+
         final error = _errorFor(failure);
         // Solo el PIN equivocado cuenta como intento fallido; un error de red
         // no debe acercar al usuario al bloqueo.
@@ -83,6 +98,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthState.unauthenticated(error: error));
           return;
         }
+        // Sin backend (flavor `mock`) el conteo sigue siendo local.
         final lockout =
             await _lockout.registerFailedAttempt(event.identifier, _now());
         emit(lockout.isLocked(_now())
@@ -119,7 +135,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       fullName: session.fullName ?? session.identifier,
       alias: session.alias ?? '@${session.identifier}',
     ));
-    await _actions.activate(session);
+    await _actions.activate(session, otpTicket: event.otpTicket);
   }
 
   @override
@@ -136,5 +152,6 @@ AuthError _errorFor(GlobalFailure<AuthFailure> failure) => switch (failure) {
       ServerFailure(failure: IdentifierTaken()) => AuthError.identifierTaken,
       ServerFailure(failure: WeakPin()) => AuthError.weakPin,
       ServerFailure(failure: PinUnchanged()) => AuthError.pinUnchanged,
+      ServerFailure(failure: TooManyAttempts()) => AuthError.invalidCredentials,
       _ => AuthError.generic,
     };

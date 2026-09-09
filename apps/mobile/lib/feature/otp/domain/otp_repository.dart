@@ -1,6 +1,4 @@
 import 'package:core_kernel/core_kernel.dart';
-import 'package:fpdart/fpdart.dart';
-
 import 'otp_challenge.dart';
 import 'otp_failure.dart';
 
@@ -14,8 +12,12 @@ abstract interface class OtpRepository {
   /// Falla solo si el identificador está bloqueado tras una cancelación.
   FutureResult<OtpFailure, OtpChallenge> request(String identifier);
 
-  /// Verifica el código. En éxito consume el reto (no se puede reutilizar).
-  FutureResult<OtpFailure, Unit> verify({
+  /// Verifica el código. En éxito consume el reto y devuelve un TICKET.
+  ///
+  /// El ticket es la prueba de haber pasado por el código: sin él, el backend
+  /// no deja cambiar el PIN ni abrir sesión en un teléfono nuevo. Que sea un
+  /// valor y no un booleano es lo que impide saltarse el paso.
+  FutureResult<OtpFailure, String> verify({
     required String challengeId,
     required String code,
   });

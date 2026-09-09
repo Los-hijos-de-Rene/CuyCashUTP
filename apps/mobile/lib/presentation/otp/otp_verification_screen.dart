@@ -22,7 +22,8 @@ class OtpVerificationScreen extends StatefulWidget {
 
   final OtpConfig config;
 
-  /// El código fue correcto y el reto quedó consumido.
+  /// El código fue correcto: entrega el TICKET, que es lo que el backend pide
+  /// después. Devolver el id del reto no serviría: ya está consumido.
   final ValueChanged<String> onVerified;
 
   /// Solo se ofrece si `config.allowChangeEmail`.
@@ -67,7 +68,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           context.go(config.cancelledRoute);
           return;
         }
-        if (state.verified) widget.onVerified(state.challengeId ?? '');
+        if (state.verified) widget.onVerified(state.otpTicket ?? '');
       },
       builder: (context, state) {
         final bloc = context.read<OtpBloc>();

@@ -27,6 +27,10 @@ abstract class OtpState with _$OtpState {
     @Default(Duration.zero) Duration cooldownRemaining,
     @Default(OtpStatus.loading) OtpStatus status,
     @Default(false) bool verified,
+
+    /// Prueba de haber pasado el código. Sin él, el backend no deja cambiar el
+    /// PIN ni abrir sesión en un teléfono nuevo.
+    String? otpTicket,
     @Default(false) bool cancelled,
     OtpCancelReason? cancelledReason,
     DateTime? expiresAt,
