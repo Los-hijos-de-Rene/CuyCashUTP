@@ -50,7 +50,6 @@ async def test_con_token_inventado_responde_401(sonda):
     assert r.json()["code"] == "UNAUTHENTICATED"
 
 
-@pytest.mark.xfail(reason="/v1/accounts llega en la Tarea 5")
 async def test_con_token_valido_devuelve_el_usuario(client, registrado):
     r = await client.get("/v1/accounts", headers=registrado.auth)
     assert r.status_code == 200

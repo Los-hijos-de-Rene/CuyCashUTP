@@ -21,7 +21,6 @@ REGISTRO = {
 }
 
 
-@pytest.mark.xfail(reason="/v1/accounts llega en la Tarea 5")
 @pytest.mark.asyncio
 async def test_registrarse_abre_una_cuenta_de_ahorros_en_cero(client, registrado, otp_codes):
     r = await client.get("/v1/accounts", headers=registrado.auth)
@@ -34,7 +33,6 @@ async def test_registrarse_abre_una_cuenta_de_ahorros_en_cero(client, registrado
     assert cuentas[0]["saldo_disponible"] == 0
 
 
-@pytest.mark.xfail(reason="/v1/accounts llega en la Tarea 5")
 @pytest.mark.asyncio
 async def test_el_numero_de_cuenta_no_contiene_el_dni(client, registrado, otp_codes):
     """Un número de cuenta no debe filtrar el documento de su titular."""
@@ -50,7 +48,7 @@ async def test_el_numero_de_cuenta_no_contiene_el_dni(client, registrado, otp_co
 async def test_registrarse_deja_una_cuenta_de_ahorros_en_la_base(
     client, registrado, otp_codes, db_de_client
 ):
-    """Lo mismo que los xfail de arriba, sin depender del router de la Tarea 5."""
+    """Lo mismo que las dos pruebas de arriba, pero contra la base y no contra el router."""
     filas = (
         await db_de_client.execute(
             select(Account).where(Account.user_id == registrado.user_id)
