@@ -20,6 +20,9 @@ class FakeAccountsBackend implements HttpClientAdapter {
   DioException? throwIt;
   final requests = <RequestOptions>[];
 
+  /// Tamaño de página del "servidor" (el real usa `limit`, 20 por defecto).
+  int pageSize = 20;
+
   static const _movimientos = <Map<String, Object?>>[
     {
       'transaction_id': 'tx-demo-1',
@@ -77,7 +80,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
     if (throwIt case final error?) throw error;
     final (status, body) = switch (forced) {
       final f? => (f.status, f.body),
-      _ => _route(options.uri.path),
+      _ => _route(options.uri.path, options.queryParameters),
     };
     return ResponseBody.fromString(
       body is String ? body : jsonEncode(body),
@@ -88,7 +91,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
     );
   }
 
-  (int, Object?) _route(String path) {
+  (int, Object?) _route(String path, Map<String, dynamic> query) {
     if (path == '/v1/accounts') {
       return (
         200,
@@ -108,7 +111,24 @@ class FakeAccountsBackend implements HttpClientAdapter {
       );
     }
     if (path == '/v1/accounts/acc-demo-1/movements') {
-      return (200, {'movimientos': _movimientos, 'next_cursor': null});
+      // Cursor opaco = índice del siguiente; ilegible empieza por el principio.
+      final crudo = query['cursor'] as String?;
+      final desde = switch (int.tryParse((crudo ?? '').replaceFirst('c', ''))) {
+        final int i when i >= 0 && i < _movimientos.length => i,
+        _ => 0,
+      };
+      final hasta = desde + pageSize;
+      final hayMas = hasta < _movimientos.length;
+      return (
+        200,
+        {
+          'movimientos': _movimientos.sublist(
+            desde,
+            hayMas ? hasta : _movimientos.length,
+          ),
+          'next_cursor': hayMas ? 'c$hasta' : null,
+        },
+      );
     }
     if (path.startsWith('/v1/accounts/')) return (404, _error404);
     final id = path.replaceFirst('/v1/movements/', '');
@@ -118,7 +138,10 @@ class FakeAccountsBackend implements HttpClientAdapter {
     }
     return (
       404,
-      {'code': 'MOVEMENT_NOT_FOUND', 'detail': 'No encontramos ese movimiento.'},
+      {
+        'code': 'MOVEMENT_NOT_FOUND',
+        'detail': 'No encontramos ese movimiento.',
+      },
     );
   }
 
@@ -143,7 +166,10 @@ void main() {
     repo = HttpAccountRepository(dio: dio);
   });
 
-  probarContratoDeCuentas('HttpAccountRepository', () => repo);
+  probarContratoDeCuentas('HttpAccountRepository', ({int? pageSize}) {
+    if (pageSize != null) backend.pageSize = pageSize;
+    return repo;
+  });
 
   AccountFailure falloDe(Result<AccountFailure, Object?> r) {
     final failure = r.getLeft().toNullable();
@@ -152,22 +178,26 @@ void main() {
   }
 
   group('HttpAccountRepository · mapeo de errores', () {
-    test('401 UNAUTHENTICATED es unauthenticated y avisa de sesión vencida',
-        () async {
-      backend.forced = (
-        status: 401,
-        body: {'code': 'UNAUTHENTICATED', 'detail': 'Sesión inválida.'},
-      );
+    test(
+      '401 UNAUTHENTICATED es unauthenticated y avisa de sesión vencida',
+      () async {
+        backend.forced = (
+          status: 401,
+          body: {'code': 'UNAUTHENTICATED', 'detail': 'Sesión inválida.'},
+        );
 
-      expect(falloDe(await repo.cuentas()), isA<Unauthenticated>());
-      expect(sesionVencida, 1);
-    });
+        expect(falloDe(await repo.cuentas()), isA<Unauthenticated>());
+        expect(sesionVencida, 1);
+      },
+    );
 
-    test('ACCOUNT_NOT_FOUND y MOVEMENT_NOT_FOUND son accountNotFound',
-        () async {
-      expect(falloDe(await repo.movimientos('x')), isA<AccountNotFound>());
-      expect(falloDe(await repo.movimiento('x')), isA<AccountNotFound>());
-    });
+    test(
+      'ACCOUNT_NOT_FOUND y MOVEMENT_NOT_FOUND son accountNotFound',
+      () async {
+        expect(falloDe(await repo.movimientos('x')), isA<AccountNotFound>());
+        expect(falloDe(await repo.movimiento('x')), isA<AccountNotFound>());
+      },
+    );
 
     test('un 404 con otro code es unexpected', () async {
       backend.forced = (status: 404, body: {'code': 'OTRA', 'detail': 'x'});
@@ -191,19 +221,24 @@ void main() {
           requestOptions: RequestOptions(path: '/v1/accounts'),
           type: tipo,
         );
-        expect(falloDe(await repo.cuentas()), isA<NetworkFailure>(),
-            reason: '$tipo');
+        expect(
+          falloDe(await repo.cuentas()),
+          isA<NetworkFailure>(),
+          reason: '$tipo',
+        );
       }
     });
 
-    test('un cuerpo que no es JSON de objeto no lanza: devuelve failure',
-        () async {
-      backend.forced = (status: 200, body: '<html>proxy</html>');
+    test(
+      'un cuerpo que no es JSON de objeto no lanza: devuelve failure',
+      () async {
+        backend.forced = (status: 200, body: '<html>proxy</html>');
 
-      final r = await repo.cuentas();
+        final r = await repo.cuentas();
 
-      expect(r.isLeft(), isTrue);
-    });
+        expect(r.isLeft(), isTrue);
+      },
+    );
 
     test('una dirección desconocida no se adivina: failure', () async {
       backend.forced = (
@@ -232,10 +267,9 @@ void main() {
 
   group('HttpAccountRepository · contrato JSON', () {
     test('las fechas con Z se leen como UTC, sin desplazarlas', () async {
-      final items = (await repo.movimientos('acc-demo-1'))
-          .getRight()
-          .toNullable()!
-          .items;
+      final items = (await repo.movimientos(
+        'acc-demo-1',
+      )).getRight().toNullable()!.items;
 
       expect(items.first.fecha, DateTime.utc(2026, 10, 5, 19, 30));
       expect(items.first.fecha.isUtc, isTrue);
@@ -246,8 +280,10 @@ void main() {
 
       expect(backend.requests.last.queryParameters['cursor'], 'abc=');
       await repo.movimientos('acc-demo-1');
-      expect(backend.requests.last.queryParameters.containsKey('cursor'),
-          isFalse);
+      expect(
+        backend.requests.last.queryParameters.containsKey('cursor'),
+        isFalse,
+      );
     });
 
     test('un tipo desconocido cae en otro; el motivo se conserva', () async {
