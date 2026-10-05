@@ -78,7 +78,36 @@ def otp_codes(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def db():
+async def db_engine():
+    """
+    Motor de la base de las pruebas del libro.
+
+    Por defecto SQLite en memoria. Con `TEST_POSTGRES_URL` (p. ej.
+    `postgresql+asyncpg://user:pass@localhost/cuycash_test`) apunta a un
+    Postgres real y desechable: se crea el esquema al empezar y se BORRA TODO
+    al terminar (`drop_all`), así que nunca debe apuntar a una base con datos.
+    """
+    url = os.environ.get("TEST_POSTGRES_URL")
+    if url:
+        engine = create_async_engine(url)
+    else:
+        engine = create_async_engine(
+            "sqlite+aiosqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    if url:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def db(db_engine):
     """
     Sesión directa contra el esquema, sin pasar por HTTP.
 
@@ -86,17 +115,9 @@ async def db():
     de la base (partida doble, montos positivos, idempotencia), y meterlas por
     un endpoint solo añadiría ruido entre la regla y su comprobación.
     """
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    maker = async_sessionmaker(engine, expire_on_commit=False)
+    maker = async_sessionmaker(db_engine, expire_on_commit=False)
     async with maker() as session:
         yield session
-    await engine.dispose()
 
 
 PIN_DE_PRUEBA = "839201"  # pasa `pin_is_valid`: ni repetido ni secuencia

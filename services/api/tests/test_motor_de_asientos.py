@@ -6,8 +6,12 @@ Si algún día otra ruta escribe asientos sin pasar por `ledger.post`, estas
 garantías dejan de valer y nadie se entera: por eso el motor es uno solo.
 """
 
+import asyncio
+import os
+
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.errors import ApiError
 from app.db.models import Account, LedgerEntry, Transaction, User
@@ -185,15 +189,209 @@ async def test_una_recarga_deja_la_caja_del_sistema_en_negativo(db):
     assert titular.saldo_disponible == 20_000
 
 
+@pytest.mark.asyncio
+async def test_una_cuenta_ya_cargada_se_relee_tras_el_bloqueo(db):
+    """
+    C1. La caja de `cuenta_de_sistema` y el origen que carga una ruta ya están
+    en el identity map cuando se llama a `post`. Si el SELECT FOR UPDATE no
+    repuebla, se valida y se calcula con un saldo viejo y el UPDATE pisa el
+    cambio concurrente (dinero creado de la nada).
+    """
+    origen = await _cuenta(db, "20000014", "19100000000014", 100_000)
+    destino = await _cuenta(db, "20000015", "19100000000015", 0)
+    await db.commit()
+    assert origen.saldo_disponible == 100_000  # cargada en el identity map
+
+    # Otra transacción deja la fila en 1.000 por detrás de la ORM.
+    await db.execute(
+        update(Account)
+        .where(Account.id == origen.id)
+        .values(saldo_disponible=1_000, saldo_contable=1_000)
+        .execution_options(synchronize_session=False)
+    )
+
+    with pytest.raises(ApiError) as exc:
+        await post(
+            db, tipo="transferencia",
+            asientos=[Asiento(origen.id, "debito", 50_000), Asiento(destino.id, "credito", 50_000)],
+            idempotency_key="k-008", fingerprint="f-008",
+        )
+    assert exc.value.detail["code"] == "INSUFFICIENT_FUNDS"
+    assert origen.saldo_disponible == 1_000
+
+
+@pytest.mark.asyncio
+async def test_la_misma_clave_y_huella_con_otro_destinatario_es_rechazada(db):
+    """I2. La huella del llamador es idéntica; los asientos, no."""
+    origen = await _cuenta(db, "20000016", "19100000000016", 50_000)
+    uno = await _cuenta(db, "20000017", "19100000000017", 0)
+    otro = await _cuenta(db, "20000018", "19100000000018", 0)
+
+    await post(
+        db, tipo="transferencia",
+        asientos=[Asiento(origen.id, "debito", 10_000), Asiento(uno.id, "credito", 10_000)],
+        idempotency_key="k-009", fingerprint="igual",
+    )
+    await db.commit()
+
+    with pytest.raises(ApiError) as exc:
+        await post(
+            db, tipo="transferencia",
+            asientos=[Asiento(origen.id, "debito", 10_000), Asiento(otro.id, "credito", 10_000)],
+            idempotency_key="k-009", fingerprint="igual",
+        )
+    assert exc.value.detail["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert otro.saldo_disponible == 0
+
+
+@pytest.mark.asyncio
+async def test_una_clave_duplicada_que_llega_al_insert_se_resuelve_como_reutilizacion(db, monkeypatch):
+    """
+    I1. Se simula la ventana: la consulta previa no ve la fila (otra sesión la
+    confirma justo después) y es la UNIQUE la que salta. No debe haber 500 ni
+    sesión envenenada.
+    """
+    from app.services import ledger
+
+    origen = await _cuenta(db, "20000019", "19100000000019", 50_000)
+    destino = await _cuenta(db, "20000020", "19100000000020", 0)
+    asientos = [Asiento(origen.id, "debito", 10_000), Asiento(destino.id, "credito", 10_000)]
+    primera, _ = await post(
+        db, tipo="transferencia", asientos=asientos,
+        idempotency_key="k-010", fingerprint="f-010",
+    )
+    await db.commit()
+
+    real = ledger._buscar_por_clave
+    llamadas = []
+
+    async def ciega_la_primera_vez(session, key):
+        llamadas.append(key)
+        return None if len(llamadas) == 1 else await real(session, key)
+
+    monkeypatch.setattr(ledger, "_buscar_por_clave", ciega_la_primera_vez)
+
+    segunda, reutilizada = await post(
+        db, tipo="transferencia", asientos=asientos,
+        idempotency_key="k-010", fingerprint="f-010",
+    )
+    assert reutilizada is True
+    assert segunda.id == primera.id
+    assert origen.saldo_disponible == 40_000
+    # La sesión sigue viva.
+    assert (await db.execute(select(func.count(LedgerEntry.id)))).scalar_one() == 2
+
+
+@pytest.mark.asyncio
+async def test_una_cuenta_bloqueada_no_se_debita(db):
+    """I3."""
+    origen = await _cuenta(db, "20000021", "19100000000021", 50_000)
+    destino = await _cuenta(db, "20000022", "19100000000022", 0)
+    origen.estado = "bloqueada"
+    await db.flush()
+    asientos = [Asiento(origen.id, "debito", 1_000), Asiento(destino.id, "credito", 1_000)]
+
+    with pytest.raises(ApiError) as exc:
+        await post(
+            db, tipo="transferencia", asientos=asientos,
+            idempotency_key="k-011", fingerprint="f-011",
+        )
+    assert exc.value.detail["code"] == "ACCOUNT_BLOCKED"
+    assert origen.saldo_disponible == 50_000
+
+    # Una reversión o ajuste sí puede tocarla, con la exención explícita.
+    _, reutilizada = await post(
+        db, tipo="ajuste", asientos=asientos,
+        idempotency_key="k-012", fingerprint="f-012",
+        permitir_cuentas_inactivas=True,
+    )
+    assert reutilizada is False
+    assert origen.saldo_disponible == 49_000
+
+
+@pytest.mark.asyncio
+async def test_entradas_invalidas_revientan_antes_de_tocar_la_base(db):
+    origen = await _cuenta(db, "20000023", "19100000000023", 50_000)
+    destino = await _cuenta(db, "20000024", "19100000000024", 0)
+    par = [Asiento(origen.id, "debito", 1_000), Asiento(destino.id, "credito", 1_000)]
+
+    with pytest.raises(AssertionError):  # tipo fuera del CHECK
+        await post(db, tipo="inventado", asientos=par, idempotency_key="k-013", fingerprint="f")
+    with pytest.raises(AssertionError):  # clave más larga que la columna
+        await post(db, tipo="transferencia", asientos=par, idempotency_key="k" * 65, fingerprint="f")
+    with pytest.raises(AssertionError):  # clave vacía
+        await post(db, tipo="transferencia", asientos=par, idempotency_key="", fingerprint="f")
+
+
 @pytest.mark.postgres
 @pytest.mark.asyncio
-async def test_dos_envios_cruzados_no_se_abrazan(db):
+async def test_dos_envios_cruzados_no_se_abrazan(db_engine):
     """
-    A→B y B→A a la vez. El bloqueo en orden de id es lo que lo evita.
+    A→B y B→A a la vez, muchas veces. El bloqueo en orden de id lo evita; sin
+    él Postgres aborta una de las dos con "deadlock detected".
 
-    NO CORRE EN LA SUITE POR DEFECTO: `tests/conftest.py` usa SQLite, cuyo
-    dialecto ignora `with_for_update()`. Aquí pasaría siempre, sin probar
-    nada. Exige Postgres y dos sesiones concurrentes; se ejecuta a mano con
-    `pytest -m postgres` contra una base real antes de desplegar.
+    SOLO CORRE CON `TEST_POSTGRES_URL`: SQLite ignora `with_for_update()` y aquí
+    pasaría siempre sin probar nada, así que sin la variable se salta.
+    Ejemplo: `TEST_POSTGRES_URL=postgresql+asyncpg://... pytest -m postgres`
+    contra una base DESECHABLE (el esquema se borra al terminar).
     """
-    pytest.skip("Requiere Postgres y dos sesiones concurrentes; ver docstring.")
+    if not os.environ.get("TEST_POSTGRES_URL"):
+        pytest.skip("Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.")
+
+    maker = async_sessionmaker(db_engine, expire_on_commit=False)
+    async with maker() as setup:
+        a = await _cuenta(setup, "30000001", "19100000000101", 1_000_000)
+        b = await _cuenta(setup, "30000002", "19100000000102", 1_000_000)
+        await setup.commit()
+        id_a, id_b = a.id, b.id
+
+    async def enviar(origen, destino, key):
+        async with maker() as s:
+            await post(
+                s, tipo="transferencia",
+                asientos=[Asiento(origen, "debito", 100), Asiento(destino, "credito", 100)],
+                idempotency_key=key, fingerprint=key,
+            )
+            await s.commit()
+
+    rondas = 25
+    tareas = []
+    for i in range(rondas):
+        tareas.append(enviar(id_a, id_b, f"ab-{i}"))
+        tareas.append(enviar(id_b, id_a, f"ba-{i}"))
+    await asyncio.wait_for(asyncio.gather(*tareas), timeout=60)
+
+    async with maker() as s:
+        saldos = (await s.execute(select(Account.saldo_disponible))).scalars().all()
+    assert sum(saldos) == 2_000_000  # nada se creó ni se perdió
+
+
+@pytest.mark.postgres
+@pytest.mark.asyncio
+async def test_la_misma_clave_en_paralelo_cobra_una_sola_vez(db_engine):
+    """HU16 bajo concurrencia real: dos peticiones simultáneas, un solo cobro."""
+    if not os.environ.get("TEST_POSTGRES_URL"):
+        pytest.skip("Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.")
+
+    maker = async_sessionmaker(db_engine, expire_on_commit=False)
+    async with maker() as setup:
+        a = await _cuenta(setup, "30000003", "19100000000103", 50_000)
+        b = await _cuenta(setup, "30000004", "19100000000104", 0)
+        await setup.commit()
+        id_a, id_b = a.id, b.id
+
+    async def enviar():
+        async with maker() as s:
+            _, reutilizada = await post(
+                s, tipo="transferencia",
+                asientos=[Asiento(id_a, "debito", 10_000), Asiento(id_b, "credito", 10_000)],
+                idempotency_key="par-1", fingerprint="par",
+            )
+            await s.commit()
+            return reutilizada
+
+    resultados = await asyncio.wait_for(asyncio.gather(enviar(), enviar()), timeout=30)
+    assert sorted(resultados) == [False, True]
+    async with maker() as s:
+        saldo = (await s.execute(select(Account.saldo_disponible).where(Account.id == id_a))).scalar_one()
+    assert saldo == 40_000
