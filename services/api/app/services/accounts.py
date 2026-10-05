@@ -19,6 +19,10 @@ async def generar_numero(session: AsyncSession) -> str:
     """14 dígitos: prefijo + 11 aleatorios, reintentando ante colisión."""
     for _ in range(20):
         candidato = PREFIJO + "".join(str(secrets.randbelow(10)) for _ in range(11))
+        # Reservado: es el número fijo de la caja del sistema. Si un titular lo
+        # recibiera, crear la caja chocaría después contra la UNIQUE sin pista.
+        if candidato == NUMERO_SISTEMA:
+            continue
         existe = (
             await session.execute(select(Account.id).where(Account.numero == candidato))
         ).scalar_one_or_none()
@@ -52,8 +56,10 @@ async def cuenta_de_sistema(session: AsyncSession) -> Account:
     Su saldo es, por construcción, el negativo del dinero inyectado en la
     demo. Es la única cuenta a la que el CHECK le permite estar en rojo.
     """
+    # Por `numero` y no por `tipo`: la UNIQUE de `numero` es lo que de verdad
+    # impide una segunda caja, y así la búsqueda es coherente con ella.
     caja = (
-        await session.execute(select(Account).where(Account.tipo == "sistema"))
+        await session.execute(select(Account).where(Account.numero == NUMERO_SISTEMA))
     ).scalar_one_or_none()
     if caja is not None:
         return caja
