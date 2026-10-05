@@ -11,8 +11,8 @@ intentos de bloqueo.
 UN SOLO PRESUPUESTO, NO UNO POR RUTA. Si cada ruta tuviera su contador, el
 atacante gastaría el cupo de una y seguiría con la otra: el límite efectivo
 sería la suma y bastaría con que una ruta quedara sin límite para anularlo.
-Todas las rutas llaman a `consumir_consulta_de_destinatario`, que descuenta del
-mismo cubo.
+Todas las rutas cubiertas llaman a `consumir_consulta_de_destinatario`, que
+descuenta del mismo cubo.
 
 POR QUÉ POR USUARIO Y NO POR SESIÓN. Cerrar sesión y volver a entrar crea una
 sesión nueva; un tope por sesión se reiniciaría con cada login y sería
@@ -22,7 +22,8 @@ QUÉ PROTEGE HOY. Un contador en un dict del proceso: frena a un titular que
 itera DNIs contra UN proceso en marcha (20 consultas cada 10 minutos, unas
 2 880 al día por cuenta).
 
-QUÉ NO PROTEGE (limitaciones conocidas, no implementadas a propósito):
+QUÉ NO PROTEGE (limitaciones conocidas, no implementadas a propósito).
+Las rutas que cubre son las tres de arriba, no "todas las del sistema":
 - Varias réplicas: cada proceso tiene su contador, así que el cupo real es
   CUPO x N réplicas y el balanceador reparte las peticiones entre ellos.
 - Reinicios y despliegues: el contador se pierde; Render reinicia el servicio
@@ -30,6 +31,16 @@ QUÉ NO PROTEGE (limitaciones conocidas, no implementadas a propósito):
 - Cuentas múltiples: el tope es por usuario; quien registre muchas cuentas
   tiene un cupo por cada una. Lo frena el costo del registro (KYC/OTP), no
   este módulo.
+- `POST /v1/auth/register` (Sprint 1) TAMBIÉN es un oráculo y NO descuenta de
+  este presupuesto: un DNI registrado responde 400 `IDENTIFIER_TAKEN` y uno
+  libre 201, sin sesión ni ticket de OTP. Cerrarlo es rediseñar identidad, no
+  parchear este módulo: gatear el alta con el ticket de OTP que ya existe, o
+  responder un 202 uniforme y avisar por correo. Ojo: aun con tope por IP, al
+  atacante le sigue saliendo gratis, porque cada DNI libre que sondea queda
+  creado como usuario.
+- `POST /v1/auth/authenticate` NO es oráculo y no debe "arreglarse": un DNI
+  inexistente recibe el mismo 401 (e incluso el mismo 423 de bloqueo) que uno
+  existente con PIN malo. Es una propiedad a conservar.
 Para que proteja de verdad hace falta un contador compartido y durable: una
 tabla en Postgres (fila por usuario y ventana, `INSERT ... ON CONFLICT DO
 UPDATE` y comprobar el total en la misma sentencia) o Redis (`INCR` + `EXPIRE`

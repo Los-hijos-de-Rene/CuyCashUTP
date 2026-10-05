@@ -16,12 +16,14 @@ from typing import Tuple
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
-from app.db.models import Account, Beneficiary, User
+from app.db.models import Account, Beneficiary, User, _uuid, utcnow
 from app.services.rate_limit import consumir_consulta_de_destinatario
 
 router = APIRouter(prefix="/v1", tags=["Directorio"])
@@ -134,22 +136,30 @@ async def guardar(
     consumir_consulta_de_destinatario(user.id)
     await _destinatario(session, payload.dni)
 
-    existente = (
-        await session.execute(
-            select(Beneficiary).where(
-                Beneficiary.user_id == user.id,
-                Beneficiary.beneficiario_dni == payload.dni,
-            )
+    # Upsert atómico en la base. Doble toque en "guardar": con "buscar y luego
+    # insertar", dos peticiones ven "no existe", ambas insertan y la UNIQUE
+    # (user_id, dni) tumba a la segunda con un 500. `ON CONFLICT DO UPDATE`
+    # no tiene ventana entre mirar y escribir. Se prefiere al SAVEPOINT +
+    # releer de `accounts.cuenta_de_sistema` porque no depende de que el
+    # ganador ya sea visible al releer (con un SAVEPOINT el perdedor puede no
+    # verlo aún y re-lanzar el error).
+    insertar = (
+        pg_insert if session.get_bind().dialect.name == "postgresql" else sqlite_insert
+    )
+    await session.execute(
+        insertar(Beneficiary)
+        .values(
+            id=_uuid(),
+            user_id=user.id,
+            beneficiario_dni=payload.dni,
+            apodo=payload.apodo,
+            created_at=utcnow(),
         )
-    ).scalar_one_or_none()
-    if existente is not None:
-        existente.apodo = payload.apodo
-    else:
-        session.add(
-            Beneficiary(
-                user_id=user.id, beneficiario_dni=payload.dni, apodo=payload.apodo
-            )
+        .on_conflict_do_update(
+            index_elements=["user_id", "beneficiario_dni"],
+            set_={"apodo": payload.apodo},
         )
+    )
     await session.commit()
     return {"ok": True}
 

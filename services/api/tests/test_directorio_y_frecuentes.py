@@ -356,3 +356,25 @@ async def test_eliminar_un_frecuente_y_no_poder_borrar_el_ajeno(
 async def test_los_frecuentes_exigen_sesion(client):
     assert (await client.get("/v1/beneficiaries")).status_code == 401
     assert (await client.delete("/v1/beneficiaries/x")).status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_guardar_el_mismo_frecuente_a_la_vez_no_da_500(
+    client, registrado, otro_registrado
+):
+    """El doble toque en "guardar" es normal en móvil: todas deben acabar en 201."""
+    import asyncio
+
+    respuestas = await asyncio.gather(
+        *[
+            client.post(
+                "/v1/beneficiaries",
+                json={"dni": otro_registrado.dni, "apodo": "Luis%d" % i},
+                headers=registrado.auth,
+            )
+            for i in range(6)
+        ]
+    )
+    assert [r.status_code for r in respuestas] == [201] * 6
+    lista = (await client.get("/v1/beneficiaries", headers=registrado.auth)).json()
+    assert len(lista["beneficiarios"]) == 1
