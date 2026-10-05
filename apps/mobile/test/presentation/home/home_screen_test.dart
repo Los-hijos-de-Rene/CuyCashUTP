@@ -193,7 +193,7 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Cobrar'));
     await tester.pump();
 
     expect(find.text('Disponible en una próxima versión.'), findsOneWidget);

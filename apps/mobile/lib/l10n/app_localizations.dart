@@ -1575,6 +1575,312 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Términos y privacidad'**
   String get profileItemTerms;
+
+  /// No description provided for @transferRecipientTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar dinero'**
+  String get transferRecipientTitle;
+
+  /// No description provided for @transferRecipientHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A quién le envías?'**
+  String get transferRecipientHeadline;
+
+  /// No description provided for @transferRecipientSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el DNI de la persona. Debe ser cliente de CuyCash.'**
+  String get transferRecipientSubtitle;
+
+  /// No description provided for @transferDniLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'DNI del destinatario'**
+  String get transferDniLabel;
+
+  /// No description provided for @transferSearching.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscando…'**
+  String get transferSearching;
+
+  /// No description provided for @transferRecipientAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta {masked}'**
+  String transferRecipientAccount(String masked);
+
+  /// No description provided for @transferContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get transferContinue;
+
+  /// No description provided for @transferAmountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto del envío'**
+  String get transferAmountTitle;
+
+  /// No description provided for @transferAmountHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto quieres enviar?'**
+  String get transferAmountHeadline;
+
+  /// No description provided for @transferAmountTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Para {name}'**
+  String transferAmountTo(String name);
+
+  /// No description provided for @transferAmountLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto en soles'**
+  String get transferAmountLabel;
+
+  /// No description provided for @transferAmountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'0.00'**
+  String get transferAmountHint;
+
+  /// No description provided for @transferAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible: {amount}'**
+  String transferAvailable(String amount);
+
+  /// No description provided for @transferMotivoLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo (opcional)'**
+  String get transferMotivoLabel;
+
+  /// No description provided for @transferMotivoHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Almuerzo'**
+  String get transferMotivoHint;
+
+  /// No description provided for @transferAmountNoThousands.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el monto sin comas de miles. Ejemplo: 1250.50'**
+  String get transferAmountNoThousands;
+
+  /// No description provided for @transferAmountInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un monto válido, como 50 o 50.50.'**
+  String get transferAmountInvalid;
+
+  /// No description provided for @transferAmountZero.
+  ///
+  /// In es, this message translates to:
+  /// **'El monto debe ser mayor a S/ 0.00.'**
+  String get transferAmountZero;
+
+  /// No description provided for @transferAmountOverMax.
+  ///
+  /// In es, this message translates to:
+  /// **'El máximo por envío es {max}.'**
+  String transferAmountOverMax(String max);
+
+  /// No description provided for @transferAmountOverBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Supera tu saldo disponible ({balance}).'**
+  String transferAmountOverBalance(String balance);
+
+  /// No description provided for @transferConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar envío'**
+  String get transferConfirmTitle;
+
+  /// No description provided for @transferConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get transferConfirmHeadline;
+
+  /// No description provided for @transferConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa los datos y escribe tu PIN de 6 dígitos.'**
+  String get transferConfirmSubtitle;
+
+  /// No description provided for @transferSummaryTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Para'**
+  String get transferSummaryTo;
+
+  /// No description provided for @transferSummaryAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get transferSummaryAmount;
+
+  /// No description provided for @transferSummaryFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get transferSummaryFrom;
+
+  /// No description provided for @transferSummaryMotivo.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo'**
+  String get transferSummaryMotivo;
+
+  /// No description provided for @transferConfirmCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar transferencia'**
+  String get transferConfirmCta;
+
+  /// No description provided for @transferRetryCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar envío'**
+  String get transferRetryCta;
+
+  /// No description provided for @transferErrorInsufficientFunds.
+  ///
+  /// In es, this message translates to:
+  /// **'No te alcanza el saldo disponible.'**
+  String get transferErrorInsufficientFunds;
+
+  /// No description provided for @transferErrorWrongPin.
+  ///
+  /// In es, this message translates to:
+  /// **'{n, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {n} intentos.}}'**
+  String transferErrorWrongPin(int n);
+
+  /// No description provided for @transferErrorLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta bloqueada hasta las {time}.'**
+  String transferErrorLocked(String time);
+
+  /// No description provided for @transferErrorRecipientNotFound.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontramos a nadie con ese DNI en CuyCash.'**
+  String get transferErrorRecipientNotFound;
+
+  /// No description provided for @transferErrorSelfTransfer.
+  ///
+  /// In es, this message translates to:
+  /// **'No puedes enviarte dinero a ti mismo.'**
+  String get transferErrorSelfTransfer;
+
+  /// No description provided for @transferErrorSearchRateLimited.
+  ///
+  /// In es, this message translates to:
+  /// **'Demasiadas búsquedas. Espera un momento.'**
+  String get transferErrorSearchRateLimited;
+
+  /// No description provided for @transferErrorSearchUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos buscar al destinatario. Inténtalo de nuevo.'**
+  String get transferErrorSearchUnexpected;
+
+  /// No description provided for @transferErrorSubmitRateLimited.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar tu envío. Espera un momento y reintenta: si ya salió, no se cobrará dos veces.'**
+  String get transferErrorSubmitRateLimited;
+
+  /// No description provided for @transferErrorAmountOutOfRange.
+  ///
+  /// In es, this message translates to:
+  /// **'El monto debe estar entre S/ 0.01 y {max}.'**
+  String transferErrorAmountOutOfRange(String max);
+
+  /// No description provided for @transferErrorAccountBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta no está activa, así que no puedes enviar dinero por ahora.'**
+  String get transferErrorAccountBlocked;
+
+  /// No description provided for @transferErrorKeyReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Este envío ya se había iniciado con otros datos. Vuelve al inicio y empieza uno nuevo.'**
+  String get transferErrorKeyReused;
+
+  /// No description provided for @transferErrorAccountNotFound.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontramos tu cuenta. Vuelve al inicio e inténtalo de nuevo.'**
+  String get transferErrorAccountNotFound;
+
+  /// No description provided for @transferErrorUnauthenticated.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu sesión venció. Ingresa de nuevo para continuar.'**
+  String get transferErrorUnauthenticated;
+
+  /// No description provided for @transferErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar tu envío. Pudo haberse realizado: reintenta y, si ya salió, no se cobrará dos veces.'**
+  String get transferErrorNetwork;
+
+  /// No description provided for @transferErrorUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo salió mal y no pudimos confirmar tu envío. Reintenta y, si ya salió, no se cobrará dos veces.'**
+  String get transferErrorUnexpected;
+
+  /// No description provided for @transferReceiptTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Constancia'**
+  String get transferReceiptTitle;
+
+  /// No description provided for @transferReceiptHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Envío realizado!'**
+  String get transferReceiptHeadline;
+
+  /// No description provided for @transferReceiptTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado a'**
+  String get transferReceiptTo;
+
+  /// No description provided for @transferReceiptDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get transferReceiptDate;
+
+  /// No description provided for @transferReceiptId.
+  ///
+  /// In es, this message translates to:
+  /// **'N.º de operación'**
+  String get transferReceiptId;
+
+  /// No description provided for @transferReceiptReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Este envío ya estaba registrado. No se cobró otra vez.'**
+  String get transferReceiptReused;
+
+  /// No description provided for @transferReceiptHome.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get transferReceiptHome;
 }
 
 class _AppLocalizationsDelegate

@@ -21,6 +21,7 @@ class CuyCashTextField extends StatelessWidget {
     this.helperText,
     this.autofocus = false,
     this.onSubmitted,
+    this.inputFormatters,
     super.key,
   });
 
@@ -39,6 +40,10 @@ class CuyCashTextField extends StatelessWidget {
   /// Acción de confirmación del teclado del sistema.
   final ValueChanged<String>? onSubmitted;
 
+  /// Filtros propios del campo, además del `digitsOnly` que ya aplica el
+  /// teclado numérico entero.
+  final List<TextInputFormatter>? inputFormatters;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -54,9 +59,11 @@ class CuyCashTextField extends StatelessWidget {
           onSubmitted: onSubmitted,
           autofocus: autofocus,
           maxLength: maxLength,
-          inputFormatters: keyboardType == TextInputType.number
-              ? [FilteringTextInputFormatter.digitsOnly]
-              : null,
+          inputFormatters: [
+            if (keyboardType == TextInputType.number)
+              FilteringTextInputFormatter.digitsOnly,
+            ...?inputFormatters,
+          ],
           decoration: InputDecoration(
             hintText: hint,
             errorText: errorText,

@@ -1,9 +1,11 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../feature/account/domain/account_failure.dart';
 import '../../l10n/app_localizations.dart';
+import '../app/app_routes.dart';
 import '../session/remembered_user_builder.dart';
 import 'bloc/account_bloc.dart';
 import 'home_action.dart';
@@ -23,8 +25,8 @@ void _showComingSoon(BuildContext context) {
 /// Inicio: saldo y movimientos del libro mayor (los trae [AccountBloc]).
 ///
 /// El resto de la pantalla (WasiBot, notificaciones) sigue siendo un gancho sin
-/// feature detrás. Enviar y recargar también avisan "próximamente" hasta que
-/// existan sus pantallas.
+/// feature detrás. Enviar abre el flujo de envío; cobrar, recargar y retirar avisan
+/// "próximamente" hasta que existan sus pantallas.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -34,6 +36,8 @@ class HomeScreen extends StatelessWidget {
   void _onAction(BuildContext context, HomeAction action) {
     switch (action) {
       case HomeAction.send:
+        final cuenta = context.read<AccountBloc>().state.cuenta;
+        if (cuenta != null) context.push(AppRoutes.enviar, extra: cuenta);
       case HomeAction.charge:
       case HomeAction.topUp:
       case HomeAction.withdraw:

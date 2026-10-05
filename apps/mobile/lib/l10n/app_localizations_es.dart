@@ -866,4 +866,196 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileItemTerms => 'Términos y privacidad';
+
+  @override
+  String get transferRecipientTitle => 'Enviar dinero';
+
+  @override
+  String get transferRecipientHeadline => '¿A quién le envías?';
+
+  @override
+  String get transferRecipientSubtitle =>
+      'Escribe el DNI de la persona. Debe ser cliente de CuyCash.';
+
+  @override
+  String get transferDniLabel => 'DNI del destinatario';
+
+  @override
+  String get transferSearching => 'Buscando…';
+
+  @override
+  String transferRecipientAccount(String masked) {
+    return 'Cuenta $masked';
+  }
+
+  @override
+  String get transferContinue => 'Continuar';
+
+  @override
+  String get transferAmountTitle => 'Monto del envío';
+
+  @override
+  String get transferAmountHeadline => '¿Cuánto quieres enviar?';
+
+  @override
+  String transferAmountTo(String name) {
+    return 'Para $name';
+  }
+
+  @override
+  String get transferAmountLabel => 'Monto en soles';
+
+  @override
+  String get transferAmountHint => '0.00';
+
+  @override
+  String transferAvailable(String amount) {
+    return 'Disponible: $amount';
+  }
+
+  @override
+  String get transferMotivoLabel => 'Motivo (opcional)';
+
+  @override
+  String get transferMotivoHint => 'Ej. Almuerzo';
+
+  @override
+  String get transferAmountNoThousands =>
+      'Escribe el monto sin comas de miles. Ejemplo: 1250.50';
+
+  @override
+  String get transferAmountInvalid =>
+      'Escribe un monto válido, como 50 o 50.50.';
+
+  @override
+  String get transferAmountZero => 'El monto debe ser mayor a S/ 0.00.';
+
+  @override
+  String transferAmountOverMax(String max) {
+    return 'El máximo por envío es $max.';
+  }
+
+  @override
+  String transferAmountOverBalance(String balance) {
+    return 'Supera tu saldo disponible ($balance).';
+  }
+
+  @override
+  String get transferConfirmTitle => 'Confirmar envío';
+
+  @override
+  String get transferConfirmHeadline => 'Confirma con tu PIN';
+
+  @override
+  String get transferConfirmSubtitle =>
+      'Revisa los datos y escribe tu PIN de 6 dígitos.';
+
+  @override
+  String get transferSummaryTo => 'Para';
+
+  @override
+  String get transferSummaryAmount => 'Monto';
+
+  @override
+  String get transferSummaryFrom => 'Desde';
+
+  @override
+  String get transferSummaryMotivo => 'Motivo';
+
+  @override
+  String get transferConfirmCta => 'Confirmar transferencia';
+
+  @override
+  String get transferRetryCta => 'Reintentar envío';
+
+  @override
+  String get transferErrorInsufficientFunds =>
+      'No te alcanza el saldo disponible.';
+
+  @override
+  String transferErrorWrongPin(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'PIN incorrecto. Te quedan $n intentos.',
+      one: 'PIN incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String transferErrorLocked(String time) {
+    return 'Cuenta bloqueada hasta las $time.';
+  }
+
+  @override
+  String get transferErrorRecipientNotFound =>
+      'No encontramos a nadie con ese DNI en CuyCash.';
+
+  @override
+  String get transferErrorSelfTransfer =>
+      'No puedes enviarte dinero a ti mismo.';
+
+  @override
+  String get transferErrorSearchRateLimited =>
+      'Demasiadas búsquedas. Espera un momento.';
+
+  @override
+  String get transferErrorSearchUnexpected =>
+      'No pudimos buscar al destinatario. Inténtalo de nuevo.';
+
+  @override
+  String get transferErrorSubmitRateLimited =>
+      'No pudimos confirmar tu envío. Espera un momento y reintenta: si ya salió, no se cobrará dos veces.';
+
+  @override
+  String transferErrorAmountOutOfRange(String max) {
+    return 'El monto debe estar entre S/ 0.01 y $max.';
+  }
+
+  @override
+  String get transferErrorAccountBlocked =>
+      'Tu cuenta no está activa, así que no puedes enviar dinero por ahora.';
+
+  @override
+  String get transferErrorKeyReused =>
+      'Este envío ya se había iniciado con otros datos. Vuelve al inicio y empieza uno nuevo.';
+
+  @override
+  String get transferErrorAccountNotFound =>
+      'No encontramos tu cuenta. Vuelve al inicio e inténtalo de nuevo.';
+
+  @override
+  String get transferErrorUnauthenticated =>
+      'Tu sesión venció. Ingresa de nuevo para continuar.';
+
+  @override
+  String get transferErrorNetwork =>
+      'No pudimos confirmar tu envío. Pudo haberse realizado: reintenta y, si ya salió, no se cobrará dos veces.';
+
+  @override
+  String get transferErrorUnexpected =>
+      'Algo salió mal y no pudimos confirmar tu envío. Reintenta y, si ya salió, no se cobrará dos veces.';
+
+  @override
+  String get transferReceiptTitle => 'Constancia';
+
+  @override
+  String get transferReceiptHeadline => '¡Envío realizado!';
+
+  @override
+  String get transferReceiptTo => 'Enviado a';
+
+  @override
+  String get transferReceiptDate => 'Fecha';
+
+  @override
+  String get transferReceiptId => 'N.º de operación';
+
+  @override
+  String get transferReceiptReused =>
+      'Este envío ya estaba registrado. No se cobró otra vez.';
+
+  @override
+  String get transferReceiptHome => 'Volver al inicio';
 }

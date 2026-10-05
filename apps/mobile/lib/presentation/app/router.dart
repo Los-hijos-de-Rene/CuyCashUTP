@@ -8,9 +8,11 @@ import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
 import '../../core/injection/modules/register_module.dart';
+import '../../core/injection/modules/transfer_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/auth/domain/auth_session.dart';
 import '../../feature/device/application/device_actions.dart';
+import '../../feature/account/domain/account.dart';
 import '../../feature/kyc/application/kyc_actions.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/bloc/auth_bloc.dart';
@@ -35,6 +37,11 @@ import '../register/bloc/register_bloc.dart';
 import '../register/register_flow_screen.dart';
 import '../shell/app_shell.dart';
 import '../splash/splash_screen.dart';
+import '../transfer/amount_screen.dart';
+import '../transfer/bloc/transfer_bloc.dart';
+import '../transfer/confirm_screen.dart';
+import '../transfer/receipt_screen.dart';
+import '../transfer/recipient_screen.dart';
 import '../auth/login_screen.dart';
 import 'app_redirect.dart';
 import 'app_routes.dart';
@@ -212,6 +219,42 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             },
           );
         },
+      ),
+      // Las cuatro pantallas del envío comparten UN TransferBloc: la clave de
+      // idempotencia, el monto y el destinatario viven mientras dure el flujo
+      // y mueren al salir de él.
+      ShellRoute(
+        builder: (context, state, child) => BlocProvider(
+          create: (_) => TransferBloc(TransferModule.create(deps)),
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: AppRoutes.enviar,
+            builder: (context, state) {
+              // La cuenta viaja como `extra` desde el inicio. Sin ella (deep
+              // link) no hay desde dónde enviar.
+              if (state.extra case final Account cuenta) {
+                return RecipientScreen(cuenta: cuenta);
+              }
+              return const SplashScreen();
+            },
+            redirect: (context, state) =>
+                state.extra is Account ? null : AppRoutes.home,
+          ),
+          GoRoute(
+            path: AppRoutes.enviarMonto,
+            builder: (context, state) => const AmountScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.enviarConfirmar,
+            builder: (context, state) => const ConfirmScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.enviarConstancia,
+            builder: (context, state) => const ReceiptScreen(),
+          ),
+        ],
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
