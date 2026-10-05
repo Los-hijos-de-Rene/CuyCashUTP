@@ -1,0 +1,770 @@
+<title>Seguridad en CuyCash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Deck 16:9 centrado; una diapositiva visible a la vez, con modo documento que las apila. Tokens "Eucalipto y Ocre" del design_system. */
+:root{
+  --bg:#FBF9F4; --panel:#FFFFFF; --panel-2:#F3F1EA;
+  --ink:#1B1C19; --muted:#6B7268; --line:#E3E0D8;
+  --brand:#152A1F; --brand-2:#2B4034;
+  --ocre:#9B5F12; --ocre-fill:#D98C2B;
+  --ok:#1B7A55; --warn:#9B5F12; --bad:#B31D3F;
+  --ok-bg:#E4F0EA; --warn-bg:#F7EDDC; --bad-bg:#FAE8EC;
+  --display:'Manrope',system-ui,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121712; --panel:#1D2620; --panel-2:#222C25;
+  --ink:#F3F1EA; --muted:#A3ACA0; --line:#2E3A32;
+  --brand:#DCE5DD; --brand-2:#94AB9C;
+  --ocre:#E9A64E; --ocre-fill:#E5A34E;
+  --ok:#6FCBA2; --warn:#E9A64E; --bad:#FF93A8;
+  --ok-bg:#162B23; --warn-bg:#2E2619; --bad-bg:#2E1A20;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#121712; --panel:#1D2620; --panel-2:#222C25;
+  --ink:#F3F1EA; --muted:#A3ACA0; --line:#2E3A32;
+  --brand:#DCE5DD; --brand-2:#94AB9C;
+  --ocre:#E9A64E; --ocre-fill:#E5A34E;
+  --ok:#6FCBA2; --warn:#E9A64E; --bad:#FF93A8;
+  --ok-bg:#162B23; --warn-bg:#2E2619; --bad-bg:#2E1A20;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ---------- marco ---------- */
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px;padding-block:14px 92px}
+.topbar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.mark{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:var(--brand);font-size:15px}
+.mark span{color:var(--ocre)}
+.topbar .sub{color:var(--muted);font-size:12.5px}
+.topbar .spacer{flex:1 1 auto}
+.ghost{font:inherit;font-size:12.5px;color:var(--muted);background:none;
+  border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
+.ghost:hover{color:var(--ink);border-color:var(--ocre)}
+.ghost:focus-visible{outline:2px solid var(--ocre);outline-offset:2px}
+
+/* ---------- diapositivas ---------- */
+.slide{display:none;min-height:clamp(380px,56vh,560px);animation:in .18s ease-out}
+.slide.on{display:block}
+body.doc .slide{display:block;border-bottom:1px solid var(--line);
+  padding-bottom:40px;margin-bottom:40px;min-height:0}
+body.doc .nav{display:none}
+@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide{animation:none}}
+
+.eyebrow{font-family:var(--display);font-weight:600;font-size:11.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--ocre);margin:0 0 4px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5.2vw,52px);
+  line-height:1.04;letter-spacing:-.03em;color:var(--brand);margin:0 0 14px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(22px,3.3vw,33px);
+  line-height:1.12;letter-spacing:-.022em;color:var(--brand);margin:0 0 6px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:-.01em;
+  color:var(--ink);margin:0 0 7px}
+.lede{color:var(--muted);font-size:15.5px;max-width:64ch;margin:0 0 22px}
+p{margin:0 0 10px;max-width:68ch}
+code,.mono{font-family:var(--mono);font-size:.88em;background:var(--panel-2);
+  border-radius:4px;padding:1px 5px}
+strong{font-weight:600}
+
+/* ---------- rejillas y tarjetas ---------- */
+.grid{display:grid;gap:14px;margin-top:4px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:16px 17px;min-width:0}
+.card p{font-size:13.5px;color:var(--muted);margin:0}
+.card p+p{margin-top:8px}
+.card.lift{border-left:3px solid var(--ocre-fill)}
+
+ul{margin:0;padding-left:0;list-style:none;display:grid;gap:9px}
+li{position:relative;padding-left:18px;font-size:14px;max-width:70ch}
+li::before{content:"";position:absolute;left:3px;top:.56em;width:5px;height:5px;
+  border-radius:50%;background:var(--ocre-fill)}
+li .k{font-weight:600;color:var(--ink)}
+ul.tight li{font-size:13.5px;color:var(--muted)}
+ul.tight li .k{color:var(--ink)}
+
+/* ---------- estados ---------- */
+.tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);
+  font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+  border-radius:999px;padding:3px 9px;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}
+.t-mid{background:var(--warn-bg);color:var(--warn)}
+.t-no{background:var(--bad-bg);color:var(--bad)}
+
+/* ---------- tablas ---------- */
+.scroll{overflow-x:auto;margin-top:6px}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+
+/* ---------- cifras ---------- */
+.stat{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.03em;
+  color:var(--brand);font-variant-numeric:tabular-nums;line-height:1}
+.stat small{font-size:14px;font-weight:600;color:var(--ocre)}
+.statlabel{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* ---------- flujo ---------- */
+.flow{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.step{flex:1 1 150px;min-width:0;background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;padding:13px 14px}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--ocre);display:block;margin-bottom:5px}
+.step b{display:block;font-family:var(--display);font-size:14px;margin-bottom:4px;color:var(--ink)}
+.step span.d{font-size:12.5px;color:var(--muted)}
+
+.note{border-left:3px solid var(--ocre-fill);background:var(--panel-2);
+  border-radius:0 9px 9px 0;padding:12px 15px;margin-top:16px}
+.note p{font-size:13.5px;color:var(--muted);margin:0}
+.note b{color:var(--ink)}
+
+/* ---------- navegación ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
+  border-top:1px solid var(--line);z-index:5;
+  padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.navin{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar{flex:1 1 auto;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ocre-fill);transition:width .2s}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{font:inherit;font-size:13px;font-weight:500;background:var(--brand);color:#fff;
+  border:none;border-radius:9px;padding:7px 14px;cursor:pointer}
+:root[data-theme="dark"] .btn,:root:not([data-theme="light"]) .btn{color:var(--bg)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn{color:#fff}}
+.btn[disabled]{opacity:.35;cursor:default}
+.btn:focus-visible,.ghost:focus-visible{outline:2px solid var(--ocre);outline-offset:2px}
+.hint{font-size:12px;color:var(--muted)}
+@media (max-width:620px){.hint{display:none}}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="mark">Cuy<span>Cash</span></span>
+    <span class="sub">Seguridad del Sprint 1 · Sesiones 13 y 14</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="mode" type="button">Ver como documento</button>
+  </div>
+
+  <!-- 1 -->
+  <section class="slide on">
+    <p class="eyebrow">Curso Integrador II · Banca Online Integral</p>
+    <h1>Seguridad en CuyCash</h1>
+    <p class="lede">Qué controles ya están escritos en el código, cuáles faltan y en qué orden
+      los vamos a cerrar. Todo lo que sigue sale del repositorio, no de un plan.</p>
+    <div class="grid g3">
+      <div class="card lift">
+        <div class="stat">11</div>
+        <p class="statlabel">controles ya implementados y con pruebas</p>
+      </div>
+      <div class="card lift">
+        <div class="stat">8</div>
+        <p class="statlabel">huecos abiertos que reconocemos y priorizamos</p>
+      </div>
+      <div class="card lift">
+        <div class="stat">59</div>
+        <p class="statlabel">pruebas automatizadas (23 backend + 36 archivos en la app)</p>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Alcance honesto:</b> el Sprint 1 es identidad y accesos. Cuentas, transferencias,
+      préstamos y QR todavía no existen, así que no hay controles que mostrar de esos módulos.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <p class="eyebrow">Punto de partida</p>
+    <h2>Qué estamos asegurando hoy</h2>
+    <p class="lede">La superficie de ataque actual es pequeña y concreta: una app Flutter y un
+      servicio de identidad en FastAPI + PostgreSQL.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Lo que existe y hay que proteger</h3>
+        <ul class="tight">
+          <li><span class="k">Registro con KYC facial</span> — documento y prueba de vida.</li>
+          <li><span class="k">Ingreso con DNI + PIN</span> de 6 dígitos.</li>
+          <li><span class="k">OTP por correo</span> para dispositivos nuevos y recuperación.</li>
+          <li><span class="k">Sesión y acceso rápido</span> con bloqueo por intentos.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Lo que aún no existe</h3>
+        <ul class="tight">
+          <li>Motor transaccional y libro mayor.</li>
+          <li>Transferencias, antifraude y pagos QR.</li>
+          <li>Préstamos y conciliación.</li>
+          <li>Dashboard web (de ahí que CORS y CSP estén diferidos).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Por qué importa:</b> un PIN de 6 dígitos tiene un millón de combinaciones. Todo el
+      diseño de abajo existe para que ese millón no se pueda recorrer.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <p class="eyebrow">Fundamentos</p>
+    <h2>La tríada CIA aplicada a CuyCash</h2>
+    <p class="lede">Los tres atributos de la sesión 13, traducidos a decisiones que están
+      en archivos concretos.</p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Confidencialidad</h3>
+        <ul class="tight">
+          <li>PIN con <span class="k">argon2id</span>; nunca en claro ni en logs.</li>
+          <li>Tokens guardados como <span class="k">hash SHA-256</span>.</li>
+          <li>En el teléfono, Keychain / EncryptedSharedPreferences.</li>
+        </ul>
+        <p style="margin-top:10px"><span class="tag t-ok">Cubierto</span></p>
+      </div>
+      <div class="card">
+        <h3>Integridad</h3>
+        <ul class="tight">
+          <li>Una fila por intento en <code>login_attempts</code>.</li>
+          <li>Del KYC se guarda el veredicto, no las imágenes.</li>
+          <li>Cambiar el PIN revoca todas las sesiones.</li>
+        </ul>
+        <p style="margin-top:10px"><span class="tag t-ok">Cubierto</span></p>
+      </div>
+      <div class="card">
+        <h3>Disponibilidad</h3>
+        <ul class="tight">
+          <li>Bloqueo acotado en el tiempo, nunca permanente.</li>
+          <li>Sin KYC configurado la app arranca igual.</li>
+          <li>Falta limitador por IP, WAF y copias de respaldo.</li>
+        </ul>
+        <p style="margin-top:10px"><span class="tag t-mid">Parcial</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <p class="eyebrow">Control de acceso</p>
+    <h2>Autenticación sí; autorización todavía no</h2>
+    <p class="lede">Son capas distintas y conviene no confundirlas al sustentar.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>AuthN — ¿quién eres?</h3>
+        <ul class="tight">
+          <li><span class="k">Algo que sabes:</span> el PIN de 6 dígitos.</li>
+          <li><span class="k">Algo que tienes:</span> el teléfono vinculado (<code>X-Device-Id</code>).</li>
+          <li><span class="k">Algo que recibes:</span> OTP al correo si el teléfono es nuevo.</li>
+          <li><span class="k">Algo que eres:</span> KYC facial al registrarse.</li>
+        </ul>
+        <p style="margin-top:10px"><span class="tag t-ok">Implementado</span></p>
+      </div>
+      <div class="card">
+        <h3>AuthZ — ¿qué puedes hacer?</h3>
+        <ul class="tight">
+          <li>Hoy hay <span class="k">un solo rol</span>: el titular sobre su propia cuenta.</li>
+          <li>No hay RBAC ni ABAC porque no hay operador, analista ni administrador.</li>
+          <li>Llegará con el motor transaccional: quién aprueba, quién consulta, quién concilia.</li>
+        </ul>
+        <p style="margin-top:10px"><span class="tag t-mid">Pendiente por diseño</span></p>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Decir esto en la sustentación es más fuerte que inventar roles.</b> Un RBAC de adorno,
+      sin endpoints que proteger, no es un control: es código muerto.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <p class="eyebrow">Flujo</p>
+    <h2>Qué pasa cuando alguien pulsa “Ingresar”</h2>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><b>Bloqueos primero</b>
+        <span class="d">Antes de mirar el PIN se consulta si el DNI o el teléfono están bloqueados.</span></div>
+      <div class="step"><span class="n">02</span><b>Verificación del PIN</b>
+        <span class="d">argon2id contra el hash. Si el DNI no existe, se hashea igual para gastar el mismo tiempo.</span></div>
+      <div class="step"><span class="n">03</span><b>¿Teléfono conocido?</b>
+        <span class="d">Si está vinculado, se abre sesión. Si no, solo se devuelve un vale temporal.</span></div>
+      <div class="step"><span class="n">04</span><b>OTP de dispositivo</b>
+        <span class="d">Código al correo enmascarado; recién al validarlo se vincula el teléfono.</span></div>
+      <div class="step"><span class="n">05</span><b>Token de sesión</b>
+        <span class="d">Aleatorio de 256 bits. En la base se guarda solo su hash.</span></div>
+    </div>
+    <div class="note">
+      <p><b>El punto de diseño:</b> acertar el PIN no basta. Un PIN robado desde otro teléfono se
+      queda en el paso 3, y el dueño recibe un correo que delata el intento.</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <p class="eyebrow">Criptografía</p>
+    <h2>Cifrar y hashear no son lo mismo</h2>
+    <p class="lede">La sesión 13 lo marca como error crítico. Aquí está dónde usamos cada uno y por qué.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Dato</th><th>Tratamiento</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>PIN del usuario</td><td class="num">argon2id</td>
+            <td>Es adivinable: solo un millón de combinaciones. El costo del hash es lo único que separa un volcado de la base de tener todos los PIN.</td></tr>
+          <tr><td>Token de sesión</td><td class="num">SHA-256</td>
+            <td>Son 256 bits aleatorios: no hay diccionario que probar, así que no hace falta un hash caro.</td></tr>
+          <tr><td>Código OTP</td><td class="num">SHA-256</td>
+            <td>Es una credencial de un solo uso, no un dato: se guarda hasheado igual que el PIN.</td></tr>
+          <tr><td>Tráfico en red</td><td class="num">TLS (pendiente)</td>
+            <td>Cifrado simétrico negociado con asimétrico. Hoy el servicio corre en HTTP de desarrollo.</td></tr>
+          <tr><td>Imágenes del KYC</td><td class="num">no se guardan</td>
+            <td>El dato que no existe no se filtra. Solo persistimos veredicto y distancias.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p><b>Nunca MD5 ni SHA-1 para contraseñas.</b> Y tampoco SHA-256 a secas: para el PIN usamos
+      argon2id precisamente porque es lento a propósito.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <p class="eyebrow">Control de acceso</p>
+    <h2>Token opaco en base, no JWT</h2>
+    <p class="lede">Decisión documentada en el ADR-0002. Fuimos contra la opción “de manual”
+      y conviene poder defenderlo.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>JWT autocontenido</h3>
+        <ul class="tight">
+          <li>No requiere consultar la base en cada petición.</li>
+          <li><span class="k">No se puede revocar</span> sin una lista de bloqueo que anula su ventaja.</li>
+          <li>Obliga a inventar el par access + refresh y su rotación.</li>
+        </ul>
+      </div>
+      <div class="card lift">
+        <h3>Token opaco guardado hasheado</h3>
+        <ul class="tight">
+          <li>Revocación inmediata: una sola sentencia <code>UPDATE</code> cierra todas las sesiones.</li>
+          <li>Un volcado de la base no permite entrar como nadie.</li>
+          <li>Expiración deslizante de 30 días: se renueva mientras haya actividad.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>El requisito manda sobre la moda:</b> “cambiar el PIN cierra todas las sesiones” es una
+      garantía dura de banca. Con JWT no se cumple sin trampas; con sesiones en base es una línea.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <p class="eyebrow">Defensa</p>
+    <h2>Que nadie averigüe qué DNI existe</h2>
+    <p class="lede">Tres medidas que trabajan juntas contra la enumeración de cuentas.</p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Mensaje genérico</h3>
+        <p>“Los datos no son correctos” para un DNI inexistente y para un PIN equivocado. Nunca
+        “ese usuario no existe”.</p>
+      </div>
+      <div class="card">
+        <h3>Tiempo uniforme</h3>
+        <p>Toda respuesta tarda al menos <span class="mono">0,35 s</span>, y si el DNI no existe
+        se hashea un PIN de descarte. Sin esto, el cronómetro delata lo que el mensaje calla.</p>
+      </div>
+      <div class="card">
+        <h3>El contador corre igual</h3>
+        <p>Los intentos fallidos se anotan también para DNI que no existen. Si solo contara para
+        cuentas reales, el propio bloqueo diría cuáles lo son.</p>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>El mismo criterio en recuperación:</b> si el correo no está registrado, la respuesta
+      es idéntica a la del caso bueno.</p>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <p class="eyebrow">Defensa</p>
+    <h2>Bloqueo en dos ejes, no en uno</h2>
+    <p class="lede">Un solo contador deja un hueco: protege una cuenta, o protege contra barrer
+      muchas, pero no las dos cosas.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Eje</th><th>Protege contra</th><th>Umbral</th><th>Castigo</th><th>Se reinicia</th></tr></thead>
+        <tbody>
+          <tr><td>Por DNI</td><td>Atacar una cuenta desde muchos teléfonos</td>
+            <td class="num">3 fallos</td><td class="num">15 min → 1 h → 24 h</td><td>Sí, al entrar bien</td></tr>
+          <tr><td>Por dispositivo</td><td>Barrer muchas cuentas desde un teléfono</td>
+            <td class="num">10 en 15 min</td><td class="num">15 min</td><td><strong>No</strong> — ventana deslizante</td></tr>
+          <tr><td>Por OTP</td><td>Adivinar el código de 6 cifras</td>
+            <td class="num">3 intentos</td><td class="num">15 min</td><td>El desafío se cancela</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p><b>Por qué el eje del dispositivo usa ventana deslizante:</b> si un ingreso correcto lo
+      pusiera a cero, bastaría con intercalar una entrada válida cada 9 intentos para seguir
+      barriendo cuentas indefinidamente. Contando los fallos de los últimos 15 minutos, esa
+      maniobra no sirve de nada.</p>
+    </div>
+    <div class="note">
+      <p><b>SLA comprometido:</b> bloqueo automático al 5.º intento. Bloqueamos al 3.º, así que
+      cumplimos con margen.</p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <p class="eyebrow">Defensa</p>
+    <h2>El OTP endurecido y el riesgo del oráculo</h2>
+    <div class="grid g4">
+      <div class="card"><div class="stat">10<small> min</small></div><p class="statlabel">vigencia del código</p></div>
+      <div class="card"><div class="stat">60<small> s</small></div><p class="statlabel">espera entre reenvíos</p></div>
+      <div class="card"><div class="stat">3</div><p class="statlabel">intentos y 3 reenvíos por desafío</p></div>
+      <div class="card"><div class="stat">5</div><p class="statlabel">consultas máximas por vale de verificación</p></div>
+    </div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card">
+        <h3>El vale de verificación</h3>
+        <p>Validar el OTP no cambia nada por sí solo: entrega un vale de un solo uso. Sin ese vale,
+        el endpoint que restablece el PIN no atiende. Así nadie cambia un PIN sin haber pasado por
+        el código.</p>
+      </div>
+      <div class="card lift">
+        <h3>El endpoint peligroso</h3>
+        <p><code>pin/check-current</code> responde si un PIN propuesto es el actual. Preguntado a
+        discreción <strong>es un oráculo del PIN</strong>: con un millón de preguntas se adivina.
+        Por eso exige vale y cada vale admite 5 consultas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <p class="eyebrow">Datos sensibles</p>
+    <h2>Lo que decidimos no guardar</h2>
+    <p class="lede">El control más barato sobre un dato es no tenerlo.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Del KYC facial guardamos</h3>
+        <ul class="tight">
+          <li>Veredicto: aprobado o rechazado.</li>
+          <li>Si el documento es válido, si hay prueba de vida, si el rostro coincide.</li>
+          <li>La distancia facial, como número.</li>
+        </ul>
+      </div>
+      <div class="card lift">
+        <h3>Nunca guardamos</h3>
+        <ul class="tight">
+          <li><span class="k">Las imágenes del documento ni del rostro.</span></li>
+          <li>El PIN en claro, ni en base, ni en logs, ni en trazas de error.</li>
+          <li>El código OTP legible.</li>
+          <li>El token de sesión tal cual.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Dato biométrico = dato sensible.</b> Guardar selfies de clientes convierte la base en
+      un objetivo de alto valor y abre una obligación legal que este proyecto no puede sostener.</p>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <p class="eyebrow">Administración</p>
+    <h2>Secretos: la regla de oro y nuestra excepción</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Lo que hacemos bien</h3>
+        <ul class="tight">
+          <li><code>config.local.json</code> y <code>config.production.json</code> están en <code>.gitignore</code>.</li>
+          <li>Solo se versionan las plantillas: <code>config.example.json</code> y <code>.env.example</code>.</li>
+          <li>El backend construimos un <span class="k">proxy del KYC</span> para que la clave viva en el servidor.</li>
+        </ul>
+      </div>
+      <div class="card lift">
+        <h3>El hueco que reconocemos</h3>
+        <p>El proxy existe, pero <strong>la app todavía llama al KYC directamente con la clave
+        dentro del binario</strong>. Falta cablearla al proxy.</p>
+        <p>Todo lo compilado es extraíble con <code>strings</code> sobre el APK o con un proxy
+        mirando el tráfico. Por eso esa clave se trata como pública y no se usa contra un
+        despliegue real.</p>
+        <p style="margin-top:10px"><span class="tag t-no">Riesgo R1 del ADR-0001</span></p>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Dicho de otro modo:</b> no existe el secreto del lado del cliente. Si una clave está en
+      la app, ya es pública; la única corrección es moverla al servidor.</p>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide">
+    <p class="eyebrow">En el teléfono</p>
+    <h2>El cliente no decide nada de seguridad</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Lo que el teléfono sí guarda</h3>
+        <ul class="tight">
+          <li>Almacén cifrado del sistema: <span class="k">Keychain</span> en iOS,
+            <span class="k">EncryptedSharedPreferences</span> en Android.</li>
+          <li>Un <span class="k">identificador propio de 128 bits</span>, generado con el
+            aleatorio seguro del sistema.</li>
+          <li>Datos de conveniencia: usuario recordado para el acceso rápido.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Decisiones deliberadas</h3>
+        <ul class="tight">
+          <li><span class="k">No usamos IMEI ni androidId:</span> son datos del aparato, su lectura
+            está restringida, y para reconocer un teléfono basta un valor propio.</li>
+          <li><span class="k">El bloqueo real lo lleva el servidor.</span> Si viviera en el
+            teléfono, se reiniciaría reinstalando la app.</li>
+          <li>Los intentos restantes llegan en la respuesta; la app solo los muestra.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide">
+    <p class="eyebrow">OWASP Top 10</p>
+    <h2>Dónde estamos frente a los riesgos críticos</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Riesgo</th><th>Estado</th><th>Qué lo sostiene</th></tr></thead>
+        <tbody>
+          <tr><td>Inyección SQL</td><td><span class="tag t-ok">Mitigado</span></td>
+            <td>Todo el acceso a datos pasa por el ORM con consultas parametrizadas. No hay SQL construido por concatenación.</td></tr>
+          <tr><td>Pérdida de autenticación</td><td><span class="tag t-ok">Mitigado</span></td>
+            <td>argon2id, bloqueo en dos ejes, OTP para dispositivos nuevos, revocación total al cambiar el PIN.</td></tr>
+          <tr><td>Cross-Site Scripting</td><td><span class="tag t-ok">No aplica aún</span></td>
+            <td>El cliente es una app nativa sin WebView. Volverá a aplicar el día que exista el dashboard web.</td></tr>
+          <tr><td>Exposición de datos sensibles</td><td><span class="tag t-mid">Parcial</span></td>
+            <td>No se guardan imágenes ni credenciales legibles, pero el tráfico de desarrollo va en HTTP.</td></tr>
+          <tr><td>Configuración insegura</td><td><span class="tag t-mid">Parcial</span></td>
+            <td>Secretos fuera del repositorio, pero el esquema se crea al arrancar en vez de con migraciones versionadas.</td></tr>
+          <tr><td>Registro y monitoreo insuficientes</td><td><span class="tag t-no">Abierto</span></td>
+            <td>Tenemos la tabla de intentos, pero no logs estructurados ni centralización.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide">
+    <p class="eyebrow">Sesión 14 · Defensa perimetral</p>
+    <h2>TLS, CORS, CSP, rate limiting y WAF</h2>
+    <p class="lede">Aquí es donde más nos falta, y conviene separar lo que está diferido por
+      diseño de lo que es deuda real.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Diferido con motivo</h3>
+        <ul class="tight">
+          <li><span class="k">CORS:</span> no hay cliente web todavía. Cuando llegue, lista blanca
+            de orígenes exactos, nunca <code>*</code>.</li>
+          <li><span class="k">CSP:</span> misma razón. Es una cabecera para navegadores.</li>
+        </ul>
+      </div>
+      <div class="card lift">
+        <h3>Deuda real</h3>
+        <ul class="tight">
+          <li><span class="k">TLS:</span> el servicio corre en HTTP de desarrollo. Falta HTTPS con
+            redirección forzada y HSTS.</li>
+          <li><span class="k">Rate limiting:</span> lo que tenemos es bloqueo de negocio por DNI y
+            por dispositivo. Falta un límite por IP delante de todo.</li>
+          <li><span class="k">WAF:</span> ninguno. Es lo último de la lista para un proyecto de aula.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Matiz importante:</b> el bloqueo por dispositivo no sustituye a un limitador por IP. El
+      identificador de dispositivo lo envía el cliente, así que un atacante lo puede cambiar en
+      cada petición; la IP no.</p>
+    </div>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide">
+    <p class="eyebrow">Sesión 14 · Trazabilidad</p>
+    <h2>Quién hizo qué, cuándo y cómo falló</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Lo que ya hay</h3>
+        <ul class="tight">
+          <li><code>login_attempts</code>: una fila por intento, con DNI, dispositivo, resultado y fecha.</li>
+          <li><code>lockouts</code>: bloqueos vigentes y su nivel de escalado.</li>
+          <li><code>kyc_verifications</code>: el veredicto de cada verificación.</li>
+          <li>Esa tabla no es solo auditoría: es el mecanismo que hace posible la ventana deslizante.</li>
+        </ul>
+      </div>
+      <div class="card lift">
+        <h3>Lo que falta</h3>
+        <ul class="tight">
+          <li><span class="k">Logs estructurados en JSON</span> en vez de texto libre.</li>
+          <li><span class="k">Un identificador de correlación</span> que viaje desde la app por
+            todas las llamadas.</li>
+          <li><span class="k">Centralización</span> del tipo ELK o equivalente.</li>
+          <li>Una política explícita de qué nunca se registra: PIN, OTP y tokens.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>La pregunta de la sesión 14:</b> si el servidor es atacado y no hay trazabilidad
+      centralizada, nadie puede determinar qué datos se llevaron. Esa es la diferencia entre un
+      incidente acotado y uno que hay que declarar entero.</p>
+    </div>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide">
+    <p class="eyebrow">Autocrítica</p>
+    <h2>Los ocho huecos abiertos</h2>
+    <p class="lede">Ordenados por lo que haríamos primero.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Hueco</th><th>Consecuencia si no se cierra</th><th>Esfuerzo</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>La clave del KYC sigue en el binario</td><td>Cualquiera extrae la clave y consume el servicio con pares documento + selfie arbitrarios</td><td class="num">bajo</td></tr>
+          <tr><td class="num">2</td><td>Sin TLS: tráfico en claro</td><td>Un atacante en la misma red lee el PIN y el token de sesión</td><td class="num">medio</td></tr>
+          <tr><td class="num">3</td><td>El token de sesión vive en memoria de la app</td><td>Cerrar la app obliga a reingresar; aún no está cableado al almacén cifrado</td><td class="num">bajo</td></tr>
+          <tr><td class="num">4</td><td>Vales de ingreso guardados en RAM del proceso</td><td>Un reinicio del servidor corta los ingresos en curso y no funciona con varias instancias</td><td class="num">bajo</td></tr>
+          <tr><td class="num">5</td><td>Sin límite de peticiones por IP</td><td>El identificador de dispositivo lo controla el atacante; la IP no</td><td class="num">medio</td></tr>
+          <tr><td class="num">6</td><td>Logs sin estructura ni centralización</td><td>No hay forma de reconstruir un incidente</td><td class="num">medio</td></tr>
+          <tr><td class="num">7</td><td>Biometría: solo existen los textos de la interfaz</td><td>El SLA de acceso biométrico en menos de 1,5 s no se puede medir todavía</td><td class="num">medio</td></tr>
+          <tr><td class="num">8</td><td>El esquema se crea al arrancar, sin migraciones</td><td>Con datos reales, cualquier cambio de modelo es irreversible</td><td class="num">bajo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide">
+    <p class="eyebrow">Plan</p>
+    <h2>Qué cerramos y en qué orden</h2>
+    <div class="grid g3">
+      <div class="card lift">
+        <h3>Ahora — el Sprint que sigue</h3>
+        <ul class="tight">
+          <li>Apuntar la app al proxy del KYC y sacar la clave del binario.</li>
+          <li>Guardar el token de sesión en el almacén cifrado.</li>
+          <li>HTTPS con redirección forzada y HSTS en el despliegue.</li>
+          <li>Migraciones versionadas en lugar de crear el esquema al arrancar.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Con el motor transaccional</h3>
+        <ul class="tight">
+          <li>Roles y permisos reales: titular, operador, analista.</li>
+          <li>Logs en JSON con identificador de correlación.</li>
+          <li>Límite de peticiones por IP en la capa de entrada.</li>
+          <li>Idempotencia: una sola autorización por pago.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Antes de datos reales</h3>
+        <ul class="tight">
+          <li>Centralización de logs y alertas.</li>
+          <li>CORS y CSP al aparecer el dashboard web.</li>
+          <li>Copias de respaldo y prueba de restauración.</li>
+          <li>Rotación de claves sin reescribir la aplicación.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Los SLA que condicionan el código:</b> autenticación en menos de 1,5 s, bloqueo al 5.º
+      intento, onboarding completo en menos de 5 minutos, operación transaccional en menos de
+      200 ms. Si un control los pone en riesgo, se discute antes de escribirlo.</p>
+    </div>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide">
+    <p class="eyebrow">Cierre</p>
+    <h2>Tres ideas para quedarse</h2>
+    <div class="grid g3">
+      <div class="card">
+        <h3>La seguridad no es un parche final</h3>
+        <p>Los dos contadores de bloqueo, el token opaco y el tiempo de respuesta uniforme son
+        decisiones de arquitectura. Ninguna se podría añadir después sin reescribir.</p>
+      </div>
+      <div class="card">
+        <h3>Asumir que ya están dentro</h3>
+        <p>Guardamos hashes y no credenciales porque damos por hecho que la base puede terminar
+        volcada. El perímetro no basta.</p>
+      </div>
+      <div class="card">
+        <h3>Nombrar lo que falta vale más que taparlo</h3>
+        <p>Los ocho huecos están escritos en los ADR del repositorio, con su razón y su riesgo.
+        Un control inventado no protege a nadie.</p>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Pregunta para el aula:</b> si mañana CuyCash sufriera una filtración de su base de
+      datos, ¿qué tendría el atacante en las manos? Con este diseño: hashes de argon2id, hashes de
+      tokens ya revocables y veredictos de KYC. Ningún PIN, ninguna sesión utilizable y ninguna
+      fotografía.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="nav">
+  <div class="navin">
+    <button class="btn" id="prev" type="button">←</button>
+    <button class="btn" id="next" type="button">→</button>
+    <span class="count" id="count">1 / 19</span>
+    <div class="bar"><i id="fill" style="width:5%"></i></div>
+    <span class="hint">Usa ← → o la barra espaciadora</span>
+  </div>
+</nav>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0;
+  var count = document.getElementById('count');
+  var fill = document.getElementById('fill');
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var mode = document.getElementById('mode');
+
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle('on', k === i); });
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    fill.style.width = ((i + 1) / slides.length * 100) + '%';
+    prev.disabled = i === 0;
+    next.disabled = i === slides.length - 1;
+    window.scrollTo({ top: 0 });
+  }
+
+  prev.addEventListener('click', function(){ show(i - 1); });
+  next.addEventListener('click', function(){ show(i + 1); });
+
+  document.addEventListener('keydown', function(e){
+    if (document.body.classList.contains('doc')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home'){ show(0); }
+    if (e.key === 'End'){ show(slides.length - 1); }
+  });
+
+  mode.addEventListener('click', function(){
+    var doc = document.body.classList.toggle('doc');
+    mode.textContent = doc ? 'Ver como presentación' : 'Ver como documento';
+    if (!doc) show(i);
+    window.scrollTo({ top: 0 });
+  });
+
+  show(0);
+})();
+</script>
