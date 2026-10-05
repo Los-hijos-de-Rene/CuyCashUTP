@@ -189,21 +189,23 @@ class HttpAuthRepository implements AuthRepository {
         // por el aviso de sesión vencida. Lleva la cabecera explícita porque
         // revoca ese token concreto, que ya no está en el holder.
         _tokenHolder.clear();
-        if (token != null) {
-          try {
+        try {
+          if (token != null) {
             await _dio.delete<void>(
               '/v1/auth/sessions/current',
               options: Options(headers: {'Authorization': 'Bearer $token'}),
             );
-          } on DioException catch (_) {
-            // Revocar en el servidor es de mejor esfuerzo (sin red o con el
-            // hosting arrancando en frío puede fallar). El cierre local debe
-            // ocurrir PASE LO QUE PASE: es lo único que lleva al usuario al
-            // login. El token quedará válido hasta que venza en el servidor.
           }
+        } on DioException catch (_) {
+          // Revocar en el servidor es de mejor esfuerzo (sin red o con el
+          // hosting arrancando en frío puede fallar). El token quedará válido
+          // hasta que venza en el servidor.
+        } finally {
+          // El cierre local ocurre PASE LO QUE PASE, incluso ante una
+          // excepción inesperada: es lo único que lleva al usuario al login.
+          _session = null;
+          _controller.add(null);
         }
-        _session = null;
-        _controller.add(null);
         return right(unit);
       });
 

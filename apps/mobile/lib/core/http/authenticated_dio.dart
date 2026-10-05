@@ -14,12 +14,16 @@ const _tokenAttached = 'cuycash.tokenAttached';
 /// cambia (login, logout) y un token capturado al armar el grafo quedaría
 /// obsoleto.
 ///
-/// [onUnauthenticated] se avisa solo ante un 401 de SESIÓN: el cuerpo trae
-/// `code == 'UNAUTHENTICATED'` (el único que emite `deps.py` por token ausente,
-/// vencido o revocado) y la petición llevaba token. Otros 401 del backend
-/// (INVALID_CREDENTIALS, INVALID_TICKET de un OTP) son errores de negocio y no
-/// deben cerrar una sesión abierta; el discriminante es el código, no el
-/// estado HTTP.
+/// [onUnauthenticated] se avisa ante un 401 que llevó token, salvo que el
+/// cuerpo traiga un `code` legible distinto de `UNAUTHENTICATED`.
+///
+/// El backend propio SIEMPRE envía `code`: INVALID_CREDENTIALS o INVALID_TICKET
+/// son errores de negocio y no cierran una sesión abierta. Pero un 401 con
+/// token y SIN `code` legible (gateway, WAF, un `HTTPException` por defecto,
+/// JSON servido como texto) no puede ser de negocio: es sesión o
+/// infraestructura. El coste es asimétrico: un falso positivo cuesta volver a
+/// entrar; un falso negativo deja al usuario dentro con una sesión muerta y
+/// sin forma de llegar al login.
 Dio buildAuthenticatedDio({
   required String baseUrl,
   required String deviceId,
@@ -59,10 +63,10 @@ Dio buildAuthenticatedDio({
       },
       onResponse: (response, handler) {
         final data = response.data;
+        final code = data is Map ? data['code'] : null;
         if (response.statusCode == 401 &&
             response.requestOptions.extra[_tokenAttached] == true &&
-            data is Map &&
-            data['code'] == 'UNAUTHENTICATED') {
+            (code == null || code == 'UNAUTHENTICATED')) {
           // No se reintenta ni se renueva en silencio. Si la sesión venció a
           // mitad de un envío, el usuario debe acabar en el login con la
           // operación SIN ejecutar: reintentar a ciegas podría cobrarle dos

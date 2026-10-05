@@ -64,28 +64,25 @@ void main() {
       },
     );
 
-    test(
-      'un 401 sin token (login fallido) no avisa de sesión vencida',
-      () async {
-        var avisos = 0;
-        final dio = buildAuthenticatedDio(
-          baseUrl: 'http://test',
-          deviceId: 'dev-1',
-          readToken: () => null,
-          onUnauthenticated: () => avisos++,
-        );
-        dio.httpClientAdapter = _Adaptador(
-          (options) => _json('{"code":"UNAUTHENTICATED","detail":"x"}', 401),
-        );
+    test('un 401 UNAUTHENTICATED sin token tampoco avisa', () async {
+      var avisos = 0;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'dev-1',
+        readToken: () => null,
+        onUnauthenticated: () => avisos++,
+      );
+      dio.httpClientAdapter = _Adaptador(
+        (options) => _json('{"code":"UNAUTHENTICATED","detail":"x"}', 401),
+      );
 
-        await dio.post<dynamic>(
-          '/v1/auth/authenticate',
-          data: <String, dynamic>{},
-        );
+      await dio.post<dynamic>(
+        '/v1/auth/authenticate',
+        data: <String, dynamic>{},
+      );
 
-        expect(avisos, 0);
-      },
-    );
+      expect(avisos, 0);
+    });
 
     test(
       'un 401 con token pero otro código (ticket inválido) no avisa',
@@ -110,6 +107,63 @@ void main() {
         expect(avisos, 0);
       },
     );
+
+    test('un 401 con token y cuerpo no-JSON sí avisa', () async {
+      var avisos = 0;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'dev-1',
+        readToken: () => 'vencido',
+        onUnauthenticated: () => avisos++,
+      );
+      dio.httpClientAdapter = _Adaptador(
+        (options) => ResponseBody.fromString(
+          '{"code":"UNAUTHENTICATED"}',
+          401,
+          headers: {
+            Headers.contentTypeHeader: ['text/plain'],
+          },
+        ),
+      );
+
+      await dio.get<dynamic>('/v1/accounts');
+
+      expect(avisos, 1);
+    });
+
+    test('un 401 con token y cuerpo vacío sí avisa', () async {
+      var avisos = 0;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'dev-1',
+        readToken: () => 'vencido',
+        onUnauthenticated: () => avisos++,
+      );
+      dio.httpClientAdapter = _Adaptador(
+        (options) => ResponseBody.fromString('', 401),
+      );
+
+      await dio.get<dynamic>('/v1/accounts');
+
+      expect(avisos, 1);
+    });
+
+    test('un 401 con token y {"detail": ...} sin code sí avisa', () async {
+      var avisos = 0;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'dev-1',
+        readToken: () => 'vencido',
+        onUnauthenticated: () => avisos++,
+      );
+      dio.httpClientAdapter = _Adaptador(
+        (options) => _json('{"detail":"Not authenticated"}', 401),
+      );
+
+      await dio.get<dynamic>('/v1/accounts');
+
+      expect(avisos, 1);
+    });
 
     test('un 401 avisa una sola vez y NO reintenta', () async {
       // Review Focus 5: si la sesión vence durante un envío, el usuario debe
