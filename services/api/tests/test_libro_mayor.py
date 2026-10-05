@@ -133,3 +133,50 @@ async def test_un_estado_no_previsto_es_rechazado(db):
 
     with pytest.raises(IntegrityError):
         await db.commit()
+
+
+async def test_la_cuenta_de_sistema_puede_quedar_en_negativo(db):
+    """
+    Una recarga crea dinero: lo debita de la caja de CuyCash. Esa cuenta es la
+    única que puede estar en rojo, y su saldo es justo lo inyectado en la demo.
+    """
+    caja = Account(
+        user_id=None, numero="19100000000000", tipo="sistema",
+        saldo_disponible=0, saldo_contable=0,
+    )
+    db.add(caja)
+    await db.flush()
+
+    caja.saldo_disponible = -50_000
+    caja.saldo_contable = -50_000
+    await db.commit()
+
+    assert caja.saldo_disponible == -50_000
+
+
+async def test_una_cuenta_normal_sigue_sin_poder_quedar_en_negativo(db):
+    """Relajar el CHECK para la caja no puede relajarlo para los titulares."""
+    cuenta = await _cuenta(db, "10000007", "00000000000007", 1_000)
+    cuenta.saldo_disponible = -1
+
+    with pytest.raises(IntegrityError):
+        await db.commit()
+
+
+async def test_recarga_es_un_tipo_de_transaccion_valido(db):
+    """Una recarga no es un ajuste: mezclarlas ensucia la auditoría."""
+    db.add(Transaction(tipo="recarga", idempotency_key="recarga-001"))
+    await db.commit()
+
+
+async def test_un_beneficiario_no_se_duplica_para_el_mismo_titular(db):
+    """Guardar dos veces el mismo DNI actualiza el apodo, no crea otra fila."""
+    from app.db.models import Beneficiary
+
+    cuenta = await _cuenta(db, "10000008", "00000000000008", 0)
+    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567", apodo="Jenny"))
+    await db.commit()
+
+    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567", apodo="Jenny 2"))
+    with pytest.raises(IntegrityError):
+        await db.commit()

@@ -182,7 +182,9 @@ class Account(Base):
     __tablename__ = "accounts"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"), index=True, nullable=True
+    )
     numero: Mapped[str] = mapped_column(String(14), unique=True, index=True)
     tipo: Mapped[str] = mapped_column(String(10), default="ahorro")
     moneda: Mapped[str] = mapped_column(String(3), default="PEN")
@@ -193,14 +195,21 @@ class Account(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     __table_args__ = (
-        CheckConstraint("tipo IN ('ahorro','corriente')", name="ck_accounts_tipo"),
+        CheckConstraint(
+            "tipo IN ('ahorro','corriente','sistema')", name="ck_accounts_tipo"
+        ),
         CheckConstraint("moneda IN ('PEN','USD')", name="ck_accounts_moneda"),
         CheckConstraint(
             "estado IN ('activa','bloqueada','cerrada')", name="ck_accounts_estado"
         ),
-        # El saldo disponible nunca puede quedar negativo: es la última
-        # defensa contra el doble gasto si alguna ruta olvidara validarlo.
-        CheckConstraint("saldo_disponible >= 0", name="ck_accounts_saldo_no_negativo"),
+        # La caja de CuyCash es la contraparte de cada recarga: su saldo es, por
+        # definición, el dinero inyectado en la demo, y por eso va en negativo.
+        # Para cualquier cuenta de un titular, el tope sigue siendo la última
+        # defensa contra el doble gasto.
+        CheckConstraint(
+            "tipo = 'sistema' OR saldo_disponible >= 0",
+            name="ck_accounts_saldo_no_negativo",
+        ),
     )
 
 
@@ -222,13 +231,18 @@ class Transaction(Base):
     estado: Mapped[str] = mapped_column(String(12), default="confirmada")
     idempotency_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     referencia: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    # Huella de los parámetros de la petición. Repetir una clave de
+    # idempotencia con OTROS datos no es un reintento, es una operación
+    # distinta: devolver la original haría creer al usuario que envió lo que
+    # acaba de escribir. Ver Review Focus 1.
+    request_fingerprint: Mapped[str] = mapped_column(String(64), default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, index=True
     )
 
     __table_args__ = (
         CheckConstraint(
-            "tipo IN ('transferencia','pago_qr','desembolso','cuota','ajuste')",
+            "tipo IN ('transferencia','recarga','pago_qr','desembolso','cuota','ajuste')",
             name="ck_transactions_tipo",
         ),
         CheckConstraint(
@@ -275,3 +289,42 @@ class LedgerEntry(Base):
         ),
         CheckConstraint("monto > 0", name="ck_ledger_monto_positivo"),
     )
+
+
+class Beneficiary(Base):
+    """
+    Destinatario guardado por un titular. Solo el DNI y un apodo: el nombre y
+    la cuenta se resuelven al usarlo, para que un cambio en el destinatario no
+    deje copias desactualizadas aquí.
+    """
+
+    __tablename__ = "beneficiaries"
+    __table_args__ = (UniqueConstraint("user_id", "beneficiario_dni"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    beneficiario_dni: Mapped[str] = mapped_column(String(8), index=True)
+    apodo: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Transfer(Base):
+    """
+    Lo que una transferencia tiene y un asiento no: a quién, desde dónde y por
+    qué. Los asientos son el dinero; esta fila es la intención.
+
+    `destino_externo` y `canal` (interbancaria, CCI) son del sprint 3 y no se
+    crean todavía.
+    """
+
+    __tablename__ = "transfers"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    transaction_id: Mapped[str] = mapped_column(
+        ForeignKey("transactions.id"), unique=True, index=True
+    )
+    cuenta_origen: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    cuenta_destino: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    monto: Mapped[int] = mapped_column(BigInteger)
+    motivo: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    estado: Mapped[str] = mapped_column(String(12), default="confirmada")
