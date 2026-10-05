@@ -14,7 +14,6 @@ from sqlalchemy import update
 
 from app.core.deps import current_user
 from app.core.errors import ApiError
-from app.db.base import get_session
 from app.db.models import Session as SessionRow
 from app.db.models import User, utcnow
 from app.main import api_error_handler, app
@@ -63,23 +62,39 @@ async def test_la_sonda_acepta_un_token_valido(sonda, registrado):
     assert r.json()["id"] == registrado.user_id
 
 
-async def test_ausente_inventado_y_vencido_responden_exactamente_igual(
-    sonda, registrado
+async def test_los_casos_de_401_responden_exactamente_igual(
+    client, sonda, registrado, otro_registrado, db_de_client
 ):
-    # Si se distinguieran, quien sondea sabría qué tokens existieron.
-    async for db in app.dependency_overrides[get_session]():
-        await db.execute(
-            update(SessionRow).values(expires_at=utcnow() - timedelta(seconds=1))
-        )
-        await db.commit()
+    # Si se distinguieran desde fuera, quien sondea sabría qué tokens existieron.
+    # Vencido: la sesión de `registrado`.
+    await db_de_client.execute(
+        update(SessionRow)
+        .where(SessionRow.user_id == registrado.user_id)
+        .values(expires_at=utcnow() - timedelta(seconds=1))
+    )
+    await db_de_client.commit()
+    # Revocado: la de `otro_registrado`, por el endpoint real.
+    salir = await client.delete("/v1/auth/sessions/current", headers=otro_registrado.auth)
+    assert salir.status_code == 204
 
     ausente = await sonda.get("/protegida")
     inventado = await sonda.get("/protegida", headers={"Authorization": "Bearer x"})
     vencido = await sonda.get("/protegida", headers=registrado.auth)
+    revocado = await sonda.get("/protegida", headers=otro_registrado.auth)
 
-    assert ausente.status_code == inventado.status_code == vencido.status_code == 401
-    assert ausente.json() == inventado.json() == vencido.json()
+    respuestas = [ausente, inventado, vencido, revocado]
+    assert {r.status_code for r in respuestas} == {401}
+    assert all(r.json() == ausente.json() for r in respuestas)
     assert ausente.json()["code"] == "UNAUTHENTICATED"
+
+    # Caso "usuario borrado" (rama `user is None` de `current_user`): NO se
+    # prueba a propósito. En producción (Postgres) `sessions.user_id` es una FK
+    # sin ON DELETE, así que no se puede borrar un usuario con sesiones; y si se
+    # borran antes las sesiones, ya no hay token que resuelva a ese usuario. La
+    # rama es defensa en profundidad, inalcanzable por FK. Solo se podría
+    # ejercitar aquí porque SQLite no activa `PRAGMA foreign_keys` por defecto
+    # (el motor de tests no lo enciende), y ese test fingiría cubrir un
+    # escenario que la base real impide.
 
 
 async def test_esquema_distinto_de_bearer_o_token_vacio_responde_401(sonda, registrado):

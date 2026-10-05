@@ -44,6 +44,24 @@ async def client():
     await engine.dispose()
 
 
+@pytest_asyncio.fixture
+async def db_de_client(client):
+    """
+    Sesión sobre la MISMA base que ve el `client` HTTP.
+
+    Para montar escenarios imposibles de crear por HTTP (una cuenta bloqueada,
+    una sesión vencida). Reutiliza el override de `get_session` de `client`:
+    mismo motor y misma conexión, así que lo que se escriba aquí lo ve la API
+    y viceversa. Quien escriba debe hacer `commit()`.
+    """
+    gen = app.dependency_overrides[get_session]()
+    session = await gen.__anext__()
+    try:
+        yield session
+    finally:
+        await gen.aclose()  # cierra la sesión, no queda el generador colgando
+
+
 @pytest.fixture
 def otp_codes(monkeypatch):
     """Captura los códigos en vez de enviarlos, para poder verificarlos."""
@@ -133,7 +151,13 @@ async def registrar(client, otp_codes, *, dni: str, nombres: str, apellidos: str
         "/v1/otp/challenges", json={"purpose": "device", "identifier": dni}
     )
     assert c.status_code == 200, c.text
-    code = [e["code"] for e in otp_codes if e["destination"] == email][-1]
+    # Por destinatario Y propósito: otro OTP al mismo correo emitido antes
+    # (p. ej. de recuperación) no debe confundirse con el de dispositivo.
+    code = [
+        e["code"]
+        for e in otp_codes
+        if e["destination"] == email and e["purpose"] == "device"
+    ][-1]
     v = await client.post(
         f"/v1/otp/challenges/{c.json()['challenge_id']}/verify", json={"code": code}
     )
