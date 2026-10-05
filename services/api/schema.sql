@@ -19,8 +19,8 @@ CREATE TABLE lockouts (
 )
 
 ;
-CREATE INDEX ix_lockouts_subject_value ON lockouts (subject_value);
 CREATE INDEX ix_lockouts_subject_type ON lockouts (subject_type);
+CREATE INDEX ix_lockouts_subject_value ON lockouts (subject_value);
 
 
 CREATE TABLE login_attempts (
@@ -33,9 +33,9 @@ CREATE TABLE login_attempts (
 )
 
 ;
-CREATE INDEX ix_login_attempts_dni ON login_attempts (dni);
 CREATE INDEX ix_login_attempts_created_at ON login_attempts (created_at);
 CREATE INDEX ix_login_attempts_device_id ON login_attempts (device_id);
+CREATE INDEX ix_login_attempts_dni ON login_attempts (dni);
 
 
 CREATE TABLE otp_challenges (
@@ -88,8 +88,8 @@ CREATE TABLE transactions (
 )
 
 ;
-CREATE UNIQUE INDEX ix_transactions_idempotency_key ON transactions (idempotency_key);
 CREATE INDEX ix_transactions_created_at ON transactions (created_at);
+CREATE UNIQUE INDEX ix_transactions_idempotency_key ON transactions (idempotency_key);
 
 
 CREATE TABLE users (
@@ -107,8 +107,8 @@ CREATE TABLE users (
 )
 
 ;
-CREATE INDEX ix_users_email ON users (email);
 CREATE UNIQUE INDEX ix_users_dni ON users (dni);
+CREATE INDEX ix_users_email ON users (email);
 
 
 CREATE TABLE accounts (
@@ -131,8 +131,8 @@ CREATE TABLE accounts (
 )
 
 ;
-CREATE INDEX ix_accounts_user_id ON accounts (user_id);
 CREATE UNIQUE INDEX ix_accounts_numero ON accounts (numero);
+CREATE INDEX ix_accounts_user_id ON accounts (user_id);
 
 
 CREATE TABLE beneficiaries (
@@ -147,8 +147,8 @@ CREATE TABLE beneficiaries (
 )
 
 ;
-CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
 CREATE INDEX ix_beneficiaries_beneficiario_dni ON beneficiaries (beneficiario_dni);
+CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
 
 
 CREATE TABLE devices (
@@ -163,8 +163,8 @@ CREATE TABLE devices (
 )
 
 ;
-CREATE INDEX ix_devices_user_id ON devices (user_id);
 CREATE INDEX ix_devices_device_id ON devices (device_id);
+CREATE INDEX ix_devices_user_id ON devices (user_id);
 
 
 CREATE TABLE kyc_verifications (
@@ -218,9 +218,10 @@ CREATE TABLE ledger_entries (
 )
 
 ;
+CREATE INDEX ix_ledger_cuenta_fecha_id ON ledger_entries (account_id, created_at, id);
 CREATE INDEX ix_ledger_entries_account_id ON ledger_entries (account_id);
-CREATE INDEX ix_ledger_entries_transaction_id ON ledger_entries (transaction_id);
 CREATE INDEX ix_ledger_entries_created_at ON ledger_entries (created_at);
+CREATE INDEX ix_ledger_entries_transaction_id ON ledger_entries (transaction_id);
 
 
 CREATE TABLE transfers (
@@ -238,7 +239,7 @@ CREATE TABLE transfers (
 )
 
 ;
+CREATE INDEX ix_transfers_cuenta_destino ON transfers (cuenta_destino);
 CREATE INDEX ix_transfers_cuenta_origen ON transfers (cuenta_origen);
 CREATE UNIQUE INDEX ix_transfers_transaction_id ON transfers (transaction_id);
-CREATE INDEX ix_transfers_cuenta_destino ON transfers (cuenta_destino);
 

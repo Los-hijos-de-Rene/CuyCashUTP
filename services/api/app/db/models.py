@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -291,6 +292,10 @@ class LedgerEntry(Base):
     )
 
     __table_args__ = (
+        # El historial pagina por (cuenta, fecha desc, id desc): este índice es
+        # exactamente ese recorrido, así que cada página es una lectura de
+        # rango y no un ordenamiento de todos los asientos de la cuenta.
+        Index("ix_ledger_cuenta_fecha_id", "account_id", "created_at", "id"),
         CheckConstraint(
             "direccion IN ('debito','credito')", name="ck_ledger_direccion"
         ),

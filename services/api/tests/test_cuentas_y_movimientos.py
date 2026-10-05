@@ -9,9 +9,12 @@ Los movimientos se siembran a mano con `db_de_client`: el motor que los crea
 pruebas cubren solo la LECTURA.
 """
 
+import base64
+import re
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import event, select
+from sqlalchemy.engine import Engine
 
 from app.db.models import Account, LedgerEntry, Transaction, Transfer
 
@@ -350,3 +353,142 @@ async def test_el_emisor_tambien_ve_la_ficha_de_su_transferencia(
     assert emisor.status_code == 200
     assert emisor.json()["direccion"] == "debito"
     assert emisor.json()["contraparte"] == "Jenny Marisol Ruiz"
+
+
+# --- Consultas por petición ---------------------------------------------------
+
+class _Contador:
+    """Cuenta las sentencias que llegan a CUALQUIER motor mientras está activo."""
+
+    def __enter__(self):
+        self.sentencias = []
+        event.listen(Engine, "before_cursor_execute", self._ver)
+        return self
+
+    def __exit__(self, *exc):
+        event.remove(Engine, "before_cursor_execute", self._ver)
+
+    def _ver(self, conn, cursor, statement, *args):
+        self.sentencias.append(statement)
+
+
+async def _consultas_del_historial(client, titular, cuenta_id, limit):
+    with _Contador() as c:
+        r = await client.get(
+            f"/v1/accounts/{cuenta_id}/movements?limit={limit}", headers=titular.auth
+        )
+    assert r.status_code == 200
+    return len(c.sentencias), len(r.json()["movimientos"])
+
+
+async def test_el_historial_no_hace_una_consulta_por_fila(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    """
+    Fija el N+1 fuera: el número de consultas NO depende de cuántas filas hay.
+    Contra un Postgres remoto cada consulta es un viaje de red, y el SLA es 1 s.
+    """
+    mia = await _cuenta_id(client, registrado)
+    suya = await _cuenta_id(client, otro_registrado)
+    await _sembrar(db_de_client, mia, n=50, contraparte_id=suya)
+
+    con_1, filas_1 = await _consultas_del_historial(client, registrado, mia, 1)
+    con_50, filas_50 = await _consultas_del_historial(client, registrado, mia, 50)
+
+    assert (filas_1, filas_50) == (1, 50)
+    assert con_50 == con_1
+    # Sesión, usuario, cuenta propia y el SELECT del historial: nada más.
+    assert con_50 <= 5, con_50
+
+
+async def test_la_ficha_tampoco_hace_consultas_de_mas(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    mia = await _cuenta_id(client, registrado)
+    suya = await _cuenta_id(client, otro_registrado)
+    [tx_id] = await _sembrar(db_de_client, mia, n=1, contraparte_id=suya)
+
+    with _Contador() as c:
+        r = await client.get(f"/v1/movements/{tx_id}", headers=registrado.auth)
+    assert r.status_code == 200
+    assert len(c.sentencias) <= 4, len(c.sentencias)
+
+
+# --- Cursor endurecido (lo que Postgres rechaza y SQLite tolera) --------------
+
+def _cursor(fecha: str, entry_id: str) -> str:
+    return base64.urlsafe_b64encode(f"{fecha}|{entry_id}".encode()).decode()
+
+
+async def test_los_cursores_peligrosos_caen_a_la_primera_pagina(
+    client, otp_codes, registrado, db_de_client
+):
+    cuenta_id = await _cuenta_id(client, registrado)
+    await _sembrar(db_de_client, cuenta_id, n=3)
+    primera = (
+        await client.get(f"/v1/accounts/{cuenta_id}/movements", headers=registrado.auth)
+    ).json()
+    uuid_ok = "123e4567-e89b-42d3-a456-426614174000"
+
+    peligrosos = {
+        "nul en el id": _cursor("2026-10-01T12:00:00.000000Z", "abc\x00def"),
+        "id que no es uuid": _cursor("2026-10-01T12:00:00.000000Z", "no-soy-un-uuid"),
+        "id de longitud distinta": _cursor("2026-10-01T12:00:00.000000Z", uuid_ok[:-1]),
+        "fecha que desborda a UTC": _cursor("0001-01-01T00:00:00+14:00", uuid_ok),
+        "fecha anterior al rango": _cursor("1970-01-01T00:00:00Z", uuid_ok),
+        "fecha posterior al rango": _cursor("9999-12-31T00:00:00Z", uuid_ok),
+        "sin separador": base64.urlsafe_b64encode(b"2026-10-01").decode(),
+    }
+    for nombre, cursor in peligrosos.items():
+        r = await client.get(
+            f"/v1/accounts/{cuenta_id}/movements?cursor={cursor}", headers=registrado.auth
+        )
+        assert r.status_code == 200, nombre
+        assert r.json() == primera, nombre
+
+
+def test_un_cursor_sin_zona_se_lee_como_utc_y_no_como_hora_local(monkeypatch):
+    """La zona del proceso no debe cambiar qué página se devuelve."""
+    from app.api.v1.routers.accounts import _decodificar_cursor
+
+    uuid_ok = "123e4567-e89b-42d3-a456-426614174000"
+    for tz in ("UTC", "America/Lima", "Asia/Tokyo"):
+        monkeypatch.setenv("TZ", tz)
+        import time
+
+        time.tzset()
+        fecha, _ = _decodificar_cursor(_cursor("2026-10-01T12:00:00", uuid_ok))
+        assert fecha == datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc), tz
+    monkeypatch.undo()
+    time.tzset()
+
+
+async def test_un_cursor_con_otra_zona_se_normaliza_a_utc():
+    from app.api.v1.routers.accounts import _decodificar_cursor
+
+    uuid_ok = "123e4567-e89b-42d3-a456-426614174000"
+    fecha, entry_id = _decodificar_cursor(_cursor("2026-10-01T07:00:00-05:00", uuid_ok))
+    assert fecha == datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+    assert fecha.utcoffset() == timedelta(0)
+    assert entry_id == uuid_ok
+
+
+# --- Formato de fecha del contrato -------------------------------------------
+
+async def test_las_fechas_salen_en_utc_con_z_y_microsegundos_fijos(
+    client, otp_codes, registrado, db_de_client
+):
+    """El contrato no puede depender del motor (naive en SQLite, aware en Postgres)."""
+    cuenta_id = await _cuenta_id(client, registrado)
+    await _sembrar(db_de_client, cuenta_id, n=3)
+
+    r = await client.get(
+        f"/v1/accounts/{cuenta_id}/movements?limit=2", headers=registrado.auth
+    )
+    fechas = [m["created_at"] for m in r.json()["movimientos"]]
+    assert fechas == ["2026-10-01T12:02:00.000000Z", "2026-10-01T12:01:00.000000Z"]
+    assert all(re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z", f) for f in fechas)
+
+    # El cursor lleva la misma fecha normalizada.
+    crudo = base64.urlsafe_b64decode(r.json()["next_cursor"].encode()).decode()
+    assert crudo.startswith("2026-10-01T12:01:00.000000Z|")

@@ -39,7 +39,9 @@ def main() -> None:
     # apunta a una tabla que todavía no exista.
     for tabla in Base.metadata.sorted_tables:
         print(f"{CreateTable(tabla).compile(dialect=dialecto)};")
-        for indice in tabla.indexes:
+        # `indexes` es un set: sin ordenar, el orden cambia entre ejecuciones
+        # y el diff contra schema.sql falla al azar.
+        for indice in sorted(tabla.indexes, key=lambda i: i.name):
             print(f"{CreateIndex(indice).compile(dialect=dialecto)};")
         print()
 
