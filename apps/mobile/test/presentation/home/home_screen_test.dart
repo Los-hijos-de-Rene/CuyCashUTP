@@ -1,4 +1,9 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/application/account_actions.dart';
+import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_failure.dart';
+import 'package:cuycash/feature/account/domain/account_repository.dart';
+import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_account_repository.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
@@ -20,6 +25,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 
 void main() {
   // Igual que en el perfil: el bloc se crea fuera de testWidgets para que su
@@ -192,4 +198,108 @@ void main() {
 
     expect(find.text('Disponible en una próxima versión.'), findsOneWidget);
   });
+
+  Widget wrapWith(AccountBloc b) => RepositoryProvider<DeviceActions>.value(
+    value: device,
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: bloc),
+        BlocProvider.value(value: b),
+      ],
+      child: MaterialApp(
+        theme: CuyCashTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const HomeScreen(),
+      ),
+    ),
+  );
+
+  testWidgets(
+    'un error de red muestra el mensaje y Reintentar dispara started',
+    (tester) async {
+      final fallido = _BlocConEstado(
+        const AccountState(
+          status: AccountStatus.error,
+          failure: AccountFailure.network(),
+        ),
+      );
+      addTearDown(fallido.close);
+      await tester.pumpWidget(wrapWith(fallido));
+      await tester.pump();
+
+      expect(
+        find.text(
+          'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(BalanceCard), findsNothing);
+
+      await tester.tap(find.text('Reintentar'));
+
+      expect(fallido.recibidos, [const AccountEvent.started()]);
+    },
+  );
+
+  testWidgets('un refresco fallido avisa sin quitar el saldo', (tester) async {
+    final b = _BlocConEstado(
+      AccountState(
+        status: AccountStatus.ready,
+        refreshFailed: true,
+        cuenta: const Account(
+          id: 'a',
+          numero: '19100000004521',
+          tipo: 'ahorro',
+          moneda: 'PEN',
+          estado: 'activa',
+          saldoDisponible: Money.fromCentimos(125040),
+          saldoContable: Money.fromCentimos(125040),
+        ),
+      ),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapWith(b));
+    await tester.pump();
+
+    expect(
+      find.text('No pudimos actualizar. Estás viendo datos anteriores.'),
+      findsOneWidget,
+    );
+    expect(find.text('S/ 1,250.40'), findsOneWidget);
+  });
+}
+
+/// Bloc que ya nace en un estado dado y anota los eventos que recibe, sin
+/// tocar ningún repositorio.
+class _BlocConEstado extends AccountBloc {
+  _BlocConEstado(AccountState inicial) : super(AccountActions(_RepoCaido())) {
+    // ignore: invalid_use_of_visible_for_testing_member
+    emit(inicial);
+  }
+
+  final recibidos = <AccountEvent>[];
+
+  @override
+  void add(AccountEvent event) => recibidos.add(event);
+}
+
+/// Repo que siempre falla por red; solo existe para construir el bloc.
+class _RepoCaido implements AccountRepository {
+  static const _caida = GlobalFailure<AccountFailure>.server(
+    AccountFailure.network(),
+  );
+
+  @override
+  FutureResult<AccountFailure, List<Account>> cuentas() async => left(_caida);
+
+  @override
+  FutureResult<AccountFailure, MovementPage> movimientos(
+    String cuentaId, {
+    String? cursor,
+  }) async => left(_caida);
+
+  @override
+  FutureResult<AccountFailure, MovementDetail> movimiento(String id) async =>
+      left(_caida);
 }

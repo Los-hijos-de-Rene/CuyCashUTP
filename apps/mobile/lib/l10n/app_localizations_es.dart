@@ -810,6 +810,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos cargar tu cuenta. Inténtalo de nuevo.';
 
   @override
+  String get homeRefreshFailed =>
+      'No pudimos actualizar. Estás viendo datos anteriores.';
+
+  @override
   String get homeRetry => 'Reintentar';
 
   @override

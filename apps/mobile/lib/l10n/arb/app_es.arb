@@ -254,6 +254,7 @@
   "homeLoading": "Cargando tu cuenta",
   "homeErrorNetwork": "No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.",
   "homeErrorGeneric": "No pudimos cargar tu cuenta. Inténtalo de nuevo.",
+  "homeRefreshFailed": "No pudimos actualizar. Estás viendo datos anteriores.",
   "homeRetry": "Reintentar",
   "homeMovementsEmpty": "Aún no tienes movimientos",
   "homeMovementFallbackTitle": "Movimiento",

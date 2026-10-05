@@ -1462,6 +1462,12 @@ abstract class AppLocalizations {
   /// **'No pudimos cargar tu cuenta. Inténtalo de nuevo.'**
   String get homeErrorGeneric;
 
+  /// No description provided for @homeRefreshFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos actualizar. Estás viendo datos anteriores.'**
+  String get homeRefreshFailed;
+
   /// No description provided for @homeRetry.
   ///
   /// In es, this message translates to:

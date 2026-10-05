@@ -36,6 +36,35 @@ class _CountingRepo implements AccountRepository {
       _inner.movimiento(id);
 }
 
+/// Repo con interruptor de fallo y latencia solo para las páginas con cursor.
+class _GuionRepo implements AccountRepository {
+  _GuionRepo(this._inner, {this.latenciaConCursor = Duration.zero});
+
+  final AccountRepository _inner;
+  final Duration latenciaConCursor;
+  bool falla = false;
+
+  @override
+  FutureResult<AccountFailure, List<Account>> cuentas() async => falla
+      ? left(const GlobalFailure.server(AccountFailure.network()))
+      : _inner.cuentas();
+
+  @override
+  FutureResult<AccountFailure, MovementPage> movimientos(
+    String cuentaId, {
+    String? cursor,
+  }) async {
+    if (cursor != null) await Future<void>.delayed(latenciaConCursor);
+    return falla
+        ? left(const GlobalFailure.server(AccountFailure.network()))
+        : _inner.movimientos(cuentaId, cursor: cursor);
+  }
+
+  @override
+  FutureResult<AccountFailure, MovementDetail> movimiento(String id) =>
+      _inner.movimiento(id);
+}
+
 class _RepoQueFalla implements AccountRepository {
   @override
   FutureResult<AccountFailure, List<Account>> cuentas() async =>
@@ -146,16 +175,67 @@ void main() {
     expect(bloc.state.movimientos, hasLength(2));
   });
 
-  test('refrescar tras un error vuelve a cargar y limpia el fallo', () async {
-    final bloc = AccountBloc(AccountActions(MemoryAccountRepository()));
+  test('refrescar tras un error de carga inicial vuelve a cargar', () async {
+    final repo = _GuionRepo(MemoryAccountRepository())..falla = true;
+    final bloc = AccountBloc(AccountActions(repo));
     addTearDown(bloc.close);
     bloc.add(const AccountStarted());
+    await bloc.stream.firstWhere((s) => s.status == AccountStatus.error);
+
+    repo.falla = false;
+    bloc.add(const AccountRefreshed());
     await bloc.stream.firstWhere((s) => s.status == AccountStatus.ready);
 
-    bloc.add(const AccountRefreshed());
-    await bloc.stream.firstWhere((s) => !s.refreshing);
-
-    expect(bloc.state.status, AccountStatus.ready);
+    expect(bloc.state.failure, isNull);
     expect(bloc.state.movimientos, hasLength(3));
   });
+
+  test(
+    'un refresco fallido conserva los datos y marca refreshFailed',
+    () async {
+      final repo = _GuionRepo(MemoryAccountRepository());
+      final bloc = AccountBloc(AccountActions(repo));
+      addTearDown(bloc.close);
+      bloc.add(const AccountStarted());
+      await bloc.stream.firstWhere((s) => s.status == AccountStatus.ready);
+
+      repo.falla = true;
+      bloc.add(const AccountRefreshed());
+      await bloc.stream.firstWhere((s) => !s.refreshing);
+
+      expect(bloc.state.status, AccountStatus.ready);
+      expect(bloc.state.refreshFailed, isTrue);
+      expect(bloc.state.cuenta?.saldoDisponible.centimos, 125040);
+      expect(bloc.state.movimientos, hasLength(3));
+
+      // Un refresco que sí funciona limpia el aviso.
+      repo.falla = false;
+      bloc.add(const AccountRefreshed());
+      await bloc.stream.firstWhere((s) => !s.refreshing && !s.refreshFailed);
+      expect(bloc.state.refreshFailed, isFalse);
+    },
+  );
+
+  test(
+    'una página pedida antes de un refresco no se anexa a la lista nueva',
+    () async {
+      final repo = _GuionRepo(
+        MemoryAccountRepository(pageSize: 1),
+        latenciaConCursor: const Duration(milliseconds: 50),
+      );
+      final bloc = AccountBloc(AccountActions(repo));
+      addTearDown(bloc.close);
+      bloc.add(const AccountStarted());
+      await bloc.stream.firstWhere((s) => s.status == AccountStatus.ready);
+
+      bloc.add(const AccountMoreRequested()); // lenta
+      await bloc.stream.firstWhere((s) => s.loadingMore);
+      bloc.add(const AccountRefreshed()); // rápida: termina antes
+      await bloc.stream.firstWhere((s) => !s.refreshing && !s.loadingMore);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(bloc.state.movimientos, hasLength(1));
+      expect(bloc.state.loadingMore, isFalse);
+    },
+  );
 }

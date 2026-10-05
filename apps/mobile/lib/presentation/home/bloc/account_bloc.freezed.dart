@@ -277,7 +277,8 @@ String toString() {
 mixin _$AccountState {
 
  AccountStatus get status; Account? get cuenta; List<Movement> get movimientos;/// Cursor opaco de la siguiente página; `null` = no hay más.
- String? get nextCursor; bool get loadingMore; bool get refreshing;/// Solo con `status == error`.
+ String? get nextCursor; bool get loadingMore; bool get refreshing;/// El último refresco falló y lo que se ve son datos anteriores.
+ bool get refreshFailed;/// Solo con `status == error`.
  AccountFailure? get failure;
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
@@ -289,16 +290,16 @@ $AccountStateCopyWith<AccountState> get copyWith => _$AccountStateCopyWithImpl<A
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AccountState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&const DeepCollectionEquality().equals(other.movimientos, movimientos)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.loadingMore, loadingMore) || other.loadingMore == loadingMore)&&(identical(other.refreshing, refreshing) || other.refreshing == refreshing)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AccountState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&const DeepCollectionEquality().equals(other.movimientos, movimientos)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.loadingMore, loadingMore) || other.loadingMore == loadingMore)&&(identical(other.refreshing, refreshing) || other.refreshing == refreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,const DeepCollectionEquality().hash(movimientos),nextCursor,loadingMore,refreshing,failure);
+int get hashCode => Object.hash(runtimeType,status,cuenta,const DeepCollectionEquality().hash(movimientos),nextCursor,loadingMore,refreshing,refreshFailed,failure);
 
 @override
 String toString() {
-  return 'AccountState(status: $status, cuenta: $cuenta, movimientos: $movimientos, nextCursor: $nextCursor, loadingMore: $loadingMore, refreshing: $refreshing, failure: $failure)';
+  return 'AccountState(status: $status, cuenta: $cuenta, movimientos: $movimientos, nextCursor: $nextCursor, loadingMore: $loadingMore, refreshing: $refreshing, refreshFailed: $refreshFailed, failure: $failure)';
 }
 
 
@@ -309,7 +310,7 @@ abstract mixin class $AccountStateCopyWith<$Res>  {
   factory $AccountStateCopyWith(AccountState value, $Res Function(AccountState) _then) = _$AccountStateCopyWithImpl;
 @useResult
 $Res call({
- AccountStatus status, Account? cuenta, List<Movement> movimientos, String? nextCursor, bool loadingMore, bool refreshing, AccountFailure? failure
+ AccountStatus status, Account? cuenta, List<Movement> movimientos, String? nextCursor, bool loadingMore, bool refreshing, bool refreshFailed, AccountFailure? failure
 });
 
 
@@ -326,7 +327,7 @@ class _$AccountStateCopyWithImpl<$Res>
 
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? movimientos = null,Object? nextCursor = freezed,Object? loadingMore = null,Object? refreshing = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? movimientos = null,Object? nextCursor = freezed,Object? loadingMore = null,Object? refreshing = null,Object? refreshFailed = null,Object? failure = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AccountStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -334,6 +335,7 @@ as Account?,movimientos: null == movimientos ? _self.movimientos : movimientos /
 as List<Movement>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,loadingMore: null == loadingMore ? _self.loadingMore : loadingMore // ignore: cast_nullable_to_non_nullable
 as bool,refreshing: null == refreshing ? _self.refreshing : refreshing // ignore: cast_nullable_to_non_nullable
+as bool,refreshFailed: null == refreshFailed ? _self.refreshFailed : refreshFailed // ignore: cast_nullable_to_non_nullable
 as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as AccountFailure?,
   ));
@@ -420,10 +422,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  AccountFailure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  bool refreshFailed,  AccountFailure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AccountState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.failure);case _:
+return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.refreshFailed,_that.failure);case _:
   return orElse();
 
 }
@@ -441,10 +443,10 @@ return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  AccountFailure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  bool refreshFailed,  AccountFailure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _AccountState():
-return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.failure);case _:
+return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.refreshFailed,_that.failure);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -461,10 +463,10 @@ return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  AccountFailure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccountStatus status,  Account? cuenta,  List<Movement> movimientos,  String? nextCursor,  bool loadingMore,  bool refreshing,  bool refreshFailed,  AccountFailure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _AccountState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.failure);case _:
+return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_that.loadingMore,_that.refreshing,_that.refreshFailed,_that.failure);case _:
   return null;
 
 }
@@ -476,7 +478,7 @@ return $default(_that.status,_that.cuenta,_that.movimientos,_that.nextCursor,_th
 
 
 class _AccountState implements AccountState {
-  const _AccountState({this.status = AccountStatus.loading, this.cuenta, final  List<Movement> movimientos = const <Movement>[], this.nextCursor, this.loadingMore = false, this.refreshing = false, this.failure}): _movimientos = movimientos;
+  const _AccountState({this.status = AccountStatus.loading, this.cuenta, final  List<Movement> movimientos = const <Movement>[], this.nextCursor, this.loadingMore = false, this.refreshing = false, this.refreshFailed = false, this.failure}): _movimientos = movimientos;
   
 
 @override@JsonKey() final  AccountStatus status;
@@ -492,6 +494,8 @@ class _AccountState implements AccountState {
 @override final  String? nextCursor;
 @override@JsonKey() final  bool loadingMore;
 @override@JsonKey() final  bool refreshing;
+/// El último refresco falló y lo que se ve son datos anteriores.
+@override@JsonKey() final  bool refreshFailed;
 /// Solo con `status == error`.
 @override final  AccountFailure? failure;
 
@@ -505,16 +509,16 @@ _$AccountStateCopyWith<_AccountState> get copyWith => __$AccountStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccountState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&const DeepCollectionEquality().equals(other._movimientos, _movimientos)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.loadingMore, loadingMore) || other.loadingMore == loadingMore)&&(identical(other.refreshing, refreshing) || other.refreshing == refreshing)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccountState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&const DeepCollectionEquality().equals(other._movimientos, _movimientos)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.loadingMore, loadingMore) || other.loadingMore == loadingMore)&&(identical(other.refreshing, refreshing) || other.refreshing == refreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,const DeepCollectionEquality().hash(_movimientos),nextCursor,loadingMore,refreshing,failure);
+int get hashCode => Object.hash(runtimeType,status,cuenta,const DeepCollectionEquality().hash(_movimientos),nextCursor,loadingMore,refreshing,refreshFailed,failure);
 
 @override
 String toString() {
-  return 'AccountState(status: $status, cuenta: $cuenta, movimientos: $movimientos, nextCursor: $nextCursor, loadingMore: $loadingMore, refreshing: $refreshing, failure: $failure)';
+  return 'AccountState(status: $status, cuenta: $cuenta, movimientos: $movimientos, nextCursor: $nextCursor, loadingMore: $loadingMore, refreshing: $refreshing, refreshFailed: $refreshFailed, failure: $failure)';
 }
 
 
@@ -525,7 +529,7 @@ abstract mixin class _$AccountStateCopyWith<$Res> implements $AccountStateCopyWi
   factory _$AccountStateCopyWith(_AccountState value, $Res Function(_AccountState) _then) = __$AccountStateCopyWithImpl;
 @override @useResult
 $Res call({
- AccountStatus status, Account? cuenta, List<Movement> movimientos, String? nextCursor, bool loadingMore, bool refreshing, AccountFailure? failure
+ AccountStatus status, Account? cuenta, List<Movement> movimientos, String? nextCursor, bool loadingMore, bool refreshing, bool refreshFailed, AccountFailure? failure
 });
 
 
@@ -542,7 +546,7 @@ class __$AccountStateCopyWithImpl<$Res>
 
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? movimientos = null,Object? nextCursor = freezed,Object? loadingMore = null,Object? refreshing = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? movimientos = null,Object? nextCursor = freezed,Object? loadingMore = null,Object? refreshing = null,Object? refreshFailed = null,Object? failure = freezed,}) {
   return _then(_AccountState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AccountStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -550,6 +554,7 @@ as Account?,movimientos: null == movimientos ? _self._movimientos : movimientos 
 as List<Movement>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,loadingMore: null == loadingMore ? _self.loadingMore : loadingMore // ignore: cast_nullable_to_non_nullable
 as bool,refreshing: null == refreshing ? _self.refreshing : refreshing // ignore: cast_nullable_to_non_nullable
+as bool,refreshFailed: null == refreshFailed ? _self.refreshFailed : refreshFailed // ignore: cast_nullable_to_non_nullable
 as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as AccountFailure?,
   ));

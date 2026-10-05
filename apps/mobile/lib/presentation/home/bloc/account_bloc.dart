@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:core_kernel/core_kernel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
@@ -22,36 +20,15 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   AccountBloc(this._actions) : super(const AccountState()) {
     on<AccountStarted>(_onStarted);
     on<AccountRefreshed>(_onRefreshed);
-    on<AccountMoreRequested>(_onMoreRequested, transformer: _dropWhileBusy);
+    on<AccountMoreRequested>(_onMoreRequested);
   }
 
   final AccountActions _actions;
 
-  /// Descarta los avisos de "más" que llegan mientras uno está en curso.
-  ///
-  /// Hace falta a mano porque los blocs procesan en cola: los N avisos de
-  /// scroll de una ráfaga se encolarían y, uno tras otro, pedirían N páginas.
-  /// (`where` + `asyncExpand` no sirve: `asyncExpand` pausa la suscripción y la
-  /// entrega queda diferida hasta que el anterior termina.)
-  EventTransformer<AccountMoreRequested> get _dropWhileBusy =>
-      (events, mapper) {
-        final out = StreamController<AccountMoreRequested>();
-        var busy = false;
-        late final StreamSubscription<AccountMoreRequested> sub;
-        out.onListen = () {
-          sub = events.listen((event) {
-            if (busy || state.refreshing) return;
-            busy = true;
-            mapper(event).listen(
-              out.add,
-              onError: out.addError,
-              onDone: () => busy = false,
-            );
-          }, onDone: out.close);
-        };
-        out.onCancel = () => sub.cancel();
-        return out.stream;
-      };
+  /// Cuenta cuántas veces se reemplazó la primera página (arranque o refresco
+  /// con éxito). Una página pedida antes de un reemplazo no debe anexarse a la
+  /// lista nueva: traería movimientos duplicados o fuera de orden.
+  int _generation = 0;
 
   Future<void> _onStarted(
     AccountStarted event,
@@ -59,6 +36,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   ) async {
     emit(const AccountState());
     final loaded = await _loadFirstPage();
+    _generation++;
     emit(
       loaded.match(
         (failure) =>
@@ -78,15 +56,17 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     Emitter<AccountState> emit,
   ) async {
     if (state.refreshing || state.status == AccountStatus.loading) return;
-    emit(state.copyWith(refreshing: true));
+    emit(state.copyWith(refreshing: true, refreshFailed: false));
     final loaded = await _loadFirstPage();
+    if (loaded.isRight()) _generation++;
     emit(
       loaded.match(
-        // Con datos ya en pantalla un fallo de refresco no los borra; sin ellos
+        // Con datos ya en pantalla un fallo de refresco no los borra, pero
+        // `refreshFailed` obliga a avisar que son datos anteriores; sin ellos
         // (venía de un error) se muestra el error de nuevo.
         (failure) => state.cuenta == null
             ? AccountState(status: AccountStatus.error, failure: failure)
-            : state.copyWith(refreshing: false),
+            : state.copyWith(refreshing: false, refreshFailed: true),
         (data) => AccountState(
           status: AccountStatus.ready,
           cuenta: data.cuenta,
@@ -110,8 +90,11 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       return;
     }
 
+    final generation = _generation;
     emit(state.copyWith(loadingMore: true));
     final result = await _actions.movimientos(cuenta.id, cursor: cursor);
+    // Un refresco terminó mientras tanto: esta página es de la lista vieja.
+    if (generation != _generation) return;
     emit(
       result.match(
         // Se conserva el cursor: el siguiente scroll reintenta la misma página.

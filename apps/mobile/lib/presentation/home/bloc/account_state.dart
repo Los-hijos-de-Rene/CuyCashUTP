@@ -17,6 +17,9 @@ abstract class AccountState with _$AccountState {
     @Default(false) bool loadingMore,
     @Default(false) bool refreshing,
 
+    /// El último refresco falló y lo que se ve son datos anteriores.
+    @Default(false) bool refreshFailed,
+
     /// Solo con `status == error`.
     AccountFailure? failure,
   }) = _AccountState;

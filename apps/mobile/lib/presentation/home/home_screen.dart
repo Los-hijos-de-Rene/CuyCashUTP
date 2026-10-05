@@ -129,6 +129,10 @@ class _ReadyView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (state.refreshFailed) ...[
+          InfoStrip(icon: Icons.info_outline, text: l10n.homeRefreshFailed),
+          const SizedBox(height: CuyCashSpacing.stackSm),
+        ],
         if (cuenta != null) ...[
           BalanceCard(
             balance: cuenta.saldoDisponible,
