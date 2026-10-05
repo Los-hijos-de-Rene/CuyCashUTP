@@ -202,6 +202,13 @@ class Account(Base):
         CheckConstraint(
             "estado IN ('activa','bloqueada','cerrada')", name="ck_accounts_estado"
         ),
+        # La cuenta de sistema y la ausencia de titular van juntas, en los dos
+        # sentidos: una `sistema` con titular podría irse a negativo (ver el
+        # CHECK de abajo) y una cuenta normal sin titular no pertenece a nadie.
+        CheckConstraint(
+            "(tipo = 'sistema') = (user_id IS NULL)",
+            name="ck_accounts_sistema_sin_titular",
+        ),
         # La caja de CuyCash es la contraparte de cada recarga: su saldo es, por
         # definición, el dinero inyectado en la demo, y por eso va en negativo.
         # Para cualquier cuenta de un titular, el tope sigue siendo la última

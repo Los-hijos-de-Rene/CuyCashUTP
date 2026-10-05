@@ -33,9 +33,9 @@ CREATE TABLE login_attempts (
 )
 
 ;
-CREATE INDEX ix_login_attempts_device_id ON login_attempts (device_id);
 CREATE INDEX ix_login_attempts_dni ON login_attempts (dni);
 CREATE INDEX ix_login_attempts_created_at ON login_attempts (created_at);
+CREATE INDEX ix_login_attempts_device_id ON login_attempts (device_id);
 
 
 CREATE TABLE otp_challenges (
@@ -80,15 +80,16 @@ CREATE TABLE transactions (
 	estado VARCHAR(12) NOT NULL, 
 	idempotency_key VARCHAR(64) NOT NULL, 
 	referencia VARCHAR(60), 
+	request_fingerprint VARCHAR(64) NOT NULL, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
-	CONSTRAINT ck_transactions_tipo CHECK (tipo IN ('transferencia','pago_qr','desembolso','cuota','ajuste')), 
+	CONSTRAINT ck_transactions_tipo CHECK (tipo IN ('transferencia','recarga','pago_qr','desembolso','cuota','ajuste')), 
 	CONSTRAINT ck_transactions_estado CHECK (estado IN ('pendiente','confirmada','revertida'))
 )
 
 ;
-CREATE INDEX ix_transactions_created_at ON transactions (created_at);
 CREATE UNIQUE INDEX ix_transactions_idempotency_key ON transactions (idempotency_key);
+CREATE INDEX ix_transactions_created_at ON transactions (created_at);
 
 
 CREATE TABLE users (
@@ -112,7 +113,7 @@ CREATE UNIQUE INDEX ix_users_dni ON users (dni);
 
 CREATE TABLE accounts (
 	id VARCHAR(36) NOT NULL, 
-	user_id VARCHAR(36) NOT NULL, 
+	user_id VARCHAR(36), 
 	numero VARCHAR(14) NOT NULL, 
 	tipo VARCHAR(10) NOT NULL, 
 	moneda VARCHAR(3) NOT NULL, 
@@ -121,16 +122,33 @@ CREATE TABLE accounts (
 	saldo_contable BIGINT NOT NULL, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
-	CONSTRAINT ck_accounts_tipo CHECK (tipo IN ('ahorro','corriente')), 
+	CONSTRAINT ck_accounts_tipo CHECK (tipo IN ('ahorro','corriente','sistema')), 
 	CONSTRAINT ck_accounts_moneda CHECK (moneda IN ('PEN','USD')), 
 	CONSTRAINT ck_accounts_estado CHECK (estado IN ('activa','bloqueada','cerrada')), 
-	CONSTRAINT ck_accounts_saldo_no_negativo CHECK (saldo_disponible >= 0), 
+	CONSTRAINT ck_accounts_sistema_sin_titular CHECK ((tipo = 'sistema') = (user_id IS NULL)), 
+	CONSTRAINT ck_accounts_saldo_no_negativo CHECK (tipo = 'sistema' OR saldo_disponible >= 0), 
 	FOREIGN KEY(user_id) REFERENCES users (id)
 )
 
 ;
-CREATE UNIQUE INDEX ix_accounts_numero ON accounts (numero);
 CREATE INDEX ix_accounts_user_id ON accounts (user_id);
+CREATE UNIQUE INDEX ix_accounts_numero ON accounts (numero);
+
+
+CREATE TABLE beneficiaries (
+	id VARCHAR(36) NOT NULL, 
+	user_id VARCHAR(36) NOT NULL, 
+	beneficiario_dni VARCHAR(8) NOT NULL, 
+	apodo VARCHAR(40) NOT NULL, 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (user_id, beneficiario_dni), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+)
+
+;
+CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
+CREATE INDEX ix_beneficiaries_beneficiario_dni ON beneficiaries (beneficiario_dni);
 
 
 CREATE TABLE devices (
@@ -145,8 +163,8 @@ CREATE TABLE devices (
 )
 
 ;
-CREATE INDEX ix_devices_device_id ON devices (device_id);
 CREATE INDEX ix_devices_user_id ON devices (user_id);
+CREATE INDEX ix_devices_device_id ON devices (device_id);
 
 
 CREATE TABLE kyc_verifications (
@@ -179,8 +197,8 @@ CREATE TABLE sessions (
 )
 
 ;
-CREATE INDEX ix_sessions_user_id ON sessions (user_id);
 CREATE UNIQUE INDEX ix_sessions_token_hash ON sessions (token_hash);
+CREATE INDEX ix_sessions_user_id ON sessions (user_id);
 
 
 CREATE TABLE ledger_entries (
@@ -200,7 +218,27 @@ CREATE TABLE ledger_entries (
 )
 
 ;
+CREATE INDEX ix_ledger_entries_account_id ON ledger_entries (account_id);
 CREATE INDEX ix_ledger_entries_transaction_id ON ledger_entries (transaction_id);
 CREATE INDEX ix_ledger_entries_created_at ON ledger_entries (created_at);
-CREATE INDEX ix_ledger_entries_account_id ON ledger_entries (account_id);
+
+
+CREATE TABLE transfers (
+	id VARCHAR(36) NOT NULL, 
+	transaction_id VARCHAR(36) NOT NULL, 
+	cuenta_origen VARCHAR(36) NOT NULL, 
+	cuenta_destino VARCHAR(36) NOT NULL, 
+	monto BIGINT NOT NULL, 
+	motivo VARCHAR(40), 
+	estado VARCHAR(12) NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(transaction_id) REFERENCES transactions (id), 
+	FOREIGN KEY(cuenta_origen) REFERENCES accounts (id), 
+	FOREIGN KEY(cuenta_destino) REFERENCES accounts (id)
+)
+
+;
+CREATE INDEX ix_transfers_cuenta_origen ON transfers (cuenta_origen);
+CREATE UNIQUE INDEX ix_transfers_transaction_id ON transfers (transaction_id);
+CREATE INDEX ix_transfers_cuenta_destino ON transfers (cuenta_destino);
 

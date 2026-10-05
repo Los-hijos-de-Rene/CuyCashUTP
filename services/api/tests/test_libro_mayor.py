@@ -180,3 +180,18 @@ async def test_un_beneficiario_no_se_duplica_para_el_mismo_titular(db):
     db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567", apodo="Jenny 2"))
     with pytest.raises(IntegrityError):
         await db.commit()
+
+
+async def test_una_cuenta_normal_sin_titular_es_rechazada(db):
+    """Solo la caja de sistema puede existir sin titular."""
+    db.add(Account(user_id=None, numero="00000000000009", tipo="ahorro"))
+    with pytest.raises(IntegrityError):
+        await db.commit()
+
+
+async def test_una_cuenta_de_sistema_con_titular_es_rechazada(db):
+    """Una `sistema` con titular podría quedar en negativo: se prohíbe."""
+    cuenta = await _cuenta(db, "10000009", "00000000000010", 0)
+    db.add(Account(user_id=cuenta.user_id, numero="19100000000001", tipo="sistema"))
+    with pytest.raises(IntegrityError):
+        await db.commit()
