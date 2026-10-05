@@ -52,7 +52,10 @@ titular.
 9. **Routers nuevos dentro del servicio existente**, que se renombra de `services/auth` a
    `services/api`. Un segundo servicio serían dos despliegues y validación de token duplicada sobre
    una base compartida, que es el antipatrón que luego habría que defender.
-10. **Tres features verticales en la app** (`account`, `transfer`, `beneficiary`), no una feature
+10. **El esquema se recrea, sin Alembic.** El proyecto no tiene datos reales todavía. Montar
+    migraciones versionadas para un esquema que nadie necesita conservar es coste sin beneficio;
+    entra en el sprint que lo necesite.
+11. **Tres features verticales en la app** (`account`, `transfer`, `beneficiary`), no una feature
     `banking`. Tres interfaces pequeñas en vez de un repositorio que mezcla consultar saldo con
     mover dinero.
 
@@ -95,16 +98,21 @@ ya existen**. `beneficiaries` y `transfers` aparecerían solas; el `user_id` nul
 con las restricciones viejas y la recarga fallaría en producción pero pasaría en los tests locales,
 que arrancan con la base vacía.
 
-Dos salidas, y hay que elegir una al implementar:
+**Decisión: se recrea la base.** No hay datos reales que conservar —ni en local ni en Neon—, así
+que se borra el esquema y `create_all` lo levanta entero con las restricciones nuevas. Introducir
+Alembic hoy costaría una revisión inicial que refleje un esquema que nadie necesita conservar.
 
-- **Introducir Alembic** (lo correcto, y lo que va a hacer falta igualmente en el sprint 4). Una
-  revisión inicial que refleje el esquema actual, más una revisión con estos cambios.
-- **Recrear la base de la demo**: borrar y dejar que `create_all` la levante entera. Vale solo
-  mientras no haya datos que conservar, y eso deja de ser cierto en cuanto alguien registre una
-  cuenta para la exposición.
+Esto es una **pérdida de datos deliberada**, y hay que ejecutarla a conciencia:
 
-La recomendación es Alembic. Si se difiere, el spec debe decir explícitamente que la base se
-recrea, porque es una pérdida de datos deliberada.
+- Un script `scripts/reset_schema.py` que haga `drop_all` + `create_all`, y que **se niegue a correr
+  si `ENV == 'production'` sin una variable `ALLOW_DESTRUCTIVE_RESET=1`**. Sin ese cerrojo, el día
+  que haya datos reales alguien lo ejecutará por costumbre.
+- Las cuentas registradas para probar el Sprint 1 desaparecen. Hay que volver a registrarse en la
+  app tras el reset.
+
+**Cuándo deja de valer esto:** en el momento en que una cuenta de la exposición, una demo grabada o
+el sprint 4 (préstamos, que escribe contratos) dependa de datos previos. Ahí entra Alembic, y es
+trabajo de ese sprint, no de este. Queda anotado para no redescubrirlo.
 
 ## Piezas transversales
 
@@ -399,7 +407,8 @@ Todo el copy nuevo va al ARB es-PE.
 # Orden sugerido
 
 1. Renombrar `services/auth` → `services/api` (commit propio).
-2. Backend: modelo, `current_user`, `accounts.py`, `ledger.py` con sus pruebas.
+2. Backend: modelo, `scripts/reset_schema.py` con su cerrojo, `current_user`, `accounts.py`,
+   `ledger.py` con sus pruebas.
 3. Backend: routers `accounts`, `directory`, `transfers`, `topups`, `beneficiaries`.
 4. App: `Money` en `core_kernel` y `formatSoles`; `Dio` autenticado.
 5. App: `feature/account` + home real (se borra `demo_wallet.dart`).
