@@ -1,3 +1,4 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
@@ -42,7 +43,10 @@ class _MovementRow extends StatelessWidget {
       MovementDay.today => l10n.homeToday,
       MovementDay.yesterday => l10n.homeYesterday,
     };
-    final amount = formatSoles(movement.amount);
+    final amount = formatSoles(
+      // TODO(tarea-12): puente temporal; la UI de demostración se borra.
+      Money.fromCentimos((movement.amount * 100).round()),
+    );
     return Padding(
       padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
       child: Row(

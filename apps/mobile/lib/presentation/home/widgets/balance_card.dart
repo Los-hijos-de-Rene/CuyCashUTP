@@ -1,3 +1,4 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
@@ -64,7 +65,10 @@ class _BalanceCardState extends State<BalanceCard> {
           ),
           const SizedBox(height: CuyCashSpacing.stackXs),
           Text(
-            _hidden ? l10n.homeBalanceHidden : formatSoles(widget.balance),
+            _hidden ? l10n.homeBalanceHidden : formatSoles(
+              // TODO(tarea-12): puente temporal; la UI de demostración se borra.
+              Money.fromCentimos((widget.balance * 100).round()),
+            ),
             style: CuyCashTypography.displayLg.copyWith(
               color: CuyCashColors.accentOnDark,
               fontFeatures: const [FontFeature.tabularFigures()],
