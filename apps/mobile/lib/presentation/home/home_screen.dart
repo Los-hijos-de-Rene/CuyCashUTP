@@ -27,7 +27,7 @@ void _showComingSoon(BuildContext context) =>
 /// Inicio: saldo y movimientos del libro mayor (los trae [AccountBloc]).
 ///
 /// El resto de la pantalla (WasiBot, notificaciones) sigue siendo un gancho sin
-/// feature detrás. Enviar abre el flujo de envío; cobrar, recargar y retirar avisan
+/// feature detrás. Enviar y recargar abren su flujo; cobrar y retirar avisan
 /// "próximamente" hasta que existan sus pantallas.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,8 +45,23 @@ class HomeScreen extends StatelessWidget {
         } else {
           context.push(AppRoutes.enviar, extra: cuenta);
         }
-      case HomeAction.charge:
       case HomeAction.topUp:
+        final bloc = context.read<AccountBloc>();
+        final cuenta = bloc.state.cuenta;
+        if (cuenta == null) {
+          _showMessage(context, AppLocalizations.of(context).homeErrorGeneric);
+        } else {
+          // La recarga avisa con `true` si hubo algún intento: el saldo se
+          // vuelve a pedir para que el nuevo se vea.
+          context
+              .push<bool>(AppRoutes.recargar, extra: cuenta)
+              .then((huboIntento) {
+                if (huboIntento == true) {
+                  bloc.add(const AccountEvent.refreshed());
+                }
+              });
+        }
+      case HomeAction.charge:
       case HomeAction.withdraw:
         _showComingSoon(context);
     }

@@ -25,6 +25,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:fpdart/fpdart.dart';
 
 void main() {
@@ -213,6 +214,98 @@ void main() {
         home: const HomeScreen(),
       ),
     ),
+  );
+
+  testWidgets('"Recargar" sin la cuenta cargada lo dice en vez de callar', (
+    tester,
+  ) async {
+    final sinCuenta = _BlocConEstado(
+      const AccountState(status: AccountStatus.ready),
+    );
+    addTearDown(sinCuenta.close);
+    await tester.pumpWidget(wrapWith(sinCuenta));
+    await tester.pump();
+
+    await tester.tap(find.text('Recargar'));
+    await tester.pump();
+
+    expect(
+      find.text('No pudimos cargar tu cuenta. Inténtalo de nuevo.'),
+      findsOneWidget,
+    );
+    expect(find.text('Disponible en una próxima versión.'), findsNothing);
+  });
+
+  testWidgets(
+    '"Recargar" con la cuenta cargada navega, y al volver con true refresca',
+    (tester) async {
+      final conCuenta = _BlocConEstado(
+        const AccountState(
+          status: AccountStatus.ready,
+          cuenta: Account(
+            id: 'a',
+            numero: '19100000004521',
+            tipo: 'ahorro',
+            moneda: 'PEN',
+            estado: 'activa',
+            saldoDisponible: Money.fromCentimos(125040),
+            saldoContable: Money.fromCentimos(125040),
+          ),
+        ),
+      );
+      addTearDown(conCuenta.close);
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+          GoRoute(
+            path: '/recargar',
+            builder: (context, state) => Scaffold(
+              body: Column(
+                children: [
+                  Text('RECARGA ${(state.extra as Account).id}'),
+                  TextButton(
+                    onPressed: () => context.pop(true),
+                    child: const Text('LISTO'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        RepositoryProvider<DeviceActions>.value(
+          value: device,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: bloc),
+              BlocProvider<AccountBloc>.value(value: conCuenta),
+            ],
+            child: MaterialApp.router(
+              routerConfig: router,
+              theme: CuyCashTheme.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Recargar'));
+      await tester.pumpAndSettle();
+      expect(find.text('RECARGA a'), findsOneWidget);
+      expect(
+        conCuenta.recibidos,
+        isNot(contains(const AccountEvent.refreshed())),
+      );
+
+      await tester.tap(find.text('LISTO'));
+      await tester.pumpAndSettle();
+
+      expect(conCuenta.recibidos, contains(const AccountEvent.refreshed()));
+    },
   );
 
   testWidgets(

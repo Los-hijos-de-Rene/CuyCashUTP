@@ -15,6 +15,9 @@ abstract final class AppRoutes {
   static const enviarConfirmar = '/enviar/confirmar';
   static const enviarConstancia = '/enviar/constancia';
 
+  // Recarga de saldo (una sola pantalla: monto + PIN).
+  static const recargar = '/recargar';
+
   // Recuperación de PIN.
   static const recuperar = '/recuperar';
   static const recuperarCodigo = '/recuperar/codigo';

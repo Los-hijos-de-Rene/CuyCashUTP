@@ -50,13 +50,20 @@ const destinatarioDePrueba = Recipient(
 /// Repositorio de prueba: resuelve siempre, y envía según [alEnviar]. Anota
 /// cada llamada a `enviar` con la clave y el PIN que recibió.
 class FakeTransferRepository implements TransferRepository {
-  FakeTransferRepository({this.alEnviar, this.alResolver});
+  FakeTransferRepository({this.alEnviar, this.alResolver, this.alRecargar});
 
   /// Lo que responde `enviar`; por defecto, una constancia.
   final FutureResult<TransferFailure, TransferReceipt> Function(int llamada)?
   alEnviar;
   final FutureResult<TransferFailure, Recipient> Function(String dni)?
   alResolver;
+
+  /// Lo que responde `recargar`; por defecto, una constancia.
+  final FutureResult<TransferFailure, TransferReceipt> Function(int llamada)?
+  alRecargar;
+
+  final clavesRecarga = <String>[];
+  int get recargas => clavesRecarga.length;
 
   final claves = <String>[];
   final pines = <String>[];
@@ -96,5 +103,9 @@ class FakeTransferRepository implements TransferRepository {
     required Money monto,
     required String pin,
     required String idempotencyKey,
-  }) => throw UnimplementedError();
+  }) {
+    clavesRecarga.add(idempotencyKey);
+    return alRecargar?.call(clavesRecarga.length) ??
+        Future.value(right(constanciaDe(monto)));
+  }
 }

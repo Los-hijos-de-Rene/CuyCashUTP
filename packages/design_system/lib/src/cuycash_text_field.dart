@@ -22,6 +22,7 @@ class CuyCashTextField extends StatelessWidget {
     this.autofocus = false,
     this.onSubmitted,
     this.inputFormatters,
+    this.enabled = true,
     super.key,
   });
 
@@ -44,6 +45,9 @@ class CuyCashTextField extends StatelessWidget {
   /// teclado numérico entero.
   final List<TextInputFormatter>? inputFormatters;
 
+  /// `false` deja el campo de solo lectura (p. ej. una intención sellada).
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -53,6 +57,7 @@ class CuyCashTextField extends StatelessWidget {
         const SizedBox(height: CuyCashSpacing.stackSm),
         TextField(
           controller: controller,
+          enabled: enabled,
           obscureText: obscure,
           keyboardType: keyboardType,
           onChanged: onChanged,

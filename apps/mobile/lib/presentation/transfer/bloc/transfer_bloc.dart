@@ -9,6 +9,7 @@ import '../../../feature/transfer/domain/recipient.dart';
 import '../../../feature/transfer/domain/transfer_failure.dart';
 import '../../../feature/transfer/domain/transfer_limits.dart';
 import '../../../feature/transfer/domain/transfer_receipt.dart';
+import '../flatten_transfer_failure.dart';
 
 part 'transfer_bloc.freezed.dart';
 part 'transfer_event.dart';
@@ -240,14 +241,6 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     );
   }
 
-  /// Aplana el `GlobalFailure` a lo que la pantalla sabe decir.
   TransferFailure _flatten(GlobalFailure<TransferFailure> failure) =>
-      switch (failure) {
-        ServerFailure(:final failure) => failure,
-        NoConnection() || Timeout() => const TransferFailure.network(),
-        PermissionDenied() ||
-        NotFound() ||
-        StorageFailure() ||
-        Unexpected() => const TransferFailure.unexpected(),
-      };
+      flattenTransferFailure(failure);
 }

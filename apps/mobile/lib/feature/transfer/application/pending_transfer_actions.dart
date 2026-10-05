@@ -34,6 +34,16 @@ class PendingTransferActions {
     String? motivo,
   }) => '$cuentaId|$destinatarioDni|${monto.centimos}|${motivo ?? ''}';
 
+  /// Huella de una RECARGA: no tiene destinatario ni motivo, así que la
+  /// intención es cuenta + monto. El prefijo `recarga|` la separa de la de un
+  /// envío (`cuenta|dni|monto|motivo`): un DNI son ocho dígitos, jamás
+  /// «recarga», así que ambas familias no pueden chocar. Comparten almacén,
+  /// vencimiento y `hasPending` (una operación sin resolver avisa en las dos).
+  static String huellaRecarga({
+    required String cuentaId,
+    required Money monto,
+  }) => 'recarga|$cuentaId|${monto.centimos}';
+
   Map<String, PendingTransfer> _vigentes(Map<String, PendingTransfer> todas) {
     final ahora = _clock().toUtc();
     return {

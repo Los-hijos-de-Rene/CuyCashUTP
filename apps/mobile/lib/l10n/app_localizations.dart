@@ -1923,6 +1923,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Volver al inicio'**
   String get transferReceiptHome;
+
+  /// No description provided for @topUpTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recargar saldo'**
+  String get topUpTitle;
+
+  /// No description provided for @topUpHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto quieres recargar?'**
+  String get topUpHeadline;
+
+  /// No description provided for @topUpSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige el monto y confirma con tu PIN de 6 dígitos.'**
+  String get topUpSubtitle;
+
+  /// No description provided for @topUpAmountOverMax.
+  ///
+  /// In es, this message translates to:
+  /// **'El máximo por recarga es {max}.'**
+  String topUpAmountOverMax(String max);
+
+  /// No description provided for @topUpCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar recarga'**
+  String get topUpCta;
+
+  /// No description provided for @topUpRetryCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar recarga'**
+  String get topUpRetryCta;
+
+  /// No description provided for @topUpSummaryTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Se acredita en'**
+  String get topUpSummaryTo;
+
+  /// No description provided for @topUpPendingElsewhereNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes una operación sin resolver. Revisa tus movimientos antes de recargar.'**
+  String get topUpPendingElsewhereNotice;
+
+  /// No description provided for @topUpRecoveredNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya habías intentado recargar este monto y no llegamos a saber si se acreditó. Si reintentas, no se cobrará dos veces.'**
+  String get topUpRecoveredNotice;
+
+  /// No description provided for @topUpLeaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir sin confirmar?'**
+  String get topUpLeaveTitle;
+
+  /// No description provided for @topUpLeaveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu recarga pudo haberse realizado. Revísala en tus movimientos antes de intentarlo otra vez.'**
+  String get topUpLeaveBody;
+
+  /// No description provided for @topUpErrorRateLimited.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar tu recarga. Espera un momento y reintenta: si ya se acreditó, no se cobrará dos veces.'**
+  String get topUpErrorRateLimited;
+
+  /// No description provided for @topUpErrorAccountBlocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta no está activa, así que no puedes recargar por ahora.'**
+  String get topUpErrorAccountBlocked;
+
+  /// No description provided for @topUpErrorKeyReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta recarga ya se había iniciado con otro monto. Vuelve al inicio y empieza una nueva.'**
+  String get topUpErrorKeyReused;
+
+  /// No description provided for @topUpErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar tu recarga. Pudo haberse realizado: reintenta y, si ya se acreditó, no se cobrará dos veces.'**
+  String get topUpErrorNetwork;
+
+  /// No description provided for @topUpErrorUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo salió mal y no pudimos confirmar tu recarga. Reintenta y, si ya se acreditó, no se cobrará dos veces.'**
+  String get topUpErrorUnexpected;
+
+  /// No description provided for @topUpDoneHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Recarga realizada!'**
+  String get topUpDoneHeadline;
+
+  /// No description provided for @topUpDoneReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta recarga ya estaba registrada. No se cobró otra vez.'**
+  String get topUpDoneReused;
 }
 
 class _AppLocalizationsDelegate

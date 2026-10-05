@@ -40,6 +40,8 @@ import '../splash/splash_screen.dart';
 import '../transfer/amount_screen.dart';
 import '../transfer/bloc/transfer_bloc.dart';
 import '../transfer/confirm_screen.dart';
+import '../topup/bloc/topup_bloc.dart';
+import '../topup/topup_screen.dart';
 import '../transfer/receipt_screen.dart';
 import '../transfer/recipient_screen.dart';
 import '../auth/login_screen.dart';
@@ -263,6 +265,28 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             builder: (context, state) => const ReceiptScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.recargar,
+        // La cuenta viaja como `extra` desde el inicio; sin ella (deep link)
+        // no hay dónde recargar.
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) {
+          final cuenta = state.extra as Account;
+          return BlocProvider(
+            // La clave de idempotencia nace al abrir (TopUpOpened).
+            create: (_) => TopUpBloc(
+              TransferModule.create(deps),
+              pending: TransferModule.pending(deps),
+              userId: switch (authBloc.state) {
+                AuthAuthenticated(:final session) => session.userId,
+                AuthUnauthenticated() => '',
+              },
+            )..add(TopUpEvent.opened(cuentaId: cuenta.id)),
+            child: TopUpScreen(cuenta: cuenta),
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

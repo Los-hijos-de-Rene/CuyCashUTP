@@ -1083,4 +1083,70 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get transferReceiptHome => 'Volver al inicio';
+
+  @override
+  String get topUpTitle => 'Recargar saldo';
+
+  @override
+  String get topUpHeadline => '¿Cuánto quieres recargar?';
+
+  @override
+  String get topUpSubtitle =>
+      'Elige el monto y confirma con tu PIN de 6 dígitos.';
+
+  @override
+  String topUpAmountOverMax(String max) {
+    return 'El máximo por recarga es $max.';
+  }
+
+  @override
+  String get topUpCta => 'Confirmar recarga';
+
+  @override
+  String get topUpRetryCta => 'Reintentar recarga';
+
+  @override
+  String get topUpSummaryTo => 'Se acredita en';
+
+  @override
+  String get topUpPendingElsewhereNotice =>
+      'Tienes una operación sin resolver. Revisa tus movimientos antes de recargar.';
+
+  @override
+  String get topUpRecoveredNotice =>
+      'Ya habías intentado recargar este monto y no llegamos a saber si se acreditó. Si reintentas, no se cobrará dos veces.';
+
+  @override
+  String get topUpLeaveTitle => '¿Salir sin confirmar?';
+
+  @override
+  String get topUpLeaveBody =>
+      'Tu recarga pudo haberse realizado. Revísala en tus movimientos antes de intentarlo otra vez.';
+
+  @override
+  String get topUpErrorRateLimited =>
+      'No pudimos confirmar tu recarga. Espera un momento y reintenta: si ya se acreditó, no se cobrará dos veces.';
+
+  @override
+  String get topUpErrorAccountBlocked =>
+      'Tu cuenta no está activa, así que no puedes recargar por ahora.';
+
+  @override
+  String get topUpErrorKeyReused =>
+      'Esta recarga ya se había iniciado con otro monto. Vuelve al inicio y empieza una nueva.';
+
+  @override
+  String get topUpErrorNetwork =>
+      'No pudimos confirmar tu recarga. Pudo haberse realizado: reintenta y, si ya se acreditó, no se cobrará dos veces.';
+
+  @override
+  String get topUpErrorUnexpected =>
+      'Algo salió mal y no pudimos confirmar tu recarga. Reintenta y, si ya se acreditó, no se cobrará dos veces.';
+
+  @override
+  String get topUpDoneHeadline => '¡Recarga realizada!';
+
+  @override
+  String get topUpDoneReused =>
+      'Esta recarga ya estaba registrada. No se cobró otra vez.';
 }
