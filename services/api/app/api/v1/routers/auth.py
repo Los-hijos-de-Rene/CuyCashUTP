@@ -12,7 +12,7 @@ from app.core.security import hash_pin, new_token, pin_is_valid, token_digest, v
 from app.db.base import get_session
 from app.db.models import Device, OtpTicket, User, utcnow
 from app.schemas import AuthenticateIn, CheckPinIn, RegisterIn, ResetPinIn, SessionIn
-from app.services import lockout, otp, sessions
+from app.services import accounts, lockout, otp, sessions
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
@@ -58,6 +58,10 @@ async def register(payload: RegisterIn, session: AsyncSession = Depends(get_sess
         pin_hash=hash_pin(payload.pin),
     )
     session.add(user)
+    await session.flush()
+    # Antes del commit a propósito: si la apertura falla, el alta entera
+    # revierte. Una identidad sin cuenta no tendría quién la repare.
+    await accounts.abrir_cuenta(session, user.id)
     await session.commit()
     # Crear la cuenta NO abre sesión: la app la activa después de la pantalla
     # de éxito.
