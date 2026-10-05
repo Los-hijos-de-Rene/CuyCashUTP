@@ -26,6 +26,7 @@ from app.db.models import Account, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
 from app.services import accounts as accounts_service
 from app.services import lockout
+from app.services.rate_limit import consumir_consulta_de_destinatario
 from app.services.ledger import Asiento, post
 
 router = APIRouter(prefix="/v1", tags=["Dinero"])
@@ -190,6 +191,13 @@ async def transferir(
 
     if payload.destinatario_dni == user.dni:
         raise ApiError(ErrorCode.SELF_TRANSFER, "No puedes enviarte dinero a ti mismo.")
+
+    # Esta búsqueda es un oráculo del padrón: responde 404 antes de verificar
+    # el PIN, así que no gasta intentos de bloqueo. Comparte presupuesto con
+    # `/directory/resolve`; si no, se esquivaría usando la ruta sin tope. Se
+    # cobra también en los reintentos: su búsqueda no filtra por estado y el
+    # destinatario del payload es el que quiera el cliente.
+    consumir_consulta_de_destinatario(user.id)
 
     consulta = (
         select(Account)

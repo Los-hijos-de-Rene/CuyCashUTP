@@ -21,6 +21,15 @@ from app.db.base import Base, get_session  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _presupuesto_de_consultas_limpio():
+    """El presupuesto vive en memoria del proceso: que no pase de un test a otro."""
+    from app.services import rate_limit
+
+    rate_limit.reiniciar_para_pruebas()
+    yield
+
+
 @pytest_asyncio.fixture
 async def client():
     engine = create_async_engine(
