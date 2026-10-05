@@ -6,6 +6,8 @@ import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
 import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
+import '../../feature/transfer/application/transfer_actions.dart';
+import '../../feature/transfer/domain/transfer_repository.dart';
 import '../env/app_flavor.dart';
 
 /// Grafo de dependencias ya resuelto (composición raíz). Solo INTERFACES:
@@ -19,6 +21,7 @@ class AppDependencies {
     required this.identifierLockoutStore,
     required this.kycRepository,
     required this.accountRepository,
+    required this.transferRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -38,6 +41,10 @@ class AppDependencies {
   /// Consulta de cuentas y movimientos. Los blocs consumen [accountActions].
   final AccountRepository accountRepository;
   AccountActions get accountActions => AccountActions(accountRepository);
+
+  /// Envío y recarga de saldo. Los blocs consumen [transferActions].
+  final TransferRepository transferRepository;
+  TransferActions get transferActions => TransferActions(transferRepository);
 
   final LockoutPolicy lockoutPolicy;
 }

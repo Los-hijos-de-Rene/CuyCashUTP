@@ -1,0 +1,448 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/core/http/authenticated_dio.dart';
+import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
+import 'package:cuycash/feature/transfer/infrastructure/http_transfer_repository.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'transfer_repository_contract.dart';
+
+/// Backend simulado y CON ESTADO: reproduce el JSON, los códigos de estado y
+/// el orden de validación de `services/api/.../transfers.py` y
+/// `directory.py` (cuerpo de error PLANO `{code, detail, <extras>}`; PIN
+/// errado 403, bloqueo 423, presupuesto 429).
+class FakeTransfersBackend implements HttpClientAdapter {
+  static const pin = '000000';
+  static const dniPropio = '70123456';
+  static const dniDestino = '87654321';
+  static const cuenta = 'acc-demo-1';
+  static const consultasMaximas = 20;
+  static final ahora = DateTime.utc(2026, 10, 5, 18);
+
+  /// Si no es null, responde esto a TODO.
+  ({int status, Object? body})? forced;
+  DioException? throwIt;
+  final requests = <RequestOptions>[];
+
+  int saldo = 125040;
+  int fallos = 0;
+  DateTime? bloqueadoHasta;
+  int consultas = 0;
+  int secuencia = 0;
+  final operaciones =
+      <String, ({String huella, Map<String, Object?> cuerpo})>{};
+
+  static (int, Object?) _error(
+    int status,
+    String code, [
+    Map<String, Object?> extra = const {},
+  ]) => (status, {'code': code, 'detail': 'texto libre', ...extra});
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    if (throwIt case final error?) throw error;
+    final (status, body) = switch (forced) {
+      final f? => (f.status, f.body),
+      _ => _route(options),
+    };
+    return ResponseBody.fromString(
+      body is String ? body : jsonEncode(body),
+      status,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  (int, Object?) _route(RequestOptions o) => switch (o.uri.path) {
+    '/v1/directory/resolve' => _resolver(o.queryParameters['dni'] as String),
+    '/v1/transfers' => _mover(o.data as Map<String, dynamic>, envio: true),
+    '/v1/topups' => _mover(o.data as Map<String, dynamic>, envio: false),
+    _ => _error(404, 'NOPE'),
+  };
+
+  (int, Object?)? _consultar() {
+    if (consultas >= consultasMaximas) {
+      return _error(429, 'RATE_LIMITED', {'retry_after_seconds': 312});
+    }
+    consultas++;
+    return null;
+  }
+
+  (int, Object?) _resolver(String dni) {
+    if (dni == dniPropio) return _error(400, 'SELF_TRANSFER');
+    if (_consultar() case final e?) return e;
+    if (dni != dniDestino) return _error(404, 'RECIPIENT_NOT_FOUND');
+    return (
+      200,
+      {
+        'dni': dniDestino,
+        'nombre_enmascarado': 'J*** M*** R***',
+        'cuenta_destino_numero_masked': '••••7732',
+      },
+    );
+  }
+
+  (int, Object?)? _exigirPin(String enviado) {
+    if (bloqueadoHasta case final h? when h.isAfter(ahora)) {
+      return _error(423, 'IDENTIFIER_LOCKED', {
+        'locked_until': h.toIso8601String(),
+      });
+    }
+    if (enviado == pin) {
+      fallos = 0;
+      return null;
+    }
+    fallos++;
+    if (fallos >= 5) {
+      fallos = 0;
+      bloqueadoHasta = ahora.add(const Duration(minutes: 15));
+      return _error(423, 'IDENTIFIER_LOCKED', {
+        'locked_until': bloqueadoHasta!.toIso8601String(),
+      });
+    }
+    return _error(403, 'INVALID_CREDENTIALS', {
+      'intentos_restantes': 5 - fallos,
+    });
+  }
+
+  (int, Object?) _mover(Map<String, dynamic> b, {required bool envio}) {
+    final cuentaId = (envio ? b['cuenta_origen_id'] : b['cuenta_id']) as String;
+    final monto = b['monto_centimos'] as int;
+    final clave = b['idempotency_key'] as String;
+    if (cuentaId != cuenta) return _error(404, 'ACCOUNT_NOT_FOUND');
+    if (envio) {
+      final dni = b['destinatario_dni'] as String;
+      if (dni == dniPropio) return _error(400, 'SELF_TRANSFER');
+      if (_consultar() case final e?) return e;
+      if (dni != dniDestino) return _error(404, 'RECIPIENT_NOT_FOUND');
+    }
+    if (monto < 1 || monto > 200000) return _error(400, 'AMOUNT_OUT_OF_RANGE');
+    if (_exigirPin(b['pin'] as String) case final e?) return e;
+
+    final huella =
+        '$envio|$cuentaId|${b['destinatario_dni']}|$monto|'
+        '${(b['motivo'] as String? ?? '').trim()}';
+    final previa = operaciones[clave];
+    if (previa != null) {
+      return previa.huella == huella
+          ? (200, previa.cuerpo)
+          : _error(409, 'IDEMPOTENCY_KEY_REUSED');
+    }
+    if (envio && saldo < monto) return _error(400, 'INSUFFICIENT_FUNDS');
+    saldo += envio ? -monto : monto;
+    final cuerpo = <String, Object?>{
+      'transaction_id': 'tx-${++secuencia}',
+      'estado': 'confirmada',
+      'monto_centimos': monto,
+      'created_at': '2026-10-05T18:00:00.000000Z',
+    };
+    operaciones[clave] = (huella: huella, cuerpo: cuerpo);
+    return (201, cuerpo);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+void main() {
+  late FakeTransfersBackend backend;
+  late HttpTransferRepository repo;
+  var sesionVencida = 0;
+
+  HttpTransferRepository nuevo() {
+    backend = FakeTransfersBackend();
+    final dio = buildAuthenticatedDio(
+      baseUrl: 'http://10.0.2.2:8001',
+      deviceId: 'telefono-1',
+      readToken: () => 'tok-1',
+      onUnauthenticated: () => sesionVencida++,
+    )..httpClientAdapter = backend;
+    return repo = HttpTransferRepository(dio: dio);
+  }
+
+  setUp(() {
+    sesionVencida = 0;
+    nuevo();
+  });
+
+  probarContratoDeTransferencias(
+    'HttpTransferRepository',
+    nuevo,
+    pinValido: FakeTransfersBackend.pin,
+    cuentaOrigenId: FakeTransfersBackend.cuenta,
+    dniPropio: FakeTransfersBackend.dniPropio,
+    dniDestino: FakeTransfersBackend.dniDestino,
+    consultasMaximas: FakeTransfersBackend.consultasMaximas,
+  );
+
+  TransferFailure falloDe(Result<TransferFailure, Object?> r) {
+    final failure = r.getLeft().toNullable();
+    expect(failure, isA<ServerFailure<TransferFailure>>());
+    return (failure! as ServerFailure<TransferFailure>).failure;
+  }
+
+  Future<Result<TransferFailure, Object?>> enviar() => repo.enviar(
+    cuentaOrigenId: 'acc-demo-1',
+    destinatarioDni: '87654321',
+    monto: const Money.fromCentimos(1000),
+    pin: '000000',
+    idempotencyKey: 'clave-0001',
+  );
+
+  group('HttpTransferRepository · mapeo de errores', () {
+    test(
+      '401 UNAUTHENTICATED es unauthenticated y avisa de sesión vencida',
+      () async {
+        backend.forced = (
+          status: 401,
+          body: {'code': 'UNAUTHENTICATED', 'detail': 'Sesión inválida.'},
+        );
+
+        expect(falloDe(await enviar()), isA<Unauthenticated>());
+        expect(sesionVencida, 1);
+      },
+    );
+
+    test('un PIN errado (403) NO cierra la sesión', () async {
+      backend.forced = (
+        status: 403,
+        body: {
+          'code': 'INVALID_CREDENTIALS',
+          'detail': 'PIN incorrecto.',
+          'intentos_restantes': 2,
+        },
+      );
+
+      final f = falloDe(await enviar());
+
+      expect((f as WrongPin).intentosRestantes, 2);
+      expect(sesionVencida, 0);
+    });
+
+    test('INVALID_CREDENTIALS sin intentos_restantes es unexpected', () async {
+      backend.forced = (
+        status: 403,
+        body: {'code': 'INVALID_CREDENTIALS', 'detail': 'x'},
+      );
+
+      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+    });
+
+    test(
+      'IDENTIFIER_LOCKED y DEVICE_LOCKED se distinguen y traen hasta',
+      () async {
+        for (final (code, esperado) in [
+          ('IDENTIFIER_LOCKED', isA<IdentifierLocked>()),
+          ('DEVICE_LOCKED', isA<DeviceLocked>()),
+        ]) {
+          backend.forced = (
+            status: 423,
+            body: {
+              'code': code,
+              'detail': 'x',
+              'locked_until': '2026-10-05T18:15:00+00:00',
+            },
+          );
+
+          final f = falloDe(await enviar());
+
+          expect(f, esperado, reason: code);
+          final hasta = switch (f) {
+            IdentifierLocked(:final hasta) => hasta,
+            DeviceLocked(:final hasta) => hasta,
+            _ => fail('No es un bloqueo'),
+          };
+          expect(hasta, DateTime.utc(2026, 10, 5, 18, 15));
+          expect(hasta.isUtc, isTrue);
+        }
+      },
+    );
+
+    test('un locked_until sin zona se lee como UTC', () async {
+      backend.forced = (
+        status: 423,
+        body: {
+          'code': 'DEVICE_LOCKED',
+          'detail': 'x',
+          'locked_until': '2026-10-05T18:15:00.123456',
+        },
+      );
+
+      final f = falloDe(await enviar()) as DeviceLocked;
+
+      expect(f.hasta.isUtc, isTrue);
+      expect(f.hasta.hour, 18);
+    });
+
+    test('un bloqueo sin locked_until legible es unexpected', () async {
+      backend.forced = (
+        status: 423,
+        body: {'code': 'IDENTIFIER_LOCKED', 'detail': 'x'},
+      );
+
+      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+    });
+
+    test('RATE_LIMITED lee retry_after_seconds de la raíz', () async {
+      backend.forced = (
+        status: 429,
+        body: {
+          'code': 'RATE_LIMITED',
+          'detail': 'x',
+          'retry_after_seconds': 312,
+        },
+      );
+
+      final f = falloDe(await enviar()) as RateLimited;
+
+      expect(f.reintentarEn, const Duration(seconds: 312));
+    });
+
+    test(
+      'RATE_LIMITED sin retry_after_seconds sigue siendo rateLimited',
+      () async {
+        backend.forced = (
+          status: 429,
+          body: {'code': 'RATE_LIMITED', 'detail': 'x'},
+        );
+
+        final f = falloDe(await enviar()) as RateLimited;
+
+        expect(f.reintentarEn, isNull);
+      },
+    );
+
+    test('ACCOUNT_BLOCKED (409) es accountBlocked', () async {
+      backend.forced = (
+        status: 409,
+        body: {'code': 'ACCOUNT_BLOCKED', 'detail': 'x'},
+      );
+
+      expect(falloDe(await enviar()), isA<AccountBlocked>());
+    });
+
+    test('un code desconocido es unexpected', () async {
+      backend.forced = (status: 400, body: {'code': 'OTRA', 'detail': 'x'});
+
+      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+    });
+
+    test('un 422 de validación (sin code) es unexpected', () async {
+      backend.forced = (status: 422, body: {'detail': <Object?>[]});
+
+      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+    });
+
+    test('un 500 es unexpected', () async {
+      backend.forced = (status: 500, body: {'detail': 'boom'});
+
+      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+    });
+
+    test('timeout y caída de conexión son network', () async {
+      for (final tipo in [
+        DioExceptionType.connectionTimeout,
+        DioExceptionType.receiveTimeout,
+        DioExceptionType.connectionError,
+      ]) {
+        backend.throwIt = DioException(
+          requestOptions: RequestOptions(path: '/v1/transfers'),
+          type: tipo,
+        );
+        expect(falloDe(await enviar()), isA<NetworkFailure>(), reason: '$tipo');
+      }
+    });
+
+    test('un cuerpo de éxito que no es JSON de objeto no lanza', () async {
+      backend.forced = (status: 201, body: '<html>proxy</html>');
+
+      expect((await enviar()).isLeft(), isTrue);
+    });
+  });
+
+  group('HttpTransferRepository · contrato JSON', () {
+    test('enviar manda céntimos enteros y los campos del router', () async {
+      await repo.enviar(
+        cuentaOrigenId: 'acc-demo-1',
+        destinatarioDni: '87654321',
+        monto: const Money.fromCentimos(25000),
+        motivo: 'Cena',
+        pin: '000000',
+        idempotencyKey: 'clave-0001',
+      );
+
+      final req = backend.requests.last;
+      expect(req.method, 'POST');
+      expect(req.uri.path, '/v1/transfers');
+      expect(req.data, {
+        'cuenta_origen_id': 'acc-demo-1',
+        'destinatario_dni': '87654321',
+        'monto_centimos': 25000,
+        'motivo': 'Cena',
+        'pin': '000000',
+        'idempotency_key': 'clave-0001',
+      });
+    });
+
+    test('sin motivo no se manda la clave motivo', () async {
+      await repo.enviar(
+        cuentaOrigenId: 'acc-demo-1',
+        destinatarioDni: '87654321',
+        monto: const Money.fromCentimos(100),
+        pin: '000000',
+        idempotencyKey: 'clave-0001',
+      );
+
+      expect(
+        (backend.requests.last.data as Map).containsKey('motivo'),
+        isFalse,
+      );
+    });
+
+    test('recargar va a /v1/topups con cuenta_id y sin destinatario', () async {
+      await repo.recargar(
+        cuentaId: 'acc-demo-1',
+        monto: const Money.fromCentimos(5000),
+        pin: '000000',
+        idempotencyKey: 'recarga-0001',
+      );
+
+      final req = backend.requests.last;
+      expect(req.uri.path, '/v1/topups');
+      expect(req.data, {
+        'cuenta_id': 'acc-demo-1',
+        'monto_centimos': 5000,
+        'pin': '000000',
+        'idempotency_key': 'recarga-0001',
+      });
+    });
+
+    test('resolver manda el DNI como query', () async {
+      await repo.resolverDestinatario('87654321');
+
+      expect(backend.requests.last.queryParameters['dni'], '87654321');
+    });
+
+    test('la fecha de la constancia con Z se lee como UTC', () async {
+      final r = await repo.recargar(
+        cuentaId: 'acc-demo-1',
+        monto: const Money.fromCentimos(5000),
+        pin: '000000',
+        idempotencyKey: 'recarga-0001',
+      );
+
+      final c = r.getRight().toNullable()!;
+      expect(c.fecha, DateTime.utc(2026, 10, 5, 18));
+      expect(c.fecha.isUtc, isTrue);
+    });
+  });
+}

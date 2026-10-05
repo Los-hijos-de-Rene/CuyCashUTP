@@ -9,6 +9,7 @@ import '../../../../feature/kyc/infrastructure/http_kyc_repository.dart';
 import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../../feature/otp/infrastructure/http_otp_repository.dart';
+import '../../../../feature/transfer/infrastructure/http_transfer_repository.dart';
 import '../../../env/app_env.dart';
 import '../../../http/authenticated_dio.dart';
 import '../../../http/close_session_on_expiry.dart';
@@ -57,6 +58,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     identifierLockoutStore: MemoryIdentifierLockoutStore(),
     kycRepository: _kycRepository(),
     accountRepository: HttpAccountRepository(dio: dio),
+    transferRepository: HttpTransferRepository(dio: dio),
   );
 }
 
