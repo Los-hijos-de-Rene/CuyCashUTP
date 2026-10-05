@@ -2,7 +2,17 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -146,3 +156,122 @@ class KycVerification(Base):
     face_match: Mapped[bool] = mapped_column(Boolean, default=False)
     face_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Épica 2 · Cuentas y libro mayor (HU05, HU17, HU18)
+#
+# Diseño y justificación: docs/modelo-datos.md.
+# Regla que gobierna todo lo de abajo: el dinero se guarda en CÉNTIMOS como
+# entero. Punto flotante en un libro mayor produce residuos que descuadran
+# partidas.
+# ---------------------------------------------------------------------------
+
+
+class Account(Base):
+    """
+    Cuenta de un titular.
+
+    `saldo_disponible` es una columna y no la suma de los asientos. Sumar el
+    historial completo es correcto, pero no sostiene el SLA de 200 ms de la
+    HU17 cuando la cuenta acumula miles de movimientos. Se actualiza en el
+    mismo COMMIT que los asientos, así que no puede divergir, y el historial
+    sigue siendo la fuente auditable para reconstruirla.
+    """
+
+    __tablename__ = "accounts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    numero: Mapped[str] = mapped_column(String(14), unique=True, index=True)
+    tipo: Mapped[str] = mapped_column(String(10), default="ahorro")
+    moneda: Mapped[str] = mapped_column(String(3), default="PEN")
+    estado: Mapped[str] = mapped_column(String(10), default="activa")
+    # Céntimos. El disponible descuenta lo retenido; el contable no.
+    saldo_disponible: Mapped[int] = mapped_column(BigInteger, default=0)
+    saldo_contable: Mapped[int] = mapped_column(BigInteger, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("tipo IN ('ahorro','corriente')", name="ck_accounts_tipo"),
+        CheckConstraint("moneda IN ('PEN','USD')", name="ck_accounts_moneda"),
+        CheckConstraint(
+            "estado IN ('activa','bloqueada','cerrada')", name="ck_accounts_estado"
+        ),
+        # El saldo disponible nunca puede quedar negativo: es la última
+        # defensa contra el doble gasto si alguna ruta olvidara validarlo.
+        CheckConstraint("saldo_disponible >= 0", name="ck_accounts_saldo_no_negativo"),
+    )
+
+
+class Transaction(Base):
+    """
+    Agrupador de los asientos de UNA operación.
+
+    `idempotency_key` tiene índice único y es lo que cumple el "una sola
+    autorización por pago" de la HU16: el cliente repite la clave al
+    reintentar, el segundo intento choca contra la restricción y se devuelve la
+    transacción original en lugar de cobrar dos veces. Se delega en la base
+    porque es la única capa que ve todos los intentos simultáneos.
+    """
+
+    __tablename__ = "transactions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tipo: Mapped[str] = mapped_column(String(20))
+    estado: Mapped[str] = mapped_column(String(12), default="confirmada")
+    idempotency_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    referencia: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo IN ('transferencia','pago_qr','desembolso','cuota','ajuste')",
+            name="ck_transactions_tipo",
+        ),
+        CheckConstraint(
+            "estado IN ('pendiente','confirmada','revertida')",
+            name="ck_transactions_estado",
+        ),
+    )
+
+
+class LedgerEntry(Base):
+    """
+    Asiento del libro mayor. Partida doble: por cada transacción, la suma de
+    los débitos iguala la de los créditos, y los asientos se insertan dentro de
+    la misma transacción de base de datos (HU18: débito y crédito, o ninguno).
+
+    El monto es SIEMPRE positivo; el signo lo dice `direccion`. Guardar montos
+    negativos obliga a recordar la convención en cada consulta y es de donde
+    salen los errores de signo.
+
+    No hay borrado: una operación equivocada se corrige con un asiento inverso
+    que deja su propio rastro.
+    """
+
+    __tablename__ = "ledger_entries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    transaction_id: Mapped[str] = mapped_column(
+        ForeignKey("transactions.id"), index=True
+    )
+    account_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    direccion: Mapped[str] = mapped_column(String(8))
+    monto: Mapped[int] = mapped_column(BigInteger)
+    moneda: Mapped[str] = mapped_column(String(3), default="PEN")
+    # Saldo de la cuenta DESPUÉS de este asiento: permite auditar la cadena sin
+    # recalcular toda la historia.
+    saldo_posterior: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "direccion IN ('debito','credito')", name="ck_ledger_direccion"
+        ),
+        CheckConstraint("monto > 0", name="ck_ledger_monto_positivo"),
+    )

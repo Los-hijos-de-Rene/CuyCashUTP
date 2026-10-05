@@ -56,3 +56,25 @@ def otp_codes(monkeypatch):
 
     monkeypatch.setattr(otp_service, "notifier", Captura())
     return enviados
+
+
+@pytest_asyncio.fixture
+async def db():
+    """
+    Sesión directa contra el esquema, sin pasar por HTTP.
+
+    La usan las pruebas del libro mayor: lo que verifican son las restricciones
+    de la base (partida doble, montos positivos, idempotencia), y meterlas por
+    un endpoint solo añadiría ruido entre la regla y su comprobación.
+    """
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+    async with maker() as session:
+        yield session
+    await engine.dispose()
