@@ -1,10 +1,14 @@
+import asyncio
 import hashlib
 import re
 import secrets
+from weakref import WeakKeyDictionary
 
-from starlette.concurrency import run_in_threadpool
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError
+from starlette.concurrency import run_in_threadpool
+
+from app.core.config import settings
 
 # argon2id con los parámetros por defecto de la librería: pensados para
 # resistir GPU. Un PIN de 6 dígitos tiene solo un millón de combinaciones, así
@@ -32,12 +36,39 @@ def verify_pin(pin: str, pin_hash: str) -> bool:
 # de < 200 ms por operación). En un hilo, argon2-cffi suelta el GIL mientras
 # calcula, así que las peticiones sí avanzan en paralelo. Los handlers async
 # deben usar estas variantes; las síncronas quedan para código sin bucle.
+#
+# TOPE DE CONCURRENCIA. Cada hash reserva `memory_cost` = 64 MiB (perfil por
+# defecto de argon2-cffi). El pool de hilos de AnyIO tiene 40 por defecto: sin
+# tope, un pico de 40 peticiones con PIN pediría 40 x 64 MiB = 2.5 GiB. El plan
+# gratuito de Render ofrece 512 MiB y el intérprete + FastAPI + el pool de
+# conexiones ya ocupan ~150-200 MiB, así que quedan ~300 MiB: con 2 hashes
+# simultáneos el pico es 2 x 64 = 128 MiB y sobra margen; con 4 serían 256 MiB,
+# demasiado justo. Por eso el valor por defecto es 2 (`PIN_HASH_CONCURRENCY`,
+# subir si el plan tiene más memoria: tope = (RAM libre) / 64 MiB). El resto de
+# peticiones espera en el semáforo SIN ocupar hilo ni memoria, y el bucle sigue
+# libre. NO se baja el coste de argon2 para ganar latencia: es un parámetro de
+# seguridad (un PIN de 6 dígitos solo se protege con el coste del hash).
+_semaforos: "WeakKeyDictionary" = WeakKeyDictionary()
+
+
+def _semaforo() -> asyncio.Semaphore:
+    # Uno por bucle de eventos: en Python 3.9 un Semaphore se ata al bucle que
+    # estaba activo al crearlo, y los tests abren un bucle por prueba.
+    loop = asyncio.get_running_loop()
+    sem = _semaforos.get(loop)
+    if sem is None:
+        sem = _semaforos[loop] = asyncio.Semaphore(max(1, settings.PIN_HASH_CONCURRENCY))
+    return sem
+
+
 async def averify_pin(pin: str, pin_hash: str) -> bool:
-    return await run_in_threadpool(verify_pin, pin, pin_hash)
+    async with _semaforo():
+        return await run_in_threadpool(verify_pin, pin, pin_hash)
 
 
 async def ahash_pin(pin: str) -> str:
-    return await run_in_threadpool(hash_pin, pin)
+    async with _semaforo():
+        return await run_in_threadpool(hash_pin, pin)
 
 
 def pin_is_valid(pin: str) -> bool:

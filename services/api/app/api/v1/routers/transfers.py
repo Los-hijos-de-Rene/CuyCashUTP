@@ -198,6 +198,9 @@ async def transferir(
         .order_by(Account.created_at, Account.id)
     )
     if not reintento:
+        # (Hoy `abrir_cuenta` crea UNA cuenta de ahorro por persona; con
+        # multicuenta, el destino de un reintento debería resolverse desde la
+        # transacción original y no por "la primera cuenta".)
         # En un reintento el destino pudo bloquearse después del envío; el
         # motor devuelve la original sin mirar estados.
         consulta = consulta.where(Account.estado == "activa")

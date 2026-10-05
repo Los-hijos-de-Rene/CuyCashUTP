@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # actividad. No hay refresh token (ver ADR-0002).
     SESSION_TTL_SECONDS: int = 60 * 60 * 24 * 30
 
+    # ---- Hash del PIN ----
+    # Máximo de hashes argon2 simultáneos. Ver el cálculo en `core/security.py`.
+    PIN_HASH_CONCURRENCY: int = 2
+
     # ---- Bloqueo por identificador (el DNI) ----
     # Protege UNA cuenta contra intentos desde muchos teléfonos.
     IDENTIFIER_MAX_ATTEMPTS: int = 3
