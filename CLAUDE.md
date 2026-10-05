@@ -18,7 +18,7 @@ Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 - `apps/mobile` — app Flutter (Bloc).
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).
 - `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
-- `services/auth` — backend de identidad (FastAPI + Postgres). Fuera del
+- `services/api` — backend de identidad (FastAPI + Postgres). Fuera del
   workspace de Flutter: `flutter analyze` y `flutter test` lo ignoran. Vive en
   este repo para poder cambiar app y contrato en un mismo commit.
 
@@ -32,7 +32,7 @@ feature, `envs/<flavor>.dart` decide qué implementación recibe. Cada
 
 ## Flavors
 - `mock` — repos en memoria (PIN válido `000000`). Default de desarrollo + tests.
-- `local` — contra `services/auth` (`config.local.json`).
+- `local` — contra `services/api` (`config.local.json`).
 - `production` — contra el backend desplegado (`config.production.json`).
 
 `AUTH_BASE_URL` es opcional: sin él se asume el PC anfitrión (`10.0.2.2` en

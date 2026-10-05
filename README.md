@@ -18,7 +18,7 @@ DNI + PIN, OTP, acceso rápido con bloqueo por intentos, home y perfil.
 ### Requisitos
 
 - Flutter (canal estable) con un emulador Android o simulador iOS.
-- Python 3.11+ solo si vas a correr `services/auth`.
+- Python 3.11+ solo si vas a correr `services/api`.
 - Docker solo si quieres ese servicio con Postgres.
 
 ### La ruta rápida: flavor `mock`
@@ -36,10 +36,10 @@ resuelve sin cámara real.
 
 ### Contra el backend de identidad: flavor `local`
 
-Levanta primero `services/auth` (puerto 8001). Sin instalar nada, con SQLite:
+Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 
 ```sh
-cd services/auth
+cd services/api
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
   .venv/bin/uvicorn app.main:app --reload --port 8001
@@ -47,7 +47,7 @@ DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
 
 Con Postgres: `cp .env.example .env && docker compose up --build`.
 Docs interactivas en `http://localhost:8001/docs`. Detalle en
-[`services/auth/README.md`](services/auth/README.md).
+[`services/api/README.md`](services/api/README.md).
 
 Luego la app:
 
@@ -64,10 +64,10 @@ flutter analyze                      # cero issues antes de commit
 flutter test                         # toda la suite (corre sobre el flavor mock)
 dart run build_runner build --delete-conflicting-outputs   # freezed
 cd apps/mobile && flutter gen-l10n   # regenera l10n desde los ARB
-cd services/auth && .venv/bin/python -m pytest             # tests del backend
+cd services/api && .venv/bin/python -m pytest             # tests del backend
 ```
 
-`services/auth` está fuera del workspace de Flutter: `flutter analyze` y
+`services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato
 en un mismo commit.
 
@@ -81,7 +81,7 @@ decidiendo backends en tiempo de ejecución.
 | Flavor | Entrypoint | Config | Backend |
 |---|---|---|---|
 | `mock` | `lib/main_mock.dart` | `config.mock.json` | Repos en memoria. PIN `000000`. Default de desarrollo y tests. |
-| `local` | `lib/main_local.dart` | `config.local.json` | `services/auth` corriendo en tu PC. |
+| `local` | `lib/main_local.dart` | `config.local.json` | `services/api` corriendo en tu PC. |
 | `production` | `lib/main_production.dart` | `config.production.json` | Backend desplegado. |
 
 ### Variables de configuración
@@ -106,7 +106,7 @@ IP del PC en la red local.
 
 > **La `KYC_API_KEY` en la app es un atajo de demo.** Todo lo compilado en el
 > binario es extraíble, así que esa clave debe tratarse como pública. El destino
-> es que `services/auth` la guarde y actúe de proxy hacia el servicio de KYC;
+> es que `services/api` la guarde y actúe de proxy hacia el servicio de KYC;
 > hasta entonces, no usarla contra un despliegue real.
 
 ---
@@ -119,7 +119,7 @@ IP del PC en la red local.
 apps/mobile             App Flutter (Bloc).
 packages/core_kernel    Result/Either, GlobalFailure, ExceptionMapper, ids. Dart puro.
 packages/design_system  Tokens "Eucalipto y Ocre", theme, componentes.
-services/auth           Backend de identidad (FastAPI + Postgres). Fuera del workspace Flutter.
+services/api            Backend de identidad (FastAPI + Postgres). Fuera del workspace Flutter.
 docs/adr                Decisiones de arquitectura.
 docs/superpowers/specs  Diseño de las funcionalidades implementadas.
 docs/sla-kpi.md         SLA, KPI, backlog y plan de sprints.

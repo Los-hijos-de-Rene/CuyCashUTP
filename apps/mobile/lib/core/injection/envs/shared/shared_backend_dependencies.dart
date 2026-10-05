@@ -15,7 +15,7 @@ import '../../app_dependencies.dart';
 /// Construcción compartida por `local` y `production`: mismo código, distinta
 /// config vía `--dart-define`.
 ///
-/// Habla con `services/auth`, no con Supabase: el modelo de identidad de
+/// Habla con `services/api`, no con Supabase: el modelo de identidad de
 /// CuyCash es DNI + PIN y Supabase Auth no encaja (ADR-0002).
 Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
   const DeviceStore deviceStore = SecureDeviceStore(FlutterSecureStorage());

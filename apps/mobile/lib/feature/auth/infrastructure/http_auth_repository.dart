@@ -8,7 +8,7 @@ import '../domain/auth_failure.dart';
 import '../domain/auth_repository.dart';
 import '../domain/auth_session.dart';
 
-/// Impl real contra `services/auth`.
+/// Impl real contra `services/api`.
 ///
 /// Reemplaza al stub de Supabase: el modelo de identidad de CuyCash es
 /// DNI + PIN, y Supabase Auth está construido alrededor de email+contraseña

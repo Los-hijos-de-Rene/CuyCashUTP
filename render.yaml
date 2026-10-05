@@ -1,6 +1,6 @@
-# Despliegue del servicio de identidad en Render.
+# Despliegue del servicio de API en Render.
 #
-# El blueprint vive en la raíz del repositorio y apunta a `services/auth` con
+# El blueprint vive en la raíz del repositorio y apunta a `services/api` con
 # `rootDir`: es lo que permite desplegar un solo servicio del monorepo sin
 # separarlo en otro repositorio.
 #
@@ -12,7 +12,7 @@ services:
   - type: web
     name: cuycash-auth
     runtime: docker
-    rootDir: services/auth
+    rootDir: services/api
     dockerfilePath: ./Dockerfile
     plan: free
     region: oregon

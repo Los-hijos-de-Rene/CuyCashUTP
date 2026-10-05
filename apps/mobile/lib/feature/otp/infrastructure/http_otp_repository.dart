@@ -7,7 +7,7 @@ import '../domain/otp_failure.dart';
 import '../domain/otp_policy.dart';
 import '../domain/otp_repository.dart';
 
-/// Impl real del OTP contra `services/auth`.
+/// Impl real del OTP contra `services/api`.
 ///
 /// El código nunca llega al teléfono: se manda al correo y el servidor lo
 /// verifica. Aquí solo viajan el reto y el resultado.

@@ -2,7 +2,7 @@ import 'dev_host.dart';
 
 /// Config de entorno leída de `--dart-define` (via `--dart-define-from-file`).
 abstract final class AppEnv {
-  /// Backend de identidad (`services/auth`). Si no se define, se asume que
+  /// Backend de identidad (`services/api`). Si no se define, se asume que
   /// corre en el PC anfitrión: sirve para emulador y simulador, NO para un
   /// teléfono físico, donde hay que poner la IP de la red local.
   static const _authBaseUrl = String.fromEnvironment('AUTH_BASE_URL');
