@@ -1,0 +1,36 @@
+# Despliegue del servicio de identidad en Render.
+#
+# El blueprint vive en la raíz del repositorio y apunta a `services/auth` con
+# `rootDir`: es lo que permite desplegar un solo servicio del monorepo sin
+# separarlo en otro repositorio.
+#
+# La base NO se declara aquí: Postgres es gestionado en Neon, y su cadena de
+# conexión se carga como variable secreta desde el panel de Render. Así la
+# credencial nunca pasa por el repositorio.
+
+services:
+  - type: web
+    name: cuycash-auth
+    runtime: docker
+    rootDir: services/auth
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      # sync:false ⇒ Render la pide al crear el servicio y la guarda cifrada.
+      - key: DATABASE_URL
+        sync: false
+      # El canal del OTP. `log` escribe el código en el registro del servicio,
+      # que es suficiente para la demo; `telegram` necesita las dos claves.
+      - key: OTP_NOTIFIER
+        value: log
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      # Proxy del KYC. La clave vive aquí y nunca en el binario de la app.
+      - key: KYC_BASE_URL
+        sync: false
+      - key: KYC_API_KEY
+        sync: false
