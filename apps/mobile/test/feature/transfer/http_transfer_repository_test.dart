@@ -207,7 +207,7 @@ void main() {
           body: {'code': 'UNAUTHENTICATED', 'detail': 'Sesión inválida.'},
         );
 
-        expect(falloDe(await enviar()), isA<Unauthenticated>());
+        expect(falloDe(await enviar()), isA<TransferUnauthenticated>());
         expect(sesionVencida, 1);
       },
     );
@@ -234,7 +234,7 @@ void main() {
         body: {'code': 'INVALID_CREDENTIALS', 'detail': 'x'},
       );
 
-      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
     });
 
     test(
@@ -289,7 +289,7 @@ void main() {
         body: {'code': 'IDENTIFIER_LOCKED', 'detail': 'x'},
       );
 
-      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
     });
 
     test('RATE_LIMITED lee retry_after_seconds de la raíz', () async {
@@ -333,19 +333,19 @@ void main() {
     test('un code desconocido es unexpected', () async {
       backend.forced = (status: 400, body: {'code': 'OTRA', 'detail': 'x'});
 
-      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
     });
 
     test('un 422 de validación (sin code) es unexpected', () async {
       backend.forced = (status: 422, body: {'detail': <Object?>[]});
 
-      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
     });
 
     test('un 500 es unexpected', () async {
       backend.forced = (status: 500, body: {'detail': 'boom'});
 
-      expect(falloDe(await enviar()), isA<UnexpectedFailure>());
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
     });
 
     test('timeout y caída de conexión son network', () async {
@@ -358,7 +358,11 @@ void main() {
           requestOptions: RequestOptions(path: '/v1/transfers'),
           type: tipo,
         );
-        expect(falloDe(await enviar()), isA<NetworkFailure>(), reason: '$tipo');
+        expect(
+          falloDe(await enviar()),
+          isA<TransferNetworkFailure>(),
+          reason: '$tipo',
+        );
       }
     });
 

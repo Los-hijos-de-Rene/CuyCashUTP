@@ -6,7 +6,6 @@ class TransferReceipt {
     required this.transactionId,
     required this.monto,
     required this.fecha,
-    this.destinatarioNombre,
     this.reutilizada = false,
   });
 
@@ -16,10 +15,8 @@ class TransferReceipt {
   /// Instante en UTC (`isUtc == true`); convertir con `toLocal()` al mostrarlo.
   final DateTime fecha;
 
-  /// Nombre del destinatario cuando quien implementa lo conoce. El backend no
-  /// lo devuelve en la constancia: la UI usa el [Recipient] que ya resolvió.
-  /// Nulo en recargas.
-  final String? destinatarioNombre;
+  // Sin nombre de destinatario: el backend no lo manda en la constancia. La
+  // pantalla usa el `Recipient` que ya resolvió.
 
   /// `true` si el servidor reconoció la `idempotencyKey` y devolvió la
   /// operación ORIGINAL (HTTP 200 en vez de 201): el dinero no se movió otra

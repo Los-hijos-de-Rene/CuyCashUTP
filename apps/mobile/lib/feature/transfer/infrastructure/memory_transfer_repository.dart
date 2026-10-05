@@ -19,9 +19,8 @@ import '../domain/transfer_repository.dart';
 /// - Bloqueo: [maxIntentos] PIN errados seguidos bloquean por [bloqueo] (el
 ///   DNI; este mock no distingue el bloqueo de dispositivo). Un PIN correcto
 ///   reinicia la cuenta de fallos. Mientras dura, ni el PIN correcto entra.
-/// - Presupuesto de consultas: [consultasMaximas] compartidas entre
-///   `resolverDestinatario` y `enviar`, como en el backend. A diferencia de
-///   él, no se renueva con el tiempo.
+/// - Presupuesto de consultas: [consultasMaximas] por [ventana] deslizante,
+///   compartidas entre `resolverDestinatario` y `enviar`, como en el backend.
 ///
 /// Datos de demo (contrato estable): titular [dniPropio] con la cuenta
 /// [cuentaId] y S/ 1,250.40, el mismo saldo que `MemoryAccountRepository`
@@ -33,6 +32,7 @@ class MemoryTransferRepository implements TransferRepository {
     this.maxIntentos = 5,
     this.bloqueo = const Duration(minutes: 15),
     this.consultasMaximas = 20,
+    this.ventana = const Duration(minutes: 10),
     Money saldoInicial = const Money.fromCentimos(125040),
   }) : _clock = clock,
        _saldo = saldoInicial;
@@ -62,11 +62,12 @@ class MemoryTransferRepository implements TransferRepository {
   final int maxIntentos;
   final Duration bloqueo;
   final int consultasMaximas;
+  final Duration ventana;
 
   Money _saldo;
   int _fallos = 0;
   DateTime? _bloqueadoHasta;
-  int _consultas = 0;
+  final _consultas = <DateTime>[];
   int _secuencia = 0;
   final _operaciones =
       <String, ({String huella, TransferReceipt constancia})>{};
@@ -74,12 +75,18 @@ class MemoryTransferRepository implements TransferRepository {
   Result<TransferFailure, T> _falla<T>(TransferFailure f) =>
       left(GlobalFailure.server(f));
 
-  /// Descuenta una consulta o devuelve el failure de 429.
+  /// Descuenta una consulta de la ventana deslizante o devuelve el failure de
+  /// 429 con el tiempo que falta hasta que caduque la marca más antigua.
   TransferFailure? _consumirConsulta() {
-    if (_consultas >= consultasMaximas) {
-      return const TransferFailure.rateLimited(Duration(minutes: 10));
+    final ahora = _clock();
+    _consultas.removeWhere((m) => !m.add(ventana).isAfter(ahora));
+    if (_consultas.length >= consultasMaximas) {
+      final espera = _consultas.first.add(ventana).difference(ahora);
+      return TransferFailure.rateLimited(
+        espera.inSeconds < 1 ? const Duration(seconds: 1) : espera,
+      );
     }
-    _consultas++;
+    _consultas.add(ahora);
     return null;
   }
 
@@ -128,7 +135,6 @@ class MemoryTransferRepository implements TransferRepository {
     required String idempotencyKey,
     required Money monto,
     required Money Function() mover,
-    String? destinatarioNombre,
   }) {
     final previa = _operaciones[idempotencyKey];
     if (previa != null) {
@@ -140,7 +146,6 @@ class MemoryTransferRepository implements TransferRepository {
           transactionId: previa.constancia.transactionId,
           monto: previa.constancia.monto,
           fecha: previa.constancia.fecha,
-          destinatarioNombre: previa.constancia.destinatarioNombre,
           reutilizada: true,
         ),
       );
@@ -150,7 +155,6 @@ class MemoryTransferRepository implements TransferRepository {
       transactionId: 'tx-mem-${++_secuencia}',
       monto: monto,
       fecha: _clock().toUtc(),
-      destinatarioNombre: destinatarioNombre,
     );
     _operaciones[idempotencyKey] = (huella: huella, constancia: constancia);
     return right(constancia);
@@ -172,8 +176,7 @@ class MemoryTransferRepository implements TransferRepository {
       return _falla(const TransferFailure.selfTransfer());
     }
     if (_consumirConsulta() case final f?) return _falla(f);
-    final destino = _destinatarios[destinatarioDni];
-    if (destino == null) {
+    if (!_destinatarios.containsKey(destinatarioDni)) {
       return _falla(const TransferFailure.recipientNotFound());
     }
     if (_validarMonto(monto) case final f?) return _falla(f);
@@ -193,7 +196,6 @@ class MemoryTransferRepository implements TransferRepository {
       idempotencyKey: idempotencyKey,
       monto: monto,
       mover: () => _saldo - monto,
-      destinatarioNombre: destino.nombreEnmascarado,
     );
   }
 

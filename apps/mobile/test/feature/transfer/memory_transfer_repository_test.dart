@@ -61,4 +61,50 @@ void main() {
       expect(f.hasta, DateTime.utc(2026, 10, 5, 18, 15));
     });
   });
+
+  group('MemoryTransferRepository · ventana de consultas', () {
+    test('el presupuesto se renueva al caducar la ventana', () async {
+      var ahora = DateTime.utc(2026, 10, 5, 18);
+      final repo = MemoryTransferRepository(
+        clock: () => ahora,
+        consultasMaximas: 2,
+      );
+      await repo.resolverDestinatario(MemoryTransferRepository.dniDestino);
+      await repo.resolverDestinatario(MemoryTransferRepository.dniDestino);
+      final agotado = await repo.resolverDestinatario(
+        MemoryTransferRepository.dniDestino,
+      );
+      expect(agotado.isLeft(), isTrue);
+
+      ahora = ahora.add(const Duration(minutes: 10, seconds: 1));
+      final r = await repo.resolverDestinatario(
+        MemoryTransferRepository.dniDestino,
+      );
+
+      expect(r.isRight(), isTrue);
+    });
+
+    test(
+      'la espera informada es lo que falta para la marca más antigua',
+      () async {
+        var ahora = DateTime.utc(2026, 10, 5, 18);
+        final repo = MemoryTransferRepository(
+          clock: () => ahora,
+          consultasMaximas: 1,
+        );
+        await repo.resolverDestinatario(MemoryTransferRepository.dniDestino);
+        ahora = ahora.add(const Duration(minutes: 4));
+
+        final r = await repo.resolverDestinatario(
+          MemoryTransferRepository.dniDestino,
+        );
+
+        final f =
+            (r.getLeft().toNullable()! as ServerFailure<TransferFailure>)
+                    .failure
+                as RateLimited;
+        expect(f.reintentarEn, const Duration(minutes: 6));
+      },
+    );
+  });
 }

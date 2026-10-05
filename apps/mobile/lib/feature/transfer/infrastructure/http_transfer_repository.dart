@@ -50,6 +50,9 @@ class HttpTransferRepository implements TransferRepository {
     required String pin,
     required String idempotencyKey,
   }) => _mover('/v1/transfers', {
+    // OJO: `motivo` viaja tal cual. El backend lo limita a 40 caracteres y uno
+    // más largo da 422 (cae en `TransferUnexpectedFailure`): la UI debe
+    // recortarlo y limitar el campo; este repositorio no lo hace.
     'cuenta_origen_id': cuentaOrigenId,
     'destinatario_dni': destinatarioDni,
     'monto_centimos': monto.centimos,

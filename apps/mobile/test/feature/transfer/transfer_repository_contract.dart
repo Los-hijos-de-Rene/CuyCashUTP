@@ -284,7 +284,7 @@ void probarContratoDeTransferencias(
       test('una cuenta de origen ajena devuelve accountNotFound', () async {
         final r = await enviar(construir(), cuenta: 'acc-ajena');
 
-        expect(falloDe(r), isA<AccountNotFound>());
+        expect(falloDe(r), isA<TransferAccountNotFound>());
       });
 
       test(
@@ -320,7 +320,6 @@ void probarContratoDeTransferencias(
         final c = valorDe(await recargar(construir()));
 
         expect(c.monto, const Money.fromCentimos(5000));
-        expect(c.destinatarioNombre, isNull);
       });
 
       test('repetir la clave devuelve la misma constancia', () async {
@@ -332,6 +331,19 @@ void probarContratoDeTransferencias(
         expect(segunda.transactionId, primera.transactionId);
         expect(segunda.reutilizada, isTrue);
       });
+
+      test(
+        'la misma clave con otro monto devuelve idempotencyKeyReused',
+        () async {
+          final repo = construir();
+          valorDe(await recargar(repo, centimos: 5000));
+
+          expect(
+            falloDe(await recargar(repo, centimos: 6000)),
+            isA<IdempotencyKeyReused>(),
+          );
+        },
+      );
 
       test('un PIN errado devuelve wrongPin', () async {
         final r = await recargar(construir(), pin: '111111');
@@ -363,7 +375,7 @@ void probarContratoDeTransferencias(
       test('una cuenta ajena devuelve accountNotFound', () async {
         expect(
           falloDe(await recargar(construir(), cuenta: 'acc-ajena')),
-          isA<AccountNotFound>(),
+          isA<TransferAccountNotFound>(),
         );
       });
 

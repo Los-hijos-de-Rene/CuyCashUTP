@@ -6,7 +6,7 @@ sealed class TransferFailure {
   const factory TransferFailure.insufficientFunds() = InsufficientFunds;
   const factory TransferFailure.recipientNotFound() = RecipientNotFound;
   const factory TransferFailure.selfTransfer() = SelfTransfer;
-  const factory TransferFailure.accountNotFound() = AccountNotFound;
+  const factory TransferFailure.accountNotFound() = TransferAccountNotFound;
   const factory TransferFailure.accountBlocked() = AccountBlocked;
   const factory TransferFailure.amountOutOfRange() = AmountOutOfRange;
   const factory TransferFailure.idempotencyKeyReused() = IdempotencyKeyReused;
@@ -16,9 +16,9 @@ sealed class TransferFailure {
   const factory TransferFailure.deviceLocked(DateTime hasta) = DeviceLocked;
   const factory TransferFailure.rateLimited(Duration? reintentarEn) =
       RateLimited;
-  const factory TransferFailure.unauthenticated() = Unauthenticated;
-  const factory TransferFailure.network() = NetworkFailure;
-  const factory TransferFailure.unexpected() = UnexpectedFailure;
+  const factory TransferFailure.unauthenticated() = TransferUnauthenticated;
+  const factory TransferFailure.network() = TransferNetworkFailure;
+  const factory TransferFailure.unexpected() = TransferUnexpectedFailure;
 }
 
 /// El saldo disponible no alcanza.
@@ -39,8 +39,8 @@ final class SelfTransfer extends TransferFailure {
 
 /// La cuenta de origen no existe o no es del usuario (el backend no
 /// distingue ambos casos).
-final class AccountNotFound extends TransferFailure {
-  const AccountNotFound();
+final class TransferAccountNotFound extends TransferFailure {
+  const TransferAccountNotFound();
 }
 
 /// La cuenta propia no está activa.
@@ -100,18 +100,18 @@ final class RateLimited extends TransferFailure {
 }
 
 /// La sesión no es válida o venció (el interceptor ya la cierra).
-final class Unauthenticated extends TransferFailure {
-  const Unauthenticated();
+final class TransferUnauthenticated extends TransferFailure {
+  const TransferUnauthenticated();
 }
 
 /// No se pudo llegar al servidor (sin red o timeout). El resultado de la
 /// operación es DESCONOCIDO: reintentar con la MISMA `idempotencyKey`.
-final class NetworkFailure extends TransferFailure {
-  const NetworkFailure();
+final class TransferNetworkFailure extends TransferFailure {
+  const TransferNetworkFailure();
 }
 
 /// Respuesta que la app no sabe interpretar (5xx, código desconocido, JSON
 /// malformado).
-final class UnexpectedFailure extends TransferFailure {
-  const UnexpectedFailure();
+final class TransferUnexpectedFailure extends TransferFailure {
+  const TransferUnexpectedFailure();
 }
