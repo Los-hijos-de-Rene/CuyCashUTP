@@ -185,18 +185,23 @@ class HttpAuthRepository implements AuthRepository {
   @override
   FutureResult<AuthFailure, Unit> signOut() => _guard(() async {
         final token = _tokenHolder.token;
-        // Se borra ANTES de llamar: si el servidor responde 401 (token ya
-        // vencido), el interceptor no debe avisar de sesión vencida y volver a
-        // entrar aquí en bucle. Por eso esta única llamada lleva la cabecera
-        // explícita: revoca ese token concreto, el que ya no está en el holder.
+        // El holder se vacía antes de llamar: así el DELETE no vuelve a pasar
+        // por el aviso de sesión vencida. Lleva la cabecera explícita porque
+        // revoca ese token concreto, que ya no está en el holder.
         _tokenHolder.clear();
         if (token != null) {
-          await _dio.delete<void>(
-            '/v1/auth/sessions/current',
-            options: Options(headers: {'Authorization': 'Bearer $token'}),
-          );
+          try {
+            await _dio.delete<void>(
+              '/v1/auth/sessions/current',
+              options: Options(headers: {'Authorization': 'Bearer $token'}),
+            );
+          } on DioException catch (_) {
+            // Revocar en el servidor es de mejor esfuerzo (sin red o con el
+            // hosting arrancando en frío puede fallar). El cierre local debe
+            // ocurrir PASE LO QUE PASE: es lo único que lleva al usuario al
+            // login. El token quedará válido hasta que venza en el servidor.
+          }
         }
-        _tokenHolder.clear();
         _session = null;
         _controller.add(null);
         return right(unit);

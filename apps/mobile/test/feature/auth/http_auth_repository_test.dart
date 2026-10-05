@@ -86,6 +86,30 @@ void main() {
     expect(holder.token, isNull);
   });
 
+  test('signOut con la red caída cierra la sesión local igualmente', () async {
+    adapter.body = {
+      'result': 'session',
+      'session_token': 'tok-1',
+      'user': {'id': 'u1'},
+    };
+    await repo.signIn(identifier: '12345678', pin: '024689');
+    final emitidos = <Object?>[];
+    final sub = repo.sessionChanges().listen(emitidos.add);
+
+    adapter.throwIt = DioException(
+      requestOptions: RequestOptions(path: '/v1/auth/sessions/current'),
+      type: DioExceptionType.connectionTimeout,
+    );
+    final result = await repo.signOut();
+    await Future<void>.delayed(Duration.zero);
+    await sub.cancel();
+
+    expect(result.isRight(), isTrue);
+    expect(repo.currentSession, isNull);
+    expect(holder.token, isNull);
+    expect(emitidos, [null]);
+  });
+
   test('el identificador del teléfono viaja en cada llamada', () async {
     adapter.body = {'result': 'device_verification_required'};
 

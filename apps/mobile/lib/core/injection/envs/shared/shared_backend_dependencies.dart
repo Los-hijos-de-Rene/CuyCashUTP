@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../feature/auth/infrastructure/http_auth_repository.dart';
@@ -12,6 +10,7 @@ import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_sto
 import '../../../../feature/otp/infrastructure/http_otp_repository.dart';
 import '../../../env/app_env.dart';
 import '../../../http/authenticated_dio.dart';
+import '../../../http/close_session_on_expiry.dart';
 import '../../../http/session_token_holder.dart';
 import '../../../env/app_flavor.dart';
 import '../../app_dependencies.dart';
@@ -37,14 +36,8 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     baseUrl: baseUrl,
     deviceId: deviceId,
     readToken: () => tokenHolder.token,
-    // Sesión vencida: se revoca la sesión local y `AppRedirect` lleva al login
-    // al emitirse `sessionChanges`. Si ya no hay sesión (varios 401 en vuelo)
-    // no se repite.
-    onUnauthenticated: () {
-      if (authRepository.currentSession != null) {
-        unawaited(authRepository.signOut());
-      }
-    },
+    // Sesión vencida: ver `closeSessionOnExpiry`.
+    onUnauthenticated: () => closeSessionOnExpiry(authRepository)(),
   );
   authRepository = HttpAuthRepository(
     dio: dio,

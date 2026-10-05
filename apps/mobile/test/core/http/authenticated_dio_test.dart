@@ -52,12 +52,58 @@ void main() {
           onUnauthenticated: () => avisos++,
         );
         dio.httpClientAdapter = _Adaptador(
-          (options) =>
-              ResponseBody.fromString('{"code":"INVALID_CREDENTIALS"}', 401),
+          (options) => _json('{"code":"INVALID_CREDENTIALS"}', 401),
         );
 
         await dio.post<dynamic>(
           '/v1/auth/authenticate',
+          data: <String, dynamic>{},
+        );
+
+        expect(avisos, 0);
+      },
+    );
+
+    test(
+      'un 401 sin token (login fallido) no avisa de sesión vencida',
+      () async {
+        var avisos = 0;
+        final dio = buildAuthenticatedDio(
+          baseUrl: 'http://test',
+          deviceId: 'dev-1',
+          readToken: () => null,
+          onUnauthenticated: () => avisos++,
+        );
+        dio.httpClientAdapter = _Adaptador(
+          (options) => _json('{"code":"UNAUTHENTICATED","detail":"x"}', 401),
+        );
+
+        await dio.post<dynamic>(
+          '/v1/auth/authenticate',
+          data: <String, dynamic>{},
+        );
+
+        expect(avisos, 0);
+      },
+    );
+
+    test(
+      'un 401 con token pero otro código (ticket inválido) no avisa',
+      () async {
+        var avisos = 0;
+        final dio = buildAuthenticatedDio(
+          baseUrl: 'http://test',
+          deviceId: 'dev-1',
+          readToken: () => 'vigente',
+          onUnauthenticated: () => avisos++,
+        );
+        dio.httpClientAdapter = _Adaptador(
+          (options) =>
+              _json('{"code":"INVALID_CREDENTIALS","detail":"x"}', 401),
+        );
+
+        await dio.post<dynamic>(
+          '/v1/auth/pin/check-current',
           data: <String, dynamic>{},
         );
 
@@ -79,10 +125,7 @@ void main() {
       );
       dio.httpClientAdapter = _Adaptador((options) {
         peticiones++;
-        return ResponseBody.fromString(
-          '{"detail":{"code":"UNAUTHENTICATED"}}',
-          401,
-        );
+        return _json('{"code":"UNAUTHENTICATED","detail":"x"}', 401);
       });
 
       final r = await dio.post<dynamic>(
@@ -111,3 +154,13 @@ class _Adaptador implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async => responder(options);
 }
+
+/// El backend responde `application/json`: sin la cabecera dio no decodifica el
+/// cuerpo y el interceptor no vería el `code`.
+ResponseBody _json(String body, int status) => ResponseBody.fromString(
+  body,
+  status,
+  headers: {
+    Headers.contentTypeHeader: [Headers.jsonContentType],
+  },
+);
