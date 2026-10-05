@@ -33,17 +33,14 @@ class SharedPrefsPendingTransferStore implements PendingTransferStore {
   }
 
   @override
-  Future<void> writeAll(
+  Future<bool> writeAll(
     String userId,
     Map<String, PendingTransfer> entries,
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (entries.isEmpty) {
-        await prefs.remove(_llave(userId));
-        return;
-      }
-      await prefs.setString(
+      if (entries.isEmpty) return await prefs.remove(_llave(userId));
+      return await prefs.setString(
         _llave(userId),
         jsonEncode({
           for (final e in entries.entries)
@@ -54,7 +51,8 @@ class SharedPrefsPendingTransferStore implements PendingTransferStore {
         }),
       );
     } catch (_) {
-      // Sin persistencia el envío sigue; solo se pierde la protección.
+      // Sin persistencia el envío sigue; quien llama se entera por el `false`.
+      return false;
     }
   }
 }

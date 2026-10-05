@@ -163,10 +163,13 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     final pendiente = huella == null
         ? null
         : await _pending.recover(_userId, huella);
+    // Sin coincidencia exacta, ¿hay otro envío sin resolver? (p. ej. el mismo
+    // pago con otro motivo tras matar la app): no se sella, pero se avisa.
+    final otro = pendiente == null && await _pending.hasPending(_userId);
     if (state.idempotencyKey.isNotEmpty) return;
     emit(
       pendiente == null
-          ? state.copyWith(idempotencyKey: _newKey())
+          ? state.copyWith(idempotencyKey: _newKey(), pendingElsewhere: otro)
           : state.copyWith(idempotencyKey: pendiente, outcomeUnknown: true),
     );
   }
@@ -195,7 +198,12 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     // La clave se anota ANTES de que el envío salga: si la app muere o la
     // sesión vence a mitad, al reentrar con la misma intención se recupera.
     final huella = _huella;
-    if (huella != null) await _pending.remember(_userId, huella, key);
+    // Si no se pudo anotar, el envío sigue (tumbarlo por un fallo de disco
+    // sería peor), pero queda marcado para que la pantalla no prometa lo que
+    // no puede cumplir.
+    final guardada =
+        huella == null || await _pending.remember(_userId, huella, key);
+    if (!guardada) emit(state.copyWith(keyUnsaved: true));
     final result = await _actions.enviar(
       cuentaOrigenId: cuenta.id,
       destinatarioDni: destinatario.dni,

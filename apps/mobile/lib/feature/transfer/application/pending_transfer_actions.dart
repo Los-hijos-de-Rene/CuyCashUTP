@@ -47,8 +47,16 @@ class PendingTransferActions {
   Future<String?> recover(String userId, String huella) async =>
       _vigentes(await _store.readAll(userId))[huella]?.idempotencyKey;
 
-  /// Anota la clave de esta intención (y limpia las caducadas).
-  Future<void> remember(String userId, String huella, String key) async {
+  /// ¿Hay CUALQUIER envío pendiente vigente de este usuario? Sirve para avisar
+  /// cuando la intención nueva no coincide exacta con la pendiente (otro
+  /// monto, otro motivo...) y por eso no se puede reconocer como repetida.
+  Future<bool> hasPending(String userId) async =>
+      _vigentes(await _store.readAll(userId)).isNotEmpty;
+
+  /// Anota la clave de esta intención (y limpia las caducadas). `false` si NO
+  /// quedó guardada: el envío debe seguir, pero el usuario sin red de
+  /// seguridad tiene que saberlo.
+  Future<bool> remember(String userId, String huella, String key) async {
     final todas = _vigentes(await _store.readAll(userId));
     // Si ya había una para esta intención se conserva con su fecha original:
     // reintentar no la rejuvenece.
@@ -56,7 +64,7 @@ class PendingTransferActions {
       huella,
       () => PendingTransfer(idempotencyKey: key, createdAt: _clock().toUtc()),
     );
-    await _store.writeAll(userId, todas);
+    return _store.writeAll(userId, todas);
   }
 
   Future<void> forget(String userId, String huella) async {

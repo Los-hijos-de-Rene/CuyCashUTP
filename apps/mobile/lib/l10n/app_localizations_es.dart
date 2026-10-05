@@ -972,6 +972,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferBackHomeCta => 'Volver al inicio';
 
   @override
+  String get transferKeyUnsavedWarning =>
+      'No pudimos recordar este intento. Revisa tus movimientos antes de reintentar.';
+
+  @override
+  String get transferPendingElsewhereNotice =>
+      'Tienes un envío sin resolver. Revisa tus movimientos antes de confirmar este.';
+
+  @override
   String get transferLeaveTitle => '¿Salir sin confirmar?';
 
   @override

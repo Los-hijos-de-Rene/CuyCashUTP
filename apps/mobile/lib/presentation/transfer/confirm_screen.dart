@@ -131,8 +131,12 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         pin: _pin,
                         onDigit: (d) => _onDigit(state, d),
                         onBackspace: () => _onBackspace(state),
+                        // Sin la clave guardada, "no se cobrará dos veces" no
+                        // se puede prometer si salimos de aquí: se avisa fuerte.
                         errorText: failed
-                            ? transferSubmitErrorText(l10n, failure)
+                            ? (state.keyUnsaved && failure.outcomeUnknown
+                                  ? l10n.transferKeyUnsavedWarning
+                                  : transferSubmitErrorText(l10n, failure))
                             : null,
                         hasError: failed && failure is WrongPin,
                         extra: Column(
@@ -142,6 +146,13 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                               InfoStrip(
                                 icon: Icons.info_outline,
                                 text: l10n.transferRecoveredNotice,
+                              ),
+                              const SizedBox(height: CuyCashSpacing.stackSm),
+                            ],
+                            if (state.pendingElsewhere && !sealed) ...[
+                              InfoStrip(
+                                icon: Icons.info_outline,
+                                text: l10n.transferPendingElsewhereNotice,
                               ),
                               const SizedBox(height: CuyCashSpacing.stackSm),
                             ],

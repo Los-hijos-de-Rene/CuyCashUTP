@@ -19,6 +19,28 @@ PendingTransferActions pendientesDePrueba({
   clock: clock ?? () => DateTime.utc(2026, 10, 5, 18),
 );
 
+/// Un disco que no escribe: la lectura funciona, la escritura falla.
+class StoreQueNoEscribe extends MemoryPendingTransferStore {
+  @override
+  Future<bool> writeAll(
+    String userId,
+    Map<String, PendingTransfer> entries,
+  ) async => false;
+}
+
+/// Una entrada pendiente de otra intención, vigente según el reloj de prueba.
+Future<void> sembrarPendiente(
+  PendingTransferStore store, {
+  String userId = 'u1',
+  String huella = 'acc-demo-1|87654321|5000|Cena',
+  DateTime? creada,
+}) => store.writeAll(userId, {
+  huella: PendingTransfer(
+    idempotencyKey: 'clave-vieja-0001',
+    createdAt: creada ?? DateTime.utc(2026, 10, 5, 17),
+  ),
+});
+
 const destinatarioDePrueba = Recipient(
   dni: '87654321',
   nombreEnmascarado: 'J*** M*** R***',

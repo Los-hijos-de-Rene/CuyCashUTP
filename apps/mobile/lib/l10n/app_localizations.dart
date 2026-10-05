@@ -1756,6 +1756,18 @@ abstract class AppLocalizations {
   /// **'Volver al inicio'**
   String get transferBackHomeCta;
 
+  /// No description provided for @transferKeyUnsavedWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos recordar este intento. Revisa tus movimientos antes de reintentar.'**
+  String get transferKeyUnsavedWarning;
+
+  /// No description provided for @transferPendingElsewhereNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes un envío sin resolver. Revisa tus movimientos antes de confirmar este.'**
+  String get transferPendingElsewhereNotice;
+
   /// No description provided for @transferLeaveTitle.
   ///
   /// In es, this message translates to:

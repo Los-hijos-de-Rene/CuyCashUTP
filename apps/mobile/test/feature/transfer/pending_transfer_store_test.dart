@@ -89,6 +89,19 @@ void main() {
         expect(await acciones.recover('u1', 'otra'), 'clave-2');
       });
 
+      test('remember informa que quedó guardado', () async {
+        expect(await acciones.remember('u1', huella, 'clave-1'), isTrue);
+      });
+
+      test('hasPending: solo cuenta lo vigente y del mismo usuario', () async {
+        expect(await acciones.hasPending('u1'), isFalse);
+        await acciones.remember('u1', huella, 'clave-1');
+        expect(await acciones.hasPending('u1'), isTrue);
+        expect(await acciones.hasPending('u2'), isFalse);
+        ahora = ahora.add(const Duration(hours: 25));
+        expect(await acciones.hasPending('u1'), isFalse);
+      });
+
       test('al guardar se limpian las caducadas', () async {
         await acciones.remember('u1', 'vieja', 'clave-v');
         ahora = ahora.add(const Duration(hours: 30));
@@ -115,4 +128,24 @@ void main() {
       isEmpty,
     );
   });
+
+  test(
+    'si el disco no escribe, remember devuelve false en vez de callar',
+    () async {
+      final acciones = PendingTransferActions(
+        _StoreQueNoEscribe(),
+        clock: () => DateTime.utc(2026, 10, 5, 18),
+      );
+
+      expect(await acciones.remember('u1', huella, 'clave-1'), isFalse);
+    },
+  );
+}
+
+class _StoreQueNoEscribe extends MemoryPendingTransferStore {
+  @override
+  Future<bool> writeAll(
+    String userId,
+    Map<String, PendingTransfer> entries,
+  ) async => false;
 }

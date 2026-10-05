@@ -34,6 +34,15 @@ abstract class TransferState with _$TransferState {
     /// cambiar destinatario ni monto, solo reintentar con la MISMA clave o
     /// abandonar el flujo.
     @Default(false) bool outcomeUnknown,
+
+    /// Al abrir la confirmación había un envío pendiente de este usuario que
+    /// NO coincide exacto con esta intención (otro monto, otro motivo). No se
+    /// sella —no se sabe si es el mismo—, pero se avisa.
+    @Default(false) bool pendingElsewhere,
+
+    /// La clave de este envío NO se pudo guardar: si el resultado queda
+    /// desconocido, reentrar al flujo no la recuperará.
+    @Default(false) bool keyUnsaved,
     TransferReceipt? constancia,
   }) = _TransferState;
 }

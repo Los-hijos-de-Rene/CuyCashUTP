@@ -451,6 +451,7 @@ void main() {
       FakeTransferRepository repo, {
       String userId = 'u1',
       Money monto = _monto,
+      String? motivo,
       String Function()? newKey,
     }) async {
       final b = TransferBloc(
@@ -463,7 +464,7 @@ void main() {
       b.add(const TransferEvent.started(_cuenta));
       b.add(const TransferEvent.recipientRequested('87654321'));
       await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
-      b.add(TransferEvent.amountEntered(monto: monto));
+      b.add(TransferEvent.amountEntered(monto: monto, motivo: motivo));
       b.add(const TransferEvent.confirmationOpened());
       await b.stream.firstWhere((s) => s.idempotencyKey.isNotEmpty);
       return b;
@@ -591,6 +592,77 @@ void main() {
       final b = await flujo(FakeTransferRepository());
 
       expect(b.state.idempotencyKey, isNot(primera));
+    });
+
+    test('R2: tras matar la app, el MISMO pago con otro motivo no se reconoce, '
+        'pero la confirmación avisa que hay un envío sin resolver', () async {
+      final a = await flujo(caeEnRed(), motivo: 'Cena');
+      await enviar(a, (s) => s.failure != null);
+      final primera = a.state.idempotencyKey;
+      await a.close();
+
+      final b = await flujo(FakeTransferRepository(), motivo: 'cena');
+
+      expect(b.state.pendingElsewhere, isTrue);
+      // No se sella: no se sabe si es la misma intención.
+      expect(b.state.outcomeUnknown, isFalse);
+      expect(b.state.idempotencyKey, isNot(primera));
+    });
+
+    test('sin envíos pendientes no avisa', () async {
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.pendingElsewhere, isFalse);
+    });
+
+    test('el pendiente de otro usuario no avisa', () async {
+      await sembrarPendiente(store, userId: 'u2');
+
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.pendingElsewhere, isFalse);
+    });
+
+    test('un pendiente caducado no avisa', () async {
+      await sembrarPendiente(
+        store,
+        creada: ahora.subtract(const Duration(hours: 25)),
+      );
+
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.pendingElsewhere, isFalse);
+    });
+
+    test('con la misma huella no avisa aparte: se reconoce y sella', () async {
+      final a = await flujo(caeEnRed());
+      await enviar(a, (s) => s.failure != null);
+      await a.close();
+
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.outcomeUnknown, isTrue);
+      expect(b.state.pendingElsewhere, isFalse);
+    });
+
+    test('si el disco no escribe, el envío SIGUE pero queda marcado como sin '
+        'clave guardada', () async {
+      store = StoreQueNoEscribe();
+      final repo = caeEnRed();
+      final a = await flujo(repo);
+
+      await enviar(a, (s) => s.failure != null);
+
+      expect(repo.llamadas, 1, reason: 'no se tumba el envío por el disco');
+      expect(a.state.keyUnsaved, isTrue);
+      expect(a.state.outcomeUnknown, isTrue);
+    });
+
+    test('con el disco sano keyUnsaved queda apagado', () async {
+      final a = await flujo(caeEnRed());
+      await enviar(a, (s) => s.failure != null);
+
+      expect(a.state.keyUnsaved, isFalse);
     });
 
     test('un fallo de red CONSERVA la entrada', () async {

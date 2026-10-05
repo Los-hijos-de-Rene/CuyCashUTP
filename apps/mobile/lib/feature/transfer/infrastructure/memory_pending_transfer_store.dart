@@ -9,10 +9,11 @@ class MemoryPendingTransferStore implements PendingTransferStore {
       Map.of(_porUsuario[userId] ?? const {});
 
   @override
-  Future<void> writeAll(
+  Future<bool> writeAll(
     String userId,
     Map<String, PendingTransfer> entries,
   ) async {
     _porUsuario[userId] = Map.of(entries);
+    return true;
   }
 }

@@ -18,12 +18,13 @@ class PendingTransfer {
 ///
 /// La clave no es un secreto (es un identificador de operación), por eso no
 /// hace falta el almacén seguro. Nunca lanza: ante un fallo de lectura devuelve
-/// vacío y ante uno de escritura calla (la protección se pierde, el envío no
-/// debe bloquearse por ello).
+/// vacío y ante uno de escritura devuelve `false` (la protección se pierde, el
+/// envío no debe bloquearse por ello, pero quien llama DEBE saberlo: sin clave
+/// guardada, prometer "no se cobrará dos veces" sería mentira).
 abstract interface class PendingTransferStore {
   /// Entradas del usuario, por huella de la intención.
   Future<Map<String, PendingTransfer>> readAll(String userId);
 
-  /// Reemplaza TODAS las entradas del usuario.
-  Future<void> writeAll(String userId, Map<String, PendingTransfer> entries);
+  /// Reemplaza TODAS las entradas del usuario. `true` si quedó persistido.
+  Future<bool> writeAll(String userId, Map<String, PendingTransfer> entries);
 }

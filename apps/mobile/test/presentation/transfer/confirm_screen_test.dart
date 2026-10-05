@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
+import 'package:cuycash/feature/transfer/domain/pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
+import 'package:cuycash/feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/app/app_routes.dart';
 import 'package:cuycash/presentation/transfer/bloc/transfer_bloc.dart';
@@ -30,16 +32,21 @@ const _cuenta = Account(
 );
 const _monto = Money.fromCentimos(5000);
 
-Future<TransferBloc> _blocEnConfirmacion(FakeTransferRepository repo) async {
+Future<TransferBloc> _blocEnConfirmacion(
+  FakeTransferRepository repo, {
+  PendingTransferStore? store,
+}) async {
   final b = TransferBloc(
     TransferActions(repo),
-    pending: pendientesDePrueba(),
+    pending: pendientesDePrueba(store: store),
     userId: 'u1',
   );
   b.add(const TransferEvent.started(_cuenta));
   b.add(const TransferEvent.recipientRequested('87654321'));
   await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
   b.add(const TransferEvent.amountEntered(monto: _monto, motivo: 'Almuerzo'));
+  b.add(const TransferEvent.confirmationOpened());
+  await b.stream.firstWhere((s) => s.idempotencyKey.isNotEmpty);
   return b;
 }
 
@@ -51,10 +58,11 @@ void main() {
   // El bloc se crea fuera de testWidgets (su suscripción corre en el reloj
   // real), igual que en los tests del inicio.
   Future<void> preparar(
-    FutureResult<TransferFailure, TransferReceipt> Function(int)? alEnviar,
-  ) async {
+    FutureResult<TransferFailure, TransferReceipt> Function(int)? alEnviar, {
+    PendingTransferStore? store,
+  }) async {
     repo = FakeTransferRepository(alEnviar: alEnviar);
-    bloc = await _blocEnConfirmacion(repo);
+    bloc = await _blocEnConfirmacion(repo, store: store);
   }
 
   tearDown(() => bloc.close());
@@ -384,4 +392,74 @@ void main() {
       expect(find.text('INICIO'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'con otro envío pendiente (huella distinta) la confirmación avisa, sin '
+    'sellar',
+    (tester) async {
+      final store = MemoryPendingTransferStore();
+      await sembrarPendiente(store);
+      await preparar(null, store: store);
+      await pump(tester);
+
+      expect(
+        find.text(
+          'Tienes un envío sin resolver. Revisa tus movimientos antes de confirmar este.',
+        ),
+        findsOneWidget,
+      );
+      expect(boton(), findsOneWidget);
+      expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isTrue);
+    },
+  );
+
+  testWidgets('sin envíos pendientes no hay aviso', (tester) async {
+    await preparar(null);
+    await pump(tester);
+
+    expect(find.textContaining('envío sin resolver'), findsNothing);
+  });
+
+  testWidgets(
+    'si la clave no se pudo guardar y el resultado es desconocido, el aviso '
+    'es el fuerte y NO promete que no se cobrará dos veces',
+    (tester) async {
+      await preparar(
+        (_) async =>
+            FakeTransferRepository.falla(const TransferFailure.network()),
+        store: StoreQueNoEscribe(),
+      );
+      await pump(tester);
+      await escribirPin(tester);
+
+      await tester.tap(boton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'No pudimos recordar este intento. Revisa tus movimientos antes de reintentar.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('no se cobrará dos veces'), findsNothing);
+      expect(repo.llamadas, 1);
+    },
+  );
+
+  testWidgets('con el disco sano el aviso de red sí promete la protección', (
+    tester,
+  ) async {
+    await preparar(
+      (_) async =>
+          FakeTransferRepository.falla(const TransferFailure.network()),
+    );
+    await pump(tester);
+    await escribirPin(tester);
+
+    await tester.tap(boton());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('no se cobrará dos veces'), findsOneWidget);
+    expect(find.textContaining('No pudimos recordar'), findsNothing);
+  });
 }
