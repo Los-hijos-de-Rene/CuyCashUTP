@@ -28,6 +28,20 @@ class StoreQueNoEscribe extends MemoryPendingTransferStore {
   ) async => false;
 }
 
+/// Un disco LENTO: la lectura espera a que el test libere [abrir]. Sirve para
+/// probar que dos toques no se cuelan mientras se consulta el almacén.
+class StoreLento extends MemoryPendingTransferStore {
+  final abrir = Completer<void>();
+  int lecturas = 0;
+
+  @override
+  Future<Map<String, PendingTransfer>> readAll(String userId) async {
+    lecturas++;
+    await abrir.future;
+    return super.readAll(userId);
+  }
+}
+
 /// Una entrada pendiente de otra intención, vigente según el reloj de prueba.
 Future<void> sembrarPendiente(
   PendingTransferStore store, {

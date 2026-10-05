@@ -1,6 +1,8 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../../account/domain/movement.dart';
+import '../../account/infrastructure/memory_ledger.dart';
 import '../domain/recipient.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
@@ -24,7 +26,7 @@ import '../domain/transfer_repository.dart';
 ///
 /// Datos de demo (contrato estable): titular [dniPropio] con la cuenta
 /// [cuentaId] y S/ 1,250.40, el mismo saldo que `MemoryAccountRepository`
-/// (este repositorio NO lo actualiza: llevan saldos independientes). PIN
+/// (enviar y recargar lo actualizan en el [MemoryLedger] compartido). PIN
 /// válido `000000`. Destinatarios conocidos: [dniDestino] y [dniDestino2].
 class MemoryTransferRepository implements TransferRepository {
   MemoryTransferRepository({
@@ -33,9 +35,9 @@ class MemoryTransferRepository implements TransferRepository {
     this.bloqueo = const Duration(minutes: 15),
     this.consultasMaximas = 20,
     this.ventana = const Duration(minutes: 10),
-    Money saldoInicial = const Money.fromCentimos(125040),
+    MemoryLedger? ledger,
   }) : _clock = clock,
-       _saldo = saldoInicial;
+       _ledger = ledger ?? MemoryLedger(clock: clock);
 
   static const pinValido = '000000';
   static const dniPropio = '70123456';
@@ -64,7 +66,7 @@ class MemoryTransferRepository implements TransferRepository {
   final int consultasMaximas;
   final Duration ventana;
 
-  Money _saldo;
+  final MemoryLedger _ledger;
   int _fallos = 0;
   DateTime? _bloqueadoHasta;
   final _consultas = <DateTime>[];
@@ -134,7 +136,10 @@ class MemoryTransferRepository implements TransferRepository {
     required String huella,
     required String idempotencyKey,
     required Money monto,
-    required Money Function() mover,
+    required MovementDirection direccion,
+    required String? contraparte,
+    String? motivo,
+    String? cuentaDestinoMasked,
   }) {
     final previa = _operaciones[idempotencyKey];
     if (previa != null) {
@@ -150,11 +155,22 @@ class MemoryTransferRepository implements TransferRepository {
         ),
       );
     }
-    _saldo = mover();
     final constancia = TransferReceipt(
       transactionId: 'tx-mem-${++_secuencia}',
       monto: monto,
       fecha: _clock().toUtc(),
+    );
+    _ledger.registrar(
+      transactionId: constancia.transactionId,
+      tipo: direccion == MovementDirection.debito
+          ? MovementKind.transferencia
+          : MovementKind.recarga,
+      direccion: direccion,
+      monto: monto,
+      fecha: constancia.fecha,
+      contraparte: contraparte,
+      motivo: motivo,
+      cuentaDestinoMasked: cuentaDestinoMasked,
     );
     _operaciones[idempotencyKey] = (huella: huella, constancia: constancia);
     return right(constancia);
@@ -188,14 +204,17 @@ class MemoryTransferRepository implements TransferRepository {
         '${monto.centimos}|$nota';
     // Una clave ya registrada no mira el saldo: el backend devuelve la
     // original (o 409 si los datos cambiaron) sin recontar.
-    if (!_operaciones.containsKey(idempotencyKey) && _saldo < monto) {
+    if (!_operaciones.containsKey(idempotencyKey) && _ledger.saldo < monto) {
       return _falla(const TransferFailure.insufficientFunds());
     }
     return _postear(
       huella: huella,
       idempotencyKey: idempotencyKey,
       monto: monto,
-      mover: () => _saldo - monto,
+      direccion: MovementDirection.debito,
+      contraparte: _destinatarios[destinatarioDni]?.nombreEnmascarado,
+      motivo: nota.isEmpty ? null : nota,
+      cuentaDestinoMasked: _destinatarios[destinatarioDni]?.cuentaDestinoMasked,
     );
   }
 
@@ -216,7 +235,8 @@ class MemoryTransferRepository implements TransferRepository {
       huella: 'recarga|$cuentaId|${monto.centimos}',
       idempotencyKey: idempotencyKey,
       monto: monto,
-      mover: () => _saldo + monto,
+      direccion: MovementDirection.credito,
+      contraparte: 'Recarga de saldo',
     );
   }
 }

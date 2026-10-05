@@ -147,6 +147,13 @@ void main() {
     'DOS toques seguidos en "Confirmar recarga" con repo lento = UNA llamada',
     (tester) async {
       final enVuelo = Completer<Result<TransferFailure, TransferReceipt>>();
+      addTearDown(() {
+        // Si el test falla, tearDown -> bloc.close() esperaría a este
+        // Completer para siempre (10 min de timeout): se libera.
+        if (!enVuelo.isCompleted) {
+          enVuelo.complete(left(const GlobalFailure.noConnection()));
+        }
+      });
       await preparar((_) => enVuelo.future);
       await pump(tester);
       await escribirMonto(tester, '100');

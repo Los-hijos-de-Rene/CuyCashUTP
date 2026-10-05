@@ -43,6 +43,8 @@ class HomeScreen extends StatelessWidget {
           // Sin cuenta cargada no hay desde dónde enviar: se dice, no se calla.
           _showMessage(context, AppLocalizations.of(context).homeErrorGeneric);
         } else {
+          // El flujo de envío se cierra con `go(home)` y no puede devolver un
+          // resultado: `RefreshAfterSend` (en el router) refresca el saldo.
           context.push(AppRoutes.enviar, extra: cuenta);
         }
       case HomeAction.topUp:

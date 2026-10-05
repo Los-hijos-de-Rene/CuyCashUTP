@@ -5,8 +5,11 @@ import '../domain/account.dart';
 import '../domain/account_failure.dart';
 import '../domain/account_repository.dart';
 import '../domain/movement.dart';
+import 'memory_ledger.dart';
 
-/// Impl en memoria (flavor `mock`): una cuenta y tres movimientos de demo.
+/// Impl en memoria (flavor `mock`): una cuenta y tres movimientos de demo,
+/// leídos de un [MemoryLedger] (compartido con `MemoryTransferRepository` en
+/// la app, para que enviar y recargar muevan el saldo del inicio).
 ///
 /// Los identificadores son ESTABLES y forman parte del contrato de la demo:
 /// la pantalla de detalle del movimiento y sus tests se apoyan en ellos.
@@ -24,78 +27,33 @@ class MemoryAccountRepository implements AccountRepository {
   MemoryAccountRepository({
     DateTime Function()? clock,
     this.pageSize = 20,
+    MemoryLedger? ledger,
   })  : assert(pageSize > 0),
-        _movimientos = _sembrar((clock ?? DateTime.now)());
+        _ledger = ledger ?? MemoryLedger(clock: clock);
 
-  static const cuentaId = 'acc-demo-1';
-  static const tx1 = 'tx-demo-1';
-  static const tx2 = 'tx-demo-2';
-  static const tx3 = 'tx-demo-3';
+  static const cuentaId = MemoryLedger.cuentaId;
+  static const tx1 = MemoryLedger.tx1;
+  static const tx2 = MemoryLedger.tx2;
+  static const tx3 = MemoryLedger.tx3;
 
   final int pageSize;
-  final List<MovementDetail> _movimientos;
+  final MemoryLedger _ledger;
 
-  static const _cuenta = Account(
+  List<MovementDetail> get _movimientos => _ledger.movimientos;
+
+  Account get _cuenta => Account(
     id: cuentaId,
     numero: '19100000004521',
     tipo: 'ahorro',
     moneda: 'PEN',
     estado: 'activa',
-    saldoDisponible: Money.fromCentimos(125040),
-    saldoContable: Money.fromCentimos(125040),
+    saldoDisponible: _ledger.saldo,
+    saldoContable: _ledger.saldo,
   );
-
-  /// Más reciente primero, con saldos encadenados:
-  /// 95.40 → (+1,200.00) 1,295.40 → (−45.00) 1,250.40.
-  static List<MovementDetail> _sembrar(DateTime ahora) {
-    final hoy = ahora.toLocal();
-    // Hora local construida y pasada a UTC, como llegaría del servidor.
-    DateTime a(DateTime dia, int h, int m) =>
-        DateTime(dia.year, dia.month, dia.day, h, m).toUtc();
-    final ayer = DateTime(hoy.year, hoy.month, hoy.day - 1);
-
-    return [
-      MovementDetail(
-        transactionId: tx1,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.debito,
-        monto: const Money.fromCentimos(4500),
-        contraparte: 'Bodega Don Aurelio',
-        saldoPosterior: const Money.fromCentimos(125040),
-        fecha: a(hoy, 14, 30),
-        estado: 'confirmada',
-        cuentaDestinoMasked: '••••7732',
-      ),
-      MovementDetail(
-        transactionId: tx2,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.credito,
-        monto: const Money.fromCentimos(120000),
-        contraparte: 'Jenny Marisol Ruiz',
-        saldoPosterior: const Money.fromCentimos(129540),
-        fecha: a(hoy, 9, 15),
-        estado: 'confirmada',
-        // Como el backend: el destino de la transferencia, que en un crédito
-        // es la cuenta propia.
-        cuentaDestinoMasked: '••••4521',
-      ),
-      MovementDetail(
-        transactionId: tx3,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.debito,
-        monto: const Money.fromCentimos(1850),
-        contraparte: 'Menú La Cuchara',
-        saldoPosterior: const Money.fromCentimos(9540),
-        fecha: a(ayer, 13, 5),
-        estado: 'confirmada',
-        cuentaDestinoMasked: '••••1908',
-      ),
-    ];
-  }
 
   @override
   FutureResult<AccountFailure, List<Account>> cuentas() async =>
-      right(const [_cuenta]);
+      right([_cuenta]);
 
   @override
   FutureResult<AccountFailure, MovementPage> movimientos(

@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/transfer/application/pending_transfer_actions.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
+import 'package:cuycash/feature/transfer/domain/pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
 import 'package:cuycash/feature/transfer/infrastructure/memory_pending_transfer_store.dart';
@@ -45,11 +46,18 @@ TopUpBloc _blocFake(
 Future<TopUpBloc> _preparado(
   FakeTransferRepository repo, {
   PendingTransferActions? pending,
+  PendingTransferStore? store,
   String userId = 'u1',
   String Function()? newKey,
   Money monto = _monto,
 }) async {
-  final b = _blocFake(repo, pending: pending, userId: userId, newKey: newKey);
+  final b = _blocFake(
+    repo,
+    pending:
+        pending ?? (store == null ? null : pendientesDePrueba(store: store)),
+    userId: userId,
+    newKey: newKey,
+  );
   b.add(const TopUpEvent.opened(cuentaId: _cuentaId));
   b.add(TopUpEvent.amountChanged(monto));
   await b.stream.firstWhere((s) => s.monto == monto);
@@ -145,7 +153,13 @@ void main() {
       final lento = Completer<Result<TransferFailure, TransferReceipt>>();
       final repo = FakeTransferRepository(alRecargar: (_) => lento.future);
       final b = await _preparado(repo);
-      addTearDown(b.close);
+      addTearDown(() {
+        // Si el test falla antes de completar, close() no debe colgarse.
+        if (!lento.isCompleted) {
+          lento.complete(left(const GlobalFailure.noConnection()));
+        }
+        b.close();
+      });
 
       b.add(const TopUpEvent.submitted(pin: '000000'));
       b.add(const TopUpEvent.submitted(pin: '000000'));
@@ -159,6 +173,34 @@ void main() {
       await _pump();
       expect(repo.recargas, 1);
     });
+
+    test(
+      'con un ALMACÉN lento, dos toques seguidos hacen UNA sola llamada',
+      () async {
+        final disco = StoreLento();
+        final repo = FakeTransferRepository();
+        final b = await _preparado(repo, store: disco);
+        addTearDown(() {
+          if (!disco.abrir.isCompleted) disco.abrir.complete();
+          b.close();
+        });
+        // Abrir también consulta el almacén (hasPending): se libera una vez y
+        // se deja pasar; las lecturas siguientes también avanzan.
+        b.add(const TopUpEvent.submitted(pin: '000000'));
+        b.add(const TopUpEvent.submitted(pin: '000000'));
+        await _pump();
+
+        // Con el almacén aún detenido el estado YA es `submitting`: el segundo
+        // evento salió sin hacer nada.
+        expect(b.state.status, TopUpStatus.submitting);
+        expect(repo.recargas, 0);
+
+        disco.abrir.complete();
+        await _pump();
+        expect(repo.recargas, 1);
+        expect(b.state.status, TopUpStatus.done);
+      },
+    );
 
     test('un PIN errado conserva monto y clave, y no se sella', () async {
       final repo = FakeTransferRepository(
@@ -177,6 +219,15 @@ void main() {
       expect(b.state.outcomeUnknown, isFalse);
       expect(b.state.status, TopUpStatus.editing);
       expect(b.state.monto, _monto);
+    });
+
+    test('un amountChanged con el MISMO monto conserva la clave', () async {
+      final b = await _preparado(FakeTransferRepository(), newKey: _claves());
+      addTearDown(b.close);
+      final antes = b.state.idempotencyKey;
+      b.add(TopUpEvent.amountChanged(_monto));
+      await _pump();
+      expect(b.state.idempotencyKey, antes);
     });
 
     test('cambiar el monto cambia la clave', () async {

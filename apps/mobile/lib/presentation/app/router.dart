@@ -18,6 +18,7 @@ import '../../l10n/app_localizations.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../home/bloc/account_bloc.dart';
 import '../home/home_screen.dart';
+import '../home/refresh_after_send.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../otp/bloc/otp_bloc.dart';
 import '../otp/flujo_cancelado_screen.dart';
@@ -298,7 +299,7 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
                 builder: (context, state) => BlocProvider(
                       create: (_) => AccountBloc(AccountModule.create(deps))
                         ..add(const AccountEvent.started()),
-                      child: const HomeScreen(),
+                      child: const RefreshAfterSend(child: HomeScreen()),
                     )),
           ]),
           StatefulShellBranch(routes: [
