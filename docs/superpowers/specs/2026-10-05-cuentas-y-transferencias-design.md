@@ -39,9 +39,16 @@ titular.
 4. **Un solo módulo escribe en el libro: `app/services/ledger.py`.** Transferencia, recarga y lo
    que venga en sprints posteriores pasan por ahí. Ninguna ruta inserta `ledger_entries` por su
    cuenta.
-5. **La idempotencia la arbitra la base**, vía el `UNIQUE` sobre `transactions.idempotency_key`,
-   capturando `IntegrityError`. Comprobar antes con un `SELECT` deja una ventana entre consulta e
-   inserción por la que se cuelan dos cobros.
+5. **La idempotencia la arbitra la base**, vía el `UNIQUE` sobre `transactions.idempotency_key`.
+   La comprobación va dentro del bloqueo `FOR UPDATE` de las cuentas implicadas: dos peticiones
+   con la misma clave compiten por las mismas cuentas, así que no hay ventana entre consulta e
+   inserción. Una operación que no bloqueara cuenta alguna tendría que capturar además el
+   `IntegrityError`.
+5b. **Junto a la clave se guarda una huella de los parámetros** (`transactions.request_fingerprint`).
+   Repetir una clave con datos distintos no es un reintento: si el usuario corrige el monto en la
+   pantalla de confirmación y reenvía, devolverle la transacción original le haría creer que envió
+   lo que acaba de escribir cuando se cobró lo anterior. Ese caso responde
+   `IDEMPOTENCY_KEY_REUSED` (409), no la transacción vieja.
 6. **La clave de idempotencia se genera al abrir la pantalla de confirmación**, no al pulsar
    confirmar, y se reutiliza en cada reintento. Generarla al pulsar convierte un doble toque en dos
    cobros.
@@ -85,6 +92,8 @@ y en un commit propio, para que el diff del motor no quede sepultado bajo movimi
 - El tope de saldo se condiciona:
   `CheckConstraint("tipo = 'sistema' OR saldo_disponible >= 0")`.
 - `Transaction.tipo` admite `'recarga'`.
+- `Transaction.request_fingerprint`: `String(64)`, la huella de los parámetros de la petición
+  (decisión 5b).
 - Tabla nueva `beneficiaries`: `id`, `user_id` (FK), `beneficiario_dni`, `apodo` (≤ 40),
   `created_at`; único sobre `(user_id, beneficiario_dni)`.
 - Tabla nueva `transfers` (la diseñada en `docs/modelo-datos.md`, recortada al alcance de hoy):
@@ -241,7 +250,8 @@ puede fallar por fondos.
 ### Códigos de error nuevos
 
 `INSUFFICIENT_FUNDS`, `RECIPIENT_NOT_FOUND`, `SELF_TRANSFER`, `ACCOUNT_BLOCKED`,
-`AMOUNT_OUT_OF_RANGE`, `RATE_LIMITED`. Se añaden a `ErrorCode` en `app/core/errors.py`.
+`AMOUNT_OUT_OF_RANGE`, `RATE_LIMITED`, `IDEMPOTENCY_KEY_REUSED`, `ACCOUNT_NOT_FOUND`,
+`MOVEMENT_NOT_FOUND`. Se añaden a `ErrorCode` en `app/core/errors.py`.
 
 ---
 
