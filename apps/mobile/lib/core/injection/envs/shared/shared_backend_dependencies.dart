@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../feature/auth/infrastructure/http_auth_repository.dart';
@@ -9,6 +11,8 @@ import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../../feature/otp/infrastructure/http_otp_repository.dart';
 import '../../../env/app_env.dart';
+import '../../../http/authenticated_dio.dart';
+import '../../../http/session_token_holder.dart';
 import '../../../env/app_flavor.dart';
 import '../../app_dependencies.dart';
 
@@ -24,10 +28,33 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
   final deviceId = await deviceStore.deviceId();
   final baseUrl = AppEnv.authBaseUrl;
 
+  // Un único `Dio` autenticado para auth y para las features con dinero. El
+  // token pasa por el holder (no por el dominio): auth lo escribe, el
+  // interceptor lo lee.
+  final tokenHolder = SessionTokenHolder();
+  late final HttpAuthRepository authRepository;
+  final dio = buildAuthenticatedDio(
+    baseUrl: baseUrl,
+    deviceId: deviceId,
+    readToken: () => tokenHolder.token,
+    // Sesión vencida: se revoca la sesión local y `AppRedirect` lleva al login
+    // al emitirse `sessionChanges`. Si ya no hay sesión (varios 401 en vuelo)
+    // no se repite.
+    onUnauthenticated: () {
+      if (authRepository.currentSession != null) {
+        unawaited(authRepository.signOut());
+      }
+    },
+  );
+  authRepository = HttpAuthRepository(
+    dio: dio,
+    deviceId: deviceId,
+    tokenHolder: tokenHolder,
+  );
+
   return AppDependencies(
     flavor: flavor,
-    authRepository:
-        HttpAuthRepository.withConfig(baseUrl: baseUrl, deviceId: deviceId),
+    authRepository: authRepository,
     deviceStore: deviceStore,
     otpRepository:
         HttpOtpRepository.withConfig(baseUrl: baseUrl, deviceId: deviceId),

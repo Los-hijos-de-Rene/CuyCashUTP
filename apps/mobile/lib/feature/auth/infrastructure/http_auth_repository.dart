@@ -4,6 +4,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../../../core/http/session_token_holder.dart';
 import '../domain/auth_failure.dart';
 import '../domain/auth_repository.dart';
 import '../domain/auth_session.dart';
@@ -18,43 +19,22 @@ import '../domain/auth_session.dart';
 /// bloqueo vienen del servidor. Llevarlos en el teléfono permitiría ponerlos a
 /// cero reinstalando la app.
 class HttpAuthRepository implements AuthRepository {
-  HttpAuthRepository({required Dio dio, required this.deviceId}) : _dio = dio;
-
-  factory HttpAuthRepository.withConfig({
-    required String baseUrl,
-    required String deviceId,
-    Duration connectTimeout = const Duration(seconds: 20),
-    Duration receiveTimeout = const Duration(seconds: 70),
-  }) =>
-      HttpAuthRepository(
-        deviceId: deviceId,
-        dio: Dio(BaseOptions(
-          baseUrl: baseUrl,
-          // Las dos esperas son distintas a propósito. El plan gratuito del
-          // hosting suspende el servicio tras unos minutos sin tráfico: la
-          // primera petición conecta en el acto —responde el proxy— y después
-          // se queda esperando a que el contenedor arranque, cerca de un
-          // minuto. Con un único valor hay que elegir entre cortar ese
-          // arranque en frío o tardar más de un minuto en avisar de que no hay
-          // red. Separadas, se consigue lo uno y lo otro.
-          connectTimeout: connectTimeout,
-          receiveTimeout: receiveTimeout,
-          headers: {'X-Device-Id': deviceId},
-          // Los 4xx son respuestas de negocio (PIN incorrecto, bloqueo), no
-          // excepciones: se leen y se mapean a failures.
-          validateStatus: (status) => status != null && status < 500,
-        )),
-      );
+  /// [dio] debe venir de `buildAuthenticatedDio` y compartir [tokenHolder]:
+  /// el interceptor adjunta la cabecera, este repositorio solo escribe el
+  /// token que recibe del servidor.
+  HttpAuthRepository({
+    required Dio dio,
+    required this.deviceId,
+    required SessionTokenHolder tokenHolder,
+  })  : _dio = dio,
+        _tokenHolder = tokenHolder;
 
   final Dio _dio;
+  final SessionTokenHolder _tokenHolder;
   final String deviceId;
 
   final _controller = StreamController<AuthSession?>.broadcast();
   AuthSession? _session;
-
-  /// Token de la sesión abierta. Vive en memoria: persistirlo es trabajo del
-  /// almacén cifrado y todavía no está cableado.
-  String? _sessionToken;
 
   /// Acredita "el PIN fue correcto" mientras se verifica el dispositivo.
   String? _pendingToken;
@@ -120,12 +100,12 @@ class HttpAuthRepository implements AuthRepository {
 
         if (data['result'] == 'session') {
           // El teléfono ya era de confianza: la sesión viene hecha.
-          _sessionToken = data['session_token'] as String?;
+          _tokenHolder.token = data['session_token'] as String?;
           _pendingToken = null;
         } else {
           // PIN correcto pero teléfono desconocido: falta el OTP. La sesión
           // NO se abre hasta que llegue el ticket.
-          _sessionToken = null;
+          _tokenHolder.clear();
           _pendingToken = data['pending_token'] as String?;
         }
         return right(session);
@@ -138,7 +118,7 @@ class HttpAuthRepository implements AuthRepository {
   }) async {
     final result = await authenticate(identifier: identifier, pin: pin);
     return result.flatMap((session) {
-      if (_sessionToken == null) {
+      if (_tokenHolder.token == null) {
         // Sin sesión abierta, `signIn` no puede cumplir su promesa: hace falta
         // verificar el dispositivo primero.
         return left(const GlobalFailure.server(AuthFailure.authUnavailable()));
@@ -150,7 +130,7 @@ class HttpAuthRepository implements AuthRepository {
 
   @override
   Future<void> activate(AuthSession session, {String? otpTicket}) async {
-    if (_sessionToken != null) {
+    if (_tokenHolder.token != null) {
       _emit(session);
       return;
     }
@@ -162,7 +142,7 @@ class HttpAuthRepository implements AuthRepository {
       data: {'pending_token': pending, 'otp_ticket': otpTicket},
     );
     if (response.statusCode != 200) return;
-    _sessionToken = response.data?['session_token'] as String?;
+    _tokenHolder.token = response.data?['session_token'] as String?;
     _pendingToken = null;
     _emit(session);
   }
@@ -197,21 +177,26 @@ class HttpAuthRepository implements AuthRepository {
         final failure = _failureFor(response);
         if (failure != null) return left(GlobalFailure.server(failure));
         // El servidor revocó todas las sesiones, incluida la de este teléfono.
-        _sessionToken = null;
+        _tokenHolder.clear();
         _session = null;
         return right(unit);
       });
 
   @override
   FutureResult<AuthFailure, Unit> signOut() => _guard(() async {
-        final token = _sessionToken;
+        final token = _tokenHolder.token;
+        // Se borra ANTES de llamar: si el servidor responde 401 (token ya
+        // vencido), el interceptor no debe avisar de sesión vencida y volver a
+        // entrar aquí en bucle. Por eso esta única llamada lleva la cabecera
+        // explícita: revoca ese token concreto, el que ya no está en el holder.
+        _tokenHolder.clear();
         if (token != null) {
           await _dio.delete<void>(
             '/v1/auth/sessions/current',
             options: Options(headers: {'Authorization': 'Bearer $token'}),
           );
         }
-        _sessionToken = null;
+        _tokenHolder.clear();
         _session = null;
         _controller.add(null);
         return right(unit);

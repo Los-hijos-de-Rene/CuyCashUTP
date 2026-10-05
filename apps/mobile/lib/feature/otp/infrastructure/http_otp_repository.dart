@@ -19,7 +19,7 @@ class HttpOtpRepository implements OtpRepository {
     required String deviceId,
     Duration connectTimeout = const Duration(seconds: 20),
     // Más larga que la de conexión por el arranque en frío del hosting: ver
-    // la nota en `HttpAuthRepository.withConfig`.
+    // la nota en `buildAuthenticatedDio`.
     Duration receiveTimeout = const Duration(seconds: 70),
   }) =>
       HttpOtpRepository(
