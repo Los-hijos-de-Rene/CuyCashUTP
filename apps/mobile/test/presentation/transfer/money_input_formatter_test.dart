@@ -6,10 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TextEditingValue v(String t) => TextEditingValue(text: t);
 
-  String tras(String antes, String despues, {VoidCallback? onRejected}) =>
-      MoneyInputFormatter(
-        onRejected: onRejected,
-      ).formatEditUpdate(v(antes), v(despues)).text;
+  String tras(
+    String antes,
+    String despues, {
+    ValueChanged<String>? onRejected,
+  }) => MoneyInputFormatter(
+    onRejected: onRejected,
+  ).formatEditUpdate(v(antes), v(despues)).text;
 
   test('deja pasar lo que Money.parse sabe leer', () {
     for (final ok in ['', '1', '250', '250.', '250.5', '250.50', '250,50']) {
@@ -19,13 +22,13 @@ void main() {
 
   test('rechaza la coma de miles: 1,234 vuelve a lo anterior', () {
     var avisos = 0;
-    expect(tras('1,23', '1,234', onRejected: () => avisos++), '1,23');
+    expect(tras('1,23', '1,234', onRejected: (_) => avisos++), '1,23');
     expect(avisos, 1);
   });
 
   test('rechaza el pegado de 1,234.56 entero', () {
     var avisos = 0;
-    expect(tras('', '1,234.56', onRejected: () => avisos++), '');
+    expect(tras('', '1,234.56', onRejected: (_) => avisos++), '');
     expect(avisos, 1);
   });
 
@@ -38,6 +41,15 @@ void main() {
   test('todo lo que deja pasar y es completo lo lee Money.parse', () {
     for (final t in ['250', '250.5', '250,50', '0.01']) {
       expect(Money.parse(t), isNotNull, reason: t);
+    }
+  });
+
+  test('esSeparadorDeMiles distingue miles de otros rechazos', () {
+    for (final t in ['1,234', '12,345', '1,234.56', '1,234,567']) {
+      expect(MoneyInputFormatter.esSeparadorDeMiles(t), isTrue, reason: t);
+    }
+    for (final t in ['abc', '1.234', '1.2.3', '-5', '12345678', '1,2345']) {
+      expect(MoneyInputFormatter.esSeparadorDeMiles(t), isFalse, reason: t);
     }
   });
 }

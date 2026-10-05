@@ -25,7 +25,9 @@ class _AmountScreenState extends State<AmountScreen> {
 
   final _amount = TextEditingController();
   final _motivo = TextEditingController();
-  bool _rejected = false;
+
+  /// Aviso del último rechazo del formateador; `null` si no hay.
+  String? _rejectedMessage;
 
   @override
   void initState() {
@@ -47,9 +49,7 @@ class _AmountScreenState extends State<AmountScreen> {
   static String _toInput(Money m) {
     final soles = m.centimos ~/ 100;
     final cents = m.centimos % 100;
-    return cents == 0
-        ? '$soles'
-        : '$soles.${cents.toString().padLeft(2, '0')}';
+    return cents == 0 ? '$soles' : '$soles.${cents.toString().padLeft(2, '0')}';
   }
 
   /// Un separador al final (`5.`) es una edición a medias, no un error.
@@ -67,7 +67,9 @@ class _AmountScreenState extends State<AmountScreen> {
     if (monto == null) return l10n.transferAmountInvalid;
     if (monto < TransferLimits.montoMinimo) return l10n.transferAmountZero;
     if (monto > TransferLimits.montoMaximo) {
-      return l10n.transferAmountOverMax(formatSoles(TransferLimits.montoMaximo));
+      return l10n.transferAmountOverMax(
+        formatSoles(TransferLimits.montoMaximo),
+      );
     }
     if (monto > disponible) {
       return l10n.transferAmountOverBalance(formatSoles(disponible));
@@ -92,10 +94,12 @@ class _AmountScreenState extends State<AmountScreen> {
         state.cuenta?.saldoDisponible ?? const Money.fromCentimos(0);
     final destinatario = state.destinatario;
     // El rechazo del formateador tiene su propio aviso; si no, el de validación.
-    final error = _rejected
-        ? l10n.transferAmountNoThousands
-        : _error(l10n, disponible);
-    final valid = _parsed != null && !_incomplete && _error(l10n, disponible) == null;
+    final error = _rejectedMessage ?? _error(l10n, disponible);
+    final valid =
+        _rejectedMessage == null &&
+        _parsed != null &&
+        !_incomplete &&
+        _error(l10n, disponible) == null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.transferAmountTitle)),
@@ -131,10 +135,15 @@ class _AmountScreenState extends State<AmountScreen> {
                 ),
                 inputFormatters: [
                   MoneyInputFormatter(
-                    onRejected: () => setState(() => _rejected = true),
+                    onRejected: (texto) => setState(
+                      () => _rejectedMessage =
+                          MoneyInputFormatter.esSeparadorDeMiles(texto)
+                          ? l10n.transferAmountNoThousands
+                          : l10n.transferAmountInvalid,
+                    ),
                   ),
                 ],
-                onChanged: (_) => setState(() => _rejected = false),
+                onChanged: (_) => setState(() => _rejectedMessage = null),
               ),
               const SizedBox(height: CuyCashSpacing.stackSm),
               Wrap(
@@ -144,7 +153,7 @@ class _AmountScreenState extends State<AmountScreen> {
                     ActionChip(
                       label: Text(formatSoles(Money.fromCentimos(soles * 100))),
                       onPressed: () => setState(() {
-                        _rejected = false;
+                        _rejectedMessage = null;
                         _amount.text = '$soles';
                       }),
                     ),

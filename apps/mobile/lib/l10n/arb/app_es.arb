@@ -307,6 +307,7 @@
   "transferSummaryMotivo": "Motivo",
   "transferConfirmCta": "Confirmar transferencia",
   "transferRetryCta": "Reintentar envío",
+  "transferBackHomeCta": "Volver al inicio",
   "transferErrorInsufficientFunds": "No te alcanza el saldo disponible.",
   "transferErrorWrongPin": "{n, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {n} intentos.}}",
   "@transferErrorWrongPin": {"placeholders": {"n": {"type": "int"}}},

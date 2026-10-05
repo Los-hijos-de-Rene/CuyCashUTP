@@ -28,6 +28,12 @@ abstract class TransferState with _$TransferState {
 
     /// El último fallo (de la búsqueda o del envío, según la pantalla).
     TransferFailure? failure,
+
+    /// Un envío falló sin que se sepa si el dinero se movió (red, 429,
+    /// inesperado). Sella la intención: mientras esté encendida no se puede
+    /// cambiar destinatario ni monto, solo reintentar con la MISMA clave o
+    /// abandonar el flujo.
+    @Default(false) bool outcomeUnknown,
     TransferReceipt? constancia,
   }) = _TransferState;
 }

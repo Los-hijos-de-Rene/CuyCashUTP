@@ -969,6 +969,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferRetryCta => 'Reintentar envío';
 
   @override
+  String get transferBackHomeCta => 'Volver al inicio';
+
+  @override
   String get transferErrorInsufficientFunds =>
       'No te alcanza el saldo disponible.';
 

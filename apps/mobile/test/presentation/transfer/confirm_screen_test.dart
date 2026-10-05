@@ -261,4 +261,62 @@ void main() {
 
     expect(find.text('No te alcanza el saldo disponible.'), findsOneWidget);
   });
+
+  testWidgets(
+    'tras un fallo de red la confirmación queda sellada: no se puede salir '
+    'hacia el monto, solo reintentar o volver al inicio',
+    (tester) async {
+      await preparar(
+        (_) async =>
+            FakeTransferRepository.falla(const TransferFailure.network()),
+      );
+      await pump(tester);
+      await escribirPin(tester);
+      expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isTrue);
+
+      await tester.tap(boton());
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isFalse);
+      expect(find.byType(BackButton), findsNothing);
+      expect(find.text('Reintentar envío'), findsOneWidget);
+      expect(find.text('Volver al inicio'), findsOneWidget);
+
+      // Aunque algo intentara editar el monto, el bloc lo ignora.
+      bloc.add(
+        const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)),
+      );
+      await tester.pump();
+      expect(bloc.state.monto, _monto);
+
+      await tester.tap(find.text('Volver al inicio'));
+      await tester.pumpAndSettle();
+      expect(find.text('INICIO'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'idempotencyKeyReused (409): no se ofrece repetir, sino volver al inicio',
+    (tester) async {
+      await preparar(
+        (_) async => FakeTransferRepository.falla(
+          const TransferFailure.idempotencyKeyReused(),
+        ),
+      );
+      await pump(tester);
+      await escribirPin(tester);
+
+      await tester.tap(boton());
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('empieza uno nuevo'), findsOneWidget);
+      expect(boton(), findsNothing);
+      expect(find.text('Reintentar envío'), findsNothing);
+
+      await tester.tap(find.text('Volver al inicio'));
+      await tester.pumpAndSettle();
+      expect(find.text('INICIO'), findsOneWidget);
+      expect(repo.llamadas, 1);
+    },
+  );
 }

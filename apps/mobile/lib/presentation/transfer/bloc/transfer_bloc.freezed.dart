@@ -534,7 +534,11 @@ mixin _$TransferState {
 /// fija al abrir la confirmación y solo se borra si cambia la intención;
 /// jamás entre reintentos. Vacía = aún no hay intención.
  String get idempotencyKey;/// El último fallo (de la búsqueda o del envío, según la pantalla).
- TransferFailure? get failure; TransferReceipt? get constancia;
+ TransferFailure? get failure;/// Un envío falló sin que se sepa si el dinero se movió (red, 429,
+/// inesperado). Sella la intención: mientras esté encendida no se puede
+/// cambiar destinatario ni monto, solo reintentar con la MISMA clave o
+/// abandonar el flujo.
+ bool get outcomeUnknown; TransferReceipt? get constancia;
 /// Create a copy of TransferState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -545,16 +549,16 @@ $TransferStateCopyWith<TransferState> get copyWith => _$TransferStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.constancia, constancia) || other.constancia == constancia));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.constancia, constancia) || other.constancia == constancia));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,constancia);
+int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,outcomeUnknown,constancia);
 
 @override
 String toString() {
-  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, constancia: $constancia)';
+  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, constancia: $constancia)';
 }
 
 
@@ -565,7 +569,7 @@ abstract mixin class $TransferStateCopyWith<$Res>  {
   factory $TransferStateCopyWith(TransferState value, $Res Function(TransferState) _then) = _$TransferStateCopyWithImpl;
 @useResult
 $Res call({
- TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, TransferReceipt? constancia
+ TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, TransferReceipt? constancia
 });
 
 
@@ -582,7 +586,7 @@ class _$TransferStateCopyWithImpl<$Res>
 
 /// Create a copy of TransferState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? constancia = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? constancia = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TransferStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -592,7 +596,8 @@ as Money?,motivo: freezed == motivo ? _self.motivo : motivo // ignore: cast_null
 as String?,guardarFrecuente: null == guardarFrecuente ? _self.guardarFrecuente : guardarFrecuente // ignore: cast_nullable_to_non_nullable
 as bool,idempotencyKey: null == idempotencyKey ? _self.idempotencyKey : idempotencyKey // ignore: cast_nullable_to_non_nullable
 as String,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as TransferFailure?,constancia: freezed == constancia ? _self.constancia : constancia // ignore: cast_nullable_to_non_nullable
+as TransferFailure?,outcomeUnknown: null == outcomeUnknown ? _self.outcomeUnknown : outcomeUnknown // ignore: cast_nullable_to_non_nullable
+as bool,constancia: freezed == constancia ? _self.constancia : constancia // ignore: cast_nullable_to_non_nullable
 as TransferReceipt?,
   ));
 }
@@ -678,10 +683,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  TransferReceipt? constancia)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  TransferReceipt? constancia)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransferState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.constancia);case _:
   return orElse();
 
 }
@@ -699,10 +704,10 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  TransferReceipt? constancia)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  TransferReceipt? constancia)  $default,) {final _that = this;
 switch (_that) {
 case _TransferState():
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.constancia);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -719,10 +724,10 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  TransferReceipt? constancia)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  TransferReceipt? constancia)?  $default,) {final _that = this;
 switch (_that) {
 case _TransferState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.constancia);case _:
   return null;
 
 }
@@ -734,7 +739,7 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 
 
 class _TransferState implements TransferState {
-  const _TransferState({this.status = TransferStatus.idle, this.cuenta, this.destinatario, this.monto, this.motivo, this.guardarFrecuente = false, this.idempotencyKey = '', this.failure, this.constancia});
+  const _TransferState({this.status = TransferStatus.idle, this.cuenta, this.destinatario, this.monto, this.motivo, this.guardarFrecuente = false, this.idempotencyKey = '', this.failure, this.outcomeUnknown = false, this.constancia});
   
 
 @override@JsonKey() final  TransferStatus status;
@@ -751,6 +756,11 @@ class _TransferState implements TransferState {
 @override@JsonKey() final  String idempotencyKey;
 /// El último fallo (de la búsqueda o del envío, según la pantalla).
 @override final  TransferFailure? failure;
+/// Un envío falló sin que se sepa si el dinero se movió (red, 429,
+/// inesperado). Sella la intención: mientras esté encendida no se puede
+/// cambiar destinatario ni monto, solo reintentar con la MISMA clave o
+/// abandonar el flujo.
+@override@JsonKey() final  bool outcomeUnknown;
 @override final  TransferReceipt? constancia;
 
 /// Create a copy of TransferState
@@ -763,16 +773,16 @@ _$TransferStateCopyWith<_TransferState> get copyWith => __$TransferStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.constancia, constancia) || other.constancia == constancia));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.constancia, constancia) || other.constancia == constancia));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,constancia);
+int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,outcomeUnknown,constancia);
 
 @override
 String toString() {
-  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, constancia: $constancia)';
+  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, constancia: $constancia)';
 }
 
 
@@ -783,7 +793,7 @@ abstract mixin class _$TransferStateCopyWith<$Res> implements $TransferStateCopy
   factory _$TransferStateCopyWith(_TransferState value, $Res Function(_TransferState) _then) = __$TransferStateCopyWithImpl;
 @override @useResult
 $Res call({
- TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, TransferReceipt? constancia
+ TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, TransferReceipt? constancia
 });
 
 
@@ -800,7 +810,7 @@ class __$TransferStateCopyWithImpl<$Res>
 
 /// Create a copy of TransferState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? constancia = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? constancia = freezed,}) {
   return _then(_TransferState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TransferStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -810,7 +820,8 @@ as Money?,motivo: freezed == motivo ? _self.motivo : motivo // ignore: cast_null
 as String?,guardarFrecuente: null == guardarFrecuente ? _self.guardarFrecuente : guardarFrecuente // ignore: cast_nullable_to_non_nullable
 as bool,idempotencyKey: null == idempotencyKey ? _self.idempotencyKey : idempotencyKey // ignore: cast_nullable_to_non_nullable
 as String,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as TransferFailure?,constancia: freezed == constancia ? _self.constancia : constancia // ignore: cast_nullable_to_non_nullable
+as TransferFailure?,outcomeUnknown: null == outcomeUnknown ? _self.outcomeUnknown : outcomeUnknown // ignore: cast_nullable_to_non_nullable
+as bool,constancia: freezed == constancia ? _self.constancia : constancia // ignore: cast_nullable_to_non_nullable
 as TransferReceipt?,
   ));
 }

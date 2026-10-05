@@ -115,3 +115,24 @@ final class TransferNetworkFailure extends TransferFailure {
 final class TransferUnexpectedFailure extends TransferFailure {
   const TransferUnexpectedFailure();
 }
+
+extension TransferFailureOutcome on TransferFailure {
+  /// El fallo deja DESCONOCIDO si el dinero se movió (red, 429, inesperado):
+  /// la única salida segura es reintentar con la MISMA clave de idempotencia.
+  bool get outcomeUnknown => switch (this) {
+    TransferNetworkFailure() ||
+    TransferUnexpectedFailure() ||
+    RateLimited() => true,
+    InsufficientFunds() ||
+    WrongPin() ||
+    IdentifierLocked() ||
+    DeviceLocked() ||
+    RecipientNotFound() ||
+    SelfTransfer() ||
+    AmountOutOfRange() ||
+    AccountBlocked() ||
+    IdempotencyKeyReused() ||
+    TransferAccountNotFound() ||
+    TransferUnauthenticated() => false,
+  };
+}

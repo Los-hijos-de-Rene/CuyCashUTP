@@ -58,22 +58,3 @@ String transferSubmitErrorText(
   TransferNetworkFailure() => l10n.transferErrorNetwork,
   TransferUnexpectedFailure() => l10n.transferErrorUnexpected,
 };
-
-/// El fallo deja el resultado del envío DESCONOCIDO: el botón pasa a
-/// "Reintentar" y el PIN escrito se conserva.
-bool transferOutcomeUnknown(TransferFailure failure) => switch (failure) {
-  TransferNetworkFailure() ||
-  TransferUnexpectedFailure() ||
-  RateLimited() => true,
-  InsufficientFunds() ||
-  WrongPin() ||
-  IdentifierLocked() ||
-  DeviceLocked() ||
-  RecipientNotFound() ||
-  SelfTransfer() ||
-  AmountOutOfRange() ||
-  AccountBlocked() ||
-  IdempotencyKeyReused() ||
-  TransferAccountNotFound() ||
-  TransferUnauthenticated() => false,
-};

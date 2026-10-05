@@ -348,6 +348,79 @@ void main() {
     }
   });
 
+  group('resultado desconocido: la intención queda sellada', () {
+    Future<(TransferBloc, FakeTransferRepository)> tras(
+      TransferFailure falla,
+    ) async {
+      final repo = FakeTransferRepository(
+        alEnviar: (n) async => n == 1
+            ? FakeTransferRepository.falla(falla)
+            : right(FakeTransferRepository.constanciaDe(_monto)),
+      );
+      final b = await _preparado(repo, newKey: _claves());
+      b.add(const TransferEvent.submitted(pin: '000000'));
+      await b.stream.firstWhere((s) => s.failure != null);
+      return (b, repo);
+    }
+
+    test('REPRODUCCIÓN: fallo de red, atrás, otro monto y reenvío NO puede '
+        'producir una segunda clave', () async {
+      final (b, repo) = await tras(const TransferFailure.network());
+      addTearDown(b.close);
+      final primera = b.state.idempotencyKey;
+
+      // El usuario retrocede a la pantalla de monto y lo baja.
+      b.add(const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)));
+      await Future<void>.delayed(Duration.zero);
+      b.add(const TransferEvent.confirmationOpened());
+      b.add(const TransferEvent.submitted(pin: '000000'));
+      await b.stream.firstWhere((s) => s.status == TransferStatus.done);
+
+      expect(b.state.monto, _monto, reason: 'el monto no pudo cambiar');
+      expect(repo.claves, [primera, primera]);
+    });
+
+    for (final falla in [
+      const TransferFailure.network(),
+      const TransferFailure.unexpected(),
+      const TransferFailure.rateLimited(null),
+    ]) {
+      test(
+        '${falla.runtimeType}: monto, destinatario y DNI no se editan',
+        () async {
+          final (b, _) = await tras(falla);
+          addTearDown(b.close);
+          final antes = b.state;
+          expect(antes.status, TransferStatus.ready);
+
+          b.add(
+            const TransferEvent.amountEntered(monto: Money.fromCentimos(1)),
+          );
+          b.add(const TransferEvent.recipientRequested('43219876'));
+          b.add(const TransferEvent.recipientCleared());
+          await Future<void>.delayed(Duration.zero);
+
+          expect(b.state, antes);
+        },
+      );
+    }
+
+    test(
+      'un fallo definitivo (PIN errado) no sella: se puede editar',
+      () async {
+        final (b, _) = await tras(const TransferFailure.wrongPin(3));
+        addTearDown(b.close);
+        expect(b.state.outcomeUnknown, isFalse);
+
+        b.add(
+          const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(b.state.monto, const Money.fromCentimos(4000));
+      },
+    );
+  });
+
   group('el motivo', () {
     blocTest<TransferBloc, TransferState>(
       'se recorta a 40 caracteres aunque la UI no lo hubiera hecho',

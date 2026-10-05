@@ -39,13 +39,12 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<TransferBloc>().add(
-      const TransferEvent.confirmationOpened(),
-    );
+    context.read<TransferBloc>().add(const TransferEvent.confirmationOpened());
   }
 
   void _onDigit(TransferState state, int digit) {
-    if (state.status == TransferStatus.submitting || _pin.length >= _pinLength) {
+    if (state.status == TransferStatus.submitting ||
+        _pin.length >= _pinLength) {
       return;
     }
     setState(() => _pin += '$digit');
@@ -63,7 +62,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
       return;
     }
     final failure = state.failure;
-    if (failure != null && !transferOutcomeUnknown(failure)) {
+    if (failure != null && !failure.outcomeUnknown) {
       setState(() => _pin = '');
     }
   }
@@ -80,11 +79,21 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
         final submitting = state.status == TransferStatus.submitting;
         final failure = state.failure;
         final failed = failure != null && !submitting;
+        // Resultado desconocido: no se sale de aquí salvo al inicio. Volver a
+        // editar el monto abriría una intención nueva con otra clave mientras
+        // el envío anterior pudo haberse ejecutado.
+        final sealed = state.outcomeUnknown;
+        // 409: reintentar repite la clave y devuelve 409 siempre. Lo único útil
+        // es empezar de nuevo.
+        final dead = failed && failure is IdempotencyKeyReused;
         return PopScope(
           // Con el envío en vuelo no se sale: el resultado debe verse.
-          canPop: !submitting,
+          canPop: !submitting && !sealed,
           child: Scaffold(
-            appBar: AppBar(title: Text(l10n.transferConfirmTitle)),
+            appBar: AppBar(
+              automaticallyImplyLeading: !submitting && !sealed,
+              title: Text(l10n.transferConfirmTitle),
+            ),
             body: SecureScreenScope(
               child: SafeArea(
                 child: Column(
@@ -110,16 +119,35 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         CuyCashSpacing.marginMobile,
                         CuyCashSpacing.stackMd,
                       ),
-                      child: PrimaryButton(
-                        label: failed && transferOutcomeUnknown(failure)
-                            ? l10n.transferRetryCta
-                            : l10n.transferConfirmCta,
-                        loading: submitting,
-                        onPressed: _pin.length == _pinLength
-                            ? () => context.read<TransferBloc>().add(
-                                TransferEvent.submitted(pin: _pin),
-                              )
-                            : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (dead)
+                            PrimaryButton(
+                              label: l10n.transferBackHomeCta,
+                              onPressed: () => context.go(AppRoutes.home),
+                            )
+                          else ...[
+                            PrimaryButton(
+                              label: failed && failure.outcomeUnknown
+                                  ? l10n.transferRetryCta
+                                  : l10n.transferConfirmCta,
+                              loading: submitting,
+                              onPressed: _pin.length == _pinLength
+                                  ? () => context.read<TransferBloc>().add(
+                                      TransferEvent.submitted(pin: _pin),
+                                    )
+                                  : null,
+                            ),
+                            if (sealed && !submitting) ...[
+                              const SizedBox(height: CuyCashSpacing.stackSm),
+                              SecondaryButton(
+                                label: l10n.transferBackHomeCta,
+                                onPressed: () => context.go(AppRoutes.home),
+                              ),
+                            ],
+                          ],
+                        ],
                       ),
                     ),
                   ],

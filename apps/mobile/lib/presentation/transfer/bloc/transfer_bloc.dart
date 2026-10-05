@@ -46,6 +46,16 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
   final TransferActions _actions;
   final String Function() _newKey;
 
+  /// La intención ya no admite cambios: hay un envío en vuelo, ya terminó, o
+  /// falló sin que se sepa si el dinero se movió. En ese último caso el
+  /// usuario no puede inventar una intención nueva (otro monto u otro
+  /// destinatario, con otra clave) mientras la anterior sigue en el aire: solo
+  /// reintentar con la MISMA clave o abandonar el flujo.
+  bool get _intentSealed =>
+      state.status == TransferStatus.submitting ||
+      state.status == TransferStatus.done ||
+      state.outcomeUnknown;
+
   /// Cada búsqueda lleva un número: si el DNI se editó mientras volaba, su
   /// respuesta ya no es de este destinatario y se descarta.
   int _search = 0;
@@ -54,10 +64,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientRequested event,
     Emitter<TransferState> emit,
   ) async {
-    if (state.status == TransferStatus.submitting ||
-        state.status == TransferStatus.done) {
-      return;
-    }
+    if (_intentSealed) return;
     final search = ++_search;
     emit(
       state.copyWith(
@@ -87,10 +94,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientCleared event,
     Emitter<TransferState> emit,
   ) {
-    if (state.status == TransferStatus.submitting ||
-        state.status == TransferStatus.done) {
-      return;
-    }
+    if (_intentSealed) return;
     _search++;
     emit(
       state.copyWith(
@@ -106,10 +110,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferAmountEntered event,
     Emitter<TransferState> emit,
   ) {
-    if (state.status == TransferStatus.submitting ||
-        state.status == TransferStatus.done) {
-      return;
-    }
+    if (_intentSealed) return;
     // El motivo se limita en la UI Y aquí: el cliente HTTP no lo recorta y el
     // backend responde 422 (error que el usuario no podría entender).
     final motivo = TransferLimits.normalizarMotivo(event.motivo);
@@ -172,6 +173,8 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
         (failure) => state.copyWith(
           status: TransferStatus.ready,
           failure: _flatten(failure),
+          outcomeUnknown:
+              state.outcomeUnknown || _flatten(failure).outcomeUnknown,
         ),
         (receipt) =>
             state.copyWith(status: TransferStatus.done, constancia: receipt),

@@ -15,12 +15,14 @@ import 'widgets/insight_card.dart';
 import 'widgets/movements_card.dart';
 import 'widgets/quick_actions_row.dart';
 
-void _showComingSoon(BuildContext context) {
-  final l10n = AppLocalizations.of(context);
+void _showMessage(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(l10n.comingSoon)));
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
+
+void _showComingSoon(BuildContext context) =>
+    _showMessage(context, AppLocalizations.of(context).comingSoon);
 
 /// Inicio: saldo y movimientos del libro mayor (los trae [AccountBloc]).
 ///
@@ -37,7 +39,12 @@ class HomeScreen extends StatelessWidget {
     switch (action) {
       case HomeAction.send:
         final cuenta = context.read<AccountBloc>().state.cuenta;
-        if (cuenta != null) context.push(AppRoutes.enviar, extra: cuenta);
+        if (cuenta == null) {
+          // Sin cuenta cargada no hay desde dónde enviar: se dice, no se calla.
+          _showMessage(context, AppLocalizations.of(context).homeErrorGeneric);
+        } else {
+          context.push(AppRoutes.enviar, extra: cuenta);
+        }
       case HomeAction.charge:
       case HomeAction.topUp:
       case HomeAction.withdraw:

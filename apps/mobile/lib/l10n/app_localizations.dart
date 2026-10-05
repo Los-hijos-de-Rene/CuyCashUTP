@@ -1750,6 +1750,12 @@ abstract class AppLocalizations {
   /// **'Reintentar envío'**
   String get transferRetryCta;
 
+  /// No description provided for @transferBackHomeCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get transferBackHomeCta;
+
   /// No description provided for @transferErrorInsufficientFunds.
   ///
   /// In es, this message translates to:

@@ -204,4 +204,41 @@ void main() {
     expect(bloc.state.motivo, 'Almuerzo');
     expect(find.text('CONFIRMAR'), findsOneWidget);
   });
+
+  testWidgets(
+    '"Continuar" se apaga mientras el aviso de rechazo está visible',
+    (tester) async {
+      await pump(tester);
+      await tester.enterText(campoMonto(), '50');
+      await tester.pump();
+      expect(habilitado(tester), isTrue);
+
+      // Un pegado inválido: el campo conserva "50" (válido) pero hay un aviso.
+      await tester.enterText(campoMonto(), '1,234');
+      await tester.pump();
+
+      expect(find.textContaining('sin comas de miles'), findsOneWidget);
+      expect(habilitado(tester), isFalse);
+    },
+  );
+
+  testWidgets(
+    'letras o un tercer decimal NO se explican como "comas de miles"',
+    (tester) async {
+      await pump(tester);
+
+      await tester.enterText(campoMonto(), 'abc');
+      await tester.pump();
+      expect(find.textContaining('sin comas de miles'), findsNothing);
+      expect(
+        find.text('Escribe un monto válido, como 50 o 50.50.'),
+        findsOneWidget,
+      );
+
+      await tester.enterText(campoMonto(), '1.234');
+      await tester.pump();
+      expect(find.textContaining('sin comas de miles'), findsNothing);
+      expect(find.textContaining('monto válido'), findsOneWidget);
+    },
+  );
 }

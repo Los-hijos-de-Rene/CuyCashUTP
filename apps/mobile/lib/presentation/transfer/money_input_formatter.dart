@@ -10,12 +10,16 @@ import 'package:flutter/services.dart';
 class MoneyInputFormatter extends TextInputFormatter {
   const MoneyInputFormatter({this.onRejected});
 
-  /// Se llama cuando se descartó una edición (p. ej. `1,234` o un pegado
-  /// con letras).
-  final VoidCallback? onRejected;
+  /// Se llama con el texto descartado (p. ej. `1,234` o un pegado con letras),
+  /// para que quien escucha pueda explicar el motivo.
+  final ValueChanged<String>? onRejected;
 
   /// Hasta 7 enteros (el tope por envío es 2,000.00) y 2 decimales.
   static final _permitido = RegExp(r'^\d{0,7}(?:[.,]\d{0,2})?$');
+
+  /// ¿El texto rechazado era un separador de miles (`1,234`, `1,234.56`)?
+  static bool esSeparadorDeMiles(String texto) =>
+      RegExp(r'^\d{1,3}(?:,\d{3})+(?:\.\d*)?$').hasMatch(texto);
 
   @override
   TextEditingValue formatEditUpdate(
@@ -23,7 +27,7 @@ class MoneyInputFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     if (_permitido.hasMatch(newValue.text)) return newValue;
-    onRejected?.call();
+    onRejected?.call(newValue.text);
     return oldValue;
   }
 }
