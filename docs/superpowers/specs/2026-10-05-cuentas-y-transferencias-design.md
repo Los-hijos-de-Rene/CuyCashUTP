@@ -3,7 +3,7 @@
 - **Fecha:** 2026-10-05
 - **Épicas:** 2 (cuentas y libro mayor, HU05/HU17/HU18) y parte de la 3 (transferencia entre personas, HU06).
 - **Base:** identidad del Sprint 1 completa (DNI+PIN, OTP, KYC, bloqueo). Las tablas `accounts`,
-  `transactions` y `ledger_entries` ya están modeladas en `services/api/app/db/models.py`, pero
+  `transactions` y `ledger_entries` ya están modeladas en `services/auth/app/db/models.py`, pero
   **ninguna ruta las expone**: hoy solo existen los routers `auth`, `kyc` y `otp`.
 - **Flavor foco:** `local` y `production` (contra el backend). `mock` debe seguir arrancando entero
   con `Memory*`.
@@ -56,7 +56,7 @@ titular.
    `core_kernel`. Ni un `double` en el dominio ni en la red.
 8. **El PIN autoriza cada movimiento de dinero**, y sus fallos alimentan el `lockout` existente:
    cinco PIN errados al transferir bloquean igual que al entrar.
-9. **Routers nuevos dentro del servicio existente**, que se renombra de `services/api` a
+9. **Routers nuevos dentro del servicio existente**, que se renombra de `services/auth` a
    `services/api`. Un segundo servicio serían dos despliegues y validación de token duplicada sobre
    una base compartida, que es el antipatrón que luego habría que defender.
 10. **El esquema se recrea, sin Alembic.** El proyecto no tiene datos reales todavía. Montar
@@ -79,7 +79,7 @@ un widget público por archivo; generados se commitean.
 
 ## Renombrado previo
 
-`services/api` → `services/api`. Ajustar `render.yaml`, el `Dockerfile`/`start` si los hay, los
+`services/auth` → `services/api`. Ajustar `render.yaml`, el `Dockerfile`/`start` si los hay, los
 imports (`app.*` no cambia) y las referencias en `CLAUDE.md`, `README.md` y los ADR. Se hace primero
 y en un commit propio, para que el diff del motor no quede sepultado bajo movimientos de archivos.
 
@@ -416,7 +416,7 @@ Todo el copy nuevo va al ARB es-PE.
 
 # Orden sugerido
 
-1. Renombrar `services/api` → `services/api` (commit propio).
+1. Renombrar `services/auth` → `services/api` (commit propio).
 2. Backend: modelo, `scripts/reset_schema.py` con su cerrojo, `current_user`, `accounts.py`,
    `ledger.py` con sus pruebas.
 3. Backend: routers `accounts`, `directory`, `transfers`, `topups`, `beneficiaries`.

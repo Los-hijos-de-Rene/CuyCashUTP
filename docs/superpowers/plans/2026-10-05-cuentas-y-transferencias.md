@@ -4,7 +4,7 @@
 
 **Goal:** Que el saldo y los movimientos del home salgan del libro mayor, y que el usuario pueda enviar dinero a otra persona de CuyCash por DNI y recargar su propia cuenta.
 
-**Architecture:** El backend existente (`services/api`, renombrado a `services/api`) expone routers nuevos sobre las tablas de libro mayor que ya están modeladas. Un único módulo, `app/services/ledger.py`, escribe asientos de partida doble dentro de una transacción de base de datos, con idempotencia arbitrada por la restricción única. La app añade tres features verticales (`account`, `transfer`, `beneficiary`), cada una con su `Memory*` para que el flavor `mock` siga arrancando sin red.
+**Architecture:** El backend existente (`services/auth`, renombrado a `services/api`) expone routers nuevos sobre las tablas de libro mayor que ya están modeladas. Un único módulo, `app/services/ledger.py`, escribe asientos de partida doble dentro de una transacción de base de datos, con idempotencia arbitrada por la restricción única. La app añade tres features verticales (`account`, `transfer`, `beneficiary`), cada una con su `Memory*` para que el flavor `mock` siga arrancando sin red.
 
 **Tech Stack:** FastAPI + SQLAlchemy 2.0 async + Postgres (Neon) / SQLite en tests · Flutter + flutter_bloc + fpdart + freezed + dio + go_router.
 
@@ -40,12 +40,12 @@ Cinco cosas que el spec implica, que ninguna tarea testearía por inercia, y que
 
 # Parte A — Backend
 
-### Tarea 1: Renombrar `services/api` → `services/api`
+### Tarea 1: Renombrar `services/auth` → `services/api`
 
 El nombre dejó de ser cierto en el momento en que el servicio pasa a mover dinero. Se hace primero y solo, para que el diff del motor no quede sepultado bajo movimientos de archivos.
 
 **Files:**
-- Move: `services/api/` → `services/api/`
+- Move: `services/auth/` → `services/api/`
 - Modify: `render.yaml`, `CLAUDE.md`, `README.md`, `docs/adr/0002-backend-de-autenticacion.md`
 - Modify: `apps/mobile/lib/feature/auth/infrastructure/http_auth_repository.dart` (solo el comentario que cita la ruta)
 
@@ -57,7 +57,7 @@ El nombre dejó de ser cierto en el momento en que el servicio pasa a mover dine
 
 ```bash
 cd /Users/jairconislla/Projects/cuycash
-git mv services/api services/api
+git mv services/auth services/api
 ```
 
 - [ ] **Step 2: Comprobar que los tests siguen pasando desde la ruta nueva**
@@ -70,11 +70,11 @@ Expected: PASS, el mismo número de tests que antes del movimiento.
 
 - [ ] **Step 3: Actualizar las referencias textuales**
 
-Buscar y sustituir `services/api` por `services/api` en:
+Buscar y sustituir `services/auth` por `services/api` en:
 
 ```bash
 cd /Users/jairconislla/Projects/cuycash
-grep -rln "services/api" --exclude-dir=.git --exclude-dir=.venv --exclude-dir=build .
+grep -rln "services/auth" --exclude-dir=.git --exclude-dir=.venv --exclude-dir=build .
 ```
 
 Revisar cada resultado a mano. En `render.yaml` cambia el `rootDir`/`dockerfilePath`; en `CLAUDE.md` la tabla de estructura; en el ADR-0002 las menciones a la ruta. **No** cambiar el nombre de la *feature* `auth` de la app, que sigue llamándose así con razón.
@@ -82,7 +82,7 @@ Revisar cada resultado a mano. En `render.yaml` cambia el `rootDir`/`dockerfileP
 - [ ] **Step 4: Verificar que no queda ninguna referencia**
 
 ```bash
-grep -rn "services/api" --exclude-dir=.git --exclude-dir=.venv --exclude-dir=build . ; echo "exit=$?"
+grep -rn "services/auth" --exclude-dir=.git --exclude-dir=.venv --exclude-dir=build . ; echo "exit=$?"
 ```
 
 Expected: sin resultados (`exit=1`).
@@ -91,7 +91,7 @@ Expected: sin resultados (`exit=1`).
 
 ```bash
 git add -A
-git commit -m "refactor: renombrar services/api a services/api
+git commit -m "refactor: renombrar services/auth a services/api
 
 El servicio deja de ser solo identidad: pasa a exponer cuentas, libro
 mayor y transferencias. El nombre viejo mentiría en cada import."
@@ -3414,7 +3414,7 @@ git commit -m "feat(app): beneficiarios frecuentes, detalle de movimiento y cons
 
 - [ ] **Step 1: Actualizar `CLAUDE.md`**
 
-- La tabla de estructura: `services/api` → `services/api`, y qué es ahora.
+- La tabla de estructura: `services/auth` → `services/api`, y qué es ahora.
 - La frase "Cuentas, transferencias, préstamos, QR, conciliación y antifraude **no existen todavía**" deja de ser cierta a medias: reescribirla para decir qué hay ya (cuentas, libro mayor, envío por DNI, recarga) y qué sigue sin existir (interbancaria, CCI, QR, préstamos, antifraude, conciliación).
 - Añadir a "Reglas duras": *el dinero es un `int` de céntimos envuelto en `Money`; ningún `double` representa dinero*.
 - Features actuales: añadir `account`, `transfer`, `beneficiary`.
