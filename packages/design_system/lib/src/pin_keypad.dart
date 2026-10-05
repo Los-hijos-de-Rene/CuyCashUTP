@@ -26,11 +26,18 @@ class PinKeypad extends StatelessWidget {
     required this.onDigit,
     required this.onBackspace,
     this.onBiometric,
+    this.enabled = true,
     super.key,
   });
 
   final ValueChanged<int> onDigit;
   final VoidCallback onBackspace;
+
+  /// En falso las teclas se apagan y dejan de responder. Se usa mientras se
+  /// verifica un PIN ya enviado: sin esto el borrado sigue activo y el usuario
+  /// puede editar un PIN que ya viaja, de modo que lo que ve en pantalla deja
+  /// de corresponder con lo que se está comprobando.
+  final bool enabled;
 
   /// Sin biométrico la celda queda vacía: fila inferior = vacío · 0 · borrar.
   final VoidCallback? onBiometric;
@@ -50,16 +57,19 @@ class PinKeypad extends StatelessWidget {
           _KeyRow(
             children: [
               for (final digit in row)
-                _DigitKey(digit: digit, onTap: () => onDigit(digit)),
+                _DigitKey(
+                  digit: digit,
+                  onTap: enabled ? () => onDigit(digit) : null,
+                ),
             ],
           ),
         _KeyRow(
           children: [
             _biometricKey(),
-            _DigitKey(digit: 0, onTap: () => onDigit(0)),
+            _DigitKey(digit: 0, onTap: enabled ? () => onDigit(0) : null),
             _IconKey(
               icon: Icons.backspace_outlined,
-              onTap: onBackspace,
+              onTap: enabled ? onBackspace : null,
               label: 'Borrar',
             ),
           ],
@@ -69,7 +79,7 @@ class PinKeypad extends StatelessWidget {
   }
 
   Widget _biometricKey() {
-    if (onBiometric == null) return const SizedBox.shrink();
+    if (onBiometric == null || !enabled) return const SizedBox.shrink();
     return Center(
       child: Material(
         color: CuyCashColors.primaryContainer,
@@ -108,7 +118,9 @@ class _KeyRow extends StatelessWidget {
 class _DigitKey extends StatelessWidget {
   const _DigitKey({required this.digit, required this.onTap});
   final int digit;
-  final VoidCallback onTap;
+
+  /// Nulo = tecla apagada: InkResponse deja de responder por sí solo.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +133,9 @@ class _DigitKey extends StatelessWidget {
           style: CuyCashTypography.headlineSm.copyWith(
             fontSize: 26,
             fontWeight: FontWeight.w500,
-            color: CuyCashColors.primaryContainer,
+            color: onTap == null
+                ? CuyCashColors.outlineVariant
+                : CuyCashColors.primaryContainer,
           ),
         ),
       ),
@@ -132,7 +146,7 @@ class _DigitKey extends StatelessWidget {
 class _IconKey extends StatelessWidget {
   const _IconKey({required this.icon, required this.onTap, required this.label});
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String label;
 
   @override
@@ -143,7 +157,9 @@ class _IconKey extends StatelessWidget {
       child: Center(
         child: Icon(icon,
             size: 24,
-            color: CuyCashColors.primaryContainer,
+            color: onTap == null
+                ? CuyCashColors.outlineVariant
+                : CuyCashColors.primaryContainer,
             semanticLabel: label),
       ),
     );

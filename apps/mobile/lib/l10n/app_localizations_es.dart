@@ -478,6 +478,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get pinVerifying => 'Verificando tu PIN…';
+
+  @override
+  String get pinVerifyingSlow =>
+      'Estamos reconectando con el servidor. Puede tardar unos segundos más.';
+
+  @override
   String durationSeconds(int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,

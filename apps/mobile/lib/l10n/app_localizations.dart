@@ -928,6 +928,18 @@ abstract class AppLocalizations {
   /// **'Tras 3 intentos fallidos bloquearemos el ingreso por {duration}.'**
   String loginWrongHint(String duration);
 
+  /// No description provided for @pinVerifying.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificando tu PIN…'**
+  String get pinVerifying;
+
+  /// No description provided for @pinVerifyingSlow.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos reconectando con el servidor. Puede tardar unos segundos más.'**
+  String get pinVerifyingSlow;
+
   /// No description provided for @durationSeconds.
   ///
   /// In es, this message translates to:

@@ -15,6 +15,7 @@ export 'src/page_dots_indicator.dart';
 export 'src/pin_boxes.dart';
 export 'src/pin_dots.dart';
 export 'src/pin_keypad.dart';
+export 'src/pin_submitting_notice.dart';
 export 'src/primary_button.dart';
 export 'src/secondary_button.dart';
 export 'src/step_segments.dart';

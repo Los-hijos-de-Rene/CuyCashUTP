@@ -82,6 +82,19 @@ class QuickAccessScreen extends StatelessWidget {
                   const SizedBox(height: CuyCashSpacing.stackXl),
                   PinDots(filled: state.pin.length),
                   const SizedBox(height: CuyCashSpacing.stackLg),
+                  // El PIN se envía al sexto dígito, sin botón que se hunda:
+                  // sin este aviso la pantalla queda igual mientras viaja la
+                  // petición y el salto al inicio llega sin anunciarse.
+                  if (state.status == QuickAccessStatus.verifying)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: PinSubmittingNotice(
+                        label: l10n.pinVerifying,
+                        patienceLabel: l10n.pinVerifyingSlow,
+                      ),
+                    ),
                   if (state.lastWrong)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -111,6 +124,7 @@ class QuickAccessScreen extends StatelessWidget {
                           bloc.add(const QuickAccessEvent.backspace()),
                       onBiometric: () =>
                           bloc.add(const QuickAccessEvent.biometric()),
+                      enabled: state.status != QuickAccessStatus.verifying,
                     ),
                   ),
                   const SizedBox(height: CuyCashSpacing.stackSm),

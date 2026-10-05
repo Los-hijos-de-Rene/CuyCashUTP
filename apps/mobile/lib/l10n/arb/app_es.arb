@@ -154,6 +154,8 @@
   "@pinWrongHint": { "placeholders": { "duration": { "type": "String" } } },
   "loginWrongHint": "Tras 3 intentos fallidos bloquearemos el ingreso por {duration}.",
   "@loginWrongHint": { "placeholders": { "duration": { "type": "String" } } },
+  "pinVerifying": "Verificando tu PIN…",
+  "pinVerifyingSlow": "Estamos reconectando con el servidor. Puede tardar unos segundos más.",
   "durationSeconds": "{n, plural, =1{1 segundo} other{{n} segundos}}",
   "@durationSeconds": { "placeholders": { "n": { "type": "int" } } },
   "durationMinutes": "{n, plural, =1{1 minuto} other{{n} minutos}}",

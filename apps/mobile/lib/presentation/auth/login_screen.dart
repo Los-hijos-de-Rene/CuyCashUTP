@@ -98,6 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _pin = _pin.substring(0, _pin.length - 1));
   }
 
+  /// El PIN se envía solo al marcar el sexto dígito, así que durante la espera
+  /// no hay botón hundido ni teclado que se cierre: la pantalla queda idéntica
+  /// y el salto a verificar dispositivo llega sin anunciarse. Mientras viaja la
+  /// petición se muestra el aviso y se apaga el teclado, para que lo que está
+  /// en pantalla siga siendo lo que se está comprobando.
+  bool _enviando(AuthUnauthenticated state) =>
+      state.status == FormStatus.submitting;
+
   void _submit() {
     context.read<AuthBloc>().add(AuthEvent.loginSubmitted(
           identifier: _dni.text.trim(),
@@ -210,6 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: PinKeypad(
                           onDigit: _onDigit,
                           onBackspace: _onBackspace,
+                          enabled: !_enviando(unauth),
                         ),
                       ),
                     GhostButton(
@@ -322,6 +331,13 @@ class _PinStep extends StatelessWidget {
         ),
         const SizedBox(height: CuyCashSpacing.stackLg),
         PinBoxes(pin: pin, hasError: error != null),
+        if (state.status == FormStatus.submitting) ...[
+          const SizedBox(height: CuyCashSpacing.stackSm),
+          PinSubmittingNotice(
+            label: l10n.pinVerifying,
+            patienceLabel: l10n.pinVerifyingSlow,
+          ),
+        ],
         if (error != null) ...[
           const SizedBox(height: CuyCashSpacing.stackSm),
           _ErrorLine(
