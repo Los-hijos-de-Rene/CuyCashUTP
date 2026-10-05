@@ -12,5 +12,10 @@ void main() {
 
   test('un negativo lleva el signo delante', () {
     expect(formatSoles(Money.fromCentimos(-150)), '-S/ 1.50');
+    expect(
+      '-'.allMatches(formatSoles(Money.fromCentimos(-5000))).length,
+      1,
+      reason: 'un solo signo; la UI no debe anteponer otro',
+    );
   });
 }

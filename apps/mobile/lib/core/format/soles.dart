@@ -10,8 +10,12 @@ import 'package:intl/intl.dart';
 ///
 /// Recibe [Money] y no un `double`: el redondeo ya lo hizo quien construyó el
 /// monto, y aquí solo se decide cómo se ve. El formateo parte de céntimos
-/// enteros para no pasar por `double`; los negativos llevan el signo delante
-/// del símbolo (`-S/ 1.50`).
+/// enteros para no pasar por `double`.
+///
+/// Signo: un monto negativo ya sale con su signo delante del símbolo
+/// (`-S/ 1.50`), así que la UI no debe anteponer otro. Si una pantalla quiere
+/// el patrón `+ S/ 50.00` / `- S/ 50.00`, debe pasar el valor absoluto y poner
+/// el signo ella; de lo contrario un egreso saldría como `- -S/ 50.00`.
 String formatSoles(Money monto) {
   final negativo = monto.centimos < 0;
   final abs = monto.centimos.abs();

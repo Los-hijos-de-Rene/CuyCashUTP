@@ -37,7 +37,13 @@ void main() {
     });
 
     test('parse rechaza entradas ambiguas o que aceptarían de más', () {
-      expect(Money.parse('1,234.56'), isNull, reason: 'separador de miles');
+      expect(
+        Money.parse('1,234.56'),
+        isNull,
+        reason:
+            'decisión: no se interpretan separadores de miles; '
+            '1,234 es ambiguo (decimal en es-PE, miles en inglés)',
+      );
       expect(Money.parse('1,234'), isNull, reason: 'ambiguo: tres decimales');
       expect(Money.parse('1,2,3'), isNull);
       expect(Money.parse('  '), isNull);
