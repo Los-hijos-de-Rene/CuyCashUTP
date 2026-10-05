@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 # Inicio de ventana "desde siempre": una fila recién creada tiene que contar
 # el fallo que la creó, no empezar a contar después de él.
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,6 +41,14 @@ async def locked_until(
 async def register_failure(
     session: AsyncSession, dni: str, device_id: str
 ) -> Optional[datetime]:
+    """Como `register_failure_detail`, pero solo devuelve el instante."""
+    disparo = await register_failure_detail(session, dni, device_id)
+    return disparo[0] if disparo else None
+
+
+async def register_failure_detail(
+    session: AsyncSession, dni: str, device_id: str
+) -> Optional[Tuple[datetime, str]]:
     """
     Anota un intento fallido en los DOS contadores y devuelve el bloqueo si
     alguno se disparó.
@@ -54,8 +62,15 @@ async def register_failure(
     identifier_until = await _register_identifier_failure(session, dni)
     device_until = await _register_device_failure(session, device_id)
 
-    candidates = [u for u in (identifier_until, device_until) if u is not None]
-    return max(candidates) if candidates else None
+    # Se devuelve también QUÉ sujeto se disparó ('dni' | 'device'): quien
+    # responde al cliente necesita el código de error que corresponde, no
+    # decir "tu cuenta está bloqueada" cuando el bloqueado es el teléfono.
+    candidates = [
+        (u, kind)
+        for u, kind in ((identifier_until, "dni"), (device_until, "device"))
+        if u is not None
+    ]
+    return max(candidates, key=lambda c: c[0]) if candidates else None
 
 
 async def _register_identifier_failure(

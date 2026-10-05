@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.deps import bearer_token
 from app.core.errors import ApiError, ErrorCode
-from app.core.security import hash_pin, new_token, pin_is_valid, token_digest, verify_pin
+from app.core.security import ahash_pin, averify_pin, new_token, pin_is_valid, token_digest
 from app.db.base import get_session
 from app.db.models import Device, OtpTicket, User, utcnow
 from app.schemas import AuthenticateIn, CheckPinIn, RegisterIn, ResetPinIn, SessionIn
@@ -55,7 +55,7 @@ async def register(payload: RegisterIn, session: AsyncSession = Depends(get_sess
         apellidos=payload.apellidos,
         email=str(payload.email),
         alias=_alias(payload.nombres, payload.dni),
-        pin_hash=hash_pin(payload.pin),
+        pin_hash=await ahash_pin(payload.pin),
     )
     session.add(user)
     await session.flush()
@@ -100,7 +100,11 @@ async def authenticate(
 
     # Se verifica el PIN incluso sin usuario, contra un hash de descarte, para
     # que el tiempo de respuesta no revele si el DNI existe.
-    ok = verify_pin(payload.pin, user.pin_hash) if user else _burn_cycles(payload.pin)
+    ok = (
+        await averify_pin(payload.pin, user.pin_hash)
+        if user
+        else await _burn_cycles(payload.pin)
+    )
 
     if not user or not ok:
         bloqueo = await lockout.register_failure(session, payload.identifier, x_device_id)
@@ -152,9 +156,9 @@ async def authenticate(
     }
 
 
-def _burn_cycles(pin: str) -> bool:
+async def _burn_cycles(pin: str) -> bool:
     """Hash de descarte: iguala el coste cuando el DNI no existe."""
-    hash_pin(pin)
+    await ahash_pin(pin)
     return False
 
 
@@ -238,7 +242,7 @@ async def check_current_pin(
     await session.flush()
 
     user = await session.get(User, ticket.user_id) if ticket.user_id else None
-    es_actual = bool(user and verify_pin(payload.pin, user.pin_hash))
+    es_actual = bool(user and await averify_pin(payload.pin, user.pin_hash))
     await session.commit()
     return {"is_current": es_actual}
 
@@ -257,10 +261,10 @@ async def reset_pin(payload: ResetPinIn, session: AsyncSession = Depends(get_ses
         await session.commit()
         return {"revoked_sessions": 0}
 
-    if verify_pin(payload.new_pin, user.pin_hash):
+    if await averify_pin(payload.new_pin, user.pin_hash):
         raise ApiError(ErrorCode.PIN_UNCHANGED, "Tu nuevo PIN debe ser distinto al anterior.")
 
-    user.pin_hash = hash_pin(payload.new_pin)
+    user.pin_hash = await ahash_pin(payload.new_pin)
     user.pin_updated_at = utcnow()
     ticket.used_at = utcnow()
     # Cambiar el PIN cierra TODAS las sesiones, incluida la de este teléfono:

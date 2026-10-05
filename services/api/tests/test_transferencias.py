@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.core.config import settings
-from app.db.models import Account, LedgerEntry, Transfer
+from app.db.models import Account, LedgerEntry, LoginAttempt, Transfer
 from app.services import accounts as accounts_service
 from app.services.ledger import Asiento, post
 from tests.conftest import PIN_DE_PRUEBA
@@ -409,6 +409,11 @@ async def test_si_otra_peticion_crea_la_caja_a_la_vez_la_sesion_sigue_sirviendo(
     Carrera de la primera recarga: esta petición no ve la caja, otra la crea y
     el INSERT choca contra la UNIQUE. La sesión debe seguir utilizable (el
     savepoint deshace solo el insert) y devolver la caja ganadora.
+
+    LIMITE: el choque se simula dentro de UNA sola sesión (la lectura inicial
+    se ciega con monkeypatch); no hay dos transacciones reales compitiendo. Eso
+    solo se prueba contra Postgres: pendiente para la suite `TEST_POSTGRES_URL`
+    (marca `postgres`), junto a los tests de concurrencia del motor.
     """
     ganadora = Account(
         user_id=None, numero=accounts_service.NUMERO_SISTEMA, tipo="sistema",
@@ -499,3 +504,113 @@ async def test_una_recarga_con_pin_errado_no_acredita(client, otp_codes, registr
     )
     assert r.json()["code"] == "INVALID_CREDENTIALS"
     assert await _saldo(client, registrado) == 0
+
+
+# ------------------------------------------------- correcciones de la ronda 1
+
+
+@pytest.mark.asyncio
+async def test_un_pin_errado_persiste_el_intento_fallido(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    """Ancla el commit previo al error: sin él, el fallo se pierde con la sesión."""
+    origen = await _con_saldo(client, registrado, 100_000)
+
+    await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 10_000, "envio-persist", pin=PIN_MALO),
+        headers=registrado.auth,
+    )
+
+    fallos = (
+        await db_de_client.execute(
+            select(func.count()).select_from(LoginAttempt).where(
+                LoginAttempt.dni == registrado.dni, LoginAttempt.succeeded.is_(False)
+            )
+        )
+    ).scalar_one()
+    assert fallos == 1
+
+
+@pytest.mark.asyncio
+async def test_reintentar_con_el_origen_ya_bloqueado_devuelve_la_original(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    """El antifraude bloquea tras el envío cuya respuesta se perdió: el reintento
+    debe ver la transacción original, no 'tu cuenta no está activa'."""
+    origen = await _con_saldo(client, registrado, 100_000)
+    cuerpo = _envio(origen, otro_registrado.dni, 25_000, "envio-bloqueado")
+    primera = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
+    assert primera.status_code == 201
+
+    for titular_id in (origen, await _cuenta_id(client, otro_registrado)):
+        cuenta = await db_de_client.get(Account, titular_id)
+        cuenta.estado = "bloqueada"
+    await db_de_client.commit()
+
+    segunda = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
+    assert segunda.status_code == 200, segunda.text
+    assert segunda.json()["transaction_id"] == primera.json()["transaction_id"]
+
+    # Con la clave NUEVA, el bloqueo sí se aplica.
+    otra = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 25_000, "envio-bloqueado-2"),
+        headers=registrado.auth,
+    )
+    assert otra.json()["code"] == "ACCOUNT_BLOCKED"
+    # Y con la clave vieja pero otros datos, 409 (no se disfraza de reintento).
+    distinta = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 99, "envio-bloqueado"),
+        headers=registrado.auth,
+    )
+    assert distinta.json()["code"] == "IDEMPOTENCY_KEY_REUSED"
+
+
+@pytest.mark.asyncio
+async def test_una_cuenta_ajena_sigue_siendo_404_aunque_la_clave_exista(
+    client, otp_codes, registrado, otro_registrado
+):
+    origen = await _con_saldo(client, registrado, 100_000)
+    await client.post(
+        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-ajena"),
+        headers=registrado.auth,
+    )
+
+    r = await client.post(
+        "/v1/transfers", json=_envio(origen, registrado.dni, 1_000, "envio-ajena"),
+        headers=otro_registrado.auth,
+    )
+    assert r.status_code == 404
+    assert r.json()["code"] == "ACCOUNT_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_si_se_dispara_el_bloqueo_del_dispositivo_el_codigo_es_device_locked(
+    client, otp_codes, registrado, otro_registrado, monkeypatch
+):
+    origen = await _con_saldo(client, registrado, 100_000)
+    monkeypatch.setattr(settings, "IDENTIFIER_MAX_ATTEMPTS", 100)
+    monkeypatch.setattr(settings, "DEVICE_MAX_ATTEMPTS", 2)
+
+    primera = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-001", pin=PIN_MALO),
+        headers=registrado.auth,
+    )
+    assert primera.json()["code"] == "INVALID_CREDENTIALS"
+
+    segunda = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-002", pin=PIN_MALO),
+        headers=registrado.auth,
+    )
+    assert segunda.status_code == 423
+    assert segunda.json()["code"] == "DEVICE_LOCKED"
+
+    tercera = await client.post(
+        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-003"),
+        headers=registrado.auth,
+    )
+    assert tercera.json()["code"] == "DEVICE_LOCKED"

@@ -2,6 +2,7 @@ import hashlib
 import re
 import secrets
 
+from starlette.concurrency import run_in_threadpool
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError
 
@@ -23,6 +24,20 @@ def verify_pin(pin: str, pin_hash: str) -> bool:
         return _hasher.verify(pin_hash, pin)
     except (VerifyMismatchError, VerificationError):
         return False
+
+
+# argon2id (64 MiB, ~30 ms) es CPU puro y síncrono: llamado directo desde un
+# handler `async` PARA el bucle de eventos, y esos 30 ms no se solapan entre
+# peticiones (7 movimientos simultáneos = 210 ms solo en hashes, contra un SLA
+# de < 200 ms por operación). En un hilo, argon2-cffi suelta el GIL mientras
+# calcula, así que las peticiones sí avanzan en paralelo. Los handlers async
+# deben usar estas variantes; las síncronas quedan para código sin bucle.
+async def averify_pin(pin: str, pin_hash: str) -> bool:
+    return await run_in_threadpool(verify_pin, pin, pin_hash)
+
+
+async def ahash_pin(pin: str) -> str:
+    return await run_in_threadpool(hash_pin, pin)
 
 
 def pin_is_valid(pin: str) -> bool:

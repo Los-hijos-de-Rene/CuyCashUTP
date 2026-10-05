@@ -10,7 +10,7 @@ seguir usando la sesión tras un fallo escribiría basura. Al cerrarse la sesió
 sin commit, todo lo pendiente se descarta.
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel, Field, StrictInt
@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.routers.accounts import _iso
 from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
-from app.core.security import verify_pin
+from app.core.security import averify_pin
 from app.db.base import get_session
 from app.db.models import Account, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
@@ -60,7 +60,39 @@ def _validar_monto(centimos: int) -> None:
         )
 
 
-async def _cuenta_propia_activa(
+async def _clave_ya_usada(session: AsyncSession, idempotency_key: str) -> bool:
+    return (
+        await session.execute(
+            select(Transaction.id).where(Transaction.idempotency_key == idempotency_key)
+        )
+    ).scalar_one_or_none() is not None
+
+
+async def _cuenta_propia(
+    session: AsyncSession, user: User, cuenta_id: str, idempotency_key: str
+) -> Tuple[Account, bool]:
+    """
+    La cuenta del titular y si la petición es el reintento de una operación ya
+    registrada.
+
+    Orden deliberado: 404 por cuenta ajena PRIMERO, luego la clave, luego el
+    estado. Si el antifraude bloquea la cuenta por un envío cuya respuesta se
+    perdió, el reintento debe recibir la transacción original (200) y no un
+    "tu cuenta no está activa" que no dice nada sobre su dinero. Un reintento
+    con datos distintos sigue acabando en 409 dentro del motor.
+    """
+    cuenta = await _buscar_cuenta_propia(session, user, cuenta_id)
+    reintento = await _clave_ya_usada(session, idempotency_key)
+    if cuenta.estado != "activa" and not reintento:
+        raise ApiError(
+            ErrorCode.ACCOUNT_BLOCKED,
+            "Esa cuenta no está activa.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    return cuenta, reintento
+
+
+async def _buscar_cuenta_propia(
     session: AsyncSession, user: User, cuenta_id: str
 ) -> Account:
     # Filtrar por titular en la consulta: una cuenta ajena es indistinguible de
@@ -75,12 +107,6 @@ async def _cuenta_propia_activa(
             ErrorCode.ACCOUNT_NOT_FOUND,
             "No encontramos esa cuenta.",
             status_code=status.HTTP_404_NOT_FOUND,
-        )
-    if cuenta.estado != "activa":
-        raise ApiError(
-            ErrorCode.ACCOUNT_BLOCKED,
-            "Esa cuenta no está activa.",
-            status_code=status.HTTP_409_CONFLICT,
         )
     return cuenta
 
@@ -110,20 +136,27 @@ async def _exigir_pin(
         if hasta is not None:
             raise _bloqueado(hasta, code)
 
-    if verify_pin(pin, user.pin_hash):
+    if await averify_pin(pin, user.pin_hash):
         # Sin commit: viaja con el movimiento. Si el movimiento falla, el
         # reinicio del contador se descarta con él, lo cual es lo prudente.
+        # OJO: esto escribe una `LoginAttempt(succeeded=True)` por cada
+        # movimiento. `login_attempts` ya no es solo el registro de ingresos:
+        # una auditoría leerá "sesión iniciada" donde hubo una transferencia.
         await lockout.register_success(session, user.dni, device_id)
         return
 
-    hasta = await lockout.register_failure(session, user.dni, device_id)
+    disparo = await lockout.register_failure_detail(session, user.dni, device_id)
     restantes = await lockout.attempts_left(session, user.dni)
     # El fallo TIENE que persistirse antes de lanzar el error: al propagarse la
     # excepción la sesión se cierra sin commit y el intento no contaría nunca,
     # con lo que el bloqueo sería decorativo.
     await session.commit()
-    if hasta is not None:
-        raise _bloqueado(hasta)
+    if disparo is not None:
+        hasta, kind = disparo
+        raise _bloqueado(
+            hasta,
+            ErrorCode.IDENTIFIER_LOCKED if kind == "dni" else ErrorCode.DEVICE_LOCKED,
+        )
     raise ApiError(
         ErrorCode.INVALID_CREDENTIALS,
         "PIN incorrecto.",
@@ -151,23 +184,24 @@ async def transferir(
     sesion: SessionRow = Depends(current_session_row),
     session: AsyncSession = Depends(get_session),
 ):
-    origen = await _cuenta_propia_activa(session, user, payload.cuenta_origen_id)
+    origen, reintento = await _cuenta_propia(
+        session, user, payload.cuenta_origen_id, payload.idempotency_key
+    )
 
     if payload.destinatario_dni == user.dni:
         raise ApiError(ErrorCode.SELF_TRANSFER, "No puedes enviarte dinero a ti mismo.")
 
-    destino = (
-        await session.execute(
-            select(Account)
-            .join(User, User.id == Account.user_id)
-            .where(
-                User.dni == payload.destinatario_dni,
-                Account.estado == "activa",
-                Account.tipo == "ahorro",
-            )
-            .order_by(Account.created_at, Account.id)
-        )
-    ).scalars().first()
+    consulta = (
+        select(Account)
+        .join(User, User.id == Account.user_id)
+        .where(User.dni == payload.destinatario_dni, Account.tipo == "ahorro")
+        .order_by(Account.created_at, Account.id)
+    )
+    if not reintento:
+        # En un reintento el destino pudo bloquearse después del envío; el
+        # motor devuelve la original sin mirar estados.
+        consulta = consulta.where(Account.estado == "activa")
+    destino = (await session.execute(consulta)).scalars().first()
     if destino is None:
         raise ApiError(
             ErrorCode.RECIPIENT_NOT_FOUND,
@@ -226,7 +260,9 @@ async def recargar(
     esquema le permite quedar en negativo. Sin esa contraparte el asiento no
     cuadraría y la conciliación de la épica 6 no tendría nada que cuadrar.
     """
-    cuenta = await _cuenta_propia_activa(session, user, payload.cuenta_id)
+    cuenta, _ = await _cuenta_propia(
+        session, user, payload.cuenta_id, payload.idempotency_key
+    )
     _validar_monto(payload.monto_centimos)
     await _exigir_pin(session, user, sesion.device_id, payload.pin)
 
