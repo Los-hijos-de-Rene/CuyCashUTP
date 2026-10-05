@@ -1,5 +1,10 @@
 {
-  "KYC_BASE_URL": "http://10.0.2.2:8000",
-  "KYC_API_KEY": "",
-  "AUTH_BASE_URL": "http://10.0.2.2:8001"
+  "//": "Plantilla. Copiar como config.local.json o config.production.json.",
+
+  "//AUTH_BASE_URL": "Backend de identidad (services/auth). Si se omite se asume el PC anfitrión: 10.0.2.2 en emulador Android, 127.0.0.1 en simulador iOS. En un TELÉFONO FÍSICO hay que ponerlo con la IP del PC en la red local.",
+  "AUTH_BASE_URL": "http://10.0.2.2:8001",
+
+  "//KYC": "Microservicio de KYC facial. Con ambas vacías la app usa MemoryKycRepository: el registro simula el reconocimiento en vez de llamar al servicio. Es lo que se quiere mientras el servicio no esté desplegado.",
+  "KYC_BASE_URL": "",
+  "KYC_API_KEY": ""
 }

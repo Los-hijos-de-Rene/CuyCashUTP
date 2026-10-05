@@ -17,13 +17,16 @@ class HttpOtpRepository implements OtpRepository {
   factory HttpOtpRepository.withConfig({
     required String baseUrl,
     required String deviceId,
-    Duration timeout = const Duration(seconds: 20),
+    Duration connectTimeout = const Duration(seconds: 20),
+    // Más larga que la de conexión por el arranque en frío del hosting: ver
+    // la nota en `HttpAuthRepository.withConfig`.
+    Duration receiveTimeout = const Duration(seconds: 70),
   }) =>
       HttpOtpRepository(
         dio: Dio(BaseOptions(
           baseUrl: baseUrl,
-          connectTimeout: timeout,
-          receiveTimeout: timeout,
+          connectTimeout: connectTimeout,
+          receiveTimeout: receiveTimeout,
           headers: {'X-Device-Id': deviceId},
           validateStatus: (status) => status != null && status < 500,
         )),

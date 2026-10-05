@@ -23,14 +23,22 @@ class HttpAuthRepository implements AuthRepository {
   factory HttpAuthRepository.withConfig({
     required String baseUrl,
     required String deviceId,
-    Duration timeout = const Duration(seconds: 20),
+    Duration connectTimeout = const Duration(seconds: 20),
+    Duration receiveTimeout = const Duration(seconds: 70),
   }) =>
       HttpAuthRepository(
         deviceId: deviceId,
         dio: Dio(BaseOptions(
           baseUrl: baseUrl,
-          connectTimeout: timeout,
-          receiveTimeout: timeout,
+          // Las dos esperas son distintas a propósito. El plan gratuito del
+          // hosting suspende el servicio tras unos minutos sin tráfico: la
+          // primera petición conecta en el acto —responde el proxy— y después
+          // se queda esperando a que el contenedor arranque, cerca de un
+          // minuto. Con un único valor hay que elegir entre cortar ese
+          // arranque en frío o tardar más de un minuto en avisar de que no hay
+          // red. Separadas, se consigue lo uno y lo otro.
+          connectTimeout: connectTimeout,
+          receiveTimeout: receiveTimeout,
           headers: {'X-Device-Id': deviceId},
           // Los 4xx son respuestas de negocio (PIN incorrecto, bloqueo), no
           // excepciones: se leen y se mapean a failures.
