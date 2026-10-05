@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.v1.routers import accounts, auth, kyc, otp
+from app.api.v1.routers import accounts, auth, kyc, otp, transfers
 from app.core.config import settings
 from app.core.errors import ApiError
 from app.db.base import Base, engine
@@ -39,3 +39,4 @@ app.include_router(auth.router)
 app.include_router(otp.router)
 app.include_router(kyc.router)
 app.include_router(accounts.router)
+app.include_router(transfers.router)

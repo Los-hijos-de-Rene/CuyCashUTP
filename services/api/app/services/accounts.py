@@ -3,8 +3,10 @@ Apertura y numeración de cuentas.
 """
 
 import secrets
+from typing import Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Account
@@ -47,6 +49,14 @@ async def abrir_cuenta(session: AsyncSession, user_id: str) -> Account:
     return cuenta
 
 
+async def _buscar_caja(session: AsyncSession) -> Optional[Account]:
+    # Por `numero` y no por `tipo`: la UNIQUE de `numero` es lo que de verdad
+    # impide una segunda caja, y así la búsqueda es coherente con ella.
+    return (
+        await session.execute(select(Account).where(Account.numero == NUMERO_SISTEMA))
+    ).scalar_one_or_none()
+
+
 async def cuenta_de_sistema(session: AsyncSession) -> Account:
     """
     La caja de CuyCash: contraparte de toda recarga.
@@ -56,23 +66,33 @@ async def cuenta_de_sistema(session: AsyncSession) -> Account:
     Su saldo es, por construcción, el negativo del dinero inyectado en la
     demo. Es la única cuenta a la que el CHECK le permite estar en rojo.
     """
-    # Por `numero` y no por `tipo`: la UNIQUE de `numero` es lo que de verdad
-    # impide una segunda caja, y así la búsqueda es coherente con ella.
-    caja = (
-        await session.execute(select(Account).where(Account.numero == NUMERO_SISTEMA))
-    ).scalar_one_or_none()
+    caja = await _buscar_caja(session)
     if caja is not None:
         return caja
 
-    caja = Account(
-        user_id=None,
-        numero=NUMERO_SISTEMA,
-        tipo="sistema",
-        moneda="PEN",
-        estado="activa",
-        saldo_disponible=0,
-        saldo_contable=0,
-    )
-    session.add(caja)
-    await session.flush()
+    # Dos primeras recargas simultáneas ven "no existe" y ambas insertan: la
+    # UNIQUE de `numero` rechaza a la segunda. Sin SAVEPOINT, ese IntegrityError
+    # deja la sesión de la petición inutilizable (hay que hacer rollback de todo
+    # y reintentar la lectura en la misma sesión no sirve). Con él, solo se
+    # deshace el insert y la sesión sigue sirviendo para releer la caja ganadora.
+    try:
+        async with session.begin_nested():
+            session.add(
+                Account(
+                    user_id=None,
+                    numero=NUMERO_SISTEMA,
+                    tipo="sistema",
+                    moneda="PEN",
+                    estado="activa",
+                    saldo_disponible=0,
+                    saldo_contable=0,
+                )
+            )
+    except IntegrityError:
+        caja = await _buscar_caja(session)
+        if caja is None:
+            raise  # no era la UNIQUE del número: otra restricción, no se disfraza
+        return caja
+    caja = await _buscar_caja(session)
+    assert caja is not None
     return caja
