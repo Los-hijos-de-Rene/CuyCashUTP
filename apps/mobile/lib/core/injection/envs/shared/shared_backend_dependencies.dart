@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../feature/account/infrastructure/http_account_repository.dart';
 import '../../../../feature/auth/infrastructure/http_auth_repository.dart';
 import '../../../../feature/device/domain/device_store.dart';
 import '../../../../feature/device/infrastructure/secure_device_store.dart';
@@ -55,6 +56,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     // queda para el acceso rápido, que sí es local a este teléfono.
     identifierLockoutStore: MemoryIdentifierLockoutStore(),
     kycRepository: _kycRepository(),
+    accountRepository: HttpAccountRepository(dio: dio),
   );
 }
 

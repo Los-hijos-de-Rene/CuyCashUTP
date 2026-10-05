@@ -1,3 +1,5 @@
+import '../../feature/account/application/account_actions.dart';
+import '../../feature/account/domain/account_repository.dart';
 import '../../feature/auth/domain/auth_repository.dart';
 import '../../feature/device/domain/device_store.dart';
 import '../../feature/kyc/domain/kyc_repository.dart';
@@ -16,6 +18,7 @@ class AppDependencies {
     required this.otpRepository,
     required this.identifierLockoutStore,
     required this.kycRepository,
+    required this.accountRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -31,5 +34,10 @@ class AppDependencies {
   /// Verificación de identidad (documento + liveness). El análisis corre en el
   /// servidor; el teléfono solo captura y pregunta.
   final KycRepository kycRepository;
+
+  /// Consulta de cuentas y movimientos. Los blocs consumen [accountActions].
+  final AccountRepository accountRepository;
+  AccountActions get accountActions => AccountActions(accountRepository);
+
   final LockoutPolicy lockoutPolicy;
 }
