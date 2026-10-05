@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.deps import bearer_token
 from app.core.errors import ApiError, ErrorCode
 from app.core.security import hash_pin, new_token, pin_is_valid, token_digest, verify_pin
 from app.db.base import get_session
@@ -200,8 +201,12 @@ async def sign_out(
     authorization: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
-    if authorization and authorization.lower().startswith("bearer "):
-        row = await sessions.resolve(session, authorization[7:])
+    # Deliberadamente NO usa `current_session_row`: cerrar sesión es idempotente
+    # y responde 204 aunque el token ya esté vencido o revocado. Exigir 401
+    # aquí haría fallar el "salir" de la app justo cuando la sesión ya no existe.
+    token = bearer_token(authorization)
+    if token is not None:
+        row = await sessions.resolve(session, token)
         if row is not None:
             await sessions.revoke(session, row)
             await session.commit()
