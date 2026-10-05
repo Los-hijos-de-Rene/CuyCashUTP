@@ -14,7 +14,8 @@ import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
-from sqlalchemy.pool import StaticPool  # noqa: E402
+from sqlalchemy.engine import make_url  # noqa: E402
+from sqlalchemy.pool import NullPool, StaticPool  # noqa: E402
 
 from app.db.base import Base, get_session  # noqa: E402
 from app.main import app  # noqa: E402
@@ -89,7 +90,19 @@ async def db_engine():
     """
     url = os.environ.get("TEST_POSTGRES_URL")
     if url:
-        engine = create_async_engine(url)
+        # Cerrojo, no aviso: este fixture hace `drop_all` AL ENTRAR. Si la URL
+        # apuntara a una base con datos, se perderían antes de que nadie lea el
+        # docstring. Se exige el sufijo `_test` en el nombre de la base.
+        nombre = make_url(url).database or ""
+        if not nombre.endswith("_test"):
+            raise RuntimeError(
+                f"TEST_POSTGRES_URL apunta a la base '{nombre}': el fixture borra "
+                "TODO el esquema, así que el nombre debe terminar en '_test'."
+            )
+        # NullPool: una conexión por tarea. Con el pool por defecto (5+10) la
+        # cola serializaría parte de la contención que el test quiere provocar,
+        # y un atasco saltaría como `QueuePool timeout` y no como abrazo mortal.
+        engine = create_async_engine(url, poolclass=NullPool)
     else:
         engine = create_async_engine(
             "sqlite+aiosqlite:///:memory:",

@@ -333,7 +333,13 @@ async def test_dos_envios_cruzados_no_se_abrazan(db_engine):
     SOLO CORRE CON `TEST_POSTGRES_URL`: SQLite ignora `with_for_update()` y aquí
     pasaría siempre sin probar nada, así que sin la variable se salta.
     Ejemplo: `TEST_POSTGRES_URL=postgresql+asyncpg://... pytest -m postgres`
-    contra una base DESECHABLE (el esquema se borra al terminar).
+    contra una base DESECHABLE cuyo nombre termine en `_test` (el esquema se
+    borra al empezar y al terminar).
+
+    PENDIENTE la primera vez que se ejecute contra Postgres: la comprobación
+    recíproca. Quitar `order_by(Account.id)` de `ledger.post` y confirmar que
+    ESTE test falla (deadlock detected). Sin esa mutación, el orden de bloqueo
+    sigue siendo un razonamiento y no una prueba.
     """
     if not os.environ.get("TEST_POSTGRES_URL"):
         pytest.skip("Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.")
