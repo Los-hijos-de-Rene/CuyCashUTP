@@ -2,22 +2,23 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../home_action.dart';
 
-/// Las cuatro acciones de dinero. Ninguna tiene feature detrás todavía: el
-/// callback existe para que la pantalla decida qué decir mientras tanto.
+/// Las cuatro acciones de dinero. Notifica con [HomeAction], no con el texto:
+/// la pantalla decide qué hacer con cada una.
 class QuickActionsRow extends StatelessWidget {
   const QuickActionsRow({required this.onAction, super.key});
 
-  final void Function(String label) onAction;
+  final void Function(HomeAction action) onAction;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final actions = <(IconData, String)>[
-      (Icons.north_east, l10n.homeActionSend),
-      (Icons.qr_code_scanner, l10n.homeActionCharge),
-      (Icons.add_circle_outline, l10n.homeActionTopUp),
-      (Icons.south_east, l10n.homeActionWithdraw),
+    final actions = <(HomeAction, IconData, String)>[
+      (HomeAction.send, Icons.north_east, l10n.homeActionSend),
+      (HomeAction.charge, Icons.qr_code_scanner, l10n.homeActionCharge),
+      (HomeAction.topUp, Icons.add_circle_outline, l10n.homeActionTopUp),
+      (HomeAction.withdraw, Icons.south_east, l10n.homeActionWithdraw),
     ];
     return Row(
       children: [
@@ -25,19 +26,23 @@ class QuickActionsRow extends StatelessWidget {
           if (index > 0) const SizedBox(width: CuyCashSpacing.stackSm + 4),
           Expanded(
             child: SurfaceCard(
-              onTap: () => onAction(action.$2),
+              onTap: () => onAction(action.$1),
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Column(
                 children: [
-                  Icon(action.$1,
-                      size: 24, color: CuyCashColors.primaryContainer),
+                  Icon(
+                    action.$2,
+                    size: 24,
+                    color: CuyCashColors.primaryContainer,
+                  ),
                   const SizedBox(height: CuyCashSpacing.stackXs + 2),
                   Text(
-                    action.$2,
+                    action.$3,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: CuyCashTypography.labelSm
-                        .copyWith(color: CuyCashColors.onSurface),
+                    style: CuyCashTypography.labelSm.copyWith(
+                      color: CuyCashColors.onSurface,
+                    ),
                   ),
                 ],
               ),

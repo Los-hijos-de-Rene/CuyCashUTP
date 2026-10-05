@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/injection/app_dependencies.dart';
+import '../../core/injection/modules/account_module.dart';
 import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
@@ -13,6 +14,7 @@ import '../../feature/device/application/device_actions.dart';
 import '../../feature/kyc/application/kyc_actions.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/bloc/auth_bloc.dart';
+import '../home/bloc/account_bloc.dart';
 import '../home/home_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../otp/bloc/otp_bloc.dart';
@@ -218,7 +220,11 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           StatefulShellBranch(routes: [
             GoRoute(
                 path: AppRoutes.home,
-                builder: (context, state) => const HomeScreen()),
+                builder: (context, state) => BlocProvider(
+                      create: (_) => AccountBloc(AccountModule.create(deps))
+                        ..add(const AccountEvent.started()),
+                      child: const HomeScreen(),
+                    )),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(

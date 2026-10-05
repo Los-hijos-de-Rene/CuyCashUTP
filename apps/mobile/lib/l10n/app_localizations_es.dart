@@ -743,9 +743,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeNotifications => 'Notificaciones';
 
   @override
-  String get homeDemoBadge => 'Datos de demostración';
-
-  @override
   String get homeBalanceLabel => 'Saldo disponible';
 
   @override
@@ -758,8 +755,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeHideBalance => 'Ocultar saldo';
 
   @override
-  String homeWalletMask(String last4) {
-    return 'Billetera •••• $last4';
+  String homeWalletMask(String masked) {
+    return 'Billetera $masked';
   }
 
   @override
@@ -800,6 +797,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String homeDateTime(String day, String time) {
     return '$day · $time';
   }
+
+  @override
+  String get homeLoading => 'Cargando tu cuenta';
+
+  @override
+  String get homeErrorNetwork =>
+      'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get homeErrorGeneric =>
+      'No pudimos cargar tu cuenta. Inténtalo de nuevo.';
+
+  @override
+  String get homeRetry => 'Reintentar';
+
+  @override
+  String get homeMovementsEmpty => 'Aún no tienes movimientos';
+
+  @override
+  String get homeMovementFallbackTitle => 'Movimiento';
 
   @override
   String get comingSoon => 'Disponible en una próxima versión.';

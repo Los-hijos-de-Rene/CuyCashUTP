@@ -1342,12 +1342,6 @@ abstract class AppLocalizations {
   /// **'Notificaciones'**
   String get homeNotifications;
 
-  /// No description provided for @homeDemoBadge.
-  ///
-  /// In es, this message translates to:
-  /// **'Datos de demostración'**
-  String get homeDemoBadge;
-
   /// No description provided for @homeBalanceLabel.
   ///
   /// In es, this message translates to:
@@ -1375,8 +1369,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeWalletMask.
   ///
   /// In es, this message translates to:
-  /// **'Billetera •••• {last4}'**
-  String homeWalletMask(String last4);
+  /// **'Billetera {masked}'**
+  String homeWalletMask(String masked);
 
   /// No description provided for @homeActionSend.
   ///
@@ -1449,6 +1443,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{day} · {time}'**
   String homeDateTime(String day, String time);
+
+  /// No description provided for @homeLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando tu cuenta'**
+  String get homeLoading;
+
+  /// No description provided for @homeErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.'**
+  String get homeErrorNetwork;
+
+  /// No description provided for @homeErrorGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tu cuenta. Inténtalo de nuevo.'**
+  String get homeErrorGeneric;
+
+  /// No description provided for @homeRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get homeRetry;
+
+  /// No description provided for @homeMovementsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes movimientos'**
+  String get homeMovementsEmpty;
+
+  /// No description provided for @homeMovementFallbackTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimiento'**
+  String get homeMovementFallbackTitle;
 
   /// No description provided for @comingSoon.
   ///
