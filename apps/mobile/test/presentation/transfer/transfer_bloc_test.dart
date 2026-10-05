@@ -5,6 +5,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
 import 'package:cuycash/feature/transfer/domain/recipient.dart';
+import 'package:cuycash/feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
 import 'package:cuycash/feature/transfer/infrastructure/memory_transfer_repository.dart';
@@ -36,7 +37,12 @@ const _listo = TransferState(
 );
 
 TransferBloc _bloc(FakeTransferRepository repo, {String Function()? newKey}) =>
-    TransferBloc(TransferActions(repo), newKey: newKey);
+    TransferBloc(
+      TransferActions(repo),
+      pending: pendientesDePrueba(),
+      userId: 'u1',
+      newKey: newKey,
+    );
 
 /// Lleva un bloc por el flujo real hasta la confirmación abierta, sin sembrar
 /// el estado a mano.
@@ -267,6 +273,8 @@ void main() {
     blocTest<TransferBloc, TransferState>(
       'contra el repositorio en memoria: PIN válido envía y descuenta',
       build: () => TransferBloc(
+        pending: pendientesDePrueba(),
+        userId: 'u1',
         TransferActions(
           MemoryTransferRepository(clock: () => DateTime.utc(2026, 10, 5, 18)),
         ),
@@ -281,6 +289,8 @@ void main() {
     blocTest<TransferBloc, TransferState>(
       'conserva el monto, el destinatario y la clave (contra el repo en memoria)',
       build: () => TransferBloc(
+        pending: pendientesDePrueba(),
+        userId: 'u1',
         TransferActions(
           MemoryTransferRepository(clock: () => DateTime.utc(2026, 10, 5, 18)),
         ),
@@ -419,6 +429,176 @@ void main() {
         expect(b.state.monto, const Money.fromCentimos(4000));
       },
     );
+  });
+
+  group('la clave sobrevive al flujo, ligada a la intención', () {
+    late MemoryPendingTransferStore store;
+    late DateTime ahora;
+    late String Function() claves;
+
+    setUp(() {
+      claves = _claves();
+      store = MemoryPendingTransferStore();
+      ahora = DateTime.utc(2026, 10, 5, 18);
+    });
+
+    TransferActions acciones(FakeTransferRepository repo) =>
+        TransferActions(repo);
+
+    /// Un flujo NUEVO (bloc nuevo = salir al inicio y reentrar, o matar la
+    /// app y reabrirla) hasta la confirmación abierta.
+    Future<TransferBloc> flujo(
+      FakeTransferRepository repo, {
+      String userId = 'u1',
+      Money monto = _monto,
+      String Function()? newKey,
+    }) async {
+      final b = TransferBloc(
+        acciones(repo),
+        pending: pendientesDePrueba(store: store, clock: () => ahora),
+        userId: userId,
+        newKey: newKey ?? claves,
+      );
+      addTearDown(b.close);
+      b.add(const TransferEvent.started(_cuenta));
+      b.add(const TransferEvent.recipientRequested('87654321'));
+      await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
+      b.add(TransferEvent.amountEntered(monto: monto));
+      b.add(const TransferEvent.confirmationOpened());
+      await b.stream.firstWhere((s) => s.idempotencyKey.isNotEmpty);
+      return b;
+    }
+
+    FakeTransferRepository caeEnRed() => FakeTransferRepository(
+      alEnviar: (n) async => n == 1
+          ? FakeTransferRepository.falla(const TransferFailure.network())
+          : right(FakeTransferRepository.constanciaDe(_monto)),
+    );
+
+    Future<void> enviar(
+      TransferBloc b,
+      bool Function(TransferState) hasta,
+    ) async {
+      b.add(const TransferEvent.submitted(pin: '000000'));
+      await b.stream.firstWhere(hasta);
+    }
+
+    test(
+      'VARIANTE 1 y 2 (volver al inicio y reentrar / matar la app): la misma '
+      'intención recupera la MISMA clave y vuelve sellada',
+      () async {
+        final repo1 = caeEnRed();
+        final a = await flujo(repo1);
+        await enviar(a, (s) => s.failure != null);
+        final primera = a.state.idempotencyKey;
+        await a.close(); // el ShellRoute muere: el bloc y su memoria también.
+
+        final repo2 = FakeTransferRepository();
+        // Su generador daría otra clave si se la pidieran: no debe pedirla.
+        final b = await flujo(repo2, newKey: () => 'clave-NUEVA-prohibida');
+
+        expect(b.state.idempotencyKey, primera);
+        expect(b.state.outcomeUnknown, isTrue);
+        await enviar(b, (s) => s.status == TransferStatus.done);
+        expect(repo2.claves, [primera]);
+      },
+    );
+
+    test('VARIANTE 3 (la sesión vence a mitad): la clave ya estaba guardada '
+        'antes de que el envío saliera', () async {
+      final nunca = Completer<Result<TransferFailure, TransferReceipt>>();
+      final repo = FakeTransferRepository(alEnviar: (_) => nunca.future);
+      final a = await flujo(repo);
+      a.add(const TransferEvent.submitted(pin: '000000'));
+      await a.stream.firstWhere((s) => s.status == TransferStatus.submitting);
+      final enVuelo = a.state.idempotencyKey;
+      await Future<void>.delayed(Duration.zero);
+      await a.close(); // el redirect global destruye el flujo en vuelo
+
+      final b = await flujo(FakeTransferRepository());
+      expect(b.state.idempotencyKey, enVuelo);
+    });
+
+    test(
+      'una intención distinta (otro monto) genera otra clave, sin sello',
+      () async {
+        final a = await flujo(caeEnRed());
+        await enviar(a, (s) => s.failure != null);
+        final primera = a.state.idempotencyKey;
+        await a.close();
+
+        final b = await flujo(
+          FakeTransferRepository(),
+          monto: const Money.fromCentimos(4000),
+        );
+
+        expect(b.state.idempotencyKey, isNot(primera));
+        expect(b.state.outcomeUnknown, isFalse);
+      },
+    );
+
+    test('la entrada caduca: pasadas 24 h la intención es nueva', () async {
+      final a = await flujo(caeEnRed());
+      await enviar(a, (s) => s.failure != null);
+      final primera = a.state.idempotencyKey;
+      await a.close();
+
+      ahora = ahora.add(const Duration(hours: 25));
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.idempotencyKey, isNot(primera));
+      expect(b.state.outcomeUnknown, isFalse);
+    });
+
+    test('la clave de un usuario no la recupera otro', () async {
+      final a = await flujo(caeEnRed());
+      await enviar(a, (s) => s.failure != null);
+      final primera = a.state.idempotencyKey;
+      await a.close();
+
+      final b = await flujo(FakeTransferRepository(), userId: 'u2');
+
+      expect(b.state.idempotencyKey, isNot(primera));
+    });
+
+    test(
+      'un envío confirmado borra la entrada: repetirlo es otro envío',
+      () async {
+        final a = await flujo(FakeTransferRepository());
+        await enviar(a, (s) => s.status == TransferStatus.done);
+        final primera = a.state.idempotencyKey;
+        await a.close();
+
+        final b = await flujo(FakeTransferRepository());
+
+        expect(b.state.idempotencyKey, isNot(primera));
+        expect(b.state.outcomeUnknown, isFalse);
+      },
+    );
+
+    test('un fallo definitivo (saldo) borra la entrada', () async {
+      final a = await flujo(
+        FakeTransferRepository(
+          alEnviar: (_) async => FakeTransferRepository.falla(
+            const TransferFailure.insufficientFunds(),
+          ),
+        ),
+      );
+      await enviar(a, (s) => s.failure != null);
+      final primera = a.state.idempotencyKey;
+      await a.close();
+
+      final b = await flujo(FakeTransferRepository());
+
+      expect(b.state.idempotencyKey, isNot(primera));
+    });
+
+    test('un fallo de red CONSERVA la entrada', () async {
+      final a = await flujo(caeEnRed());
+      await enviar(a, (s) => s.failure != null);
+
+      expect(await store.readAll('u1'), hasLength(1));
+    });
   });
 
   group('el motivo', () {

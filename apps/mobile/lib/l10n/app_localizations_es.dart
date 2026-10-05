@@ -972,6 +972,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferBackHomeCta => 'Volver al inicio';
 
   @override
+  String get transferLeaveTitle => '¿Salir sin confirmar?';
+
+  @override
+  String get transferLeaveBody =>
+      'Tu envío pudo haberse realizado. Revísalo en tus movimientos antes de intentarlo otra vez.';
+
+  @override
+  String get transferLeaveConfirm => 'Salir';
+
+  @override
+  String get transferRecoveredNotice =>
+      'Ya habías intentado enviar esto y no llegamos a saber si salió. Si reintentas, no se cobrará dos veces.';
+
+  @override
   String get transferErrorInsufficientFunds =>
       'No te alcanza el saldo disponible.';
 

@@ -27,7 +27,11 @@ void main() {
   late TransferBloc bloc;
 
   setUp(() async {
-    bloc = TransferBloc(TransferActions(FakeTransferRepository()));
+    bloc = TransferBloc(
+      TransferActions(FakeTransferRepository()),
+      pending: pendientesDePrueba(),
+      userId: 'u1',
+    );
     bloc.add(const TransferEvent.started(_cuenta));
     bloc.add(const TransferEvent.recipientRequested('87654321'));
     await bloc.stream.firstWhere((s) => s.status == TransferStatus.ready);

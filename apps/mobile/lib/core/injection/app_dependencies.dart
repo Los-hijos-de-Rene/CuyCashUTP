@@ -7,6 +7,7 @@ import '../../feature/lockout/domain/identifier_lockout_store.dart';
 import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
 import '../../feature/transfer/application/transfer_actions.dart';
+import '../../feature/transfer/domain/pending_transfer_store.dart';
 import '../../feature/transfer/domain/transfer_repository.dart';
 import '../env/app_flavor.dart';
 
@@ -22,6 +23,7 @@ class AppDependencies {
     required this.kycRepository,
     required this.accountRepository,
     required this.transferRepository,
+    required this.pendingTransferStore,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -45,6 +47,9 @@ class AppDependencies {
   /// Envío y recarga de saldo. Los blocs consumen [transferActions].
   final TransferRepository transferRepository;
   TransferActions get transferActions => TransferActions(transferRepository);
+
+  /// Claves de idempotencia de envíos que pudieron ejecutarse, por usuario.
+  final PendingTransferStore pendingTransferStore;
 
   final LockoutPolicy lockoutPolicy;
 }

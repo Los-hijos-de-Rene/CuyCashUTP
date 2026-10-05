@@ -225,7 +225,15 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       // y mueren al salir de él.
       ShellRoute(
         builder: (context, state, child) => BlocProvider(
-          create: (_) => TransferBloc(TransferModule.create(deps)),
+          create: (_) => TransferBloc(
+            TransferModule.create(deps),
+            pending: TransferModule.pending(deps),
+            // Las claves pendientes son de ESTE usuario y de nadie más.
+            userId: switch (authBloc.state) {
+              AuthAuthenticated(:final session) => session.userId,
+              AuthUnauthenticated() => '',
+            },
+          ),
           child: child,
         ),
         routes: [

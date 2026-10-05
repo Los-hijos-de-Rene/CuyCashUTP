@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../feature/account/domain/account.dart';
+import '../../../feature/transfer/application/pending_transfer_actions.dart';
 import '../../../feature/transfer/application/transfer_actions.dart';
 import '../../../feature/transfer/domain/recipient.dart';
 import '../../../feature/transfer/domain/transfer_failure.dart';
@@ -30,9 +31,15 @@ part 'transfer_state.dart';
 ///    El primer evento pasa a `submitting` de forma síncrona, antes de su
 ///    primer `await`, así que el segundo ya lo ve.
 class TransferBloc extends Bloc<TransferEvent, TransferState> {
-  TransferBloc(this._actions, {String Function()? newKey})
-    : _newKey = newKey ?? IdempotencyKey.generate,
-      super(const TransferState()) {
+  TransferBloc(
+    this._actions, {
+    required PendingTransferActions pending,
+    required String userId,
+    String Function()? newKey,
+  }) : _pending = pending,
+       _userId = userId,
+       _newKey = newKey ?? IdempotencyKey.generate,
+       super(const TransferState()) {
     on<TransferStarted>(
       (event, emit) => emit(TransferState(cuenta: event.cuenta)),
     );
@@ -44,6 +51,8 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
   }
 
   final TransferActions _actions;
+  final PendingTransferActions _pending;
+  final String _userId;
   final String Function() _newKey;
 
   /// La intención ya no admite cambios: hay un envío en vuelo, ya terminó, o
@@ -127,13 +136,39 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     );
   }
 
-  void _onConfirmationOpened(
+  /// Huella de la intención actual, o `null` si aún no está completa.
+  String? get _huella {
+    final cuenta = state.cuenta;
+    final destinatario = state.destinatario;
+    final monto = state.monto;
+    if (cuenta == null || destinatario == null || monto == null) return null;
+    return PendingTransferActions.huella(
+      cuentaId: cuenta.id,
+      destinatarioDni: destinatario.dni,
+      monto: monto,
+      motivo: state.motivo,
+    );
+  }
+
+  Future<void> _onConfirmationOpened(
     TransferConfirmationOpened event,
     Emitter<TransferState> emit,
-  ) {
+  ) async {
     // Volver a abrir la confirmación con la misma intención CONSERVA la clave.
     if (state.idempotencyKey.isNotEmpty) return;
-    emit(state.copyWith(idempotencyKey: _newKey()));
+    // ¿Salió ya un envío IGUAL que no llegó a resolverse (flujo cerrado, app
+    // reiniciada, sesión vencida)? Entonces la clave es ESA, y la intención
+    // nace sellada: el resultado de aquel envío sigue desconocido.
+    final huella = _huella;
+    final pendiente = huella == null
+        ? null
+        : await _pending.recover(_userId, huella);
+    if (state.idempotencyKey.isNotEmpty) return;
+    emit(
+      pendiente == null
+          ? state.copyWith(idempotencyKey: _newKey())
+          : state.copyWith(idempotencyKey: pendiente, outcomeUnknown: true),
+    );
   }
 
   Future<void> _onSubmitted(
@@ -157,6 +192,10 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
 
     // Síncrono, antes del primer await: el siguiente evento ya ve `submitting`.
     emit(state.copyWith(status: TransferStatus.submitting, failure: null));
+    // La clave se anota ANTES de que el envío salga: si la app muere o la
+    // sesión vence a mitad, al reentrar con la misma intención se recupera.
+    final huella = _huella;
+    if (huella != null) await _pending.remember(_userId, huella, key);
     final result = await _actions.enviar(
       cuentaOrigenId: cuenta.id,
       destinatarioDni: destinatario.dni,
@@ -165,6 +204,17 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
       pin: event.pin,
       idempotencyKey: key,
     );
+    // Confirmado, o el servidor dijo que NO movió nada: la entrada ya no hace
+    // falta. Con resultado desconocido (o sellado) se conserva.
+    if (huella != null) {
+      final definitivo = result.match(
+        (f) =>
+            _flatten(f) is IdempotencyKeyReused ||
+            (!_flatten(f).outcomeUnknown && !state.outcomeUnknown),
+        (_) => true,
+      );
+      if (definitivo) await _pending.forget(_userId, huella);
+    }
     emit(
       result.match(
         // Vuelve a `ready` con monto, destinatario y clave intactos: tras un

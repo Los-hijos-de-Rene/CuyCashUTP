@@ -1756,6 +1756,30 @@ abstract class AppLocalizations {
   /// **'Volver al inicio'**
   String get transferBackHomeCta;
 
+  /// No description provided for @transferLeaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir sin confirmar?'**
+  String get transferLeaveTitle;
+
+  /// No description provided for @transferLeaveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu envío pudo haberse realizado. Revísalo en tus movimientos antes de intentarlo otra vez.'**
+  String get transferLeaveBody;
+
+  /// No description provided for @transferLeaveConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir'**
+  String get transferLeaveConfirm;
+
+  /// No description provided for @transferRecoveredNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya habías intentado enviar esto y no llegamos a saber si salió. Si reintentas, no se cobrará dos veces.'**
+  String get transferRecoveredNotice;
+
   /// No description provided for @transferErrorInsufficientFunds.
   ///
   /// In es, this message translates to:

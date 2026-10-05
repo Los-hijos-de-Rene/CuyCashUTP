@@ -31,7 +31,11 @@ const _cuenta = Account(
 const _monto = Money.fromCentimos(5000);
 
 Future<TransferBloc> _blocEnConfirmacion(FakeTransferRepository repo) async {
-  final b = TransferBloc(TransferActions(repo));
+  final b = TransferBloc(
+    TransferActions(repo),
+    pending: pendientesDePrueba(),
+    userId: 'u1',
+  );
   b.add(const TransferEvent.started(_cuenta));
   b.add(const TransferEvent.recipientRequested('87654321'));
   await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
@@ -291,6 +295,8 @@ void main() {
 
       await tester.tap(find.text('Volver al inicio'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Salir'));
+      await tester.pumpAndSettle();
       expect(find.text('INICIO'), findsOneWidget);
     },
   );
@@ -317,6 +323,65 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('INICIO'), findsOneWidget);
       expect(repo.llamadas, 1);
+    },
+  );
+
+  testWidgets(
+    'sellada y con un PIN errado en el reintento, el botón sigue diciendo '
+    '"Reintentar envío"',
+    (tester) async {
+      await preparar(
+        (n) async => n == 1
+            ? FakeTransferRepository.falla(const TransferFailure.network())
+            : FakeTransferRepository.falla(const TransferFailure.wrongPin(2)),
+      );
+      await pump(tester);
+      await escribirPin(tester);
+      await tester.tap(boton());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Reintentar envío'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('PIN incorrecto. Te quedan 2 intentos.'),
+        findsOneWidget,
+      );
+      expect(find.text('Reintentar envío'), findsOneWidget);
+      expect(boton(), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '"Volver al inicio" con la intención sellada avisa antes de salir',
+    (tester) async {
+      await preparar(
+        (_) async =>
+            FakeTransferRepository.falla(const TransferFailure.network()),
+      );
+      await pump(tester);
+      await escribirPin(tester);
+      await tester.tap(boton());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Volver al inicio'));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Salir sin confirmar?'), findsOneWidget);
+      expect(
+        find.textContaining('Revísalo en tus movimientos'),
+        findsOneWidget,
+      );
+
+      // Cancelar se queda donde está.
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+      expect(find.text('INICIO'), findsNothing);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Volver al inicio'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Salir'));
+      await tester.pumpAndSettle();
+      expect(find.text('INICIO'), findsOneWidget);
     },
   );
 }

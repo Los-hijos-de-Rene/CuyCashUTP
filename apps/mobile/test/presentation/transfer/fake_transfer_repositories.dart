@@ -1,11 +1,23 @@
 import 'dart:async';
 
 import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/transfer/application/pending_transfer_actions.dart';
+import 'package:cuycash/feature/transfer/domain/pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/recipient.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_repository.dart';
+import 'package:cuycash/feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import 'package:fpdart/fpdart.dart';
+
+/// Claves pendientes con reloj controlable (por defecto, fijo).
+PendingTransferActions pendientesDePrueba({
+  PendingTransferStore? store,
+  DateTime Function()? clock,
+}) => PendingTransferActions(
+  store ?? MemoryPendingTransferStore(),
+  clock: clock ?? () => DateTime.utc(2026, 10, 5, 18),
+);
 
 const destinatarioDePrueba = Recipient(
   dni: '87654321',

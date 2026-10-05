@@ -55,6 +55,32 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
     setState(() => _pin = _pin.substring(0, _pin.length - 1));
   }
 
+  /// Salir con el resultado desconocido es la única vía sin fricción hacia un
+  /// segundo cobro: se avisa antes. (La clave queda guardada, así que reentrar
+  /// con la misma intención la recupera; pero el usuario debe mirar sus
+  /// movimientos primero.)
+  Future<void> _leave(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final salir = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.transferLeaveTitle),
+        content: Text(l10n.transferLeaveBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.transferLeaveConfirm),
+          ),
+        ],
+      ),
+    );
+    if (salir == true && context.mounted) context.go(AppRoutes.home);
+  }
+
   void _onResult(BuildContext context, TransferState state) {
     if (state.status == TransferStatus.done) {
       // Reemplaza la confirmación: volver atrás no debe poder reenviar.
@@ -109,7 +135,19 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                             ? transferSubmitErrorText(l10n, failure)
                             : null,
                         hasError: failed && failure is WrongPin,
-                        extra: _Summary(state: state),
+                        extra: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (sealed && failure == null) ...[
+                              InfoStrip(
+                                icon: Icons.info_outline,
+                                text: l10n.transferRecoveredNotice,
+                              ),
+                              const SizedBox(height: CuyCashSpacing.stackSm),
+                            ],
+                            _Summary(state: state),
+                          ],
+                        ),
                       ),
                     ),
                     Padding(
@@ -129,7 +167,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                             )
                           else ...[
                             PrimaryButton(
-                              label: failed && failure.outcomeUnknown
+                              label: sealed
                                   ? l10n.transferRetryCta
                                   : l10n.transferConfirmCta,
                               loading: submitting,
@@ -143,7 +181,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                               const SizedBox(height: CuyCashSpacing.stackSm),
                               SecondaryButton(
                                 label: l10n.transferBackHomeCta,
-                                onPressed: () => context.go(AppRoutes.home),
+                                onPressed: () => _leave(context),
                               ),
                             ],
                           ],
