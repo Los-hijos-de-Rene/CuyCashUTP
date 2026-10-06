@@ -82,6 +82,8 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '100');
       await tester.pump();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+      await tester.pumpAndSettle();
       for (final d in '000000'.split('')) {
         await tester.tap(find.text(d));
         await tester.pump();

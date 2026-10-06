@@ -103,30 +103,91 @@ void main() {
   Finder boton([String label = 'Confirmar recarga']) =>
       find.widgetWithText(ElevatedButton, label);
 
-  testWidgets('el botón espera monto válido Y los 6 dígitos del PIN', (
+  /// Paso 1 → paso 2.
+  Future<void> continuar(WidgetTester tester) async {
+    await tester.tap(boton('Continuar'));
+    await tester.pumpAndSettle();
+  }
+
+  /// Monto, "Continuar" y PIN: deja la recarga lista para confirmar.
+  Future<void> hastaElPin(
+    WidgetTester tester, {
+    String monto = '100',
+    String pin = '000000',
+  }) async {
+    await escribirMonto(tester, monto);
+    await continuar(tester);
+    await escribirPin(tester, pin);
+  }
+
+  testWidgets('paso 1 espera un monto válido; paso 2, los 6 dígitos del PIN', (
     tester,
   ) async {
     await preparar(null);
     await pump(tester);
 
-    await escribirPin(tester);
-    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+    // Paso 1: solo el monto, sin teclado de PIN.
+    expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
+    expect(find.byType(PinKeypad), findsNothing);
+    expect(tester.widget<ElevatedButton>(boton('Continuar')).onPressed, isNull);
 
     await escribirMonto(tester, '100');
+    expect(
+      tester.widget<ElevatedButton>(boton('Continuar')).onPressed,
+      isNotNull,
+    );
+    await continuar(tester);
+
+    // Paso 2: resumen y PIN.
+    expect(find.text('Confirma tu recarga'), findsOneWidget);
+    expect(find.text('S/ 100.00'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+
+    await escribirPin(tester, '00000');
+    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+    await escribirPin(tester, '0');
     expect(tester.widget<ElevatedButton>(boton()).onPressed, isNotNull);
   });
+
+  testWidgets(
+    'atrás en el PIN vuelve al monto: lo conserva, borra el PIN y no cambia '
+    'la clave',
+    (tester) async {
+      await preparar(null);
+      await pump(tester);
+      await hastaElPin(tester, pin: '123');
+      final clave = bloc.state.idempotencyKey;
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
+      expect(find.text('100'), findsOneWidget);
+      expect(bloc.state.idempotencyKey, clave);
+
+      // El gesto del sistema hace lo mismo que la flecha.
+      await continuar(tester);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
+
+      await continuar(tester);
+      expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+      expect(resultado, isNull);
+    },
+  );
 
   testWidgets('un monto sobre el máximo se explica y no deja confirmar', (
     tester,
   ) async {
     await preparar(null);
     await pump(tester);
-    await escribirPin(tester);
 
     await escribirMonto(tester, '2000.01');
 
     expect(find.text('El máximo por recarga es S/ 2,000.00.'), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+    expect(tester.widget<ElevatedButton>(boton('Continuar')).onPressed, isNull);
   });
 
   testWidgets('el separador de miles se rechaza diciendo por qué', (
@@ -156,8 +217,7 @@ void main() {
       });
       await preparar((_) => enVuelo.future);
       await pump(tester);
-      await escribirMonto(tester, '100');
-      await escribirPin(tester);
+      await hastaElPin(tester);
 
       await tester.tap(boton());
       await tester.tap(boton());
@@ -182,8 +242,7 @@ void main() {
   ) async {
     await preparar(null);
     await pump(tester);
-    await escribirMonto(tester, '100');
-    await escribirPin(tester);
+    await hastaElPin(tester);
 
     await tester.tap(boton());
     await tester.pumpAndSettle();
@@ -202,8 +261,7 @@ void main() {
   ) async {
     await preparar(null);
     await pump(tester);
-    await escribirMonto(tester, '100');
-    await escribirPin(tester);
+    await hastaElPin(tester);
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
@@ -223,8 +281,7 @@ void main() {
             : right(FakeTransferRepository.constanciaDe(_monto)),
       );
       await pump(tester);
-      await escribirMonto(tester, '100');
-      await escribirPin(tester);
+      await hastaElPin(tester);
       await tester.tap(boton());
       await tester.pumpAndSettle();
 
@@ -232,12 +289,12 @@ void main() {
         find.textContaining('No pudimos confirmar tu recarga'),
         findsOneWidget,
       );
-      // El monto ya no se edita ni hay flecha de atrás.
-      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      // No hay flecha, y atrás no vuelve al monto ni sale.
       expect(find.byType(BackButton), findsNothing);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(find.text('Recargar saldo'), findsOneWidget);
+      expect(find.text('Confirma tu recarga'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
 
       // Salir avisa, y cancelar se queda.
       await tester.tap(find.text('Volver al inicio'));
@@ -264,8 +321,7 @@ void main() {
           FakeTransferRepository.falla(const TransferFailure.network()),
     );
     await pump(tester);
-    await escribirMonto(tester, '100');
-    await escribirPin(tester);
+    await hastaElPin(tester);
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
@@ -287,8 +343,7 @@ void main() {
         discoSano: false,
       );
       await pump(tester);
-      await escribirMonto(tester, '100');
-      await escribirPin(tester);
+      await hastaElPin(tester);
       await tester.tap(boton());
       await tester.pumpAndSettle();
 
@@ -306,14 +361,18 @@ void main() {
           FakeTransferRepository.falla(const TransferFailure.wrongPin(2)),
     );
     await pump(tester);
-    await escribirMonto(tester, '100');
-    await escribirPin(tester, '111111');
+    await hastaElPin(tester, pin: '111111');
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
     expect(find.text('PIN incorrecto. Te quedan 2 intentos.'), findsOneWidget);
     expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
-    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
     expect(bloc.state.monto, _monto);
+
+    // No queda sellada: se puede volver a cambiar el monto.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
+    expect(find.text('100'), findsOneWidget);
   });
 }

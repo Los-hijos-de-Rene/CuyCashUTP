@@ -16,15 +16,24 @@ import '../transfer/money_input_formatter.dart';
 import 'bloc/topup_bloc.dart';
 import 'topup_error_text.dart';
 
-/// Recarga de saldo: monto y PIN en una sola pantalla.
+/// Los dos pasos de la recarga, dentro de la misma ruta.
+enum _Step { amount, pin }
+
+/// Recarga de saldo en dos pasos: primero el monto, después el resumen y el
+/// PIN que la autoriza.
+///
+/// Los dos pasos viven en la MISMA ruta y comparten el [TopUpBloc] que la
+/// ruta provee: la clave de idempotencia nace al abrir y no cambia por ir y
+/// volver entre pasos (solo si cambia el monto). Volver del PIN al monto borra
+/// el PIN.
 ///
 /// Cierra con `pop(true)` cuando hubo algún intento de recarga (acreditada o
 /// con resultado desconocido): quien la abrió refresca la cuenta.
 ///
-/// **Con el resultado desconocido la intención queda sellada**: el monto no se
-/// edita, no se puede retroceder, y solo quedan "Reintentar" (misma clave) o
-/// salir con aviso. El botón se deshabilita al primer toque y el bloc descarta
-/// un segundo evento aunque llegue antes del siguiente fotograma.
+/// **Con el resultado desconocido la intención queda sellada**: no se vuelve
+/// al paso del monto ni se sale con atrás; solo quedan "Reintentar" (misma
+/// clave) o salir con aviso. El botón se deshabilita al primer toque y el bloc
+/// descarta un segundo evento aunque llegue antes del siguiente fotograma.
 class TopUpScreen extends StatefulWidget {
   const TopUpScreen({required this.cuenta, super.key});
 
@@ -40,6 +49,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
   final _amount = TextEditingController();
   String _pin = '';
+  _Step _step = _Step.amount;
 
   /// Aviso del último rechazo del formateador; `null` si no hay.
   String? _rejectedMessage;
@@ -81,12 +91,21 @@ class _TopUpScreenState extends State<TopUpScreen> {
     );
   }
 
+  void _goToPin() {
+    // El PIN y el teclado del sistema no conviven.
+    FocusScope.of(context).unfocus();
+    setState(() => _step = _Step.pin);
+  }
+
+  void _backToAmount() => setState(() {
+    _step = _Step.amount;
+    _pin = '';
+  });
+
   void _onDigit(TopUpState state, int digit) {
     if (state.status == TopUpStatus.submitting || _pin.length >= _pinLength) {
       return;
     }
-    // El PIN y el teclado del sistema no conviven.
-    FocusScope.of(context).unfocus();
     setState(() => _pin += '$digit');
   }
 
@@ -134,162 +153,241 @@ class _TopUpScreenState extends State<TopUpScreen> {
         if (state.status == TopUpStatus.done) {
           return _DoneView(state: state, cuenta: widget.cuenta);
         }
-        final submitting = state.status == TopUpStatus.submitting;
-        final failure = state.failure;
-        final failed = failure != null && !submitting;
-        final sealed = state.outcomeUnknown;
-        final dead = failed && failure is IdempotencyKeyReused;
-        final bloqueado = submitting || sealed;
-        final error = _rejectedMessage ?? _amountError(l10n);
+        final bloqueado =
+            state.status == TopUpStatus.submitting || state.outcomeUnknown;
+        final enPin = _step == _Step.pin;
         return PopScope(
-          canPop: !bloqueado,
+          // Atrás en el PIN vuelve al monto; con la intención sellada o la
+          // recarga en vuelo no se va a ninguna parte.
+          canPop: !enPin && !bloqueado,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && enPin && !bloqueado) _backToAmount();
+          },
           child: Scaffold(
             appBar: AppBar(
+              leading: enPin && !bloqueado
+                  ? BackButton(onPressed: _backToAmount)
+                  : null,
               automaticallyImplyLeading: !bloqueado,
               title: Text(l10n.topUpTitle),
             ),
             body: SecureScreenScope(
               child: SafeArea(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: PinEntryView(
-                        headline: l10n.topUpHeadline,
-                        subtitle: l10n.topUpSubtitle,
-                        pin: _pin,
-                        onDigit: (d) => _onDigit(state, d),
-                        onBackspace: () => _onBackspace(state),
-                        // Sin la clave guardada, "no se cobrará dos veces" no
-                        // se puede prometer: el aviso es el fuerte.
-                        errorText: failed
-                            ? (state.keyUnsaved && failure.outcomeUnknown
-                                  ? l10n.transferKeyUnsavedWarning
-                                  : topUpErrorText(l10n, failure))
-                            : null,
-                        hasError: failed && failure is WrongPin,
-                        extra: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (sealed && failure == null) ...[
-                              InfoStrip(
-                                icon: Icons.info_outline,
-                                text: l10n.topUpRecoveredNotice,
-                              ),
-                              const SizedBox(height: CuyCashSpacing.stackSm),
-                            ],
-                            if (state.pendingElsewhere && !sealed) ...[
-                              InfoStrip(
-                                icon: Icons.info_outline,
-                                text: l10n.topUpPendingElsewhereNotice,
-                              ),
-                              const SizedBox(height: CuyCashSpacing.stackSm),
-                            ],
-                            CuyCashTextField(
-                              label: l10n.transferAmountLabel,
-                              hint: l10n.transferAmountHint,
-                              controller: _amount,
-                              enabled: !bloqueado,
-                              errorText: error,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [
-                                MoneyInputFormatter(
-                                  onRejected: (texto) => setState(
-                                    () => _rejectedMessage =
-                                        MoneyInputFormatter.esSeparadorDeMiles(
-                                          texto,
-                                        )
-                                        ? l10n.transferAmountNoThousands
-                                        : l10n.transferAmountInvalid,
-                                  ),
-                                ),
-                              ],
-                              onChanged: (_) {
-                                setState(() => _rejectedMessage = null);
-                                _publishAmount(l10n);
-                              },
-                            ),
-                            const SizedBox(height: CuyCashSpacing.stackSm),
-                            Wrap(
-                              spacing: CuyCashSpacing.stackSm,
-                              children: [
-                                for (final soles in _quickAmounts)
-                                  ActionChip(
-                                    label: Text(
-                                      formatSoles(
-                                        Money.fromCentimos(soles * 100),
-                                      ),
-                                    ),
-                                    onPressed: bloqueado
-                                        ? null
-                                        : () {
-                                            setState(() {
-                                              _rejectedMessage = null;
-                                              _amount.text = '$soles';
-                                            });
-                                            _publishAmount(l10n);
-                                          },
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: CuyCashSpacing.stackSm),
-                            _Line(
-                              label: l10n.topUpSummaryTo,
-                              value: widget.cuenta.numeroMasked,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        CuyCashSpacing.marginMobile,
-                        CuyCashSpacing.stackSm,
-                        CuyCashSpacing.marginMobile,
-                        CuyCashSpacing.stackMd,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (dead)
-                            PrimaryButton(
-                              label: l10n.transferBackHomeCta,
-                              onPressed: () => context.pop(true),
-                            )
-                          else ...[
-                            PrimaryButton(
-                              label: sealed
-                                  ? l10n.topUpRetryCta
-                                  : l10n.topUpCta,
-                              loading: submitting,
-                              onPressed:
-                                  _pin.length == _pinLength &&
-                                      state.monto != null
-                                  ? () => context.read<TopUpBloc>().add(
-                                      TopUpEvent.submitted(pin: _pin),
-                                    )
-                                  : null,
-                            ),
-                            if (sealed && !submitting) ...[
-                              const SizedBox(height: CuyCashSpacing.stackSm),
-                              SecondaryButton(
-                                label: l10n.transferBackHomeCta,
-                                onPressed: () => _leave(context),
-                              ),
-                            ],
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                child: enPin
+                    ? _buildPinStep(context, state, l10n)
+                    : _buildAmountStep(context, state, l10n, bloqueado),
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  /// Paso 1: cuánto. "Continuar" espera un monto que el bloc ya aceptó.
+  Widget _buildAmountStep(
+    BuildContext context,
+    TopUpState state,
+    AppLocalizations l10n,
+    bool bloqueado,
+  ) {
+    final error = _rejectedMessage ?? _amountError(l10n);
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: CuyCashSpacing.marginMobile,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.topUpHeadline, style: CuyCashTypography.headlineSm),
+                const SizedBox(height: CuyCashSpacing.stackXs),
+                Text(
+                  l10n.topUpSubtitle,
+                  style: CuyCashTypography.bodyLg.copyWith(
+                    color: CuyCashColors.secondaryText,
+                  ),
+                ),
+                const SizedBox(height: CuyCashSpacing.stackLg),
+                CuyCashTextField(
+                  label: l10n.transferAmountLabel,
+                  hint: l10n.transferAmountHint,
+                  controller: _amount,
+                  enabled: !bloqueado,
+                  autofocus: _amount.text.isEmpty,
+                  errorText: error,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    MoneyInputFormatter(
+                      onRejected: (texto) => setState(
+                        () => _rejectedMessage =
+                            MoneyInputFormatter.esSeparadorDeMiles(texto)
+                            ? l10n.transferAmountNoThousands
+                            : l10n.transferAmountInvalid,
+                      ),
+                    ),
+                  ],
+                  onChanged: (_) {
+                    setState(() => _rejectedMessage = null);
+                    _publishAmount(l10n);
+                  },
+                ),
+                const SizedBox(height: CuyCashSpacing.stackSm),
+                Wrap(
+                  spacing: CuyCashSpacing.stackSm,
+                  children: [
+                    for (final soles in _quickAmounts)
+                      ActionChip(
+                        label: Text(
+                          formatSoles(Money.fromCentimos(soles * 100)),
+                        ),
+                        onPressed: bloqueado
+                            ? null
+                            : () {
+                                setState(() {
+                                  _rejectedMessage = null;
+                                  _amount.text = '$soles';
+                                });
+                                _publishAmount(l10n);
+                              },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: CuyCashSpacing.stackSm),
+                _Line(
+                  label: l10n.topUpSummaryTo,
+                  value: widget.cuenta.numeroMasked,
+                ),
+                const SizedBox(height: CuyCashSpacing.stackLg),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            CuyCashSpacing.marginMobile,
+            CuyCashSpacing.stackSm,
+            CuyCashSpacing.marginMobile,
+            CuyCashSpacing.stackMd,
+          ),
+          child: PrimaryButton(
+            label: l10n.transferContinue,
+            onPressed: state.monto != null && error == null && !bloqueado
+                ? _goToPin
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Paso 2: resumen y PIN. Aquí nace (y se reintenta) la recarga.
+  Widget _buildPinStep(
+    BuildContext context,
+    TopUpState state,
+    AppLocalizations l10n,
+  ) {
+    final submitting = state.status == TopUpStatus.submitting;
+    final failure = state.failure;
+    final failed = failure != null && !submitting;
+    final sealed = state.outcomeUnknown;
+    final dead = failed && failure is IdempotencyKeyReused;
+    final monto = state.monto;
+    return Column(
+      children: [
+        Expanded(
+          child: PinEntryView(
+            headline: l10n.topUpConfirmHeadline,
+            subtitle: l10n.topUpConfirmSubtitle,
+            pin: _pin,
+            onDigit: (d) => _onDigit(state, d),
+            onBackspace: () => _onBackspace(state),
+            // Sin la clave guardada, "no se cobrará dos veces" no se puede
+            // prometer: el aviso es el fuerte.
+            errorText: failed
+                ? (state.keyUnsaved && failure.outcomeUnknown
+                      ? l10n.transferKeyUnsavedWarning
+                      : topUpErrorText(l10n, failure))
+                : null,
+            hasError: failed && failure is WrongPin,
+            extra: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (sealed && failure == null) ...[
+                  InfoStrip(
+                    icon: Icons.info_outline,
+                    text: l10n.topUpRecoveredNotice,
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                ],
+                if (state.pendingElsewhere && !sealed) ...[
+                  InfoStrip(
+                    icon: Icons.info_outline,
+                    text: l10n.topUpPendingElsewhereNotice,
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                ],
+                SurfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (monto != null)
+                        Text(
+                          formatSoles(monto),
+                          style: CuyCashTypography.headlineMd,
+                        ),
+                      _Line(
+                        label: l10n.topUpSummaryTo,
+                        value: widget.cuenta.numeroMasked,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            CuyCashSpacing.marginMobile,
+            CuyCashSpacing.stackSm,
+            CuyCashSpacing.marginMobile,
+            CuyCashSpacing.stackMd,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (dead)
+                PrimaryButton(
+                  label: l10n.transferBackHomeCta,
+                  onPressed: () => context.pop(true),
+                )
+              else ...[
+                PrimaryButton(
+                  label: sealed ? l10n.topUpRetryCta : l10n.topUpCta,
+                  loading: submitting,
+                  onPressed: _pin.length == _pinLength && monto != null
+                      ? () => context.read<TopUpBloc>().add(
+                          TopUpEvent.submitted(pin: _pin),
+                        )
+                      : null,
+                ),
+                if (sealed && !submitting) ...[
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                  SecondaryButton(
+                    label: l10n.transferBackHomeCta,
+                    onPressed: () => _leave(context),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

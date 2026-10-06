@@ -1169,7 +1169,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get topUpSubtitle =>
-      'Elige el monto y confirma con tu PIN de 6 dígitos.';
+      'Elige el monto. En el siguiente paso lo confirmas con tu PIN.';
+
+  @override
+  String get topUpConfirmHeadline => 'Confirma tu recarga';
+
+  @override
+  String get topUpConfirmSubtitle =>
+      'Ingresa tu PIN de 6 dígitos para autorizarla.';
 
   @override
   String topUpAmountOverMax(String max) {
