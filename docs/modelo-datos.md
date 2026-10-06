@@ -232,7 +232,9 @@ dos lecturas ven el mismo saldo y las dos aprueban.
 Es bloqueo por fila: dos cuentas distintas no se estorban, así que el SLA de
 200 ms no debería degradarse bajo concurrencia (no hay medición automatizada de
 esa cifra). `FOR UPDATE` solo tiene efecto en Postgres; los tests de
-concurrencia llevan la marca `postgres` y se omiten en SQLite.
+concurrencia llevan la marca `postgres` y se omiten en SQLite. **Nunca se han
+ejecutado contra un Postgres real**: el orden de bloqueo del `FOR UPDATE` y la
+ventana de idempotencia están razonados, no probados.
 
 Además, `accounts` lleva un `CHECK (tipo = 'sistema' OR saldo_disponible >= 0)`
 como última defensa contra el doble gasto. La cuenta de sistema —contraparte de

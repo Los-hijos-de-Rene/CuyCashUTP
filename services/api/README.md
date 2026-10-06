@@ -1,7 +1,9 @@
-# CuyCash · servicio de autenticación
+# CuyCash · servicio de API
 
-Backend de identidad de CuyCash: registro, ingreso con DNI + PIN, verificación
-de dispositivo, recuperación de PIN y proxy del servicio de KYC.
+Backend de CuyCash: identidad (registro, ingreso con DNI + PIN, verificación de
+dispositivo, recuperación de PIN, proxy del servicio de KYC), cuentas, libro
+mayor con partida doble, envío por DNI, recarga simulada y beneficiarios
+frecuentes.
 
 Diseño y razones: [`docs/adr/0002-backend-de-autenticacion.md`](../../docs/adr/0002-backend-de-autenticacion.md).
 

@@ -28,8 +28,14 @@ cuentas por titular.
 **Estado de la verificación.** La app y el backend tienen sus propias suites
 (contra dobles en memoria la app, por HTTP contra SQLite el backend), y el
 recorrido del backend se ejercitó a mano con `curl`. La prueba con la app
-real hablando con el backend (flavor `local`, en emulador) **no se ha
-registrado todavía**.
+real hablando con el backend (flavor `local`, en emulador) **nunca se ha
+ejecutado**; el guion está en [`docs/verificacion-manual.md`](docs/verificacion-manual.md).
+
+**Sin probar:** los dos tests de concurrencia (marca `postgres`: envíos cruzados
+y misma clave en paralelo) nunca se han ejecutado contra un Postgres real; el
+orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están razonados,
+no probados. Y el SLA de 200 ms por operación del motor no tiene medición
+automatizada.
 
 ---
 
@@ -92,7 +98,7 @@ cd apps/mobile && flutter gen-l10n   # regenera l10n desde los ARB
 cd services/api && .venv/bin/python -m pytest             # tests del backend
 ```
 
-Los tests de concurrencia del libro exigen Postgres real y se omiten sin él
+Los tests de concurrencia del libro exigen Postgres real y se omiten sin él (y hasta hoy nadie los ha ejecutado)
 (`pytest -m postgres` con `TEST_POSTGRES_URL`; la base debe terminar en
 `_test`). Detalle en [`CLAUDE.md`](CLAUDE.md).
 
@@ -120,7 +126,7 @@ Se pasan con `--dart-define-from-file`. Plantilla en `apps/mobile/config.example
 ```json
 {
   "AUTH_BASE_URL": "http://10.0.2.2:8001",
-  "KYC_BASE_URL": "http://10.0.2.2:8000",
+  "KYC_BASE_URL": "",
   "KYC_API_KEY": ""
 }
 ```
@@ -210,6 +216,7 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Guía de trabajo en el repo (arquitectura, comandos, reglas). |
 | [`docs/sla-kpi.md`](docs/sla-kpi.md) | SLA por módulo, KPI de negocio y ágiles, backlog y sprints. |
+| [`docs/verificacion-manual.md`](docs/verificacion-manual.md) | Guion para probar la app contra el backend en un emulador (pendiente de ejecutar). |
 | [`docs/modelo-datos.md`](docs/modelo-datos.md) | Modelo de datos: tablas implementadas (con sus columnas) y diseñadas. |
 | [`docs/adr/0001-integracion-kyc-facial.md`](docs/adr/0001-integracion-kyc-facial.md) | Contrato, riesgos y acuerdos con el servicio de KYC. |
 | [`docs/adr/0002-backend-de-autenticacion.md`](docs/adr/0002-backend-de-autenticacion.md) | Diseño del backend propio de auth. |

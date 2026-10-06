@@ -10,6 +10,8 @@
 
 services:
   - type: web
+    # El nombre quedó de cuando el servicio solo hacía auth: es el identificador en
+    # Render, y cambiarlo crearía un servicio nuevo.
     name: cuycash-auth
     runtime: docker
     rootDir: services/api

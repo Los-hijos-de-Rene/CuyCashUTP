@@ -5,8 +5,8 @@ El producto completo son 22 historias de usuario en 6 épicas repartidas en 6
 sprints: identidad/KYC, cuentas y motor transaccional, transferencias y
 antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 
-**Lo implementado hoy** es el Sprint 1 (identidad y accesos) más el grueso de
-las épicas 2 y una parte de la 3:
+**Lo implementado hoy** es el Sprint 1 (identidad y accesos) más la épica 2
+(cuentas y libro mayor) y una parte de la 3 (transferencia entre cuentas CuyCash):
 
 - Identidad: splash → onboarding → (login | registro con KYC) → home → perfil,
   más OTP, PIN y acceso rápido con bloqueo por intentos.
@@ -26,8 +26,14 @@ titular. El dashboard web está diferido.
 
 **Lo que no se ha comprobado:** la app y el backend se probaron cada uno contra
 su propio doble (la app contra `Memory*`, el backend por HTTP con su suite). La
-verificación en un emulador del flavor `local` contra `services/api` está
-descrita pero depende de quien la ejecute; no la des por hecha.
+verificación en un emulador del flavor `local` contra `services/api` **nunca se
+ha ejecutado**; el guion está en `docs/verificacion-manual.md`, con los pasos de
+pantalla marcados como inferidos del código.
+
+**Concurrencia sin probar.** Los dos tests marcados `postgres` (envíos cruzados
+y misma clave en paralelo) **nunca se han ejecutado contra un Postgres real**:
+el orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están
+razonados, no probados. Es la única garantía del sprint en ese estado.
 
 Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 `SLA_KPI_Banca_Online_Integral.xlsx`).
@@ -37,8 +43,8 @@ Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).
 - `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
 - `services/api` — backend de identidad, cuentas y libro mayor (FastAPI +
-  Postgres; SQLite para desarrollo y tests). Fuera del workspace de Flutter: `flutter analyze` y `flutter test` lo ignoran. Vive en
-  este repo para poder cambiar app y contrato en un mismo commit.
+  Postgres; SQLite para desarrollo y tests). Fuera del workspace de Flutter:
+  `flutter analyze` y `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato en un mismo commit.
 
 Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
 Flutter); UI + Bloc en `presentation/<x>/`. Features actuales: `auth`, `kyc`,
@@ -121,7 +127,8 @@ acepta SQLite y los hosts `localhost`/`127.0.0.1` (y rechaza `ENV=production`).
 Contra una base remota hay que pasar esa variable a propósito.
 
 **Tests que exigen Postgres** (el bloqueo de fila y la concurrencia no se
-pueden probar en SQLite; sin esta variable se omiten):
+pueden probar en SQLite; sin esta variable se omiten, y hasta hoy nadie los ha
+ejecutado contra un Postgres real):
 ```sh
 cd services/api
 TEST_POSTGRES_URL="postgresql+asyncpg://user:pass@localhost/cuycash_test" \
