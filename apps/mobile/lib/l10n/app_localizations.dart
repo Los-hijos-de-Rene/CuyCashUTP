@@ -1832,6 +1832,12 @@ abstract class AppLocalizations {
   /// **'Ese frecuente recibe en {simbolo}. Envía desde una cuenta en {simbolo}.'**
   String transferFrequentOtherCurrency(String simbolo);
 
+  /// No description provided for @transferFrequentIsOrigin.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese frecuente es la cuenta desde la que envías. Elige otra.'**
+  String get transferFrequentIsOrigin;
+
   /// No description provided for @transferRecipientAccountSemantics.
   ///
   /// In es, this message translates to:

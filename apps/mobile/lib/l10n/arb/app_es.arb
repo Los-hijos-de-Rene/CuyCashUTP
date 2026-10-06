@@ -323,6 +323,7 @@
   "@transferRecipientNoOwnEligible": {"placeholders": {"simbolo": {"type": "String"}}},
   "transferFrequentOtherCurrency": "Ese frecuente recibe en {simbolo}. Envía desde una cuenta en {simbolo}.",
   "@transferFrequentOtherCurrency": {"placeholders": {"simbolo": {"type": "String"}}},
+  "transferFrequentIsOrigin": "Ese frecuente es la cuenta desde la que envías. Elige otra.",
   "transferRecipientAccountSemantics": "Enviar a {linea}",
   "@transferRecipientAccountSemantics": {"placeholders": {"linea": {"type": "String"}}},
   "transferContinue": "Continuar",

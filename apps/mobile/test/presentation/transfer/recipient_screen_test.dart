@@ -222,4 +222,47 @@ void main() {
     expect(repo.busquedas, ['87654321']);
     expect(find.text('Ahorros · S/ · ••••7732'), findsOneWidget);
   });
+
+  testWidgets('un frecuente que es la cuenta de origen avisa y se queda', (
+    t,
+  ) async {
+    await pump(
+      t,
+      frecuentes: [
+        _frecuente(
+          cuenta: const RecipientAccount(
+            cuentaId: 'acc-demo-1',
+            tipo: AccountType.ahorro,
+            moneda: Currency.pen,
+            numeroMasked: '••••4521',
+          ),
+        ),
+      ],
+    );
+    await t.tap(find.text('Mamá'));
+    await t.pumpAndSettle();
+    expect(
+      find.text('Ese frecuente es la cuenta desde la que envías. Elige otra.'),
+      findsOneWidget,
+    );
+    expect(find.text('MONTO'), findsNothing);
+  });
+
+  testWidgets('tras un frecuente directo, al volver no quedan tarjetas viejas', (
+    t,
+  ) async {
+    await pump(t, frecuentes: [_frecuente(cuenta: cuentaDeDestinoDePrueba)]);
+    await t.enterText(find.byType(TextField), '87654321');
+    await t.pumpAndSettle();
+    expect(find.text('Corriente · S/ · ••••5510'), findsOneWidget);
+    await t.tap(find.text('Mamá'));
+    await t.pumpAndSettle();
+    expect(find.text('MONTO'), findsOneWidget);
+    expect(bloc.state.destinatario?.cuenta.cuentaId, 'acc-ext-1');
+    final contexto = t.element(find.text('MONTO'));
+    GoRouter.of(contexto).pop();
+    await t.pumpAndSettle();
+    expect(find.text('Corriente · S/ · ••••5510'), findsNothing);
+    expect(find.widgetWithText(TextField, '87654321'), findsNothing);
+  });
 }

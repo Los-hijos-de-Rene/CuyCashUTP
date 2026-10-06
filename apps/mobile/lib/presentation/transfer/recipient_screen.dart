@@ -74,7 +74,22 @@ class _RecipientScreenState extends State<RecipientScreen> {
               ),
             ),
           );
+      case final RecipientAccount c when c.cuentaId == origen?.id:
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).transferFrequentIsOrigin,
+              ),
+            ),
+          );
       case final RecipientAccount c:
+        // Al volver del monto no deben quedar el DNI ni las tarjetas de una
+        // búsqueda anterior: se limpia ANTES de elegir (limpiar borra el
+        // destinatario).
+        _controller.clear();
+        context.read<TransferBloc>().add(const TransferEvent.recipientCleared());
         _elegir(
           Recipient(
             dni: b.dni,
@@ -92,7 +107,17 @@ class _RecipientScreenState extends State<RecipientScreen> {
   }
 
   void _elegir(Recipient r) {
-    context.read<TransferBloc>().add(TransferEvent.recipientSelected(r));
+    final bloc = context.read<TransferBloc>();
+    // El bloc rechaza la misma cuenta y otra moneda, pero procesa el evento
+    // de forma asíncrona: se repite la guarda aquí para no ir al monto sin
+    // destinatario.
+    final origen = bloc.state.cuenta;
+    if (origen == null ||
+        r.cuenta.cuentaId == origen.id ||
+        r.cuenta.moneda != origen.moneda) {
+      return;
+    }
+    bloc.add(TransferEvent.recipientSelected(r));
     context.push(AppRoutes.enviarMonto);
   }
 

@@ -6,8 +6,7 @@ import '../../../l10n/app_localizations.dart';
 
 /// Fila horizontal de frecuentes. Tocar uno avisa con el frecuente entero;
 /// quien la usa decide qué hacer (ir al monto con su cuenta, o rellenar el
-/// DNI). Sin frecuentes no ocupa
-/// espacio.
+/// DNI). Sin frecuentes no ocupa espacio.
 class FrequentRow extends StatelessWidget {
   const FrequentRow({
     required this.beneficiarios,

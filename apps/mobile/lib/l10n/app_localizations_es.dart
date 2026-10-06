@@ -1025,6 +1025,10 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get transferFrequentIsOrigin =>
+      'Ese frecuente es la cuenta desde la que envías. Elige otra.';
+
+  @override
   String transferRecipientAccountSemantics(String linea) {
     return 'Enviar a $linea';
   }
