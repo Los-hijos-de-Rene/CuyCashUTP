@@ -6,6 +6,8 @@ import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
 import 'package:cuycash/feature/transfer/domain/recipient.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_account.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_directory.dart';
 import 'package:cuycash/feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
@@ -53,8 +55,7 @@ Future<TransferBloc> _preparado(
 }) async {
   final b = _bloc(repo, newKey: newKey);
   b.add(const TransferEvent.started(_cuenta));
-  b.add(const TransferEvent.recipientRequested('87654321'));
-  await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
+  b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
   b.add(const TransferEvent.amountEntered(monto: _monto));
   b.add(const TransferEvent.confirmationOpened());
   await b.stream.firstWhere((s) => s.idempotencyKey.isNotEmpty);
@@ -71,7 +72,7 @@ String Function() _claves() {
 void main() {
   group('búsqueda del destinatario', () {
     blocTest<TransferBloc, TransferState>(
-      'un DNI conocido deja al destinatario listo',
+      'un DNI conocido deja su directorio listo, sin elegir cuenta',
       build: () => _bloc(FakeTransferRepository()),
       seed: () => const TransferState(cuenta: _cuenta),
       act: (b) => b.add(const TransferEvent.recipientRequested('87654321')),
@@ -83,17 +84,13 @@ void main() {
         ),
         isA<TransferState>()
             .having((s) => s.status, 'status', TransferStatus.ready)
-            .having(
-              (s) => s.destinatario,
-              'destinatario',
-              destinatarioDePrueba,
-            ),
+            .having((s) => s.directorio, 'directorio', directorioDePrueba)
+            .having((s) => s.destinatario, 'destinatario', isNull),
       ],
     );
 
     for (final (nombre, falla) in [
       ('recipientNotFound', const TransferFailure.recipientNotFound()),
-      ('selfTransfer', const TransferFailure.selfTransfer()),
       ('rateLimited', const TransferFailure.rateLimited(Duration(seconds: 30))),
       ('network', const TransferFailure.network()),
       ('unexpected', const TransferFailure.unexpected()),
@@ -126,7 +123,7 @@ void main() {
     );
 
     test('la respuesta de un DNI que ya se editó se descarta', () async {
-      final primera = Completer<Result<TransferFailure, Recipient>>();
+      final primera = Completer<Result<TransferFailure, RecipientDirectory>>();
       final repo = FakeTransferRepository(alResolver: (_) => primera.future);
       final b = _bloc(repo);
       addTearDown(b.close);
@@ -135,11 +132,11 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       b.add(const TransferEvent.recipientCleared());
       await Future<void>.delayed(Duration.zero);
-      primera.complete(right(destinatarioDePrueba));
+      primera.complete(right(directorioDePrueba));
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
 
-      expect(b.state.destinatario, isNull);
+      expect(b.state.directorio, isNull);
       expect(b.state.status, TransferStatus.idle);
     });
   });
@@ -313,11 +310,163 @@ void main() {
     );
   });
 
+  group('cuenta elegida del directorio', () {
+    late FakeTransferRepository repo;
+
+    blocTest<TransferBloc, TransferState>(
+      'buscar un DNI guarda sus cuentas, sin elegir ninguna',
+      build: () => _bloc(FakeTransferRepository()),
+      act: (b) {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(const TransferEvent.recipientRequested('87654321'));
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (b) {
+        expect(b.state.directorio?.cuentas, hasLength(3));
+        expect(b.state.destinatario, isNull);
+      },
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'elegir otra cuenta del mismo DNI tras abrir la confirmación cambia '
+      'la clave',
+      build: () => _bloc(FakeTransferRepository(), newKey: _claves()),
+      act: (b) async {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
+        b.add(const TransferEvent.amountEntered(monto: _monto));
+        b.add(const TransferEvent.confirmationOpened());
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        b.add(
+          TransferEvent.recipientSelected(
+            Recipient(
+              dni: '87654321',
+              nombreEnmascarado: 'J*** M*** R***',
+              cuenta: directorioDePrueba.cuentas[1],
+            ),
+          ),
+        );
+        b.add(const TransferEvent.confirmationOpened());
+      },
+      wait: const Duration(milliseconds: 20),
+      verify: (b) {
+        expect(b.state.destinatario?.cuenta.cuentaId, 'acc-ext-2');
+        expect(b.state.idempotencyKey, 'clave-generada-2');
+      },
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'elegir la misma cuenta otra vez conserva la clave',
+      build: () => _bloc(FakeTransferRepository(), newKey: _claves()),
+      act: (b) async {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
+        b.add(const TransferEvent.amountEntered(monto: _monto));
+        b.add(const TransferEvent.confirmationOpened());
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
+      },
+      wait: const Duration(milliseconds: 20),
+      verify: (b) => expect(b.state.idempotencyKey, 'clave-generada-1'),
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'una cuenta de otra moneda no se elige',
+      build: () => _bloc(FakeTransferRepository()),
+      act: (b) {
+        b.add(const TransferEvent.started(_cuenta)); // soles
+        b.add(
+          TransferEvent.recipientSelected(
+            Recipient(
+              dni: '87654321',
+              nombreEnmascarado: 'J*** M*** R***',
+              cuenta: directorioDePrueba.cuentas[2], // dólares
+            ),
+          ),
+        );
+      },
+      verify: (b) {
+        expect(b.state.destinatario, isNull);
+        expect(b.state.failure, isA<CurrencyMismatch>());
+      },
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'la cuenta de origen no se elige como destino',
+      build: () => _bloc(FakeTransferRepository()),
+      act: (b) {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(
+          const TransferEvent.recipientSelected(
+            Recipient(
+              dni: '70123456',
+              nombreEnmascarado: 'T*** P***',
+              cuenta: RecipientAccount(
+                cuentaId: MemoryTransferRepository.cuentaId,
+                tipo: AccountType.ahorro,
+                moneda: Currency.pen,
+                numeroMasked: '••••4521',
+              ),
+            ),
+          ),
+        );
+      },
+      verify: (b) {
+        expect(b.state.destinatario, isNull);
+        expect(b.state.failure, isA<SameAccount>());
+      },
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'enviar manda la cuenta elegida',
+      build: () => _bloc(repo = FakeTransferRepository()),
+      act: (b) async {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(
+          TransferEvent.recipientSelected(
+            Recipient(
+              dni: '87654321',
+              nombreEnmascarado: 'J*** M*** R***',
+              cuenta: directorioDePrueba.cuentas[1],
+            ),
+          ),
+        );
+        b.add(const TransferEvent.amountEntered(monto: _monto));
+        b.add(const TransferEvent.confirmationOpened());
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        b.add(const TransferEvent.submitted(pin: '000000'));
+      },
+      wait: const Duration(milliseconds: 20),
+      verify: (_) => expect(repo.cuentasDestino, ['acc-ext-2']),
+    );
+
+    blocTest<TransferBloc, TransferState>(
+      'una respuesta tardía de un DNI anterior se descarta',
+      build: () => _bloc(
+        FakeTransferRepository(
+          alResolver: (dni) async {
+            if (dni == '11111111') {
+              await Future<void>.delayed(const Duration(milliseconds: 30));
+            }
+            return right(directorioDePrueba);
+          },
+        ),
+      ),
+      act: (b) async {
+        b.add(const TransferEvent.started(_cuenta));
+        b.add(const TransferEvent.recipientRequested('11111111'));
+        b.add(const TransferEvent.recipientCleared());
+      },
+      wait: const Duration(milliseconds: 60),
+      verify: (b) => expect(b.state.directorio, isNull),
+    );
+  });
+
   group('un caso por failure del envío', () {
     final casos = <(String, TransferFailure)>[
       ('insufficientFunds', const TransferFailure.insufficientFunds()),
       ('recipientNotFound', const TransferFailure.recipientNotFound()),
-      ('selfTransfer', const TransferFailure.selfTransfer()),
+      ('sameAccount', const TransferFailure.sameAccount()),
       ('wrongPin', const TransferFailure.wrongPin(3)),
       (
         'identifierLocked',
@@ -458,8 +607,7 @@ void main() {
       );
       addTearDown(b.close);
       b.add(const TransferEvent.started(_cuenta));
-      b.add(const TransferEvent.recipientRequested('87654321'));
-      await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
+      b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
       b.add(TransferEvent.amountEntered(monto: monto, motivo: motivo));
       b.add(const TransferEvent.confirmationOpened());
       await b.stream.firstWhere((s) => s.idempotencyKey.isNotEmpty);

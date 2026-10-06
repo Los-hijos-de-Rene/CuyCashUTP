@@ -33,10 +33,10 @@ class _FrecuentesQueFallan implements BeneficiaryRepository {
       left(const GlobalFailure.server(BeneficiaryFailure.network()));
 
   @override
-  FutureResult<BeneficiaryFailure, Unit> guardar(
-    String dni,
-    String apodo,
-  ) async =>
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  }) async =>
       left(const GlobalFailure.server(BeneficiaryFailure.rateLimited(null)));
 
   @override
@@ -56,8 +56,7 @@ Future<TransferBloc> _hastaConfirmar(
     beneficiaries: BeneficiaryActions(frecuentes),
   );
   b.add(const TransferEvent.started(_cuenta));
-  b.add(const TransferEvent.recipientRequested('87654321'));
-  await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
+  b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
   if (guardar) b.add(const TransferEvent.saveFrequentToggled(true));
   b.add(const TransferEvent.amountEntered(monto: _monto));
   b.add(const TransferEvent.confirmationOpened());
@@ -85,6 +84,7 @@ void main() {
 
     final guardado = await _guardado(frecuentes);
     expect(guardado?.dni, '87654321');
+    expect(guardado?.cuenta?.cuentaId, 'acc-ext-1');
     expect(guardado?.apodo, 'J*** M*** R***');
     expect(b.state.frecuenteNoGuardado, isFalse);
     await b.close();

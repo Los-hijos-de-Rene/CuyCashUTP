@@ -33,7 +33,7 @@ class ReceiptScreen extends StatelessWidget {
             estado: 'confirmada',
             contraparteLabel: l10n.transferReceiptTo,
             contraparte: destinatario?.nombreEnmascarado,
-            cuentaDestinoMasked: destinatario?.cuentaDestinoMasked,
+            cuentaDestinoMasked: destinatario?.cuenta.numeroMasked,
             motivo: state.motivo,
             reutilizada: constancia.reutilizada,
           );

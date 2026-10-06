@@ -237,7 +237,7 @@ class _Summary extends StatelessWidget {
           if (state.destinatario case final d?)
             _Row(
               label: l10n.transferSummaryTo,
-              value: '${d.nombreEnmascarado} · ${d.cuentaDestinoMasked}',
+              value: '${d.nombreEnmascarado} · ${d.cuenta.numeroMasked}',
             ),
           if (state.cuenta case final c?)
             _Row(label: l10n.transferSummaryFrom, value: c.numeroMasked),
