@@ -135,7 +135,6 @@ void main() {
           builder: (context, setState) {
             rebuild = setState;
             return AccountCarousel(
-              key: ValueKey('c$n'.substring(0, 1)),
               cuentas: tres,
               seleccionada: 2,
               onSelected: (_) {},
