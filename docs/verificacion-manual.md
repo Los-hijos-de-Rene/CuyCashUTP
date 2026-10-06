@@ -82,4 +82,15 @@ Qué significa que falle: si el importe sale distinto en un lado (p. ej. 12550 v
 ### Paso 10. Reintento idempotente (opcional)
  Desde curl, repite un `POST /v1/transfers` con la misma `idempotency_key` y el mismo cuerpo (ver el recorrido HTTP del backend: `POST /v1/transfers` con `Authorization: Bearer <token>` y el mismo cuerpo): 200 con la misma transacción y sin cambio de saldo. En la app, la prueba equivalente es enviar, matar la red (modo avión) justo al confirmar y reintentar: no debe cobrar dos veces. Si cobra dos veces, la clave no se está persistiendo (`pending_transfer_store`).
 
+### Perfil y huella (no ejecutado)
+
+Todos los pasos son [inferido] del código; ninguno se ha ejecutado. Requiere el esquema recreado (`scripts/reset_schema.py`) y un teléfono con huella.
+
+1. [inferido] Perfil → Datos personales: ver nombres, DNI y correo enmascarado.
+2. [inferido] Editar alias a `prueba_01`: el saludo del inicio cambia.
+3. [inferido] Cambiar PIN: `PIN actual → nuevo → confirmar`; salir y entrar con el nuevo.
+4. [inferido] Acceso biométrico: encender (PIN + huella del sistema); cerrar la app y entrar con la huella desde el acceso rápido.
+5. [inferido] Desde un segundo teléfono vinculado, desvincular el primero: el primero vuelve al login y su huella deja de funcionar (aviso "Tu acceso con huella ya no es válido").
+6. [inferido] Cambiar el PIN desde el segundo teléfono: la huella del primero deja de funcionar.
+
 Al terminar: Ctrl+C en el backend y `rm services/api/cuycash.db`.

@@ -282,13 +282,18 @@ son dinero.
 
 | Tabla | Rol |
 |---|---|
-| `devices` | Teléfonos vinculados. Sin vínculo, entrar exige OTP. |
+| `devices` | Teléfonos vinculados. Sin vínculo, entrar exige OTP. Lleva `nombre` (String 80) y `plataforma` (String 20), nulables, tomados de `X-Device-Name` (`plataforma\|modelo`); solo sirven para mostrar. |
+| `biometric_credentials` | Secreto que libera la huella. Columnas: `id`, `user_id`, `device_id`, `secret_hash` (único, SHA-256), `created_at`, `revoked_at`. Revocar es poner `revoked_at`; la fila no se borra ni vuelve a valer. |
 | `sessions` | Sesiones abiertas. Guarda el hash del token, no el token. |
 | `lockouts` | Bloqueos vigentes por DNI y por dispositivo, con nivel de escalado. |
 | `login_attempts` | Una fila por intento. Sostiene la ventana deslizante y la auditoría. |
 | `otp_challenges` | Desafío OTP con su código hasheado, vigencia y contadores. |
 | `otp_tickets` | Prueba de que un OTP se verificó. Lo exige el restablecimiento de PIN. |
 | `kyc_verifications` | Veredicto y distancias faciales. **Nunca las imágenes.** |
+
+Nota: `devices.nombre`, `devices.plataforma` y la tabla `biometric_credentials`
+son posteriores; `create_all` no altera tablas existentes, así que las bases
+creadas antes exigen `scripts/reset_schema.py`.
 
 ### Tablas implementadas de dinero (épicas 2 y 3)
 
