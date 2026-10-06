@@ -5,11 +5,31 @@ App móvil de banca digital para Perú. Proyecto universitario (UTP, 2026).
 El alcance del producto cubre onboarding con KYC biométrico facial,
 autenticación multifactor, cuentas, transferencias, préstamos digitales,
 billetera/QR, motor transaccional, conciliación, antifraude y cumplimiento
-PLDFT. Este repositorio contiene **la app móvil y el backend de identidad**; el
-resto de módulos está planificado por sprints (ver [`docs/sla-kpi.md`](docs/sla-kpi.md)).
+PLDFT. Este repositorio contiene **la app móvil y un backend de identidad,
+cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
+[`docs/sla-kpi.md`](docs/sla-kpi.md)).
 
-Implementado hoy: splash, onboarding, registro con KYC facial, ingreso con
-DNI + PIN, OTP, acceso rápido con bloqueo por intentos, home y perfil.
+**Implementado hoy**
+
+- Identidad: splash, onboarding, registro con KYC facial, ingreso con DNI + PIN,
+  OTP, acceso rápido con bloqueo por intentos, home y perfil.
+- Cuentas: una cuenta de ahorro en soles por titular, con saldo e historial de
+  movimientos.
+- Libro mayor con partida doble, idempotencia y bloqueo de fila.
+- Envío de dinero a otro titular de CuyCash por DNI, confirmado con PIN.
+- Recarga de saldo, **simulada**: el dinero sale de una cuenta de sistema, no de
+  un medio de pago real.
+- Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+
+**No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
+antifraude, conciliación y cumplimiento PLDFT. Tampoco cuentas en USD ni varias
+cuentas por titular.
+
+**Estado de la verificación.** La app y el backend tienen sus propias suites
+(contra dobles en memoria la app, por HTTP contra SQLite el backend), y el
+recorrido del backend se ejercitó a mano con `curl`. La prueba con la app
+real hablando con el backend (flavor `local`, en emulador) **no se ha
+registrado todavía**.
 
 ---
 
@@ -18,7 +38,7 @@ DNI + PIN, OTP, acceso rápido con bloqueo por intentos, home y perfil.
 ### Requisitos
 
 - Flutter (canal estable) con un emulador Android o simulador iOS.
-- Python 3.11+ solo si vas a correr `services/api`.
+- Python 3.9+ solo si vas a correr `services/api` (la suite corre en 3.9; la imagen Docker usa 3.10).
 - Docker solo si quieres ese servicio con Postgres.
 
 ### La ruta rápida: flavor `mock`
@@ -34,7 +54,7 @@ flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.m
 Todos los repositorios son `Memory*`. El **PIN válido es `000000`** y el KYC se
 resuelve sin cámara real.
 
-### Contra el backend de identidad: flavor `local`
+### Contra el backend: flavor `local`
 
 Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 
@@ -44,6 +64,11 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
   .venv/bin/uvicorn app.main:app --reload --port 8001
 ```
+
+Si cambiaste los modelos y ya tenías una base, el servicio no altera tablas
+existentes (`create_all` solo crea las que faltan): recrea el esquema, que
+**borra todos los datos**, con `.venv/bin/python scripts/reset_schema.py`. Sin
+`ALLOW_DESTRUCTIVE_RESET=1` solo acepta SQLite y `localhost`/`127.0.0.1`.
 
 Con Postgres: `cp .env.example .env && docker compose up --build`.
 Docs interactivas en `http://localhost:8001/docs`. Detalle en
@@ -66,6 +91,10 @@ dart run build_runner build --delete-conflicting-outputs   # freezed
 cd apps/mobile && flutter gen-l10n   # regenera l10n desde los ARB
 cd services/api && .venv/bin/python -m pytest             # tests del backend
 ```
+
+Los tests de concurrencia del libro exigen Postgres real y se omiten sin él
+(`pytest -m postgres` con `TEST_POSTGRES_URL`; la base debe terminar en
+`_test`). Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 `services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato
@@ -119,8 +148,9 @@ IP del PC en la red local.
 apps/mobile             App Flutter (Bloc).
 packages/core_kernel    Result/Either, GlobalFailure, ExceptionMapper, ids. Dart puro.
 packages/design_system  Tokens "Eucalipto y Ocre", theme, componentes.
-services/api            Backend de identidad (FastAPI + Postgres). Fuera del workspace Flutter.
+services/api            Backend de identidad, cuentas y libro mayor (FastAPI + Postgres). Fuera del workspace Flutter.
 docs/adr                Decisiones de arquitectura.
+docs/modelo-datos.md    Modelo de datos: tablas implementadas y diseñadas.
 docs/superpowers/specs  Diseño de las funcionalidades implementadas.
 docs/sla-kpi.md         SLA, KPI, backlog y plan de sprints.
 ```
@@ -141,7 +171,7 @@ lib/presentation/<x>/   Widgets + Bloc.
 ```
 
 `feature/auth` es la plantilla: cópiala para features nuevas. Features actuales:
-`auth`, `kyc`, `otp`, `device`, `lockout`.
+`auth`, `kyc`, `otp`, `device`, `lockout`, `account`, `transfer`, `beneficiary`.
 
 ### Composición y arranque
 
@@ -167,6 +197,10 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 7. Copy es-PE en ARB; cero strings de UI hardcodeados.
 8. Un widget público por archivo; `.freezed.dart` y l10n generados se commitean.
 9. `auth` es la feature plantilla — cópiala para features nuevas.
+10. El dinero es un `int` de céntimos envuelto en `Money`; ningún `double`
+    representa dinero.
+11. Toda escritura de dinero pasa por `services/api/app/services/ledger.py` y
+    lleva `idempotency_key`.
 
 ---
 
@@ -176,6 +210,7 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Guía de trabajo en el repo (arquitectura, comandos, reglas). |
 | [`docs/sla-kpi.md`](docs/sla-kpi.md) | SLA por módulo, KPI de negocio y ágiles, backlog y sprints. |
+| [`docs/modelo-datos.md`](docs/modelo-datos.md) | Modelo de datos: tablas implementadas (con sus columnas) y diseñadas. |
 | [`docs/adr/0001-integracion-kyc-facial.md`](docs/adr/0001-integracion-kyc-facial.md) | Contrato, riesgos y acuerdos con el servicio de KYC. |
 | [`docs/adr/0002-backend-de-autenticacion.md`](docs/adr/0002-backend-de-autenticacion.md) | Diseño del backend propio de auth. |
 | [`docs/superpowers/specs/`](docs/superpowers/specs/) | Diseño de las funcionalidades implementadas. |
