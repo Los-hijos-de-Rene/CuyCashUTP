@@ -4,6 +4,7 @@ import 'package:cuycash/feature/account/application/account_actions.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
 import 'package:cuycash/feature/account/domain/account_repository.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_account_repository.dart';
 import 'package:cuycash/presentation/movement/bloc/movement_detail_bloc.dart';
@@ -25,6 +26,21 @@ class _SinRed implements AccountRepository {
   FutureResult<AccountFailure, MovementDetail> movimiento(
     String transactionId,
   ) async => left(const GlobalFailure.noConnection());
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) async => left(const GlobalFailure.server(AccountFailure.network()));
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) async => left(const GlobalFailure.server(AccountFailure.network()));
 }
 
 void main() {

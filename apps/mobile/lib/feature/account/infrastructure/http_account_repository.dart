@@ -67,6 +67,43 @@ class HttpAccountRepository implements AccountRepository {
         return right(_detalle(_cuerpo(response)));
       });
 
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) => _guard(() async {
+    final response = await _dio.post<dynamic>(
+      '/v1/accounts',
+      data: {
+        'tipo': tipo.code,
+        'moneda': moneda.code,
+        'nombre': nombre,
+        'pin': pin,
+        'idempotency_key': idempotencyKey,
+      },
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
+    return right(_cuenta(_cuerpo(response)));
+  });
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) => _guard(() async {
+    final response = await _dio.patch<dynamic>(
+      '/v1/accounts/${Uri.encodeComponent(cuentaId)}/nombre',
+      data: {'nombre': nombre},
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
+    return right(_cuenta(_cuerpo(response)));
+  });
+
   Map<String, dynamic> _cuerpo(Response<dynamic> response) {
     final data = response.data;
     if (data is Map<String, dynamic>) return data;
@@ -168,13 +205,33 @@ class HttpAccountRepository implements AccountRepository {
     if (status == 401) return const AccountFailure.unauthenticated();
 
     final data = response.data;
-    final code = data is Map ? data['code'] : null;
-    return switch ((status, code)) {
-      (404, 'ACCOUNT_NOT_FOUND' || 'MOVEMENT_NOT_FOUND') =>
-        const AccountFailure.accountNotFound(),
+    final body = data is Map ? data : const <Object?, Object?>{};
+    return switch (body['code']) {
+      'ACCOUNT_NOT_FOUND' ||
+      'MOVEMENT_NOT_FOUND' => const AccountFailure.accountNotFound(),
+      'ACCOUNT_LIMIT_REACHED' => const AccountFailure.limitReached(),
+      'SALARY_ACCOUNT_EXISTS' => const AccountFailure.salaryAccountExists(),
+      'INVALID_ACCOUNT_CURRENCY' => const AccountFailure.invalidCurrency(),
+      'INVALID_ACCOUNT_NAME' => const AccountFailure.invalidName(),
+      'IDEMPOTENCY_KEY_REUSED' => const AccountFailure.idempotencyKeyReused(),
+      'INVALID_CREDENTIALS' => switch (body['intentos_restantes']) {
+        final int n => AccountFailure.wrongPin(n),
+        _ => const AccountFailure.unexpected(),
+      },
+      'IDENTIFIER_LOCKED' || 'DEVICE_LOCKED' =>
+        switch (_instante(body['locked_until'])) {
+          final DateTime hasta => AccountFailure.locked(hasta),
+          _ => const AccountFailure.unexpected(),
+        },
       _ => const AccountFailure.unexpected(),
     };
   }
+
+  /// Instante del servidor; sin sufijo de zona se fuerza UTC.
+  DateTime? _instante(Object? crudo) =>
+      crudo is String && DateTime.tryParse(crudo) != null
+      ? _fecha(crudo)
+      : null;
 
   Future<Either<GlobalFailure<AccountFailure>, T>> _guard<T>(
     Future<Either<GlobalFailure<AccountFailure>, T>> Function() call,

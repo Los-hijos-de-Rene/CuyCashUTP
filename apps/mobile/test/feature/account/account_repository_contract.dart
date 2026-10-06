@@ -248,5 +248,57 @@ void probarContratoDeCuentas(
       expect(detalle.saldoPosterior, fila.saldoPosterior);
       expect(detalle.fecha, fila.fecha);
     });
+
+    test('abrir una cuenta la agrega a la lista', () async {
+      final repo = construir();
+      final nueva = valorDe(
+        await repo.abrir(
+          tipo: AccountType.corriente,
+          moneda: Currency.usd,
+          nombre: 'Viaje',
+          pin: '000000',
+          idempotencyKey: 'abrir-contrato-01',
+        ),
+      );
+
+      expect(nueva.tipo, AccountType.corriente);
+      expect(nueva.moneda, Currency.usd);
+      expect(nueva.nombre, 'Viaje');
+      expect(nueva.saldoDisponible, Money.zero(Currency.usd));
+      final ids = valorDe(await repo.cuentas()).map((c) => c.id);
+      expect(ids, contains(nueva.id));
+    });
+
+    test(
+      'reintentar la apertura con la misma clave devuelve la misma cuenta',
+      () async {
+        final repo = construir();
+        Future<Account> abrir() async => valorDe(
+          await repo.abrir(
+            tipo: AccountType.ahorro,
+            moneda: Currency.pen,
+            pin: '000000',
+            idempotencyKey: 'abrir-contrato-02',
+          ),
+        );
+        final a = await abrir();
+        final b = await abrir();
+        expect(b.id, a.id);
+      },
+    );
+
+    test('renombrar devuelve la cuenta con su nombre nuevo', () async {
+      final repo = construir();
+      final c = await primeraCuenta(repo);
+      expect(valorDe(await repo.renombrar(c.id, 'Casa')).nombre, 'Casa');
+      expect(valorDe(await repo.renombrar(c.id, null)).nombre, isNull);
+    });
+
+    test('renombrar una cuenta inexistente es accountNotFound', () async {
+      expect(
+        falloDe(await construir().renombrar('no-existe', 'X')),
+        isA<AccountNotFound>(),
+      );
+    });
   });
 }

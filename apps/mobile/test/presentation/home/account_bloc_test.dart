@@ -4,6 +4,7 @@ import 'package:cuycash/feature/account/application/account_actions.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
 import 'package:cuycash/feature/account/domain/account_repository.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_account_repository.dart';
 import 'package:cuycash/presentation/home/bloc/account_bloc.dart';
@@ -34,6 +35,27 @@ class _CountingRepo implements AccountRepository {
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(String id) =>
       _inner.movimiento(id);
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) => _inner.abrir(
+    tipo: tipo,
+    moneda: moneda,
+    nombre: nombre,
+    pin: pin,
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) => _inner.renombrar(cuentaId, nombre);
 }
 
 /// Repo con interruptor de fallo y latencia solo para las páginas con cursor.
@@ -63,6 +85,27 @@ class _GuionRepo implements AccountRepository {
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(String id) =>
       _inner.movimiento(id);
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) => _inner.abrir(
+    tipo: tipo,
+    moneda: moneda,
+    nombre: nombre,
+    pin: pin,
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) => _inner.renombrar(cuentaId, nombre);
 }
 
 class _RepoQueFalla implements AccountRepository {
@@ -79,6 +122,21 @@ class _RepoQueFalla implements AccountRepository {
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(String id) async =>
       left(const GlobalFailure.server(AccountFailure.network()));
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) async => left(const GlobalFailure.server(AccountFailure.network()));
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) async => left(const GlobalFailure.server(AccountFailure.network()));
 }
 
 void main() {

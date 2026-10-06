@@ -403,4 +403,19 @@ class _RepoCaido implements AccountRepository {
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(String id) async =>
       left(_caida);
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) async => left(_caida);
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) async => left(_caida);
 }

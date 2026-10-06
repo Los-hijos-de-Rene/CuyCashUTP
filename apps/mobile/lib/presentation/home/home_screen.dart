@@ -217,6 +217,13 @@ class _ErrorView extends StatelessWidget {
       null ||
       AccountNotFound() ||
       Unauthenticated() ||
+      AccountLimitReached() ||
+      SalaryAccountExists() ||
+      InvalidAccountCurrency() ||
+      InvalidAccountName() ||
+      AccountWrongPin() ||
+      AccountLocked() ||
+      AccountKeyReused() ||
       UnexpectedFailure() => l10n.homeErrorGeneric,
     };
     return Padding(

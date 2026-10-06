@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/infrastructure/http_account_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,11 @@ class FakeAccountsBackend implements HttpClientAdapter {
 
   /// Tamaño de página del "servidor" (el real usa `limit`, 20 por defecto).
   int pageSize = 20;
+
+  /// Cuentas abiertas por `POST /v1/accounts`, además de la de demo.
+  final _abiertas = <Map<String, Object?>>[];
+  final _porClave = <String, Map<String, Object?>>{};
+  final _nombres = <String, String?>{};
 
   static const _movimientos = <Map<String, Object?>>[
     {
@@ -83,7 +89,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
     if (throwIt case final error?) throw error;
     final (status, body) = switch (forced) {
       final f? => (f.status, f.body),
-      _ => _route(options.uri.path, options.queryParameters),
+      _ => _route(options),
     };
     return ResponseBody.fromString(
       body is String ? body : jsonEncode(body),
@@ -94,25 +100,61 @@ class FakeAccountsBackend implements HttpClientAdapter {
     );
   }
 
-  (int, Object?) _route(String path, Map<String, dynamic> query) {
+  Map<String, Object?> get _demo => {
+    'id': 'acc-demo-1',
+    'numero': '19100000004521',
+    'tipo': 'ahorro',
+    'moneda': 'PEN',
+    'estado': 'activa',
+    'nombre': _nombres['acc-demo-1'],
+    'saldo_disponible': 125040,
+    'saldo_contable': 125040,
+  };
+
+  (int, Object?) _route(RequestOptions options) {
+    final path = options.uri.path;
+    final query = options.queryParameters;
+    if (path == '/v1/accounts' && options.method == 'POST') {
+      final body = options.data as Map;
+      final clave = body['idempotency_key'] as String;
+      if (_porClave[clave] case final previa?) return (200, previa);
+      final n = _abiertas.length + 1;
+      final cuenta = <String, Object?>{
+        'id': 'acc-http-$n',
+        'numero': '191000000099${n.toString().padLeft(2, '0')}',
+        'tipo': body['tipo'],
+        'moneda': body['moneda'],
+        'estado': 'activa',
+        'nombre': body['nombre'],
+        'saldo_disponible': 0,
+        'saldo_contable': 0,
+      };
+      _abiertas.add(cuenta);
+      _porClave[clave] = cuenta;
+      return (201, cuenta);
+    }
     if (path == '/v1/accounts') {
       return (
         200,
         {
-          'cuentas': [
-            {
-              'id': 'acc-demo-1',
-              'numero': '19100000004521',
-              'tipo': 'ahorro',
-              'moneda': 'PEN',
-              'estado': 'activa',
-              'nombre': null,
-              'saldo_disponible': 125040,
-              'saldo_contable': 125040,
-            },
-          ],
+          'cuentas': [_demo, ..._abiertas],
         },
       );
+    }
+    if (path.endsWith('/nombre') && options.method == 'PATCH') {
+      final id = path.split('/')[3];
+      final nombre = (options.data as Map)['nombre'] as String?;
+      if (id == 'acc-demo-1') {
+        _nombres[id] = nombre;
+        return (200, _demo);
+      }
+      for (final c in _abiertas) {
+        if (c['id'] == id) {
+          c['nombre'] = nombre;
+          return (200, c);
+        }
+      }
+      return (404, _error404);
     }
     if (path == '/v1/accounts/acc-demo-1/movements') {
       // Cursor opaco = índice del siguiente; ilegible empieza por el principio.
@@ -312,6 +354,73 @@ void main() {
       );
 
       expect((await repo.movimientos('acc-demo-1')).isLeft(), isTrue);
+    });
+  });
+
+  group('errores de abrir', () {
+    Future<AccountFailure> falla(int status, Map<String, Object?> body) async {
+      backend.forced = (status: status, body: body);
+      final r = await repo.abrir(
+        tipo: AccountType.ahorro,
+        moneda: Currency.pen,
+        pin: '1',
+        idempotencyKey: 'k-000001',
+      );
+      return falloDe(r);
+    }
+
+    test('mapea cada code', () async {
+      expect(
+        await falla(409, {'code': 'ACCOUNT_LIMIT_REACHED'}),
+        isA<AccountLimitReached>(),
+      );
+      expect(
+        await falla(409, {'code': 'SALARY_ACCOUNT_EXISTS'}),
+        isA<SalaryAccountExists>(),
+      );
+      expect(
+        await falla(400, {'code': 'INVALID_ACCOUNT_CURRENCY'}),
+        isA<InvalidAccountCurrency>(),
+      );
+      expect(
+        await falla(400, {'code': 'INVALID_ACCOUNT_NAME'}),
+        isA<InvalidAccountName>(),
+      );
+      expect(
+        await falla(409, {'code': 'IDEMPOTENCY_KEY_REUSED'}),
+        isA<AccountKeyReused>(),
+      );
+      expect(
+        await falla(403, {'code': 'INVALID_CREDENTIALS', 'intentos_restantes': 2}),
+        isA<AccountWrongPin>().having((f) => f.intentosRestantes, 'restantes', 2),
+      );
+      expect(
+        await falla(423, {
+          'code': 'DEVICE_LOCKED',
+          'locked_until': '2026-10-06T15:00:00+00:00',
+        }),
+        isA<AccountLocked>(),
+      );
+    });
+
+    test('abrir manda el body del contrato', () async {
+      await repo.abrir(
+        tipo: AccountType.sueldo,
+        moneda: Currency.pen,
+        nombre: 'Planilla',
+        pin: '000000',
+        idempotencyKey: 'k-000002',
+      );
+      final req = backend.requests.last;
+      expect(req.method, 'POST');
+      expect(req.path, '/v1/accounts');
+      expect(req.data, {
+        'tipo': 'sueldo',
+        'moneda': 'PEN',
+        'nombre': 'Planilla',
+        'pin': '000000',
+        'idempotency_key': 'k-000002',
+      });
     });
   });
 

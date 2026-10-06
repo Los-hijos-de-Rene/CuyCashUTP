@@ -2,7 +2,9 @@ import 'package:core_kernel/core_kernel.dart';
 
 import '../domain/account.dart';
 import '../domain/account_failure.dart';
+import '../domain/account_limits.dart';
 import '../domain/account_repository.dart';
+import '../domain/account_type.dart';
 import '../domain/movement.dart';
 
 /// Operaciones FINAS de cuentas (delegación directa sobre el
@@ -26,4 +28,23 @@ class AccountActions {
     String transactionId,
   ) =>
       _repo.movimiento(transactionId);
+
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) => _repo.abrir(
+    tipo: tipo,
+    moneda: moneda,
+    nombre: AccountLimits.normalizarNombre(nombre),
+    pin: pin,
+    idempotencyKey: idempotencyKey,
+  );
+
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) => _repo.renombrar(cuentaId, AccountLimits.normalizarNombre(nombre));
 }
