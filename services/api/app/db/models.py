@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -213,6 +214,13 @@ class Account(Base):
     tipo: Mapped[str] = mapped_column(String(10), default="ahorro")
     moneda: Mapped[str] = mapped_column(String(3), default="PEN")
     estado: Mapped[str] = mapped_column(String(10), default="activa")
+    # Lo pone el titular ("Viaje"); solo lo ve él. Quien le envía dinero ve el
+    # tipo y la moneda, nunca esto.
+    nombre: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    # Clave de la petición que abrió la cuenta: un reintento con la misma clave
+    # devuelve esta cuenta en vez de abrir otra. `None` en la de registro y en
+    # las cajas.
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     # Céntimos. El disponible descuenta lo retenido; el contable no.
     saldo_disponible: Mapped[int] = mapped_column(BigInteger, default=0)
     saldo_contable: Mapped[int] = mapped_column(BigInteger, default=0)
@@ -220,8 +228,24 @@ class Account(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "tipo IN ('ahorro','corriente','sistema')", name="ck_accounts_tipo"
+            "tipo IN ('ahorro','corriente','sueldo','sistema')", name="ck_accounts_tipo"
         ),
+        # La cuenta sueldo existe para recibir la planilla, que en Perú se paga
+        # en soles.
+        CheckConstraint(
+            "tipo <> 'sueldo' OR moneda = 'PEN'", name="ck_accounts_sueldo_en_soles"
+        ),
+        # Una sueldo por titular. Índice parcial y no regla del servicio: dos
+        # aperturas simultáneas verían "no hay" y abrirían dos.
+        Index(
+            "ux_accounts_un_sueldo",
+            "user_id",
+            unique=True,
+            sqlite_where=text("tipo = 'sueldo'"),
+            postgresql_where=text("tipo = 'sueldo'"),
+        ),
+        # La clave de apertura es única POR TITULAR: la de otro no debe chocar.
+        UniqueConstraint("user_id", "idempotency_key", name="uq_accounts_clave_apertura"),
         CheckConstraint("moneda IN ('PEN','USD')", name="ck_accounts_moneda"),
         CheckConstraint(
             "estado IN ('activa','bloqueada','cerrada')", name="ck_accounts_estado"
@@ -328,17 +352,23 @@ class LedgerEntry(Base):
 
 class Beneficiary(Base):
     """
-    Destinatario guardado por un titular. Solo el DNI y un apodo: el nombre y
-    la cuenta se resuelven al usarlo, para que un cambio en el destinatario no
-    deje copias desactualizadas aquí.
+    Una CUENTA guardada por un titular, con un apodo.
+
+    Se guarda la cuenta y no solo el DNI porque una persona puede tener varias:
+    el frecuente es "la de ahorros en soles de Luis", no "Luis". El DNI se
+    conserva para pintar y para volver a buscar si esa cuenta deja de recibir.
+    El nombre y el número enmascarado se calculan al leer.
     """
 
     __tablename__ = "beneficiaries"
-    __table_args__ = (UniqueConstraint("user_id", "beneficiario_dni"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "cuenta_destino_id", name="uq_beneficiaries_user_cuenta"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     beneficiario_dni: Mapped[str] = mapped_column(String(8), index=True)
+    cuenta_destino_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
     apodo: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

@@ -170,14 +170,16 @@ async def test_recarga_es_un_tipo_de_transaccion_valido(db):
 
 
 async def test_un_beneficiario_no_se_duplica_para_el_mismo_titular(db):
-    """Guardar dos veces el mismo DNI actualiza el apodo, no crea otra fila."""
+    """Guardar dos veces la misma cuenta actualiza el apodo, no crea otra fila."""
     from app.db.models import Beneficiary
 
     cuenta = await _cuenta(db, "10000008", "00000000000008", 0)
-    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567", apodo="Jenny"))
+    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567",
+                    cuenta_destino_id=cuenta.id, apodo="Jenny"))
     await db.commit()
 
-    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567", apodo="Jenny 2"))
+    db.add(Beneficiary(user_id=cuenta.user_id, beneficiario_dni="71234567",
+                    cuenta_destino_id=cuenta.id, apodo="Jenny 2"))
     with pytest.raises(IntegrityError):
         await db.commit()
 

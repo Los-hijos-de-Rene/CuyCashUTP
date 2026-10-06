@@ -426,9 +426,9 @@ async def test_si_otra_peticion_crea_la_caja_a_la_vez_la_sesion_sigue_sirviendo(
     real = accounts_service._buscar_caja
     llamadas = []
 
-    async def ciega_la_primera_vez(session):
+    async def ciega_la_primera_vez(session, moneda="PEN"):
         llamadas.append(1)
-        return None if len(llamadas) == 1 else await real(session)
+        return None if len(llamadas) == 1 else await real(session, moneda)
 
     monkeypatch.setattr(accounts_service, "_buscar_caja", ciega_la_primera_vez)
 
