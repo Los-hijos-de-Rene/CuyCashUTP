@@ -342,6 +342,12 @@ async def abrir_cuenta(
     """
     nombre = _nombre(payload.nombre)
 
+    # Serializa las aperturas del MISMO titular: sin esto, dos peticiones a la
+    # vez contarían 4 cuentas cada una y abrirían la 5.ª y la 6.ª. SQLite
+    # ignora FOR UPDATE (allí las escrituras ya se serializan).
+    await session.execute(select(User.id).where(User.id == user.id).with_for_update())
+    # El reintento se busca DESPUÉS del bloqueo: dos peticiones con la misma
+    # clave se serializan y la segunda ve la cuenta de la primera.
     previa = (
         await session.execute(
             select(Account).where(
@@ -366,10 +372,6 @@ async def abrir_cuenta(
             "La cuenta sueldo solo puede ser en soles.",
         )
 
-    # Serializa las aperturas del MISMO titular: sin esto, dos peticiones a la
-    # vez contarían 4 cuentas cada una y abrirían la 5.ª y la 6.ª. SQLite
-    # ignora FOR UPDATE (allí las escrituras ya se serializan).
-    await session.execute(select(User.id).where(User.id == user.id).with_for_update())
     cuantas = (
         await session.execute(
             select(func.count()).select_from(Account).where(Account.user_id == user.id)
@@ -402,8 +404,10 @@ async def abrir_cuenta(
             idempotency_key=payload.idempotency_key,
         )
     except IntegrityError:
-        # Otra apertura de sueldo ganó la carrera: el índice parcial la frenó.
         await session.rollback()
+        if payload.tipo != "sueldo":
+            raise  # una restricción inesperada no se disfraza de sueldo repetida
+        # Otra apertura de sueldo ganó la carrera: el índice parcial la frenó.
         raise _sueldo_repetida()
     cuerpo = _cuenta_json(cuenta)
     await session.commit()

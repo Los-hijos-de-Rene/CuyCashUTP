@@ -9,7 +9,7 @@ import asyncio
 
 import pytest
 
-from tests.conftest import PIN_DE_PRUEBA, registrar
+from tests.conftest import PIN_DE_PRUEBA
 
 PIN = PIN_DE_PRUEBA
 
@@ -170,3 +170,19 @@ async def test_dos_aperturas_de_sueldo_a_la_vez_dejan_una(client, registrado):
         ]
     )
     assert sorted(r.status_code for r in respuestas) == [201, 409]
+
+
+@pytest.mark.asyncio
+async def test_una_precondicion_fallida_no_gasta_intentos_de_pin(client, registrado):
+    """El PIN se valida el último: sueldo en USD con PIN errado da el error de
+    moneda, y el siguiente PIN errado ve el cupo completo."""
+    r = await client.post(
+        "/v1/accounts", json=_abrir("sueldo", "USD", pin="000000"), headers=registrado.auth
+    )
+    assert r.status_code == 400
+    assert r.json()["code"] == "INVALID_ACCOUNT_CURRENCY"
+    primero = await client.post("/v1/accounts", json=_abrir(pin="000000"), headers=registrado.auth)
+    assert primero.status_code == 403
+    # Con 3 intentos de tope, el primer fallo deja 2; si la precondición
+    # hubiera gastado uno, quedaría 1.
+    assert primero.json()["intentos_restantes"] == 2
