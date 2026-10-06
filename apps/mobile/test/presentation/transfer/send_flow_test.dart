@@ -73,6 +73,23 @@ void main() {
     expect(find.text('Disponible en una próxima versión.'), findsNothing);
   });
 
+  testWidgets('la primera pantalla del envío tiene flecha y vuelve al inicio', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('Enviar'));
+    await tester.pumpAndSettle();
+
+    // Es la primera página del navegador del ShellRoute: sin la flecha
+    // explícita el AppBar no pondría ninguna.
+    expect(find.byType(BackButton), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RecipientScreen), findsNothing);
+    expect(find.text('Últimos movimientos'), findsOneWidget);
+  });
+
   testWidgets('recorrido completo: DNI, monto, PIN y constancia', (
     tester,
   ) async {
