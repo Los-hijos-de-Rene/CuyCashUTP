@@ -295,6 +295,24 @@ void main() {
       expect(await pending.hasPending('u1'), isFalse);
     });
 
+    test('un 401 NO es definitivo: conserva la entrada', () async {
+      // `authenticated_dio` cuenta con el 401 sin `code` legible de un
+      // gateway, y ese puede llegar DESPUÉS de que la recarga tocara la app:
+      // borrar la clave haría que el reintento naciera con otra y acreditara
+      // dos veces.
+      final pending = pendientesDePrueba();
+      final repo = FakeTransferRepository(
+        alRecargar: (_) async => FakeTransferRepository.falla(
+          const TransferFailure.unauthenticated(),
+        ),
+      );
+      final b = await _preparado(repo, pending: pending);
+      addTearDown(b.close);
+      b.add(const TopUpEvent.submitted(pin: '000000'));
+      await _pump();
+      expect(await pending.hasPending('u1'), isTrue);
+    });
+
     test('un 409 es definitivo: borra la entrada', () async {
       final pending = pendientesDePrueba();
       final repo = FakeTransferRepository(

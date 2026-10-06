@@ -244,12 +244,19 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     // Confirmado, o el servidor dijo que NO movió nada: la entrada ya no hace
     // falta. Con resultado desconocido (o sellado) se conserva.
     if (huella != null) {
-      final definitivo = result.match(
-        (f) =>
-            _flatten(f) is IdempotencyKeyReused ||
-            (!_flatten(f).outcomeUnknown && !state.outcomeUnknown),
-        (_) => true,
-      );
+      final definitivo = result.match((f) {
+        final plano = _flatten(f);
+    // El 401 NO olvida la clave. `TransferUnauthenticated` no deja el
+    // resultado desconocido cuando viene de `current_user` (corre antes del
+    // handler), pero `authenticated_dio` cuenta con el 401 SIN `code` legible
+    // de un gateway, y ese puede llegar DESPUÉS de que la petición tocara la
+    // app: olvidar la clave haría que el reintento con la misma intención
+    // naciera con una clave nueva y COBRARA DOS VECES. Conservarla no cuesta
+    // nada: solo la recupera la misma intención, y el 401 ya cierra la sesión.
+        if (plano is TransferUnauthenticated) return false;
+        return plano is IdempotencyKeyReused ||
+            (!plano.outcomeUnknown && !state.outcomeUnknown);
+      }, (_) => true);
       if (definitivo) await _pending.forget(_userId, huella);
     }
     emit(

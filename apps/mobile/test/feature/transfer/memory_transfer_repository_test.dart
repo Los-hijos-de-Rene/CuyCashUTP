@@ -1,4 +1,5 @@
 import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_policy.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/infrastructure/memory_transfer_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +15,7 @@ void main() {
     dniPropio: MemoryTransferRepository.dniPropio,
     dniDestino: MemoryTransferRepository.dniDestino,
     consultasMaximas: 20,
+    maxIntentos: LockoutPolicy.maxAttempts,
   );
 
   group('MemoryTransferRepository · bloqueo con reloj', () {
@@ -26,7 +28,7 @@ void main() {
         pin: '111111',
         idempotencyKey: 'mala-000$i',
       );
-      for (var i = 1; i <= 5; i++) {
+      for (var i = 1; i <= LockoutPolicy.maxAttempts; i++) {
         await mal(i);
       }
 

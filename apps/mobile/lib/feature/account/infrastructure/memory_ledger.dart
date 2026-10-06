@@ -74,7 +74,9 @@ class MemoryLedger {
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.debito,
         monto: const Money.fromCentimos(4500),
-        contraparte: 'Bodega Don Aurelio',
+        // Enmascarada: en un DÉBITO el backend solo da lo que ya dio
+        // `/directory/resolve`, porque la operación la eligió quien envía.
+        contraparte: 'B*** D*** A***',
         saldoPosterior: const Money.fromCentimos(125040),
         fecha: a(hoy, 14, 30),
         estado: 'confirmada',
@@ -85,6 +87,7 @@ class MemoryLedger {
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.credito,
         monto: const Money.fromCentimos(120000),
+        // Completa: es un CRÉDITO, y recibir no es algo que uno se provoque.
         contraparte: 'Jenny Marisol Ruiz',
         saldoPosterior: const Money.fromCentimos(129540),
         fecha: a(hoy, 9, 15),
@@ -98,7 +101,7 @@ class MemoryLedger {
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.debito,
         monto: const Money.fromCentimos(1850),
-        contraparte: 'Menú La Cuchara',
+        contraparte: 'M*** L*** C***',
         saldoPosterior: const Money.fromCentimos(9540),
         fecha: a(ayer, 13, 5),
         estado: 'confirmada',

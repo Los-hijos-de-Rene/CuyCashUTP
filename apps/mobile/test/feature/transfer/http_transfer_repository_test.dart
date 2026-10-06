@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_policy.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/infrastructure/http_transfer_repository.dart';
 import 'package:dio/dio.dart';
@@ -20,6 +21,10 @@ class FakeTransfersBackend implements HttpClientAdapter {
   static const dniDestino = '87654321';
   static const cuenta = 'acc-demo-1';
   static const consultasMaximas = 20;
+  /// El tope REAL del backend (`IDENTIFIER_MAX_ATTEMPTS`). Transcribirlo a
+  /// mano fue lo que hizo que la batería de contrato certificara un 5 que no
+  /// existe en ninguno de los dos lados.
+  static const maxIntentos = LockoutPolicy.maxAttempts;
   static final ahora = DateTime.utc(2026, 10, 5, 18);
 
   /// Si no es null, responde esto a TODO.
@@ -102,7 +107,7 @@ class FakeTransfersBackend implements HttpClientAdapter {
       return null;
     }
     fallos++;
-    if (fallos >= 5) {
+    if (fallos >= maxIntentos) {
       fallos = 0;
       bloqueadoHasta = ahora.add(const Duration(minutes: 15));
       return _error(423, 'IDENTIFIER_LOCKED', {
@@ -110,7 +115,7 @@ class FakeTransfersBackend implements HttpClientAdapter {
       });
     }
     return _error(403, 'INVALID_CREDENTIALS', {
-      'intentos_restantes': 5 - fallos,
+      'intentos_restantes': maxIntentos - fallos,
     });
   }
 
@@ -182,6 +187,7 @@ void main() {
     dniPropio: FakeTransfersBackend.dniPropio,
     dniDestino: FakeTransfersBackend.dniDestino,
     consultasMaximas: FakeTransfersBackend.consultasMaximas,
+    maxIntentos: FakeTransfersBackend.maxIntentos,
   );
 
   TransferFailure falloDe(Result<TransferFailure, Object?> r) {

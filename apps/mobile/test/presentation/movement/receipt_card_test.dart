@@ -17,7 +17,7 @@ ReceiptCard _card({
   transactionId: 'tx-demo-1',
   estado: estado,
   contraparteLabel: 'Enviado a',
-  contraparte: 'Bodega Don Aurelio',
+  contraparte: 'B*** D*** A***',
   cuentaDestinoMasked: '••••7732',
   motivo: 'Menú',
   saldoPosterior: saldoPosterior,
@@ -42,7 +42,7 @@ void main() {
     expect(find.text('Enviaste'), findsOneWidget);
     expect(find.text('S/ 45.00'), findsOneWidget);
     expect(find.text('Enviado a'), findsOneWidget);
-    expect(find.text('Bodega Don Aurelio'), findsOneWidget);
+    expect(find.text('B*** D*** A***'), findsOneWidget);
     expect(find.text('••••7732'), findsOneWidget);
     expect(find.text('Menú'), findsOneWidget);
     expect(find.text('Confirmada'), findsOneWidget);
@@ -91,7 +91,7 @@ void main() {
 
     expect(texto, startsWith('Constancia de CuyCash'));
     expect(texto, contains('Enviaste: S/ 45.00'));
-    expect(texto, contains('Enviado a: Bodega Don Aurelio'));
+    expect(texto, contains('Enviado a: B*** D*** A***'));
     expect(texto, contains('N.º de operación: tx-demo-1'));
   });
 

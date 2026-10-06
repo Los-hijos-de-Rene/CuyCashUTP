@@ -521,6 +521,31 @@ void main() {
     });
 
     test(
+      'VARIANTE 4 (401): la clave NO se olvida, porque el 401 sin `code` de un '
+      'gateway puede llegar DESPUÉS de que la petición tocara la app',
+      () async {
+        final repo1 = FakeTransferRepository(
+          alEnviar: (_) async => FakeTransferRepository.falla(
+            const TransferFailure.unauthenticated(),
+          ),
+        );
+        final a = await flujo(repo1);
+        await enviar(a, (s) => s.failure != null);
+        final primera = a.state.idempotencyKey;
+        await a.close(); // el 401 cierra la sesión y mata el flujo.
+
+        final repo2 = FakeTransferRepository();
+        // Si la clave se hubiera olvidado, aquí nacería una nueva y el envío
+        // se cobraría DOS veces.
+        final b = await flujo(repo2, newKey: () => 'clave-NUEVA-prohibida');
+
+        expect(b.state.idempotencyKey, primera);
+        await enviar(b, (s) => s.status == TransferStatus.done);
+        expect(repo2.claves, [primera]);
+      },
+    );
+
+    test(
       'una intención distinta (otro monto) genera otra clave, sin sello',
       () async {
         final a = await flujo(caeEnRed());

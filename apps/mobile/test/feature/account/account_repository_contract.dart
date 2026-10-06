@@ -151,14 +151,46 @@ void probarContratoDeCuentas(
       expect(items.every((m) => m.monto > Money.zero), isTrue);
       expect(items[0].direccion, MovementDirection.debito);
       expect(items[0].monto, const Money.fromCentimos(4500));
-      expect(items[0].contraparte, 'Bodega Don Aurelio');
+      expect(items[0].contraparte, 'B*** D*** A***');
       expect(items[1].direccion, MovementDirection.credito);
       expect(items[1].monto, const Money.fromCentimos(120000));
       expect(items[1].contraparte, 'Jenny Marisol Ruiz');
       expect(items[2].direccion, MovementDirection.debito);
       expect(items[2].monto, const Money.fromCentimos(1850));
-      expect(items[2].contraparte, 'Menú La Cuchara');
+      expect(items[2].contraparte, 'M*** L*** C***');
     });
+
+    test(
+      'la contraparte va enmascarada al enviar y completa al recibir',
+      () async {
+        // El historial es el dato MÁS visible de la app, y es el que destapaba
+        // el nombre completo de un desconocido a cambio de un céntimo: quien
+        // envía solo puede ver lo que `/directory/resolve` le dio.
+        final repo = construir();
+        final cuenta = await primeraCuenta(repo);
+        final items = valorDe(await repo.movimientos(cuenta.id)).items;
+        final enmascarado = RegExp(r'^\S\*\*\*( \S\*\*\*)*$');
+
+        final enviados = items
+            .where((m) => m.direccion == MovementDirection.debito)
+            .toList();
+        final recibidos = items
+            .where(
+              (m) =>
+                  m.direccion == MovementDirection.credito &&
+                  m.tipo == MovementKind.transferencia,
+            )
+            .toList();
+        expect(enviados, isNotEmpty);
+        expect(recibidos, isNotEmpty);
+        for (final m in enviados) {
+          expect(m.contraparte, matches(enmascarado), reason: '\${m.transactionId}');
+        }
+        for (final m in recibidos) {
+          expect(m.contraparte, isNot(contains('***')), reason: '\${m.transactionId}');
+        }
+      },
+    );
 
     test(
       'el saldo posterior del más reciente es el saldo de la cuenta',

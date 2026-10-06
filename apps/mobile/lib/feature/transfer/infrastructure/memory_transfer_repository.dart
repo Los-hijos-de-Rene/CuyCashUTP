@@ -3,6 +3,7 @@ import 'package:fpdart/fpdart.dart';
 
 import '../../account/domain/movement.dart';
 import '../../account/infrastructure/memory_ledger.dart';
+import '../../lockout/domain/lockout_policy.dart';
 import '../domain/recipient.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
@@ -31,7 +32,11 @@ import '../domain/transfer_repository.dart';
 class MemoryTransferRepository implements TransferRepository {
   MemoryTransferRepository({
     required DateTime Function() clock,
-    this.maxIntentos = 5,
+    // El MISMO número que el backend (`IDENTIFIER_MAX_ATTEMPTS`) y que el
+    // resto de la app: el PIN de un movimiento alimenta el bloqueo del login,
+    // así que no puede haber dos cuentas de intentos distintas. Con 5 aquí, la
+    // demo prometía "te quedan 4" donde producción dice "te quedan 2".
+    this.maxIntentos = LockoutPolicy.maxAttempts,
     this.bloqueo = const Duration(minutes: 15),
     this.consultasMaximas = 20,
     this.ventana = const Duration(minutes: 10),

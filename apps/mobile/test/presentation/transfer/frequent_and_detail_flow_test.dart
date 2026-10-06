@@ -160,7 +160,7 @@ void main() {
   testWidgets('tocar un movimiento del inicio abre su detalle', (tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Bodega Don Aurelio'));
+    await tester.tap(find.text('B*** D*** A***'));
     await tester.pumpAndSettle();
 
     expect(find.text('Detalle del movimiento'), findsOneWidget);

@@ -17,7 +17,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// - Titular [dniPropio] con la cuenta [cuentaOrigenId] y S/ 1,250.40.
 /// - El único cliente destinatario es [dniDestino] (nombre enmascarado y
 ///   cuenta `••••`).
-/// - PIN válido [pinValido]; 5 PIN errados seguidos bloquean por DNI.
+/// - PIN válido [pinValido]; [maxIntentos] PIN errados seguidos bloquean por
+///   DNI. El número NO se fija aquí: se lo pasa cada lado, y es lo que impide
+///   que la batería certifique un número inventado (el backend real lo tiene
+///   en `IDENTIFIER_MAX_ATTEMPTS`). Se exige >= 2.
 /// - Presupuesto de [consultasMaximas] consultas de destinatario, compartido
 ///   entre `resolverDestinatario` y `enviar`.
 void probarContratoDeTransferencias(
@@ -28,7 +31,9 @@ void probarContratoDeTransferencias(
   required String dniPropio,
   required String dniDestino,
   required int consultasMaximas,
+  required int maxIntentos,
 }) {
+  assert(maxIntentos >= 2, 'La batería necesita al menos dos intentos');
   TransferFailure falloDe(Result<TransferFailure, Object?> r) {
     final failure = r.getLeft().toNullable();
     expect(failure, isA<ServerFailure<TransferFailure>>(), reason: '$r');
@@ -181,45 +186,50 @@ void probarContratoDeTransferencias(
           final f = falloDe(await enviar(construir(), pin: '111111'));
 
           expect(f, isA<WrongPin>());
-          expect((f as WrongPin).intentosRestantes, 4);
+          expect((f as WrongPin).intentosRestantes, maxIntentos - 1);
         },
       );
 
       test('los intentos restantes bajan con cada PIN errado', () async {
         final repo = construir();
-        await enviar(repo, pin: '111111');
+        // Todos los fallos menos el que bloquearía.
+        for (var i = 1; i < maxIntentos - 1; i++) {
+          await enviar(repo, pin: '111111', clave: 'mala-000$i');
+        }
 
         final f = falloDe(
           await enviar(repo, pin: '111111', clave: 'otra-0002'),
         );
 
-        expect((f as WrongPin).intentosRestantes, 3);
+        expect((f as WrongPin).intentosRestantes, 1);
       });
 
       test('un PIN correcto reinicia la cuenta de intentos', () async {
         final repo = construir();
-        await enviar(repo, pin: '111111');
-        await enviar(repo, pin: '111111', clave: 'otra-0002');
+        for (var i = 1; i < maxIntentos; i++) {
+          await enviar(repo, pin: '111111', clave: 'mala-000$i');
+        }
         valorDe(await enviar(repo, clave: 'otra-0003'));
 
         final f = falloDe(
           await enviar(repo, pin: '111111', clave: 'otra-0004'),
         );
 
-        expect((f as WrongPin).intentosRestantes, 4);
+        expect((f as WrongPin).intentosRestantes, maxIntentos - 1);
       });
 
-      test('el quinto PIN errado bloquea y no se queda en wrongPin', () async {
+      test('el último PIN errado bloquea y no se queda en wrongPin', () async {
         final repo = construir();
-        for (var i = 1; i <= 4; i++) {
+        for (var i = 1; i < maxIntentos; i++) {
           expect(
             falloDe(await enviar(repo, pin: '111111', clave: 'mala-000$i')),
             isA<WrongPin>(),
+            reason: 'intento $i de $maxIntentos',
           );
         }
 
         final f = falloDe(
-          await enviar(repo, pin: '111111', clave: 'mala-0005'),
+          await enviar(repo, pin: '111111', clave: 'mala-ultima'),
         );
 
         expect(f, isA<IdentifierLocked>());
@@ -228,7 +238,7 @@ void probarContratoDeTransferencias(
 
       test('bloqueado, ni el PIN correcto envía', () async {
         final repo = construir();
-        for (var i = 1; i <= 5; i++) {
+        for (var i = 1; i <= maxIntentos; i++) {
           await enviar(repo, pin: '111111', clave: 'mala-000$i');
         }
 
@@ -291,7 +301,7 @@ void probarContratoDeTransferencias(
         'el PIN se verifica al final: un monto inválido no gasta intentos',
         () async {
           final repo = construir();
-          for (var i = 0; i < 6; i++) {
+          for (var i = 0; i <= maxIntentos; i++) {
             await enviar(repo, centimos: 0, pin: '111111', clave: 'mala-000$i');
           }
 
@@ -299,7 +309,7 @@ void probarContratoDeTransferencias(
             await enviar(repo, pin: '111111', clave: 'mala-0009'),
           );
 
-          expect((f as WrongPin).intentosRestantes, 4);
+          expect((f as WrongPin).intentosRestantes, maxIntentos - 1);
         },
       );
 
@@ -355,11 +365,11 @@ void probarContratoDeTransferencias(
         'el PIN errado de recargar y de enviar suman el mismo bloqueo',
         () async {
           final repo = construir();
-          for (var i = 1; i <= 4; i++) {
+          for (var i = 1; i < maxIntentos; i++) {
             await recargar(repo, pin: '111111', clave: 'mala-000$i');
           }
 
-          final r = await enviar(repo, pin: '111111', clave: 'mala-0005');
+          final r = await enviar(repo, pin: '111111', clave: 'mala-ultima');
 
           expect(falloDe(r), isA<IdentifierLocked>());
         },

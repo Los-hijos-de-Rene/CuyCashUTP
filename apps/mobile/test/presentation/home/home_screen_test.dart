@@ -126,7 +126,7 @@ void main() {
 
       expect(find.text('S/ 1,250.40'), findsOneWidget);
       expect(find.text('Billetera ••••4521'), findsOneWidget);
-      expect(find.text('Bodega Don Aurelio'), findsOneWidget);
+      expect(find.text('B*** D*** A***'), findsOneWidget);
       // El signo lo pone la UI sobre el valor absoluto.
       expect(find.text('- S/ 45.00'), findsOneWidget);
       expect(find.text('+ S/ 1,200.00'), findsOneWidget);

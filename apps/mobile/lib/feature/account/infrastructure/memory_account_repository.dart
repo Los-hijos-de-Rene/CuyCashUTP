@@ -15,9 +15,9 @@ import 'memory_ledger.dart';
 /// la pantalla de detalle del movimiento y sus tests se apoyan en ellos.
 ///
 /// - [cuentaId]: `acc-demo-1` (número `19100000004521`, S/ 1,250.40).
-/// - [tx1] `tx-demo-1`: Bodega Don Aurelio, débito S/ 45.00, hoy 14:30.
+/// - [tx1] `tx-demo-1`: `B*** D*** A***`, débito S/ 45.00, hoy 14:30.
 /// - [tx2] `tx-demo-2`: Jenny Marisol Ruiz, crédito S/ 1,200.00, hoy 09:15.
-/// - [tx3] `tx-demo-3`: Menú La Cuchara, débito S/ 18.50, ayer 13:05.
+/// - [tx3] `tx-demo-3`: `M*** L*** C***`, débito S/ 18.50, ayer 13:05.
 ///
 /// Paginación: igual que el backend, el cursor es opaco y un cursor ilegible
 /// empieza por el principio. Aquí es el índice del siguiente movimiento.
