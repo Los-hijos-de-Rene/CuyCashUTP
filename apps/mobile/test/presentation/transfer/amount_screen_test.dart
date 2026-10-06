@@ -2,6 +2,8 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
+import 'package:cuycash/feature/transfer/domain/recipient.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_account.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/app/app_routes.dart';
 import 'package:cuycash/presentation/transfer/amount_screen.dart';
@@ -23,20 +25,41 @@ const _cuenta = Account(
   saldoDisponible: Money.soles(125040),
   saldoContable: Money.soles(125040),
 );
+const _cuentaDolares = Account(
+  id: 'acc-demo-3',
+  numero: '19100000009999',
+  tipo: AccountType.ahorro,
+  moneda: Currency.usd,
+  estado: 'activa',
+  saldoDisponible: Money.dolares(50000),
+  saldoContable: Money.dolares(50000),
+);
+const _destinatarioDolares = Recipient(
+  dni: '87654321',
+  nombreEnmascarado: 'J*** M*** R***',
+  cuenta: RecipientAccount(
+    cuentaId: 'acc-ext-3',
+    tipo: AccountType.ahorro,
+    moneda: Currency.usd,
+    numeroMasked: '••••0419',
+  ),
+);
 
 void main() {
   late TransferBloc bloc;
 
-  setUp(() async {
+  Future<void> prepararBloc(Recipient destinatario, Account origen) async {
     bloc = TransferBloc(
       TransferActions(FakeTransferRepository()),
       pending: pendientesDePrueba(),
       userId: 'u1',
     );
-    bloc.add(const TransferEvent.started(_cuenta));
-    bloc.add(const TransferEvent.recipientRequested('87654321'));
+    bloc.add(TransferEvent.started(origen));
+    bloc.add(TransferEvent.recipientSelected(destinatario));
     await bloc.stream.firstWhere((s) => s.status == TransferStatus.ready);
-  });
+  }
+
+  setUp(() => prepararBloc(destinatarioDePrueba, _cuenta));
   tearDown(() => bloc.close());
 
   Future<void> pump(WidgetTester tester) async {
@@ -69,6 +92,19 @@ void main() {
     await tester.pump();
   }
 
+  Future<void> pumpConDestinatario(
+    WidgetTester tester,
+    Recipient destinatario, {
+    Account origen = _cuenta,
+  }) async {
+    // El bloc vive en el reloj real, no en el falso de testWidgets.
+    await tester.runAsync(() async {
+      await bloc.close();
+      await prepararBloc(destinatario, origen);
+    });
+    await pump(tester);
+  }
+
   Finder campoMonto() => find.byType(TextField).first;
   Finder continuar() => find.widgetWithText(ElevatedButton, 'Continuar');
   bool habilitado(WidgetTester t) =>
@@ -84,6 +120,20 @@ void main() {
       expect(find.text(s), findsOneWidget);
     }
     expect(habilitado(tester), isFalse);
+  });
+
+  testWidgets('debajo del nombre muestra la cuenta que recibe', (t) async {
+    await pumpConDestinatario(t, destinatarioDePrueba);
+    expect(find.text('Para J*** M*** R***'), findsOneWidget);
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
+  });
+
+  testWidgets('el campo y los montos rápidos usan la moneda de origen', (
+    t,
+  ) async {
+    await pumpConDestinatario(t, _destinatarioDolares, origen: _cuentaDolares);
+    expect(find.text(r'US$ 20.00'), findsOneWidget);
+    expect(find.textContaining(r'Disponible: US$'), findsOneWidget);
   });
 
   testWidgets('la coma de miles no se puede teclear y se avisa por qué', (

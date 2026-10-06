@@ -8,6 +8,7 @@ import '../../core/format/money_format.dart';
 import '../../feature/beneficiary/domain/beneficiary_limits.dart';
 import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import 'bloc/transfer_bloc.dart';
 import 'money_input_formatter.dart';
@@ -124,6 +125,12 @@ class _AmountScreenState extends State<AmountScreen> {
                 Text(
                   l10n.transferAmountTo(destinatario.nombreEnmascarado),
                   style: CuyCashTypography.bodyLg.copyWith(
+                    color: CuyCashColors.secondaryText,
+                  ),
+                ),
+                Text(
+                  recipientAccountShort(l10n, destinatario.cuenta),
+                  style: CuyCashTypography.bodyMd.copyWith(
                     color: CuyCashColors.secondaryText,
                   ),
                 ),

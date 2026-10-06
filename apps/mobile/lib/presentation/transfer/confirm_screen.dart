@@ -8,6 +8,7 @@ import '../../core/format/money_format.dart';
 import '../../core/security/secure_screen_scope.dart';
 import '../../feature/transfer/domain/transfer_failure.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import '../pin/pin_entry_view.dart';
 import 'bloc/transfer_bloc.dart';
@@ -237,10 +238,15 @@ class _Summary extends StatelessWidget {
           if (state.destinatario case final d?)
             _Row(
               label: l10n.transferSummaryTo,
-              value: '${d.nombreEnmascarado} · ${d.cuenta.numeroMasked}',
+              value:
+                  '${d.nombreEnmascarado} · '
+                  '${recipientAccountShort(l10n, d.cuenta)}',
             ),
           if (state.cuenta case final c?)
-            _Row(label: l10n.transferSummaryFrom, value: c.numeroMasked),
+            _Row(
+              label: l10n.transferSummaryFrom,
+              value: '${accountLabel(l10n, c)} · ${c.numeroMasked}',
+            ),
           if (motivo != null)
             _Row(label: l10n.transferSummaryMotivo, value: motivo),
         ],

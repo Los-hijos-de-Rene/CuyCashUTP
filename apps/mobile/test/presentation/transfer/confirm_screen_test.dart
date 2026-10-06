@@ -43,7 +43,7 @@ Future<TransferBloc> _blocEnConfirmacion(
     userId: 'u1',
   );
   b.add(const TransferEvent.started(_cuenta));
-  b.add(const TransferEvent.recipientRequested('87654321'));
+  b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
   await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
   b.add(const TransferEvent.amountEntered(monto: _monto, motivo: 'Almuerzo'));
   b.add(const TransferEvent.confirmationOpened());
@@ -177,6 +177,16 @@ void main() {
     enVuelo!.complete(right(FakeTransferRepository.constanciaDe(_monto)));
     await tester.pumpAndSettle();
     expect(repo.pines, ['000000']);
+  });
+
+  testWidgets('el resumen muestra la cuenta que recibe y la de origen', (
+    tester,
+  ) async {
+    await preparar(null);
+    await pump(tester);
+
+    expect(find.text('J*** M*** R*** · Ahorros · ••••7732'), findsOneWidget);
+    expect(find.text('Cuenta de ahorros · ••••4521'), findsOneWidget);
   });
 
   testWidgets('un envío exitoso lleva a la constancia con el nombre resuelto', (

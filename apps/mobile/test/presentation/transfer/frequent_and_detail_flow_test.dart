@@ -138,9 +138,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Un frecuente con cuenta pasa directo al monto. Que el monto muestre la
-    // cuenta destino ('Ahorros · ••••7732') se verifica en la Task 5.
+    // Un frecuente con cuenta pasa directo al monto, que muestra la cuenta.
     expect(find.text('Monto del envío'), findsOneWidget);
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
   });
 
   testWidgets('sin encender el interruptor el destinatario no se guarda', (

@@ -103,6 +103,7 @@ void main() {
     expect(find.text('J*** M*** R***'), findsOneWidget);
     await tester.tap(find.text('Ahorros · S/ · ••••7732'));
     await tester.pumpAndSettle();
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, '50');
     await tester.pump();

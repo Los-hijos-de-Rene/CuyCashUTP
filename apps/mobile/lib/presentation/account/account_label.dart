@@ -1,5 +1,6 @@
 import '../../feature/account/domain/account.dart';
 import '../../feature/account/domain/account_type.dart';
+import '../../feature/transfer/domain/recipient_account.dart';
 import '../../l10n/app_localizations.dart';
 
 /// "Cuenta de ahorros", para títulos.
@@ -19,3 +20,7 @@ String accountTypeShort(AppLocalizations l10n, AccountType t) => switch (t) {
 /// Cómo llama el titular a su cuenta: su nombre, o el tipo.
 String accountLabel(AppLocalizations l10n, Account c) =>
     c.nombre ?? accountTypeLabel(l10n, c.tipo);
+
+/// Cuenta que recibe: el nombre solo si es propia; si no, "Ahorros · ••••7732".
+String recipientAccountShort(AppLocalizations l10n, RecipientAccount c) =>
+    c.nombre ?? '${accountTypeShort(l10n, c.tipo)} · ${c.numeroMasked}';
