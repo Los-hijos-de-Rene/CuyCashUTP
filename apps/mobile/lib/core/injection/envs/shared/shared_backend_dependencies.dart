@@ -11,6 +11,7 @@ import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../../feature/otp/infrastructure/http_otp_repository.dart';
 import '../../../../feature/profile/infrastructure/http_profile_repository.dart';
+import '../../../../feature/security/infrastructure/http_security_repository.dart';
 import '../../../../feature/transfer/infrastructure/http_transfer_repository.dart';
 import '../../../../feature/transfer/infrastructure/shared_prefs_pending_transfer_store.dart';
 import '../../../env/app_env.dart';
@@ -70,6 +71,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     pendingTransferStore: const SharedPrefsPendingTransferStore(),
     beneficiaryRepository: HttpBeneficiaryRepository(dio: dio),
     profileRepository: HttpProfileRepository(dio: dio),
+    securityRepository: HttpSecurityRepository(dio: dio),
   );
 }
 

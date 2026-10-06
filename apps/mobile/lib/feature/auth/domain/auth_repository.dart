@@ -71,5 +71,12 @@ abstract interface class AuthRepository {
     String? otpTicket,
   });
 
+  /// Abre sesión con la credencial que la huella liberó. No suma intentos al
+  /// bloqueo en el servidor, pero sí lo respeta (`accessLocked`).
+  FutureResult<AuthFailure, AuthSession> signInWithBiometric({
+    required String dni,
+    required String credential,
+  });
+
   FutureResult<AuthFailure, Unit> signOut();
 }

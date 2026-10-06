@@ -9,6 +9,10 @@ class MemoryDeviceStore implements DeviceStore {
         _lockout = lockout;
 
   RememberedUser? _user;
+  String? _credential;
+
+  /// Simula un disco que no escribe (para probar la credencial huérfana).
+  bool failCredentialWrites = false;
   LockoutState _lockout;
 
   @override
@@ -18,7 +22,23 @@ class MemoryDeviceStore implements DeviceStore {
   Future<void> saveUser(RememberedUser user) async => _user = user;
 
   @override
-  Future<void> clearUser() async => _user = null;
+  Future<void> clearUser() async {
+    _user = null;
+    _credential = null;
+  }
+
+  @override
+  Future<String?> readBiometricCredential() async => _credential;
+
+  @override
+  Future<bool> saveBiometricCredential(String credential) async {
+    if (failCredentialWrites) return false;
+    _credential = credential;
+    return true;
+  }
+
+  @override
+  Future<void> clearBiometricCredential() async => _credential = null;
 
   String? _deviceId;
 

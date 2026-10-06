@@ -8,6 +8,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_failure.dart';
 import '../../../feature/auth/domain/auth_session.dart';
+import '../../../feature/auth/domain/pin_rules.dart';
 import '../../auth/bloc/auth_bloc.dart' show AuthError;
 
 part 'register_bloc.freezed.dart';
@@ -18,7 +19,6 @@ part 'register_state.dart';
 abstract final class RegisterValidators {
   static final _dni = RegExp(r'^\d{8}$');
   static final _email = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  static final _pin = RegExp(r'^\d{6}$');
 
   static bool dataValid(RegisterDraft draft) =>
       dniError(draft.dni) == null &&
@@ -35,27 +35,12 @@ abstract final class RegisterValidators {
   static FieldError? emailError(String value) =>
       _email.hasMatch(value.trim()) ? null : FieldError.emailInvalid;
 
-  /// Cada condición del PIN se expone por separado, y no solo agregada en
-  /// [pinValid], para que la checklist pueda mostrar EXACTAMENTE cuál falta.
-  /// Una regla que se comprueba en silencio deja al usuario atascado sin saber
-  /// qué corregir.
-  static bool hasSixDigits(String pin) => _pin.hasMatch(pin);
-
-  /// Descarta 000000, 111111… (los seis dígitos iguales).
+  // Las reglas del PIN viven en `PinRules`; aquí solo se delegan.
+  static bool hasSixDigits(String pin) => PinRules.hasSixDigits(pin);
   static bool hasNoRepeatedDigit(String pin) =>
-      hasSixDigits(pin) && pin.split('').toSet().length > 1;
-
-  /// Descarta secuencias triviales, ascendentes o descendentes (123456 /
-  /// 654321).
-  static bool hasNoSequence(String pin) {
-    if (!hasSixDigits(pin)) return false;
-    const asc = '0123456789';
-    const desc = '9876543210';
-    return !asc.contains(pin) && !desc.contains(pin);
-  }
-
-  static bool pinValid(String pin) =>
-      hasSixDigits(pin) && hasNoRepeatedDigit(pin) && hasNoSequence(pin);
+      PinRules.hasNoRepeatedDigit(pin);
+  static bool hasNoSequence(String pin) => PinRules.hasNoSequence(pin);
+  static bool pinValid(String pin) => PinRules.isValid(pin);
 }
 
 /// Bloc del wizard de registro. Consume `AuthActions` por constructor. En el

@@ -10,6 +10,8 @@ import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
 import '../../feature/profile/application/profile_actions.dart';
 import '../../feature/profile/domain/profile_repository.dart';
+import '../../feature/security/application/security_actions.dart';
+import '../../feature/security/domain/security_repository.dart';
 import '../../feature/transfer/application/transfer_actions.dart';
 import '../../feature/transfer/domain/pending_transfer_store.dart';
 import '../../feature/transfer/domain/transfer_repository.dart';
@@ -30,6 +32,7 @@ class AppDependencies {
     required this.pendingTransferStore,
     required this.beneficiaryRepository,
     required this.profileRepository,
+    required this.securityRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -65,6 +68,11 @@ class AppDependencies {
   /// Datos del titular y alias. Los blocs consumen [profileActions].
   final ProfileRepository profileRepository;
   ProfileActions get profileActions => ProfileActions(profileRepository);
+
+  /// Cambio de PIN, dispositivos y huella. Los blocs consumen
+  /// [securityActions] o los use cases de `feature/security/application`.
+  final SecurityRepository securityRepository;
+  SecurityActions get securityActions => SecurityActions(securityRepository);
 
   final LockoutPolicy lockoutPolicy;
 }

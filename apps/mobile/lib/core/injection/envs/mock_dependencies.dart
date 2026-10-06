@@ -10,6 +10,8 @@ import '../../../feature/lockout/domain/lockout_policy.dart';
 import '../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../feature/otp/infrastructure/memory_otp_repository.dart';
 import '../../../feature/profile/infrastructure/memory_profile_repository.dart';
+import '../../../feature/security/infrastructure/memory_security_repository.dart';
+import '../../../feature/security/infrastructure/memory_security_state.dart';
 import '../../../feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import '../../../feature/transfer/infrastructure/memory_transfer_repository.dart';
 import '../../env/app_flavor.dart';
@@ -20,9 +22,11 @@ Future<AppDependencies> buildMockDependencies() async {
   // UN libro mayor para toda la demo: enviar y recargar mueven el saldo que
   // el inicio muestra.
   final ledger = MemoryLedger(clock: DateTime.now);
+  // El PIN y las huellas se comparten entre el login y el perfil.
+  final security = MemorySecurityState.demo(clock: DateTime.now);
   return AppDependencies(
     flavor: AppFlavor.mock,
-    authRepository: MemoryAuthRepository(),
+    authRepository: MemoryAuthRepository(security: security),
     deviceStore: const SecureDeviceStore(FlutterSecureStorage()),
     // El reloj se inyecta aquí (composición raíz): dentro del repo nunca se
     // llama a DateTime.now().
@@ -40,6 +44,7 @@ Future<AppDependencies> buildMockDependencies() async {
     pendingTransferStore: MemoryPendingTransferStore(),
     beneficiaryRepository: MemoryBeneficiaryRepository(clock: DateTime.now),
     profileRepository: MemoryProfileRepository(),
+    securityRepository: MemorySecurityRepository(security, clock: DateTime.now),
     // Bloqueo de 10/20/30 s para poder ver la pantalla completa al probar.
     lockoutPolicy: const LockoutPolicy.mock(),
   );

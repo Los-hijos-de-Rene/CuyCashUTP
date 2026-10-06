@@ -10,6 +10,7 @@ sealed class AuthFailure {
   const factory AuthFailure.accessLocked(DateTime until) = AccessLocked;
   const factory AuthFailure.pinUnchanged() = PinUnchanged;
   const factory AuthFailure.authUnavailable() = AuthUnavailable;
+  const factory AuthFailure.biometricRevoked() = BiometricRevoked;
 }
 
 /// DNI/Alias o PIN incorrectos.
@@ -51,4 +52,10 @@ final class PinUnchanged extends AuthFailure {
 /// No se pudo contactar al proveedor de auth (sin backend real aún).
 final class AuthUnavailable extends AuthFailure {
   const AuthUnavailable();
+}
+
+/// La credencial biométrica ya no vale (revocada, de otro teléfono, o el
+/// dispositivo se desvinculó). Se borra del teléfono y se entra con PIN.
+final class BiometricRevoked extends AuthFailure {
+  const BiometricRevoked();
 }

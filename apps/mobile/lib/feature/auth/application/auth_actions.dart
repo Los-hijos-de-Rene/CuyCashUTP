@@ -61,5 +61,11 @@ class AuthActions {
           {String? otpTicket}) =>
       _repo.activate(session, otpTicket: otpTicket);
 
+  FutureResult<AuthFailure, AuthSession> signInWithBiometric({
+    required String dni,
+    required String credential,
+  }) =>
+      _repo.signInWithBiometric(dni: dni, credential: credential);
+
   FutureResult<AuthFailure, Unit> signOut() => _repo.signOut();
 }

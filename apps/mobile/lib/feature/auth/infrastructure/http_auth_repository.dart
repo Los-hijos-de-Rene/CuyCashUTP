@@ -201,6 +201,31 @@ class HttpAuthRepository implements AuthRepository {
       });
 
   @override
+  FutureResult<AuthFailure, AuthSession> signInWithBiometric({
+    required String dni,
+    required String credential,
+  }) =>
+      _guard(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/v1/auth/sessions/biometric',
+          data: {'dni': dni, 'credential': credential},
+        );
+        final failure = _failureFor(response);
+        if (failure != null) return left(GlobalFailure.server(failure));
+
+        final data = response.data ?? const {};
+        final user = data['user'] as Map? ?? const {};
+        _tokenHolder.token = data['session_token'] as String?;
+        final session = AuthSession(
+          userId: user['id'] as String? ?? '',
+          identifier: dni,
+          alias: user['alias'] as String?,
+        );
+        _emit(session);
+        return right(session);
+      });
+
+  @override
   FutureResult<AuthFailure, Unit> signOut() => _guard(() async {
         final token = _tokenHolder.token;
         // El holder se vacía antes de llamar: así el DELETE no vuelve a pasar
@@ -250,6 +275,7 @@ class HttpAuthRepository implements AuthRepository {
       'IDENTIFIER_TAKEN' => const AuthFailure.identifierTaken(),
       'WEAK_PIN' => const AuthFailure.weakPin(),
       'PIN_UNCHANGED' => const AuthFailure.pinUnchanged(),
+      'BIOMETRIC_REVOKED' => const AuthFailure.biometricRevoked(),
       _ => const AuthFailure.authUnavailable(),
     };
   }

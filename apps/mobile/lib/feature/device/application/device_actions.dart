@@ -18,6 +18,10 @@ class DeviceActions {
   Future<RememberedUser?> readUser() => _store.readUser();
   Future<void> saveUser(RememberedUser user) => _store.saveUser(user);
   Future<void> clearUser() => _store.clearUser();
+  Future<String?> readBiometricCredential() => _store.readBiometricCredential();
+  Future<bool> saveBiometricCredential(String credential) =>
+      _store.saveBiometricCredential(credential);
+  Future<void> clearBiometricCredential() => _store.clearBiometricCredential();
   Future<LockoutState> readLockout() => _store.readLockout();
 
   /// Registra un intento fallido. Al alcanzar `maxAttempts`, sube de nivel y

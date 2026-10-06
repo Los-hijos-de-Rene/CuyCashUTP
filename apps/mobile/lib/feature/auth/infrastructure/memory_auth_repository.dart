@@ -5,25 +5,31 @@ import 'package:fpdart/fpdart.dart';
 
 import '../domain/auth_failure.dart';
 import '../domain/auth_repository.dart';
+import '../../security/infrastructure/memory_security_state.dart';
 import '../domain/auth_session.dart';
 
 /// Memory* FUNCIONAL de auth (backend del flavor `mock` + contrato de tests).
-/// [validPin] (default '000000') es el PIN que se acepta.
+/// [validPin] (default '000000') es el PIN que se acepta; vive en el estado
+/// compartido [MemorySecurityState] para que cambiarlo desde el perfil cambie
+/// también el del login.
 class MemoryAuthRepository implements AuthRepository {
   MemoryAuthRepository({
     AuthSession? initial,
     String validPin = '000000',
     List<String> otherDeviceTokens = const [],
+    MemorySecurityState? security,
   })  : _session = initial,
-        _validPin = validPin,
+        _security = security ??
+            MemorySecurityState.demo(clock: DateTime.now, pin: validPin),
         _otherDeviceTokens = [...otherDeviceTokens] {
     if (initial != null) _registered.add(initial.identifier);
   }
 
-  String _validPin;
+  final MemorySecurityState _security;
 
-  /// PIN aceptado por `signIn`. Cambia con `resetPin`.
-  String get validPin => _validPin;
+  /// PIN aceptado por `signIn`. Cambia con `resetPin` y con el cambio de PIN
+  /// del perfil (estado compartido).
+  String get validPin => _security.pin;
 
   /// Tokens simulados de OTROS dispositivos. `resetPin` los invalida: cambiar
   /// el PIN cierra las sesiones abiertas en el resto de teléfonos.
@@ -47,7 +53,7 @@ class MemoryAuthRepository implements AuthRepository {
     required String identifier,
     required String pin,
   }) async {
-    if (pin != _validPin) {
+    if (pin != _security.pin) {
       return left(const GlobalFailure.server(AuthFailure.invalidCredentials()));
     }
     return right(AuthSession(
@@ -72,7 +78,7 @@ class MemoryAuthRepository implements AuthRepository {
     required String pin,
     String? otpTicket,  // el backend real lo exige; aquí no hay a quién pedírselo
   }) async =>
-      right(pin == _validPin);
+      right(pin == _security.pin);
 
   @override
   FutureResult<AuthFailure, Unit> resetPin({
@@ -83,10 +89,10 @@ class MemoryAuthRepository implements AuthRepository {
     if (!_pinFormat.hasMatch(newPin)) {
       return left(const GlobalFailure.server(AuthFailure.weakPin()));
     }
-    if (newPin == _validPin) {
+    if (newPin == _security.pin) {
       return left(const GlobalFailure.server(AuthFailure.pinUnchanged()));
     }
-    _validPin = newPin;
+    _security.pin = newPin;
     // Cambiar el PIN cierra las sesiones del resto de dispositivos. La de este
     // teléfono tampoco queda abierta: restablecer no otorga sesión.
     _otherDeviceTokens.clear();
@@ -123,6 +129,20 @@ class MemoryAuthRepository implements AuthRepository {
       {String? otpTicket}) async {
     _emit(session);
     return right(unit);
+  }
+
+  @override
+  FutureResult<AuthFailure, AuthSession> signInWithBiometric({
+    required String dni,
+    required String credential,
+  }) async {
+    final device = _security.credentials[credential];
+    if (device != _security.thisDeviceId || dni != _security.dni) {
+      return left(const GlobalFailure.server(AuthFailure.biometricRevoked()));
+    }
+    final session = AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni);
+    _emit(session);
+    return right(session);
   }
 
   @override

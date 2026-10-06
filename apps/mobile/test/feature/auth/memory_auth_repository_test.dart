@@ -2,6 +2,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/auth/domain/auth_failure.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
+import 'package:cuycash/feature/security/infrastructure/memory_security_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -14,6 +15,28 @@ void main() {
     expect(repo.currentSession, isNotNull);
     await Future<void>.delayed(Duration.zero);
     expect(emissions.single, isA<AuthSession>());
+  });
+
+  test('signInWithBiometric acepta la credencial vigente de este teléfono',
+      () async {
+    final estado = MemorySecurityState.demo(clock: DateTime.now);
+    estado.credentials['ok'] = estado.thisDeviceId;
+    final repo = MemoryAuthRepository(security: estado);
+
+    final bien =
+        await repo.signInWithBiometric(dni: estado.dni, credential: 'ok');
+    final mal =
+        await repo.signInWithBiometric(dni: estado.dni, credential: 'x');
+
+    expect(bien.isRight(), isTrue);
+    expect(repo.currentSession?.identifier, estado.dni);
+    expect(
+      switch (mal.getLeft().toNullable()) {
+        ServerFailure(:final failure) => failure,
+        _ => null,
+      },
+      isA<BiometricRevoked>(),
+    );
   });
 
   test('signIn con PIN inválido → InvalidCredentials', () async {

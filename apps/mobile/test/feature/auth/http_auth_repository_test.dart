@@ -87,6 +87,41 @@ void main() {
     expect(holder.token, isNull);
   });
 
+  group('signInWithBiometric', () {
+    test('abre sesión y deja el token en el holder', () async {
+      adapter.body = {
+        'result': 'session',
+        'session_token': 't',
+        'user': {'id': 'u', 'dni': '71234567', 'alias': '@j'},
+      };
+      final emitidas = <AuthSession?>[];
+      repo.sessionChanges().listen(emitidas.add);
+
+      final r = await repo.signInWithBiometric(
+          dni: '71234567', credential: 'secreto');
+
+      expect(r.isRight(), isTrue);
+      expect(adapter.lastRequest?.path, '/v1/auth/sessions/biometric');
+      expect(holder.token, 't');
+      await Future<void>.delayed(Duration.zero);
+      expect(emitidas.single?.identifier, '71234567');
+      expect(emitidas.single?.alias, '@j');
+      expect(repo.currentSession, isNotNull);
+    });
+
+    test('401 BIOMETRIC_REVOKED es BiometricRevoked', () async {
+      adapter
+        ..statusCode = 401
+        ..body = {'code': 'BIOMETRIC_REVOKED', 'detail': 'x'};
+
+      final r = await repo.signInWithBiometric(
+          dni: '71234567', credential: 'secreto');
+
+      expect(failureOf(r), isA<BiometricRevoked>());
+      expect(holder.token, isNull);
+    });
+  });
+
   test('signOut con la red caída cierra la sesión local igualmente', () async {
     adapter.body = {
       'result': 'session',
