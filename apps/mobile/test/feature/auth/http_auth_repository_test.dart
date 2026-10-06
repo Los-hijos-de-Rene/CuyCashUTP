@@ -98,7 +98,9 @@ void main() {
       repo.sessionChanges().listen(emitidas.add);
 
       final r = await repo.signInWithBiometric(
-          dni: '71234567', credential: 'secreto');
+        dni: '71234567',
+        credential: 'secreto',
+      );
 
       expect(r.isRight(), isTrue);
       expect(adapter.lastRequest?.path, '/v1/auth/sessions/biometric');
@@ -115,7 +117,9 @@ void main() {
         ..body = {'code': 'BIOMETRIC_REVOKED', 'detail': 'x'};
 
       final r = await repo.signInWithBiometric(
-          dni: '71234567', credential: 'secreto');
+        dni: '71234567',
+        credential: 'secreto',
+      );
 
       expect(failureOf(r), isA<BiometricRevoked>());
       expect(holder.token, isNull);
@@ -176,8 +180,9 @@ void main() {
 
     final resultado = await repo.signIn(identifier: '12345678', pin: '024689');
 
-    // El PIN correcto no basta: falta el OTP de dispositivo.
-    expect(resultado.isLeft(), isTrue);
+    // El PIN correcto no basta: falta el OTP de dispositivo. El failure lo
+    // dice con su nombre para que nadie lo cuente como un PIN errado.
+    expect(failureOf(resultado), isA<DeviceVerificationRequired>());
     expect(repo.currentSession, isNull);
   });
 
@@ -192,21 +197,20 @@ void main() {
     expect((failure as TooManyAttempts).attemptsLeft, 2);
   });
 
-  test('el bloqueo llega con su vencimiento, por DNI o por dispositivo',
-      () async {
-    adapter.statusCode = 423;
-    for (final code in ['IDENTIFIER_LOCKED', 'DEVICE_LOCKED']) {
-      adapter.body = {
-        'code': code,
-        'locked_until': '2026-09-09T21:18:00Z',
-      };
+  test(
+    'el bloqueo llega con su vencimiento, por DNI o por dispositivo',
+    () async {
+      adapter.statusCode = 423;
+      for (final code in ['IDENTIFIER_LOCKED', 'DEVICE_LOCKED']) {
+        adapter.body = {'code': code, 'locked_until': '2026-09-09T21:18:00Z'};
 
-      final failure = failureOf(await autenticar());
+        final failure = failureOf(await autenticar());
 
-      expect(failure, isA<AccessLocked>(), reason: code);
-      expect((failure as AccessLocked).until.isUtc, isTrue);
-    }
-  });
+        expect(failure, isA<AccessLocked>(), reason: code);
+        expect((failure as AccessLocked).until.isUtc, isTrue);
+      }
+    },
+  );
 
   test('el mapeo va por `code` y NO por el texto del detalle', () async {
     adapter.statusCode = 400;
@@ -219,7 +223,10 @@ void main() {
 
     final failure = failureOf(
       await repo.resetPin(
-          identifier: 'j@p.pe', newPin: '314159', otpTicket: 't'),
+        identifier: 'j@p.pe',
+        newPin: '314159',
+        otpTicket: 't',
+      ),
     );
 
     expect(failure, isA<PinUnchanged>());
@@ -244,14 +251,12 @@ void main() {
     expect(repo.currentSession, isNotNull);
 
     adapter.body = {'revoked_sessions': 1};
-    await repo.resetPin(
-        identifier: 'j@p.pe', newPin: '314159', otpTicket: 't');
+    await repo.resetPin(identifier: 'j@p.pe', newPin: '314159', otpTicket: 't');
 
     // El servidor revocó todas las sesiones, incluida la de este teléfono:
     // restablecer no otorga acceso.
     expect(repo.currentSession, isNull);
   });
-
 
   group('el alta deja la sesión lista', () {
     test('register guarda el token, así que activate abre sesión', () async {
@@ -274,8 +279,11 @@ void main() {
       );
       final session = creada.getRight().toNullable();
       expect(session, isNotNull, reason: 'el alta debe devolver la sesión');
-      expect(holder.token, 'tok-del-alta',
-          reason: 'sin el token, "Ir a mi cuenta" no puede activar nada');
+      expect(
+        holder.token,
+        'tok-del-alta',
+        reason: 'sin el token, "Ir a mi cuenta" no puede activar nada',
+      );
 
       // Es lo que hace "Ir a mi cuenta" en la pantalla de éxito.
       final emitidas = <AuthSession?>[];
@@ -295,8 +303,11 @@ void main() {
 
       final resultado = await repo.activate(session);
 
-      expect(resultado.isLeft(), isTrue,
-          reason: 'activar sin credenciales debe ser un failure, no un no-op');
+      expect(
+        resultado.isLeft(),
+        isTrue,
+        reason: 'activar sin credenciales debe ser un failure, no un no-op',
+      );
       expect(repo.currentSession, isNull);
     });
   });

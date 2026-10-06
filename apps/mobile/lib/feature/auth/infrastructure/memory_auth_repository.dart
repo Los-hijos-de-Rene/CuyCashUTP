@@ -18,14 +18,21 @@ class MemoryAuthRepository implements AuthRepository {
     String validPin = '000000',
     List<String> otherDeviceTokens = const [],
     MemorySecurityState? security,
-  })  : _session = initial,
-        _security = security ??
-            MemorySecurityState.demo(clock: DateTime.now, pin: validPin),
-        _otherDeviceTokens = [...otherDeviceTokens] {
+    this.deviceTrusted = true,
+  }) : _session = initial,
+       _security =
+           security ??
+           MemorySecurityState.demo(clock: DateTime.now, pin: validPin),
+       _otherDeviceTokens = [...otherDeviceTokens] {
     if (initial != null) _registered.add(initial.identifier);
   }
 
   final MemorySecurityState _security;
+
+  /// Si es `false`, este teléfono no es de confianza (p. ej. lo desvincularon
+  /// desde otro): el PIN correcto no abre sesión y `signIn` pide el OTP de
+  /// dispositivo, como el backend real. Solo para simularlo en tests.
+  bool deviceTrusted;
 
   /// PIN aceptado por `signIn`. Cambia con `resetPin` y con el cambio de PIN
   /// del perfil (estado compartido).
@@ -56,8 +63,9 @@ class MemoryAuthRepository implements AuthRepository {
     if (pin != _security.pin) {
       return left(const GlobalFailure.server(AuthFailure.invalidCredentials()));
     }
-    return right(AuthSession(
-        userId: 'mem-${identifier.hashCode}', identifier: identifier));
+    return right(
+      AuthSession(userId: 'mem-${identifier.hashCode}', identifier: identifier),
+    );
   }
 
   @override
@@ -66,9 +74,14 @@ class MemoryAuthRepository implements AuthRepository {
     required String pin,
   }) async {
     final result = await authenticate(identifier: identifier, pin: pin);
-    return result.map((session) {
+    return result.flatMap((session) {
+      if (!deviceTrusted) {
+        return left(
+          const GlobalFailure.server(AuthFailure.deviceVerificationRequired()),
+        );
+      }
       _emit(session);
-      return session;
+      return right(session);
     });
   }
 
@@ -76,9 +89,9 @@ class MemoryAuthRepository implements AuthRepository {
   FutureResult<AuthFailure, bool> isCurrentPin({
     required String identifier,
     required String pin,
-    String? otpTicket,  // el backend real lo exige; aquí no hay a quién pedírselo
-  }) async =>
-      right(pin == _security.pin);
+    String?
+    otpTicket, // el backend real lo exige; aquí no hay a quién pedírselo
+  }) async => right(pin == _security.pin);
 
   @override
   FutureResult<AuthFailure, Unit> resetPin({
@@ -116,17 +129,21 @@ class MemoryAuthRepository implements AuthRepository {
     _registered.add(dni);
     // Crea la cuenta pero NO inicia sesión: la sesión se activa cuando el
     // usuario toca "Ir a mi cuenta" en la pantalla de éxito.
-    return right(AuthSession(
-      userId: 'mem-${dni.hashCode}',
-      identifier: dni,
-      alias: _aliasFor(nombres, dni),
-      fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
-    ));
+    return right(
+      AuthSession(
+        userId: 'mem-${dni.hashCode}',
+        identifier: dni,
+        alias: _aliasFor(nombres, dni),
+        fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
+      ),
+    );
   }
 
   @override
-  FutureResult<AuthFailure, Unit> activate(AuthSession session,
-      {String? otpTicket}) async {
+  FutureResult<AuthFailure, Unit> activate(
+    AuthSession session, {
+    String? otpTicket,
+  }) async {
     _emit(session);
     return right(unit);
   }
@@ -161,6 +178,9 @@ class MemoryAuthRepository implements AuthRepository {
   }
 
   void _emit(AuthSession session) {
+    // La huella del mock se ata al DNI con sesión; si quedara fijo el de la
+    // demo, cualquier otro DNI vería su huella revocada al primer uso.
+    _security.dni = session.identifier;
     _session = session;
     _controller.add(session);
   }

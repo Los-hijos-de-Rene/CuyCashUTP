@@ -51,7 +51,10 @@ class MemorySecurityState {
   }
 
   String pin;
-  final String dni;
+
+  /// DNI del titular con sesión; `MemoryAuthRepository` lo actualiza al
+  /// abrir sesión (default de la demo: 70123456).
+  String dni;
   final String thisDeviceId;
   final List<LinkedDevice> devices;
 
