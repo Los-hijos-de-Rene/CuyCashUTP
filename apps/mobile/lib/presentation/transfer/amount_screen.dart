@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format/soles.dart';
+import '../../feature/beneficiary/domain/beneficiary_limits.dart';
 import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
@@ -25,6 +26,7 @@ class _AmountScreenState extends State<AmountScreen> {
 
   final _amount = TextEditingController();
   final _motivo = TextEditingController();
+  final _apodo = TextEditingController();
 
   /// Aviso del último rechazo del formateador; `null` si no hay.
   String? _rejectedMessage;
@@ -37,12 +39,14 @@ class _AmountScreenState extends State<AmountScreen> {
     final monto = bloc.state.monto;
     if (monto != null) _amount.text = _toInput(monto);
     _motivo.text = bloc.state.motivo ?? '';
+    _apodo.text = bloc.state.apodoFrecuente;
   }
 
   @override
   void dispose() {
     _amount.dispose();
     _motivo.dispose();
+    _apodo.dispose();
     super.dispose();
   }
 
@@ -185,6 +189,16 @@ class _AmountScreenState extends State<AmountScreen> {
                     TransferEvent.saveFrequentToggled(value),
                   ),
                 ),
+                if (state.guardarFrecuente)
+                  CuyCashTextField(
+                    label: l10n.transferFrequentNicknameLabel,
+                    hint: destinatario?.nombreEnmascarado,
+                    controller: _apodo,
+                    maxLength: BeneficiaryLimits.apodoMaxLength,
+                    onChanged: (v) => context.read<TransferBloc>().add(
+                      TransferEvent.frequentNicknameChanged(v),
+                    ),
+                  ),
               ],
               const SizedBox(height: CuyCashSpacing.stackLg),
               PrimaryButton(

@@ -50,19 +50,19 @@ class ReceiptCard extends StatelessWidget {
   /// Los pares rótulo/valor que la constancia muestra, en orden. Los usa
   /// también el texto para compartir, para que ambos digan lo mismo.
   List<(String, String)> lines(AppLocalizations l10n) => [
-    if (contraparte != null)
-      (contraparteLabel ?? l10n.movementDetailCounterparty, contraparte!),
-    if (cuentaDestinoMasked != null)
-      (l10n.movementDetailDestinationAccount, cuentaDestinoMasked!),
-    if (motivo != null && motivo!.isNotEmpty)
-      (l10n.movementDetailReason, motivo!),
+    if (contraparte case final c?)
+      (contraparteLabel ?? l10n.movementDetailCounterparty, c),
+    if (cuentaDestinoMasked case final cuenta?)
+      (l10n.movementDetailDestinationAccount, cuenta),
+    if (motivo case final m? when m.isNotEmpty)
+      (l10n.movementDetailReason, m),
     (l10n.movementDetailStatus, _estadoTexto(l10n)),
     (
       l10n.transferReceiptDate,
       DateFormat('dd/MM/yyyy HH:mm').format(fecha.toLocal()),
     ),
-    if (saldoPosterior != null)
-      (l10n.movementDetailBalanceAfter, formatSoles(saldoPosterior!)),
+    if (saldoPosterior case final saldo?)
+      (l10n.movementDetailBalanceAfter, formatSoles(saldo)),
     (l10n.transferReceiptId, transactionId),
   ];
 

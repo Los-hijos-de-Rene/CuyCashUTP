@@ -344,6 +344,7 @@
   "@transferFrequentSemantics": {"placeholders": {"name": {"type": "String"}}},
   "transferSaveFrequentTitle": "Guardar como frecuente",
   "transferSaveFrequentHint": "Si el envío sale bien, podrás elegirlo la próxima vez sin escribir el DNI.",
+  "transferFrequentNicknameLabel": "¿Cómo lo llamas? (opcional)",
   "transferFrequentNotSaved": "El envío se realizó, pero no pudimos guardar a esta persona como frecuente.",
   "movementDetailTitle": "Detalle del movimiento",
   "movementDetailNotFound": "No encontramos este movimiento.",

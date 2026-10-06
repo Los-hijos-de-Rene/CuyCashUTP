@@ -20,6 +20,10 @@ abstract class TransferState with _$TransferState {
     /// "Guardar como frecuente": se aplica DESPUÉS de un envío exitoso.
     @Default(false) bool guardarFrecuente,
 
+    /// Cómo llamará el titular al frecuente. Vacío = usar el nombre
+    /// enmascarado como apodo por defecto.
+    @Default('') String apodoFrecuente,
+
     /// El envío salió bien pero guardar al destinatario como frecuente falló.
     @Default(false) bool frecuenteNoGuardado,
 

@@ -75,6 +75,8 @@ void main() {
       await tester.ensureVisible(find.byType(Switch));
       await tester.tap(find.byType(Switch));
       await tester.pump();
+      expect(find.text('¿Cómo lo llamas? (opcional)'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, 'Carlos');
     }
     await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
     await tester.pumpAndSettle();
@@ -131,7 +133,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(FrequentRow),
-        matching: find.text('J*** M*** R***'),
+        matching: find.text('Carlos'),
       ),
     );
     await tester.pumpAndSettle();

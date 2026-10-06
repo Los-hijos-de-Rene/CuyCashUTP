@@ -90,6 +90,30 @@ void main() {
     await b.close();
   });
 
+  test('el apodo escrito por el usuario es el que se guarda', () async {
+    final b = await _hastaConfirmar(FakeTransferRepository(), frecuentes);
+    b.add(const TransferEvent.frequentNicknameChanged('  Carlos  '));
+    await pumpEventQueue();
+    b.add(const TransferEvent.submitted(pin: '000000'));
+    await b.stream.firstWhere((s) => s.status == TransferStatus.done);
+    await pumpEventQueue();
+
+    expect((await _guardado(frecuentes))?.apodo, 'Carlos');
+    await b.close();
+  });
+
+  test('un apodo en blanco cae al nombre enmascarado', () async {
+    final b = await _hastaConfirmar(FakeTransferRepository(), frecuentes);
+    b.add(const TransferEvent.frequentNicknameChanged('   '));
+    await pumpEventQueue();
+    b.add(const TransferEvent.submitted(pin: '000000'));
+    await b.stream.firstWhere((s) => s.status == TransferStatus.done);
+    await pumpEventQueue();
+
+    expect((await _guardado(frecuentes))?.apodo, 'J*** M*** R***');
+    await b.close();
+  });
+
   test('si el envío FALLA no se guarda a nadie', () async {
     final repo = FakeTransferRepository(
       alEnviar: (_) async =>

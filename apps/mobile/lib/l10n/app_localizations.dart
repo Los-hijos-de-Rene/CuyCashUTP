@@ -1948,6 +1948,12 @@ abstract class AppLocalizations {
   /// **'Si el envío sale bien, podrás elegirlo la próxima vez sin escribir el DNI.'**
   String get transferSaveFrequentHint;
 
+  /// No description provided for @transferFrequentNicknameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo lo llamas? (opcional)'**
+  String get transferFrequentNicknameLabel;
+
   /// No description provided for @transferFrequentNotSaved.
   ///
   /// In es, this message translates to:

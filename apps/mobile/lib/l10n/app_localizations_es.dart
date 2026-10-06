@@ -1100,6 +1100,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Si el envío sale bien, podrás elegirlo la próxima vez sin escribir el DNI.';
 
   @override
+  String get transferFrequentNicknameLabel => '¿Cómo lo llamas? (opcional)';
+
+  @override
   String get transferFrequentNotSaved =>
       'El envío se realizó, pero no pudimos guardar a esta persona como frecuente.';
 

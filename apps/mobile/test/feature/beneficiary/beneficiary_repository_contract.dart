@@ -50,6 +50,13 @@ void probarContratoDeBeneficiarios(
       expect(lista.single.nombreEnmascarado, contains('***'));
     });
 
+    test('el apodo que llega es el que se guarda, tal cual', () async {
+      final repo = construir();
+      valorDe(await repo.guardar(dniConocido, 'Mamá Ñañita'));
+
+      expect(valorDe(await repo.listar()).single.apodo, 'Mamá Ñañita');
+    });
+
     test('guardar dos veces el mismo DNI actualiza el apodo', () async {
       final repo = construir();
       valorDe(await repo.guardar(dniConocido, 'Carlos'));

@@ -25,6 +25,10 @@ sealed class TransferEvent with _$TransferEvent {
   const factory TransferEvent.submitted({required String pin}) =
       TransferSubmitted;
 
+  /// El usuario escribió (o borró) el apodo del frecuente.
+  const factory TransferEvent.frequentNicknameChanged(String value) =
+      TransferFrequentNicknameChanged;
+
   /// El usuario encendió o apagó "guardar como frecuente".
   const factory TransferEvent.saveFrequentToggled(bool value) =
       TransferSaveFrequentToggled;

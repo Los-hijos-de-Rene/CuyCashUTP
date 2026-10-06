@@ -53,6 +53,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     on<TransferConfirmationOpened>(_onConfirmationOpened);
     on<TransferSubmitted>(_onSubmitted);
     on<TransferSaveFrequentToggled>(_onSaveFrequentToggled);
+    on<TransferFrequentNicknameChanged>(_onFrequentNicknameChanged);
   }
 
   final TransferActions _actions;
@@ -170,6 +171,14 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     emit(state.copyWith(guardarFrecuente: event.value));
   }
 
+  void _onFrequentNicknameChanged(
+    TransferFrequentNicknameChanged event,
+    Emitter<TransferState> emit,
+  ) {
+    if (_intentSealed) return;
+    emit(state.copyWith(apodoFrecuente: event.value));
+  }
+
   Future<void> _onConfirmationOpened(
     TransferConfirmationOpened event,
     Emitter<TransferState> emit,
@@ -273,9 +282,11 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
         destinatario == null) {
       return;
     }
+    // Sin apodo propio, el enmascarado: es lo único que la app sabe.
+    final apodo = state.apodoFrecuente.trim();
     final saved = await beneficiaries.guardar(
       destinatario.dni,
-      destinatario.nombreEnmascarado,
+      apodo.isEmpty ? destinatario.nombreEnmascarado : apodo,
     );
     if (saved.isLeft()) emit(state.copyWith(frecuenteNoGuardado: true));
   }
