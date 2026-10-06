@@ -437,6 +437,17 @@ void main() {
       });
     });
 
+    test('la constancia lleva la moneda del monto enviado', () async {
+      final r = await repo.recargar(
+        cuentaId: 'acc-demo-1',
+        monto: const Money.dolares(2000),
+        pin: '000000',
+        idempotencyKey: 'recarga-usd-1',
+      );
+
+      expect(r.getRight().toNullable()!.monto.currency, Currency.usd);
+    });
+
     test('resolver manda el DNI como query', () async {
       await repo.resolverDestinatario('87654321');
 

@@ -766,7 +766,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeBalanceLabel => 'Saldo disponible';
 
   @override
-  String get homeBalanceHidden => 'S/ ••••••';
+  String homeBalanceHidden(String simbolo) {
+    return '$simbolo ••••••';
+  }
 
   @override
   String get homeShowBalance => 'Mostrar saldo';
@@ -972,7 +974,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Escribe un monto válido, como 50 o 50.50.';
 
   @override
-  String get transferAmountZero => 'El monto debe ser mayor a S/ 0.00.';
+  String transferAmountZero(String cero) {
+    return 'El monto debe ser mayor a $cero.';
+  }
 
   @override
   String transferAmountOverMax(String max) {
@@ -1078,8 +1082,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos confirmar tu envío. Espera un momento y reintenta: si ya salió, no se cobrará dos veces.';
 
   @override
-  String transferErrorAmountOutOfRange(String max) {
-    return 'El monto debe estar entre S/ 0.01 y $max.';
+  String transferErrorAmountOutOfRange(String min, String max) {
+    return 'El monto debe estar entre $min y $max.';
   }
 
   @override

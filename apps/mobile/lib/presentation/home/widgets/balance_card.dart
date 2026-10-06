@@ -68,7 +68,8 @@ class _BalanceCardState extends State<BalanceCard> {
           ),
           const SizedBox(height: CuyCashSpacing.stackXs),
           Text(
-            _hidden ? l10n.homeBalanceHidden : formatMoney(widget.balance),
+            _hidden ? l10n.homeBalanceHidden(widget.balance.currency.symbol)
+                :  formatMoney(widget.balance),
             style: CuyCashTypography.displayLg.copyWith(
               color: CuyCashColors.accentOnDark,
               fontFeatures: const [FontFeature.tabularFigures()],

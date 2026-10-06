@@ -17,22 +17,23 @@ String topUpErrorText(
   TransferFailure failure,
   Currency moneda,
 ) => switch (failure) {
-  WrongPin(:final intentosRestantes) => l10n.transferErrorWrongPin(
-    intentosRestantes,
-  ),
-  IdentifierLocked(:final hasta) || DeviceLocked(:final hasta) =>
-    l10n.transferErrorLocked(DateFormat('HH:mm').format(hasta.toLocal())),
-  RateLimited() => l10n.topUpErrorRateLimited,
-  AmountOutOfRange() => l10n.transferErrorAmountOutOfRange(
+      WrongPin(:final intentosRestantes) => l10n.transferErrorWrongPin(
+        intentosRestantes,
+      ),
+      IdentifierLocked(:final hasta) || DeviceLocked(:final hasta) =>
+        l10n.transferErrorLocked(DateFormat('HH:mm').format(hasta.toLocal())),
+      RateLimited() => l10n.topUpErrorRateLimited,
+      AmountOutOfRange() => l10n.transferErrorAmountOutOfRange(
+        formatMoney(TransferLimits.montoMinimo(moneda)),
     formatMoney(TransferLimits.montoMaximo(moneda)),
-  ),
-  AccountBlocked() => l10n.topUpErrorAccountBlocked,
-  IdempotencyKeyReused() => l10n.topUpErrorKeyReused,
-  TransferAccountNotFound() => l10n.transferErrorAccountNotFound,
-  TransferUnauthenticated() => l10n.transferErrorUnauthenticated,
-  TransferNetworkFailure() => l10n.topUpErrorNetwork,
-  InsufficientFunds() ||
-  RecipientNotFound() ||
-  SelfTransfer() ||
-  TransferUnexpectedFailure() => l10n.topUpErrorUnexpected,
-};
+      ),
+      AccountBlocked() => l10n.topUpErrorAccountBlocked,
+      IdempotencyKeyReused() => l10n.topUpErrorKeyReused,
+      TransferAccountNotFound() => l10n.transferErrorAccountNotFound,
+      TransferUnauthenticated() => l10n.transferErrorUnauthenticated,
+      TransferNetworkFailure() => l10n.topUpErrorNetwork,
+      InsufficientFunds() ||
+      RecipientNotFound() ||
+      SelfTransfer() ||
+      TransferUnexpectedFailure() => l10n.topUpErrorUnexpected,
+    };

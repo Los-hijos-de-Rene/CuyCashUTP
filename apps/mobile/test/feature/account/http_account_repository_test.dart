@@ -243,6 +243,29 @@ void main() {
       },
     );
 
+    test('una cuenta con moneda desconocida es inesperada, no soles', () async {
+      backend.forced = (
+        status: 200,
+        body: {
+          'cuentas': [
+            {
+              'id': 'acc-x',
+              'numero': '19100000004521',
+              'tipo': 'ahorro',
+              'moneda': 'EUR',
+              'estado': 'activa',
+              'saldo_disponible': 1,
+              'saldo_contable': 1,
+            },
+          ],
+        },
+      );
+
+      final r = await repo.cuentas();
+
+      expect(r.getLeft().toNullable(), isA<Unexpected<AccountFailure>>());
+    });
+
     test('una dirección desconocida no se adivina: failure', () async {
       backend.forced = (
         status: 200,

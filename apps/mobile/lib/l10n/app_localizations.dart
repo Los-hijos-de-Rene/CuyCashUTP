@@ -1381,8 +1381,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeBalanceHidden.
   ///
   /// In es, this message translates to:
-  /// **'S/ ••••••'**
-  String get homeBalanceHidden;
+  /// **'{simbolo} ••••••'**
+  String homeBalanceHidden(String simbolo);
 
   /// No description provided for @homeShowBalance.
   ///
@@ -1753,8 +1753,8 @@ abstract class AppLocalizations {
   /// No description provided for @transferAmountZero.
   ///
   /// In es, this message translates to:
-  /// **'El monto debe ser mayor a S/ 0.00.'**
-  String get transferAmountZero;
+  /// **'El monto debe ser mayor a {cero}.'**
+  String transferAmountZero(String cero);
 
   /// No description provided for @transferAmountOverMax.
   ///
@@ -1915,8 +1915,8 @@ abstract class AppLocalizations {
   /// No description provided for @transferErrorAmountOutOfRange.
   ///
   /// In es, this message translates to:
-  /// **'El monto debe estar entre S/ 0.01 y {max}.'**
-  String transferErrorAmountOutOfRange(String max);
+  /// **'El monto debe estar entre {min} y {max}.'**
+  String transferErrorAmountOutOfRange(String min, String max);
 
   /// No description provided for @transferErrorAccountBlocked.
   ///

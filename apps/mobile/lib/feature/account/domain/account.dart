@@ -22,7 +22,7 @@ class Account {
   /// `ahorro` | `corriente`.
   final String tipo;
 
-  /// Código ISO, hoy solo `PEN`.
+  /// Moneda de la cuenta; sus saldos vienen en ella.
   final Currency moneda;
 
   /// `activa` | `bloqueada` | `cerrada`.

@@ -63,21 +63,18 @@ class _AmountScreenState extends State<AmountScreen> {
   }
 
   /// `null` si el texto no es un monto legible.
-  Currency get _moneda =>
-      context.read<TransferBloc>().state.cuenta?.moneda ?? Currency.pen;
+  Money? _parsed(Currency moneda) => Money.parse(_amount.text, moneda);
 
-  Money? get _parsed => Money.parse(_amount.text, _moneda);
-
-  String? _error(AppLocalizations l10n, Money disponible) {
+  String? _error(AppLocalizations l10n, Money disponible, Currency moneda) {
     if (_amount.text.isEmpty || _incomplete) return null;
-    final monto = _parsed;
+    final monto = _parsed(moneda);
     if (monto == null) return l10n.transferAmountInvalid;
-    if (monto < TransferLimits.montoMinimo(_moneda)) {
-      return l10n.transferAmountZero;
+    if (monto < TransferLimits.montoMinimo(moneda)) {
+      return l10n.transferAmountZero(formatMoney(Money.zero(moneda)));
     }
-    if (monto > TransferLimits.montoMaximo(_moneda)) {
+    if (monto > TransferLimits.montoMaximo(moneda)) {
       return l10n.transferAmountOverMax(
-        formatMoney(TransferLimits.montoMaximo(_moneda)),
+        formatMoney(TransferLimits.montoMaximo(moneda)),
       );
     }
     if (monto > disponible) {
@@ -86,8 +83,8 @@ class _AmountScreenState extends State<AmountScreen> {
     return null;
   }
 
-  void _continue() {
-    final monto = _parsed;
+  void _continue(Currency moneda) {
+    final monto = _parsed(moneda);
     if (monto == null) return;
     context.read<TransferBloc>().add(
       TransferEvent.amountEntered(monto: monto, motivo: _motivo.text),
@@ -99,15 +96,16 @@ class _AmountScreenState extends State<AmountScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = context.watch<TransferBloc>().state;
-    final disponible = state.cuenta?.saldoDisponible ?? Money.zero(_moneda);
+    final moneda = state.cuenta?.moneda ?? Currency.pen;
+    final disponible = state.cuenta?.saldoDisponible ?? Money.zero(moneda);
     final destinatario = state.destinatario;
     // El rechazo del formateador tiene su propio aviso; si no, el de validación.
-    final error = _rejectedMessage ?? _error(l10n, disponible);
+    final error = _rejectedMessage ?? _error(l10n, disponible, moneda);
     final valid =
         _rejectedMessage == null &&
-        _parsed != null &&
+        _parsed(moneda) != null &&
         !_incomplete &&
-        _error(l10n, disponible) == null;
+        _error(l10n, disponible, moneda) == null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.transferAmountTitle)),
@@ -157,12 +155,12 @@ class _AmountScreenState extends State<AmountScreen> {
               Wrap(
                 spacing: CuyCashSpacing.stackSm,
                 children: [
-                  for (final soles in _quickAmounts)
+                  for (final unidades in _quickAmounts)
                     ActionChip(
-                      label: Text(formatMoney(Money(soles * 100, _moneda))),
+                      label: Text(formatMoney(Money(unidades * 100, moneda))),
                       onPressed: () => setState(() {
                         _rejectedMessage = null;
-                        _amount.text = '$soles';
+                        _amount.text = '$unidades';
                       }),
                     ),
                 ],
@@ -207,7 +205,7 @@ class _AmountScreenState extends State<AmountScreen> {
               const SizedBox(height: CuyCashSpacing.stackLg),
               PrimaryButton(
                 label: l10n.transferContinue,
-                onPressed: valid ? _continue : null,
+                onPressed: valid ? () => _continue(moneda) : null,
               ),
             ],
           ),

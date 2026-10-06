@@ -49,6 +49,7 @@ String transferSubmitErrorText(
   SelfTransfer() => l10n.transferErrorSelfTransfer,
   RateLimited() => l10n.transferErrorSubmitRateLimited,
   AmountOutOfRange() => l10n.transferErrorAmountOutOfRange(
+        formatMoney(TransferLimits.montoMinimo(moneda)),
     formatMoney(TransferLimits.montoMaximo(moneda)),
   ),
   AccountBlocked() => l10n.transferErrorAccountBlocked,

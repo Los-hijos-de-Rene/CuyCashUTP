@@ -140,7 +140,9 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                                   : transferSubmitErrorText(
                                       l10n,
                                       failure,
-                                      state.cuenta?.moneda ?? Currency.pen,
+                                      state.monto?.currency ??
+                                          state.cuenta?.moneda ??
+                                          Currency.pen,
                                     ))
                             : null,
                         hasError: failed && failure is WrongPin,
