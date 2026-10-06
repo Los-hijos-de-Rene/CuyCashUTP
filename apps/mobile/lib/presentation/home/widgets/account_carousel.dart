@@ -41,16 +41,33 @@ class _AccountCarouselState extends State<AccountCarousel> {
   );
   late int _pagina = widget.seleccionada;
 
+  /// Hay un `animateToPage` propio en curso: sus páginas intermedias no son
+  /// una elección del titular.
+  bool _animando = false;
+
   @override
   void didUpdateWidget(AccountCarousel old) {
     super.didUpdateWidget(old);
-    if (widget.seleccionada != _pagina && _controller.hasClients) {
+    // Solo un cambio externo de la selección mueve el carrusel; un rebuild
+    // con la misma selección no debe sacarlo de la página de "abrir".
+    if (widget.seleccionada != old.seleccionada &&
+        widget.seleccionada != _pagina &&
+        _controller.hasClients) {
       _pagina = widget.seleccionada;
-      _controller.animateToPage(
-        widget.seleccionada,
+      _animar(widget.seleccionada);
+    }
+  }
+
+  Future<void> _animar(int pagina) async {
+    _animando = true;
+    try {
+      await _controller.animateToPage(
+        pagina,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
+    } finally {
+      _animando = false;
     }
   }
 
@@ -75,7 +92,7 @@ class _AccountCarouselState extends State<AccountCarousel> {
             onPageChanged: (i) {
               setState(() => _pagina = i);
               // La página de "abrir" no es una cuenta: no cambia la selección.
-              if (i < widget.cuentas.length) widget.onSelected(i);
+              if (!_animando && i < widget.cuentas.length) widget.onSelected(i);
             },
             itemBuilder: (context, i) => Padding(
               padding: const EdgeInsets.symmetric(

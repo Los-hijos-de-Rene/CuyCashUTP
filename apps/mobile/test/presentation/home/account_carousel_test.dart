@@ -123,4 +123,35 @@ void main() {
     );
     expect(find.text(r'US$ 120.00'), findsOneWidget);
   });
+
+  testWidgets('un rebuild con la misma selección no saca de "abrir"', (
+    t,
+  ) async {
+    late StateSetter rebuild;
+    var n = 0;
+    await t.pumpWidget(
+      _app(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return AccountCarousel(
+              key: ValueKey('c$n'.substring(0, 1)),
+              cuentas: tres,
+              seleccionada: 2,
+              onSelected: (_) {},
+              onRename: (_) {},
+              onOpenAccount: () {},
+            );
+          },
+        ),
+      ),
+    );
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.pumpAndSettle();
+    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+
+    rebuild(() => n++);
+    await t.pumpAndSettle();
+    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+  });
 }

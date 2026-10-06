@@ -40,9 +40,15 @@ class _RenameAccountSheetState extends State<RenameAccountSheet> {
     super.dispose();
   }
 
-  void _guardar(String? nombre) => context.read<AccountBloc>().add(
-    AccountEvent.renameRequested(cuentaId: widget.cuenta.id, nombre: nombre),
-  );
+  /// Hubo un intento desde esta hoja: un fallo viejo del bloc no se muestra.
+  bool _intentado = false;
+
+  void _guardar(String? nombre) {
+    setState(() => _intentado = true);
+    context.read<AccountBloc>().add(
+      AccountEvent.renameRequested(cuentaId: widget.cuenta.id, nombre: nombre),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +56,8 @@ class _RenameAccountSheetState extends State<RenameAccountSheet> {
     return BlocConsumer<AccountBloc, AccountState>(
       listenWhen: (a, b) => a.renaming && !b.renaming,
       listener: (context, state) {
-        if (state.renameFailure == null) Navigator.of(context).pop();
+        if (!_intentado || state.renameFailure == null)
+          Navigator.of(context).pop();
       },
       builder: (context, state) {
         final largo =
@@ -77,7 +84,7 @@ class _RenameAccountSheetState extends State<RenameAccountSheet> {
                 onChanged: (_) => setState(() {}),
                 errorText: largo
                     ? l10n.renameAccountTooLong
-                    : (state.renameFailure == null
+                    : (!_intentado || state.renameFailure == null
                           ? null
                           : l10n.renameAccountError),
               ),
