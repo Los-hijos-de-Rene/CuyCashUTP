@@ -13,7 +13,7 @@ import '../domain/movement.dart';
 class MemoryLedger {
   MemoryLedger({DateTime Function()? clock})
     : _movimientos = _sembrar((clock ?? DateTime.now)()),
-      _saldo = const Money.fromCentimos(125040);
+      _saldo = const Money.soles(125040);
 
   static const cuentaId = 'acc-demo-1';
   static const tx1 = 'tx-demo-1';
@@ -73,11 +73,11 @@ class MemoryLedger {
         transactionId: tx1,
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.debito,
-        monto: const Money.fromCentimos(4500),
+        monto: const Money.soles(4500),
         // Enmascarada: en un DÉBITO el backend solo da lo que ya dio
         // `/directory/resolve`, porque la operación la eligió quien envía.
         contraparte: 'B*** D*** A***',
-        saldoPosterior: const Money.fromCentimos(125040),
+        saldoPosterior: const Money.soles(125040),
         fecha: a(hoy, 14, 30),
         estado: 'confirmada',
         cuentaDestinoMasked: '••••7732',
@@ -86,10 +86,10 @@ class MemoryLedger {
         transactionId: tx2,
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.credito,
-        monto: const Money.fromCentimos(120000),
+        monto: const Money.soles(120000),
         // Completa: es un CRÉDITO, y recibir no es algo que uno se provoque.
         contraparte: 'Jenny Marisol Ruiz',
-        saldoPosterior: const Money.fromCentimos(129540),
+        saldoPosterior: const Money.soles(129540),
         fecha: a(hoy, 9, 15),
         estado: 'confirmada',
         // Como el backend: el destino de la transferencia, que en un crédito
@@ -100,9 +100,9 @@ class MemoryLedger {
         transactionId: tx3,
         tipo: MovementKind.transferencia,
         direccion: MovementDirection.debito,
-        monto: const Money.fromCentimos(1850),
+        monto: const Money.soles(1850),
         contraparte: 'M*** L*** C***',
-        saldoPosterior: const Money.fromCentimos(9540),
+        saldoPosterior: const Money.soles(9540),
         fecha: a(ayer, 13, 5),
         estado: 'confirmada',
         cuentaDestinoMasked: '••••1908',

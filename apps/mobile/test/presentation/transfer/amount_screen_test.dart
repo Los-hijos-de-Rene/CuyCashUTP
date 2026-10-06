@@ -17,10 +17,10 @@ const _cuenta = Account(
   id: 'acc-demo-1',
   numero: '19100000004521',
   tipo: 'ahorro',
-  moneda: 'PEN',
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
 
 void main() {
@@ -131,7 +131,7 @@ void main() {
     await tester.tap(continuar());
     await tester.pumpAndSettle();
 
-    expect(bloc.state.monto, const Money.fromCentimos(1250));
+    expect(bloc.state.monto, const Money.soles(1250));
   });
 
   testWidgets('un monto mayor al disponible no deja continuar y lo explica', (
@@ -204,7 +204,7 @@ void main() {
     await tester.tap(continuar());
     await tester.pumpAndSettle();
 
-    expect(bloc.state.monto, const Money.fromCentimos(7550));
+    expect(bloc.state.monto, const Money.soles(7550));
     expect(bloc.state.motivo, 'Almuerzo');
     expect(find.text('CONFIRMAR'), findsOneWidget);
   });

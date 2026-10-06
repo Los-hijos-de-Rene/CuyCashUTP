@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/format/soles.dart';
+import '../../core/format/money_format.dart';
 import '../../feature/beneficiary/domain/beneficiary_limits.dart';
 import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
@@ -63,20 +63,25 @@ class _AmountScreenState extends State<AmountScreen> {
   }
 
   /// `null` si el texto no es un monto legible.
-  Money? get _parsed => Money.parse(_amount.text);
+  Currency get _moneda =>
+      context.read<TransferBloc>().state.cuenta?.moneda ?? Currency.pen;
+
+  Money? get _parsed => Money.parse(_amount.text, _moneda);
 
   String? _error(AppLocalizations l10n, Money disponible) {
     if (_amount.text.isEmpty || _incomplete) return null;
     final monto = _parsed;
     if (monto == null) return l10n.transferAmountInvalid;
-    if (monto < TransferLimits.montoMinimo) return l10n.transferAmountZero;
-    if (monto > TransferLimits.montoMaximo) {
+    if (monto < TransferLimits.montoMinimo(_moneda)) {
+      return l10n.transferAmountZero;
+    }
+    if (monto > TransferLimits.montoMaximo(_moneda)) {
       return l10n.transferAmountOverMax(
-        formatSoles(TransferLimits.montoMaximo),
+        formatMoney(TransferLimits.montoMaximo(_moneda)),
       );
     }
     if (monto > disponible) {
-      return l10n.transferAmountOverBalance(formatSoles(disponible));
+      return l10n.transferAmountOverBalance(formatMoney(disponible));
     }
     return null;
   }
@@ -94,8 +99,7 @@ class _AmountScreenState extends State<AmountScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = context.watch<TransferBloc>().state;
-    final disponible =
-        state.cuenta?.saldoDisponible ?? const Money.fromCentimos(0);
+    final disponible = state.cuenta?.saldoDisponible ?? Money.zero(_moneda);
     final destinatario = state.destinatario;
     // El rechazo del formateador tiene su propio aviso; si no, el de validación.
     final error = _rejectedMessage ?? _error(l10n, disponible);
@@ -133,7 +137,7 @@ class _AmountScreenState extends State<AmountScreen> {
                 controller: _amount,
                 autofocus: true,
                 errorText: error,
-                helperText: l10n.transferAvailable(formatSoles(disponible)),
+                helperText: l10n.transferAvailable(formatMoney(disponible)),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -155,7 +159,7 @@ class _AmountScreenState extends State<AmountScreen> {
                 children: [
                   for (final soles in _quickAmounts)
                     ActionChip(
-                      label: Text(formatSoles(Money.fromCentimos(soles * 100))),
+                      label: Text(formatMoney(Money(soles * 100, _moneda))),
                       onPressed: () => setState(() {
                         _rejectedMessage = null;
                         _amount.text = '$soles';

@@ -30,6 +30,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
       'estado': 'confirmada',
       'direccion': 'debito',
       'monto': 4500,
+      'moneda': 'PEN',
       'contraparte': 'B*** D*** A***',
       'motivo': null,
       'saldo_posterior': 125040,
@@ -41,6 +42,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
       'estado': 'confirmada',
       'direccion': 'credito',
       'monto': 120000,
+      'moneda': 'PEN',
       'contraparte': 'Jenny Marisol Ruiz',
       'motivo': 'Almuerzo',
       'saldo_posterior': 129540,
@@ -52,6 +54,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
       'estado': 'confirmada',
       'direccion': 'debito',
       'monto': 1850,
+      'moneda': 'PEN',
       'contraparte': 'M*** L*** C***',
       'motivo': null,
       'saldo_posterior': 9540,
@@ -251,6 +254,7 @@ void main() {
               'estado': 'confirmada',
               'direccion': 'raro',
               'monto': 1,
+              'moneda': 'PEN',
               'contraparte': null,
               'motivo': null,
               'saldo_posterior': 1,
@@ -266,6 +270,36 @@ void main() {
   });
 
   group('HttpAccountRepository · contrato JSON', () {
+    test(
+      'un movimiento con moneda desconocida es inesperado, no soles',
+      () async {
+        backend.forced = (
+          status: 200,
+          body: {
+            'movimientos': [
+              {
+                'transaction_id': 'tx-x',
+                'tipo': 'transferencia',
+                'estado': 'confirmada',
+                'direccion': 'debito',
+                'monto': 100,
+                'moneda': 'EUR',
+                'contraparte': null,
+                'motivo': null,
+                'saldo_posterior': 0,
+                'created_at': '2026-10-05T19:30:00.000000Z',
+              },
+            ],
+            'next_cursor': null,
+          },
+        );
+
+        final r = await repo.movimientos('acc-demo-1');
+        expect(r.isLeft(), isTrue);
+        expect(r.getLeft().toNullable(), isA<Unexpected<AccountFailure>>());
+      },
+    );
+
     test('las fechas con Z se leen como UTC, sin desplazarlas', () async {
       final items = (await repo.movimientos(
         'acc-demo-1',
@@ -297,6 +331,7 @@ void main() {
               'estado': 'confirmada',
               'direccion': 'debito',
               'monto': 1,
+              'moneda': 'PEN',
               'contraparte': null,
               'motivo': null,
               'saldo_posterior': 1,

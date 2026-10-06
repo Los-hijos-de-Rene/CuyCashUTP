@@ -947,7 +947,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get transferAmountLabel => 'Monto en soles';
+  String get transferAmountLabel => 'Monto';
 
   @override
   String get transferAmountHint => '0.00';

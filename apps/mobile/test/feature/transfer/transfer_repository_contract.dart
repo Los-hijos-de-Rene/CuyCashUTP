@@ -54,7 +54,7 @@ void probarContratoDeTransferencias(
   }) => repo.enviar(
     cuentaOrigenId: cuenta ?? cuentaOrigenId,
     destinatarioDni: dni ?? dniDestino,
-    monto: Money.fromCentimos(centimos),
+    monto: Money.soles(centimos),
     motivo: motivo,
     pin: pin ?? pinValido,
     idempotencyKey: clave,
@@ -68,7 +68,7 @@ void probarContratoDeTransferencias(
     String? cuenta,
   }) => repo.recargar(
     cuentaId: cuenta ?? cuentaOrigenId,
-    monto: Money.fromCentimos(centimos),
+    monto: Money.soles(centimos),
     pin: pin ?? pinValido,
     idempotencyKey: clave,
   );
@@ -128,7 +128,7 @@ void probarContratoDeTransferencias(
           await enviar(construir(), centimos: 25000, motivo: 'Cena compartida'),
         );
 
-        expect(c.monto, const Money.fromCentimos(25000));
+        expect(c.monto, const Money.soles(25000));
         expect(c.transactionId, isNotEmpty);
         expect(c.fecha.isUtc, isTrue);
         expect(c.reutilizada, isFalse);
@@ -329,7 +329,7 @@ void probarContratoDeTransferencias(
       test('acredita sin necesitar destinatario', () async {
         final c = valorDe(await recargar(construir()));
 
-        expect(c.monto, const Money.fromCentimos(5000));
+        expect(c.monto, const Money.soles(5000));
       });
 
       test('repetir la clave devuelve la misma constancia', () async {

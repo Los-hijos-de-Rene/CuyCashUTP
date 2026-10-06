@@ -7,8 +7,8 @@ Movement _mov(MovementDirection d, int centimos) => Movement(
   transactionId: 't',
   tipo: MovementKind.transferencia,
   direccion: d,
-  monto: Money.fromCentimos(centimos),
-  saldoPosterior: Money.zero,
+  monto: Money.soles(centimos),
+  saldoPosterior: Money.zero(Currency.pen),
   fecha: DateTime.utc(2026, 1, 1),
 );
 

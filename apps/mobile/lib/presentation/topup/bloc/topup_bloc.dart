@@ -88,8 +88,8 @@ class TopUpBloc extends Bloc<TopUpEvent, TopUpState> {
     }
     final monto = state.monto;
     if (monto == null || state.idempotencyKey.isEmpty) return;
-    if (monto < TransferLimits.montoMinimo ||
-        monto > TransferLimits.montoMaximo) {
+    if (monto < TransferLimits.montoMinimo(monto.currency) ||
+        monto > TransferLimits.montoMaximo(monto.currency)) {
       emit(state.copyWith(failure: const TransferFailure.amountOutOfRange()));
       return;
     }
@@ -128,13 +128,13 @@ class TopUpBloc extends Bloc<TopUpEvent, TopUpState> {
     // falta. Con resultado desconocido (o sellado) se conserva.
     final definitivo = result.match((f) {
       final plano = flattenTransferFailure(f);
-    // El 401 NO olvida la clave. `TransferUnauthenticated` no deja el
-    // resultado desconocido cuando viene de `current_user` (corre antes del
-    // handler), pero `authenticated_dio` cuenta con el 401 SIN `code` legible
-    // de un gateway, y ese puede llegar DESPUÉS de que la petición tocara la
-    // app: olvidar la clave haría que el reintento con la misma intención
-    // naciera con una clave nueva y COBRARA DOS VECES. Conservarla no cuesta
-    // nada: solo la recupera la misma intención, y el 401 ya cierra la sesión.
+      // El 401 NO olvida la clave. `TransferUnauthenticated` no deja el
+      // resultado desconocido cuando viene de `current_user` (corre antes del
+      // handler), pero `authenticated_dio` cuenta con el 401 SIN `code` legible
+      // de un gateway, y ese puede llegar DESPUÉS de que la petición tocara la
+      // app: olvidar la clave haría que el reintento con la misma intención
+      // naciera con una clave nueva y COBRARA DOS VECES. Conservarla no cuesta
+      // nada: solo la recupera la misma intención, y el 401 ya cierra la sesión.
       if (plano is TransferUnauthenticated) return false;
       return plano is IdempotencyKeyReused ||
           (!plano.outcomeUnknown && !state.outcomeUnknown);

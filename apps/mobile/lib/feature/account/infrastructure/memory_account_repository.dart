@@ -28,8 +28,8 @@ class MemoryAccountRepository implements AccountRepository {
     DateTime Function()? clock,
     this.pageSize = 20,
     MemoryLedger? ledger,
-  })  : assert(pageSize > 0),
-        _ledger = ledger ?? MemoryLedger(clock: clock);
+  }) : assert(pageSize > 0),
+       _ledger = ledger ?? MemoryLedger(clock: clock);
 
   static const cuentaId = MemoryLedger.cuentaId;
   static const tx1 = MemoryLedger.tx1;
@@ -45,7 +45,7 @@ class MemoryAccountRepository implements AccountRepository {
     id: cuentaId,
     numero: '19100000004521',
     tipo: 'ahorro',
-    moneda: 'PEN',
+    moneda: Currency.pen,
     estado: 'activa',
     saldoDisponible: _ledger.saldo,
     saldoContable: _ledger.saldo,
@@ -69,12 +69,14 @@ class MemoryAccountRepository implements AccountRepository {
     };
     final fin = inicio + pageSize;
     final hayMas = fin < _movimientos.length;
-    return right(MovementPage(
-      items: List.unmodifiable(
-        _movimientos.sublist(inicio, hayMas ? fin : _movimientos.length),
+    return right(
+      MovementPage(
+        items: List.unmodifiable(
+          _movimientos.sublist(inicio, hayMas ? fin : _movimientos.length),
+        ),
+        nextCursor: hayMas ? '$fin' : null,
       ),
-      nextCursor: hayMas ? '$fin' : null,
-    ));
+    );
   }
 
   @override

@@ -12,7 +12,7 @@ ReceiptCard _card({
   Money? saldoPosterior,
 }) => ReceiptCard(
   headline: 'Enviaste',
-  monto: const Money.fromCentimos(4500),
+  monto: const Money.soles(4500),
   fecha: DateTime.utc(2026, 10, 5, 19, 30),
   transactionId: 'tx-demo-1',
   estado: estado,
@@ -37,7 +37,7 @@ void main() {
   testWidgets('muestra monto, contraparte, motivo, estado y operación', (
     tester,
   ) async {
-    await _pump(tester, _card(saldoPosterior: const Money.fromCentimos(1000)));
+    await _pump(tester, _card(saldoPosterior: const Money.soles(1000)));
 
     expect(find.text('Enviaste'), findsOneWidget);
     expect(find.text('S/ 45.00'), findsOneWidget);
@@ -55,7 +55,7 @@ void main() {
       tester,
       ReceiptCard(
         headline: 'Recarga de saldo',
-        monto: Money.fromCentimos(1000),
+        monto: Money.soles(1000),
         fecha: _fecha,
         transactionId: 'tx-9',
         estado: 'confirmada',
@@ -99,10 +99,7 @@ void main() {
     String? compartido;
     await _pump(
       tester,
-      ShareReceiptButton(
-        text: 'hola',
-        onShare: (t) async => compartido = t,
-      ),
+      ShareReceiptButton(text: 'hola', onShare: (t) async => compartido = t),
     );
 
     await tester.tap(find.text('Compartir constancia'));

@@ -10,7 +10,7 @@ void main() {
   final huella = PendingTransferActions.huella(
     cuentaId: 'acc-1',
     destinatarioDni: '87654321',
-    monto: const Money.fromCentimos(5000),
+    monto: const Money.soles(5000),
     motivo: 'Almuerzo',
   );
 
@@ -54,7 +54,7 @@ void main() {
         final otra = PendingTransferActions.huella(
           cuentaId: 'acc-1',
           destinatarioDni: '87654321',
-          monto: const Money.fromCentimos(4000),
+          monto: const Money.soles(4000),
           motivo: 'Almuerzo',
         );
 

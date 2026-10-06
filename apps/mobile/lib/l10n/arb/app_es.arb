@@ -297,7 +297,7 @@
   "transferAmountHeadline": "¿Cuánto quieres enviar?",
   "transferAmountTo": "Para {name}",
   "@transferAmountTo": {"placeholders": {"name": {"type": "String"}}},
-  "transferAmountLabel": "Monto en soles",
+  "transferAmountLabel": "Monto",
   "transferAmountHint": "0.00",
   "transferAvailable": "Disponible: {amount}",
   "@transferAvailable": {"placeholders": {"amount": {"type": "String"}}},

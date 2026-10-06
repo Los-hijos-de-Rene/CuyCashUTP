@@ -19,13 +19,13 @@ const _cuenta = Account(
   id: MemoryTransferRepository.cuentaId,
   numero: '19100000004521',
   tipo: 'ahorro',
-  moneda: 'PEN',
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
 
-const _monto = Money.fromCentimos(5000);
+const _monto = Money.soles(5000);
 
 /// Listo para confirmar: destinatario, monto y clave ya fijados.
 const _listo = TransferState(
@@ -200,9 +200,8 @@ void main() {
       'si cambia el monto la intención es otra: la clave se descarta (daría 409)',
       build: () => _bloc(FakeTransferRepository(), newKey: _claves()),
       seed: () => _listo,
-      act: (b) => b.add(
-        const TransferEvent.amountEntered(monto: Money.fromCentimos(7000)),
-      ),
+      act: (b) =>
+          b.add(const TransferEvent.amountEntered(monto: Money.soles(7000))),
       verify: (b) => expect(b.state.idempotencyKey, isEmpty),
     );
   });
@@ -380,7 +379,7 @@ void main() {
       final primera = b.state.idempotencyKey;
 
       // El usuario retrocede a la pantalla de monto y lo baja.
-      b.add(const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)));
+      b.add(const TransferEvent.amountEntered(monto: Money.soles(4000)));
       await Future<void>.delayed(Duration.zero);
       b.add(const TransferEvent.confirmationOpened());
       b.add(const TransferEvent.submitted(pin: '000000'));
@@ -403,9 +402,7 @@ void main() {
           final antes = b.state;
           expect(antes.status, TransferStatus.ready);
 
-          b.add(
-            const TransferEvent.amountEntered(monto: Money.fromCentimos(1)),
-          );
+          b.add(const TransferEvent.amountEntered(monto: Money.soles(1)));
           b.add(const TransferEvent.recipientRequested('43219876'));
           b.add(const TransferEvent.recipientCleared());
           await Future<void>.delayed(Duration.zero);
@@ -422,11 +419,9 @@ void main() {
         addTearDown(b.close);
         expect(b.state.outcomeUnknown, isFalse);
 
-        b.add(
-          const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)),
-        );
+        b.add(const TransferEvent.amountEntered(monto: Money.soles(4000)));
         await Future<void>.delayed(Duration.zero);
-        expect(b.state.monto, const Money.fromCentimos(4000));
+        expect(b.state.monto, const Money.soles(4000));
       },
     );
   });
@@ -555,7 +550,7 @@ void main() {
 
         final b = await flujo(
           FakeTransferRepository(),
-          monto: const Money.fromCentimos(4000),
+          monto: const Money.soles(4000),
         );
 
         expect(b.state.idempotencyKey, isNot(primera));

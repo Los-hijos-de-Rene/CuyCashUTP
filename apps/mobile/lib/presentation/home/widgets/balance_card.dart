@@ -2,7 +2,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/format/soles.dart';
+import '../../../core/format/money_format.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Card de saldo sobre Eucalipto, con el ojo para ocultarlo.
@@ -68,7 +68,7 @@ class _BalanceCardState extends State<BalanceCard> {
           ),
           const SizedBox(height: CuyCashSpacing.stackXs),
           Text(
-            _hidden ? l10n.homeBalanceHidden : formatSoles(widget.balance),
+            _hidden ? l10n.homeBalanceHidden : formatMoney(widget.balance),
             style: CuyCashTypography.displayLg.copyWith(
               color: CuyCashColors.accentOnDark,
               fontFeatures: const [FontFeature.tabularFigures()],

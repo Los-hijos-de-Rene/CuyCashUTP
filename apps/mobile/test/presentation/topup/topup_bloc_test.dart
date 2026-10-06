@@ -16,7 +16,7 @@ import 'package:fpdart/fpdart.dart';
 import '../transfer/fake_transfer_repositories.dart';
 
 const _cuentaId = MemoryTransferRepository.cuentaId;
-const _monto = Money.fromCentimos(10000);
+const _monto = Money.soles(10000);
 
 TopUpBloc _bloc(
   TransferActions actions, {
@@ -105,7 +105,7 @@ void main() {
         _bloc(TransferActions(MemoryTransferRepository(clock: DateTime.now))),
     act: (bloc) {
       bloc.add(const TopUpEvent.opened(cuentaId: _cuentaId));
-      bloc.add(TopUpEvent.amountChanged(const Money.fromCentimos(200000)));
+      bloc.add(TopUpEvent.amountChanged(const Money.soles(200000)));
       bloc.add(const TopUpEvent.submitted(pin: '000000'));
     },
     verify: (bloc) {
@@ -117,7 +117,7 @@ void main() {
   for (final centimos in [300000, 200001]) {
     test('$centimos céntimos se rechaza sin llamar al backend', () async {
       final repo = FakeTransferRepository();
-      final b = await _preparado(repo, monto: Money.fromCentimos(centimos));
+      final b = await _preparado(repo, monto: Money.soles(centimos));
       addTearDown(b.close);
 
       b.add(const TopUpEvent.submitted(pin: '000000'));
@@ -235,7 +235,7 @@ void main() {
       final b = await _preparado(repo, newKey: _claves());
       addTearDown(b.close);
       final antes = b.state.idempotencyKey;
-      b.add(TopUpEvent.amountChanged(const Money.fromCentimos(5000)));
+      b.add(TopUpEvent.amountChanged(const Money.soles(5000)));
       await _pump();
       expect(b.state.idempotencyKey, isNot(antes));
     });
@@ -263,7 +263,7 @@ void main() {
           expect(b.state.outcomeUnknown, isTrue);
 
           // Sellada: el monto ya no se edita.
-          b.add(TopUpEvent.amountChanged(const Money.fromCentimos(5000)));
+          b.add(TopUpEvent.amountChanged(const Money.soles(5000)));
           await _pump();
           expect(b.state.monto, _monto);
 
@@ -382,7 +382,7 @@ void main() {
       final segundo = await _preparado(
         repo,
         pending: pendientesDePrueba(store: store),
-        monto: const Money.fromCentimos(2000),
+        monto: const Money.soles(2000),
         newKey: () => 'clave-NUEVA',
       );
       addTearDown(segundo.close);

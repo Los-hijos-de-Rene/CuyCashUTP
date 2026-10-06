@@ -59,7 +59,7 @@ class HttpTransferRepository implements TransferRepository {
     'motivo': ?motivo,
     'pin': pin,
     'idempotency_key': idempotencyKey,
-  });
+  }, monto.currency);
 
   @override
   FutureResult<TransferFailure, TransferReceipt> recargar({
@@ -72,11 +72,12 @@ class HttpTransferRepository implements TransferRepository {
     'monto_centimos': monto.centimos,
     'pin': pin,
     'idempotency_key': idempotencyKey,
-  });
+  }, monto.currency);
 
   FutureResult<TransferFailure, TransferReceipt> _mover(
     String path,
     Map<String, Object?> body,
+    Currency moneda,
   ) => _guard(() async {
     final response = await _dio.post<dynamic>(path, data: body);
     if (_failureFor(response) case final f?) {
@@ -86,7 +87,7 @@ class HttpTransferRepository implements TransferRepository {
     return right(
       TransferReceipt(
         transactionId: j['transaction_id'] as String,
-        monto: Money.fromCentimos(j['monto_centimos'] as int),
+        monto: Money(j['monto_centimos'] as int, moneda),
         fecha: _utc(j['created_at'] as String),
         // 200 = el servidor devolvió la operación original; 201 = nueva.
         reutilizada: response.statusCode == 200,

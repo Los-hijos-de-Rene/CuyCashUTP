@@ -24,7 +24,7 @@ void main() {
       final repo = MemoryTransferRepository(clock: () => ahora);
       Future<Result<TransferFailure, Object?>> mal(int i) => repo.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(100),
+        monto: const Money.soles(100),
         pin: '111111',
         idempotencyKey: 'mala-000$i',
       );
@@ -35,7 +35,7 @@ void main() {
       ahora = ahora.add(const Duration(minutes: 16));
       final r = await repo.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(100),
+        monto: const Money.soles(100),
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'buena-001',
       );
@@ -52,7 +52,7 @@ void main() {
 
       final r = await repo.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(100),
+        monto: const Money.soles(100),
         pin: '111111',
         idempotencyKey: 'mala-0001',
       );

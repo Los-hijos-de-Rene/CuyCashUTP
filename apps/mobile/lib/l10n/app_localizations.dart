@@ -1711,7 +1711,7 @@ abstract class AppLocalizations {
   /// No description provided for @transferAmountLabel.
   ///
   /// In es, this message translates to:
-  /// **'Monto en soles'**
+  /// **'Monto'**
   String get transferAmountLabel;
 
   /// No description provided for @transferAmountHint.

@@ -4,8 +4,9 @@ import 'package:core_kernel/core_kernel.dart';
 /// `services/api/.../transfers.py` y del `motivo` (≤ 40): la UI los aplica
 /// ANTES de enviar para no pagar un 422 que la app no sabe explicar.
 abstract final class TransferLimits {
-  static const montoMinimo = Money.fromCentimos(1);
-  static const montoMaximo = Money.fromCentimos(200000);
+  /// Mismo rango en cualquier moneda (espejo de `MONTO_MINIMO`/`MONTO_MAXIMO`).
+  static Money montoMinimo(Currency moneda) => Money(1, moneda);
+  static Money montoMaximo(Currency moneda) => Money(200000, moneda);
 
   /// Máximo de caracteres del motivo. El cliente HTTP no lo recorta.
   static const motivoMaxLength = 40;

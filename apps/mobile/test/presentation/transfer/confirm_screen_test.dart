@@ -25,12 +25,12 @@ const _cuenta = Account(
   id: 'acc-demo-1',
   numero: '19100000004521',
   tipo: 'ahorro',
-  moneda: 'PEN',
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
-const _monto = Money.fromCentimos(5000);
+const _monto = Money.soles(5000);
 
 Future<TransferBloc> _blocEnConfirmacion(
   FakeTransferRepository repo, {
@@ -295,9 +295,7 @@ void main() {
       expect(find.text('Volver al inicio'), findsOneWidget);
 
       // Aunque algo intentara editar el monto, el bloc lo ignora.
-      bloc.add(
-        const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)),
-      );
+      bloc.add(const TransferEvent.amountEntered(monto: Money.soles(4000)));
       await tester.pump();
       expect(bloc.state.monto, _monto);
 

@@ -22,12 +22,12 @@ const _cuenta = Account(
   id: 'acc-demo-1',
   numero: '19100000004521',
   tipo: 'ahorro',
-  moneda: 'PEN',
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
-const _monto = Money.fromCentimos(10000);
+const _monto = Money.soles(10000);
 
 void main() {
   late FakeTransferRepository repo;

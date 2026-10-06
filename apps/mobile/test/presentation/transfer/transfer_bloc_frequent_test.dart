@@ -18,13 +18,13 @@ const _cuenta = Account(
   id: MemoryTransferRepository.cuentaId,
   numero: '19100000004521',
   tipo: 'ahorro',
-  moneda: 'PEN',
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
 
-const _monto = Money.fromCentimos(5000);
+const _monto = Money.soles(5000);
 
 class _FrecuentesQueFallan implements BeneficiaryRepository {
   @override
@@ -35,9 +35,8 @@ class _FrecuentesQueFallan implements BeneficiaryRepository {
   FutureResult<BeneficiaryFailure, Unit> guardar(
     String dni,
     String apodo,
-  ) async => left(
-    const GlobalFailure.server(BeneficiaryFailure.rateLimited(null)),
-  );
+  ) async =>
+      left(const GlobalFailure.server(BeneficiaryFailure.rateLimited(null)));
 
   @override
   FutureResult<BeneficiaryFailure, Unit> eliminar(String id) async =>

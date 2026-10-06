@@ -1,7 +1,7 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:intl/intl.dart';
 
-/// Formatea un monto como `S/ 1,250.40`.
+/// Formatea un monto con el símbolo de su moneda: `S/ 1,250.40`, `US$ 20.00`.
 ///
 /// El símbolo va delante y los separadores son los peruanos: coma para miles,
 /// punto para decimales. No se usa `NumberFormat.currency(locale: 'es_PE')`
@@ -16,10 +16,10 @@ import 'package:intl/intl.dart';
 /// (`-S/ 1.50`), así que la UI no debe anteponer otro. Si una pantalla quiere
 /// el patrón `+ S/ 50.00` / `- S/ 50.00`, debe pasar el valor absoluto y poner
 /// el signo ella; de lo contrario un egreso saldría como `- -S/ 50.00`.
-String formatSoles(Money monto) {
+String formatMoney(Money monto) {
   final negativo = monto.centimos < 0;
   final abs = monto.centimos.abs();
   final enteros = NumberFormat('#,##0', 'en_US').format(abs ~/ 100);
   final decimales = (abs % 100).toString().padLeft(2, '0');
-  return '${negativo ? '-' : ''}S/ $enteros.$decimales';
+  return '${negativo ? '-' : ''}${monto.currency.symbol} $enteros.$decimales';
 }

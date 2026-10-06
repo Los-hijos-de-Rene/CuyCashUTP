@@ -28,23 +28,23 @@ void main() {
   test(
     'recargar sube el saldo que ve el inicio y deja el movimiento',
     () async {
-      expect(await saldo(), const Money.fromCentimos(125040));
+      expect(await saldo(), const Money.soles(125040));
 
       await transferencias.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(10000),
+        monto: const Money.soles(10000),
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0001',
       );
 
-      expect(await saldo(), const Money.fromCentimos(135040));
+      expect(await saldo(), const Money.soles(135040));
       final pagina = (await cuentas.movimientos(
         MemoryLedger.cuentaId,
       )).getRight().toNullable()!;
       final primero = pagina.items.first;
       expect(primero.tipo, MovementKind.recarga);
       expect(primero.direccion, MovementDirection.credito);
-      expect(primero.saldoPosterior, const Money.fromCentimos(135040));
+      expect(primero.saldoPosterior, const Money.soles(135040));
       expect(primero.transactionId, startsWith('tx-mem-'));
       // La ficha del movimiento nuevo también se encuentra.
       expect(
@@ -60,13 +60,13 @@ void main() {
       await transferencias.enviar(
         cuentaOrigenId: MemoryTransferRepository.cuentaId,
         destinatarioDni: MemoryTransferRepository.dniDestino,
-        monto: const Money.fromCentimos(5000),
+        monto: const Money.soles(5000),
         motivo: 'Cena',
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'envio-0001',
       );
 
-      expect(await saldo(), const Money.fromCentimos(120040));
+      expect(await saldo(), const Money.soles(120040));
       final primero = (await cuentas.movimientos(
         MemoryLedger.cuentaId,
       )).getRight().toNullable()!.items.first;
@@ -80,29 +80,29 @@ void main() {
     for (var i = 0; i < 2; i++) {
       await transferencias.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(10000),
+        monto: const Money.soles(10000),
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0001',
       );
     }
-    expect(await saldo(), const Money.fromCentimos(135040));
+    expect(await saldo(), const Money.soles(135040));
   });
 
   test('un fallo (PIN errado, fondos) no toca el saldo', () async {
     await transferencias.recargar(
       cuentaId: MemoryTransferRepository.cuentaId,
-      monto: const Money.fromCentimos(10000),
+      monto: const Money.soles(10000),
       pin: '111111',
       idempotencyKey: 'recarga-0002',
     );
     await transferencias.enviar(
       cuentaOrigenId: MemoryTransferRepository.cuentaId,
       destinatarioDni: MemoryTransferRepository.dniDestino,
-      monto: const Money.fromCentimos(200000),
+      monto: const Money.soles(200000),
       pin: MemoryTransferRepository.pinValido,
       idempotencyKey: 'envio-0002',
     );
-    expect(await saldo(), const Money.fromCentimos(125040));
+    expect(await saldo(), const Money.soles(125040));
   });
 
   test(
@@ -111,17 +111,14 @@ void main() {
       final deps = await buildMockDependencies();
       await deps.transferRepository.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
-        monto: const Money.fromCentimos(10000),
+        monto: const Money.soles(10000),
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0003',
       );
       final cuentasMock = (await deps.accountRepository.cuentas())
           .getRight()
           .toNullable()!;
-      expect(
-        cuentasMock.first.saldoDisponible,
-        const Money.fromCentimos(135040),
-      );
+      expect(cuentasMock.first.saldoDisponible, const Money.soles(135040));
     },
   );
 }

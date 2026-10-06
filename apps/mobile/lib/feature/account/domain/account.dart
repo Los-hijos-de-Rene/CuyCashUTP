@@ -23,7 +23,7 @@ class Account {
   final String tipo;
 
   /// Código ISO, hoy solo `PEN`.
-  final String moneda;
+  final Currency moneda;
 
   /// `activa` | `bloqueada` | `cerrada`.
   final String estado;
@@ -33,7 +33,9 @@ class Account {
   /// Los últimos cuatro dígitos precedidos de `••••`. El número completo no
   /// debe pintarse en pantallas de resumen.
   String get numeroMasked {
-    final cola = numero.length <= 4 ? numero : numero.substring(numero.length - 4);
+    final cola = numero.length <= 4
+        ? numero
+        : numero.substring(numero.length - 4);
     return '••••$cola';
   }
 }

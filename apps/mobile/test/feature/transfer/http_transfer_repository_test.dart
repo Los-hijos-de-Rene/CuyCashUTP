@@ -21,6 +21,7 @@ class FakeTransfersBackend implements HttpClientAdapter {
   static const dniDestino = '87654321';
   static const cuenta = 'acc-demo-1';
   static const consultasMaximas = 20;
+
   /// El tope REAL del backend (`IDENTIFIER_MAX_ATTEMPTS`). Transcribirlo a
   /// mano fue lo que hizo que la batería de contrato certificara un 5 que no
   /// existe en ninguno de los dos lados.
@@ -199,7 +200,7 @@ void main() {
   Future<Result<TransferFailure, Object?>> enviar() => repo.enviar(
     cuentaOrigenId: 'acc-demo-1',
     destinatarioDni: '87654321',
-    monto: const Money.fromCentimos(1000),
+    monto: const Money.soles(1000),
     pin: '000000',
     idempotencyKey: 'clave-0001',
   );
@@ -384,7 +385,7 @@ void main() {
       await repo.enviar(
         cuentaOrigenId: 'acc-demo-1',
         destinatarioDni: '87654321',
-        monto: const Money.fromCentimos(25000),
+        monto: const Money.soles(25000),
         motivo: 'Cena',
         pin: '000000',
         idempotencyKey: 'clave-0001',
@@ -407,7 +408,7 @@ void main() {
       await repo.enviar(
         cuentaOrigenId: 'acc-demo-1',
         destinatarioDni: '87654321',
-        monto: const Money.fromCentimos(100),
+        monto: const Money.soles(100),
         pin: '000000',
         idempotencyKey: 'clave-0001',
       );
@@ -421,7 +422,7 @@ void main() {
     test('recargar va a /v1/topups con cuenta_id y sin destinatario', () async {
       await repo.recargar(
         cuentaId: 'acc-demo-1',
-        monto: const Money.fromCentimos(5000),
+        monto: const Money.soles(5000),
         pin: '000000',
         idempotencyKey: 'recarga-0001',
       );
@@ -445,7 +446,7 @@ void main() {
     test('la fecha de la constancia con Z se lee como UTC', () async {
       final r = await repo.recargar(
         cuentaId: 'acc-demo-1',
-        monto: const Money.fromCentimos(5000),
+        monto: const Money.soles(5000),
         pin: '000000',
         idempotencyKey: 'recarga-0001',
       );

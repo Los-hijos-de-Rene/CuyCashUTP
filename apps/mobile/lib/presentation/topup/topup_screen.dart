@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/format/soles.dart';
+import '../../core/format/money_format.dart';
 import '../../core/security/secure_screen_scope.dart';
 import '../../feature/account/domain/account.dart';
 import '../../feature/transfer/domain/transfer_failure.dart';
@@ -65,15 +65,19 @@ class _TopUpScreenState extends State<TopUpScreen> {
     return t.endsWith('.') || t.endsWith(',');
   }
 
-  Money? get _parsed => Money.parse(_amount.text);
+  Money? get _parsed => Money.parse(_amount.text, widget.cuenta.moneda);
 
   String? _amountError(AppLocalizations l10n) {
     if (_amount.text.isEmpty || _incomplete) return null;
     final monto = _parsed;
     if (monto == null) return l10n.transferAmountInvalid;
-    if (monto < TransferLimits.montoMinimo) return l10n.transferAmountZero;
-    if (monto > TransferLimits.montoMaximo) {
-      return l10n.topUpAmountOverMax(formatSoles(TransferLimits.montoMaximo));
+    if (monto < TransferLimits.montoMinimo(widget.cuenta.moneda)) {
+      return l10n.transferAmountZero;
+    }
+    if (monto > TransferLimits.montoMaximo(widget.cuenta.moneda)) {
+      return l10n.topUpAmountOverMax(
+        formatMoney(TransferLimits.montoMaximo(widget.cuenta.moneda)),
+      );
     }
     return null;
   }
@@ -243,7 +247,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     for (final soles in _quickAmounts)
                       ActionChip(
                         label: Text(
-                          formatSoles(Money.fromCentimos(soles * 100)),
+                          formatMoney(Money(soles * 100, widget.cuenta.moneda)),
                         ),
                         onPressed: bloqueado
                             ? null
@@ -311,7 +315,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
             errorText: failed
                 ? (state.keyUnsaved && failure.outcomeUnknown
                       ? l10n.transferKeyUnsavedWarning
-                      : topUpErrorText(l10n, failure))
+                      : topUpErrorText(l10n, failure, widget.cuenta.moneda))
                 : null,
             hasError: failed && failure is WrongPin,
             extra: Column(
@@ -337,7 +341,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     children: [
                       if (monto != null)
                         Text(
-                          formatSoles(monto),
+                          formatMoney(monto),
                           style: CuyCashTypography.headlineMd,
                         ),
                       _Line(
@@ -432,7 +436,7 @@ class _DoneView extends StatelessWidget {
                 if (constancia != null) ...[
                   const SizedBox(height: CuyCashSpacing.stackXs),
                   Text(
-                    formatSoles(constancia.monto),
+                    formatMoney(constancia.monto),
                     style: CuyCashTypography.headlineMd,
                   ),
                   const SizedBox(height: CuyCashSpacing.stackLg),

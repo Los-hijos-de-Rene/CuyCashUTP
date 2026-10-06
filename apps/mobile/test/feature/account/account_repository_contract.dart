@@ -38,15 +38,15 @@ void probarContratoDeCuentas(
       final cuentas = valorDe(await construir().cuentas());
 
       expect(cuentas, isNotEmpty);
-      expect(cuentas.first.moneda, 'PEN');
+      expect(cuentas.first.moneda, Currency.pen);
       expect(cuentas.first.estado, 'activa');
     });
 
     test('el saldo es Money en céntimos exactos', () async {
       final c = await primeraCuenta(construir());
 
-      expect(c.saldoDisponible, const Money.fromCentimos(125040));
-      expect(c.saldoContable, const Money.fromCentimos(125040));
+      expect(c.saldoDisponible, const Money.soles(125040));
+      expect(c.saldoContable, const Money.soles(125040));
     });
 
     test('el número enmascarado son los últimos cuatro dígitos', () async {
@@ -148,15 +148,15 @@ void probarContratoDeCuentas(
       final cuenta = await primeraCuenta(repo);
       final items = valorDe(await repo.movimientos(cuenta.id)).items;
 
-      expect(items.every((m) => m.monto > Money.zero), isTrue);
+      expect(items.every((m) => m.monto > Money.zero(Currency.pen)), isTrue);
       expect(items[0].direccion, MovementDirection.debito);
-      expect(items[0].monto, const Money.fromCentimos(4500));
+      expect(items[0].monto, const Money.soles(4500));
       expect(items[0].contraparte, 'B*** D*** A***');
       expect(items[1].direccion, MovementDirection.credito);
-      expect(items[1].monto, const Money.fromCentimos(120000));
+      expect(items[1].monto, const Money.soles(120000));
       expect(items[1].contraparte, 'Jenny Marisol Ruiz');
       expect(items[2].direccion, MovementDirection.debito);
-      expect(items[2].monto, const Money.fromCentimos(1850));
+      expect(items[2].monto, const Money.soles(1850));
       expect(items[2].contraparte, 'M*** L*** C***');
     });
 
@@ -184,10 +184,18 @@ void probarContratoDeCuentas(
         expect(enviados, isNotEmpty);
         expect(recibidos, isNotEmpty);
         for (final m in enviados) {
-          expect(m.contraparte, matches(enmascarado), reason: '\${m.transactionId}');
+          expect(
+            m.contraparte,
+            matches(enmascarado),
+            reason: '\${m.transactionId}',
+          );
         }
         for (final m in recibidos) {
-          expect(m.contraparte, isNot(contains('***')), reason: '\${m.transactionId}');
+          expect(
+            m.contraparte,
+            isNot(contains('***')),
+            reason: '\${m.transactionId}',
+          );
         }
       },
     );
@@ -213,7 +221,7 @@ void probarContratoDeCuentas(
         expect(d.transactionId, 'tx-demo-1');
         expect(d.tipo, MovementKind.transferencia);
         expect(d.estado, 'confirmada');
-        expect(d.monto, const Money.fromCentimos(4500));
+        expect(d.monto, const Money.soles(4500));
         expect(d.cuentaDestinoMasked, matches(RegExp(r'^••••\d{4}$')));
         expect(d.fecha.isUtc, isTrue);
       },
