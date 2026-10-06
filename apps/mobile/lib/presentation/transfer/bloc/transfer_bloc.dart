@@ -228,6 +228,10 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     // pago con otro motivo tras matar la app): no se sella, pero se avisa.
     final otro = pendiente == null && await _pending.hasPending(_userId);
     if (state.idempotencyKey.isNotEmpty) return;
+    // La intención pudo cambiar durante los `await` (otra cuenta, otro monto):
+    // la clave hallada sería de la intención anterior. La próxima apertura de
+    // la confirmación lo rehace.
+    if (_huella != huella) return;
     emit(
       pendiente == null
           ? state.copyWith(idempotencyKey: _newKey(), pendingElsewhere: otro)

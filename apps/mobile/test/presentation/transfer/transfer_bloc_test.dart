@@ -462,6 +462,40 @@ void main() {
     );
   });
 
+  test('si el destino cambia mientras se consulta el almacén, no se sella '
+      'con la clave pendiente del destino anterior', () async {
+    final store = StoreLento();
+    await sembrarPendiente(store, huella: 'acc-demo-1|acc-ext-1|5000|');
+    final b = TransferBloc(
+      TransferActions(FakeTransferRepository()),
+      pending: pendientesDePrueba(store: store),
+      userId: 'u1',
+      newKey: _claves(),
+    );
+    addTearDown(b.close);
+    b.add(const TransferEvent.started(_cuenta));
+    b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
+    b.add(const TransferEvent.amountEntered(monto: _monto));
+    b.add(const TransferEvent.confirmationOpened());
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    b.add(
+      TransferEvent.recipientSelected(
+        Recipient(
+          dni: directorioDePrueba.dni,
+          nombreEnmascarado: directorioDePrueba.nombreEnmascarado,
+          cuenta: directorioDePrueba.cuentas[1],
+        ),
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    store.abrir.complete();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(b.state.destinatario?.cuenta.cuentaId, 'acc-ext-2');
+    expect(b.state.idempotencyKey, isEmpty);
+    expect(b.state.outcomeUnknown, isFalse);
+  });
+
   group('un caso por failure del envío', () {
     final casos = <(String, TransferFailure)>[
       ('insufficientFunds', const TransferFailure.insufficientFunds()),
@@ -554,6 +588,15 @@ void main() {
 
           b.add(const TransferEvent.amountEntered(monto: Money.soles(1)));
           b.add(const TransferEvent.recipientRequested('43219876'));
+          b.add(
+            TransferEvent.recipientSelected(
+              Recipient(
+                dni: directorioDePrueba.dni,
+                nombreEnmascarado: directorioDePrueba.nombreEnmascarado,
+                cuenta: directorioDePrueba.cuentas[1],
+              ),
+            ),
+          );
           b.add(const TransferEvent.recipientCleared());
           await Future<void>.delayed(Duration.zero);
 
