@@ -80,9 +80,11 @@ erDiagram
         uuid id PK
         uuid user_id FK "nulo solo en la cuenta de sistema"
         varchar numero UK "14 dígitos"
-        varchar tipo "ahorro | corriente | sistema"
+        varchar tipo "ahorro | corriente | sueldo | sistema"
         varchar moneda "PEN | USD"
         varchar estado "activa | bloqueada | cerrada"
+        varchar nombre "30, nulo; solo lo ve su titular"
+        varchar idempotency_key "64, nulo; UK con user_id"
         bigint saldo_disponible "céntimos"
         bigint saldo_contable "céntimos"
         timestamptz created_at
@@ -122,7 +124,8 @@ erDiagram
     beneficiaries {
         uuid id PK
         uuid user_id FK
-        varchar beneficiario_dni "8 dígitos; UK con user_id"
+        varchar beneficiario_dni "8 dígitos"
+        uuid cuenta_destino_id FK "cuenta guardada; UK con user_id"
         varchar apodo "40"
         timestamptz created_at
     }
@@ -303,11 +306,24 @@ la aplicación, y las fechas son `timestamptz`.
 
 | Tabla | Columnas | Restricciones |
 |---|---|---|
-| `accounts` | `id`, `user_id` (FK `users`, nulo solo en la cuenta de sistema), `numero` (14), `tipo`, `moneda`, `estado`, `saldo_disponible`, `saldo_contable`, `created_at` | `numero` único; `CHECK` de `tipo` (`ahorro`, `corriente`, `sistema`), `moneda` (`PEN`, `USD`) y `estado` (`activa`, `bloqueada`, `cerrada`); `(tipo = 'sistema') = (user_id IS NULL)`; saldo disponible no negativo salvo en `sistema` |
+| `accounts` | `id`, `user_id` (FK `users`, nulo solo en la cuenta de sistema), `numero` (14), `tipo`, `moneda`, `estado`, `nombre` (30, nulo), `idempotency_key` (64, nulo), `saldo_disponible`, `saldo_contable`, `created_at` | `numero` único; `CHECK` de `tipo` (`ahorro`, `corriente`, `sueldo`, `sistema`), `moneda` (`PEN`, `USD`) y `estado` (`activa`, `bloqueada`, `cerrada`); `(tipo = 'sistema') = (user_id IS NULL)`; saldo disponible no negativo salvo en `sistema`; `ck_accounts_sueldo_en_soles` (la `sueldo` solo es `PEN`); índice único parcial `ux_accounts_un_sueldo (user_id) WHERE tipo = 'sueldo'` (una sola por titular); `uq_accounts_clave_apertura (user_id, idempotency_key)` (abrir cuenta es idempotente) |
 | `transactions` | `id`, `tipo`, `estado`, `idempotency_key` (64), `referencia` (60, nulo), `request_fingerprint` (64), `created_at` | `idempotency_key` única; `CHECK` de `tipo` (`transferencia`, `recarga`, `pago_qr`, `desembolso`, `cuota`, `ajuste`) y `estado` (`pendiente`, `confirmada`, `revertida`) |
 | `ledger_entries` | `id`, `transaction_id` (FK), `account_id` (FK), `direccion`, `monto`, `moneda`, `saldo_posterior`, `created_at` | `monto > 0`; `direccion` en (`debito`, `credito`); índice `(account_id, created_at, id)` para paginar el historial |
 | `transfers` | `id`, `transaction_id` (FK), `cuenta_origen` (FK `accounts`), `cuenta_destino` (FK `accounts`), `monto`, `motivo` (40, nulo), `estado` (12, por defecto `confirmada`) | `transaction_id` único (una transferencia por transacción) |
-| `beneficiaries` | `id`, `user_id` (FK `users`), `beneficiario_dni` (8), `apodo` (40), `created_at` | única `(user_id, beneficiario_dni)`. Solo guarda DNI y apodo: nombre y cuenta se resuelven al usarlo |
+| `beneficiaries` | `id`, `user_id` (FK `users`), `beneficiario_dni` (8), `cuenta_destino_id` (FK `accounts`, NOT NULL), `apodo` (40), `created_at` | `uq_beneficiaries_user_cuenta (user_id, cuenta_destino_id)`. Un frecuente apunta a una cuenta concreta del destinatario, no solo a su DNI; el nombre se resuelve al usarlo |
+
+**Reglas de `accounts` que no son restricción de base.** Tope de 5 cuentas por
+titular (cuentan todas, también las cerradas): es regla del servicio, serializada
+con `SELECT ... FOR UPDATE` sobre la fila de `users` en `POST /v1/accounts`. La
+carrera de dos `sueldo` simultáneas la resuelve el índice parcial; la ruta
+captura el `IntegrityError` y responde `SALARY_ACCOUNT_EXISTS` (test `postgres`
+sin ejecutar: `tests/test_concurrencia_multicuenta.py`). Hay dos cajas de
+sistema, una por moneda: `PEN` = `19100000000000` y `USD` = `19100000000001`;
+ningún titular recibe esos números, y la recarga sale de la caja de la moneda
+de la cuenta.
+
+Cambió un `CHECK` y una `UNIQUE`: hay que recrear el esquema con
+`scripts/reset_schema.py`.
 
 `transfers` no guarda el dinero —eso son los asientos—, guarda la intención: a
 quién, desde dónde y con qué motivo. Una recarga no tiene fila en `transfers`.

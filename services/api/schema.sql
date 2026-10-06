@@ -118,11 +118,15 @@ CREATE TABLE accounts (
 	tipo VARCHAR(10) NOT NULL, 
 	moneda VARCHAR(3) NOT NULL, 
 	estado VARCHAR(10) NOT NULL, 
+	nombre VARCHAR(30), 
+	idempotency_key VARCHAR(64), 
 	saldo_disponible BIGINT NOT NULL, 
 	saldo_contable BIGINT NOT NULL, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
-	CONSTRAINT ck_accounts_tipo CHECK (tipo IN ('ahorro','corriente','sistema')), 
+	CONSTRAINT ck_accounts_tipo CHECK (tipo IN ('ahorro','corriente','sueldo','sistema')), 
+	CONSTRAINT ck_accounts_sueldo_en_soles CHECK (tipo <> 'sueldo' OR moneda = 'PEN'), 
+	CONSTRAINT uq_accounts_clave_apertura UNIQUE (user_id, idempotency_key), 
 	CONSTRAINT ck_accounts_moneda CHECK (moneda IN ('PEN','USD')), 
 	CONSTRAINT ck_accounts_estado CHECK (estado IN ('activa','bloqueada','cerrada')), 
 	CONSTRAINT ck_accounts_sistema_sin_titular CHECK ((tipo = 'sistema') = (user_id IS NULL)), 
@@ -133,22 +137,7 @@ CREATE TABLE accounts (
 ;
 CREATE UNIQUE INDEX ix_accounts_numero ON accounts (numero);
 CREATE INDEX ix_accounts_user_id ON accounts (user_id);
-
-
-CREATE TABLE beneficiaries (
-	id VARCHAR(36) NOT NULL, 
-	user_id VARCHAR(36) NOT NULL, 
-	beneficiario_dni VARCHAR(8) NOT NULL, 
-	apodo VARCHAR(40) NOT NULL, 
-	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
-	PRIMARY KEY (id), 
-	UNIQUE (user_id, beneficiario_dni), 
-	FOREIGN KEY(user_id) REFERENCES users (id)
-)
-
-;
-CREATE INDEX ix_beneficiaries_beneficiario_dni ON beneficiaries (beneficiario_dni);
-CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
+CREATE UNIQUE INDEX ux_accounts_un_sueldo ON accounts (user_id) WHERE tipo = 'sueldo';
 
 
 CREATE TABLE biometric_credentials (
@@ -218,6 +207,25 @@ CREATE TABLE sessions (
 ;
 CREATE UNIQUE INDEX ix_sessions_token_hash ON sessions (token_hash);
 CREATE INDEX ix_sessions_user_id ON sessions (user_id);
+
+
+CREATE TABLE beneficiaries (
+	id VARCHAR(36) NOT NULL, 
+	user_id VARCHAR(36) NOT NULL, 
+	beneficiario_dni VARCHAR(8) NOT NULL, 
+	cuenta_destino_id VARCHAR(36) NOT NULL, 
+	apodo VARCHAR(40) NOT NULL, 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_beneficiaries_user_cuenta UNIQUE (user_id, cuenta_destino_id), 
+	FOREIGN KEY(user_id) REFERENCES users (id), 
+	FOREIGN KEY(cuenta_destino_id) REFERENCES accounts (id)
+)
+
+;
+CREATE INDEX ix_beneficiaries_beneficiario_dni ON beneficiaries (beneficiario_dni);
+CREATE INDEX ix_beneficiaries_cuenta_destino_id ON beneficiaries (cuenta_destino_id);
+CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
 
 
 CREATE TABLE ledger_entries (
