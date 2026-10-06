@@ -10,18 +10,23 @@ import base64
 import binascii
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import case, or_, select
+from fastapi import APIRouter, Depends, Query, Response, status
+from pydantic import BaseModel, Field
+from sqlalchemy import case, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.routers.directory import enmascarar
-from app.core.deps import current_user
+from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
 from app.db.models import Account, LedgerEntry, Transaction, Transfer, User
+from app.db.models import Session as SessionRow
+from app.services import accounts as accounts_service
+from app.services.autorizacion import exigir_pin_de_operacion
 
 router = APIRouter(prefix="/v1", tags=["Cuentas"])
 
@@ -35,6 +40,7 @@ def _cuenta_json(c: Account) -> dict:
         "tipo": c.tipo,
         "moneda": c.moneda,
         "estado": c.estado,
+        "nombre": c.nombre,
         "saldo_disponible": c.saldo_disponible,
         "saldo_contable": c.saldo_contable,
     }
@@ -287,3 +293,152 @@ async def detalle_movimiento(
     if fila[2] is not None and numero_destino is not None:
         base["cuenta_destino_masked"] = f"••••{numero_destino[-4:]}"
     return base
+
+
+NOMBRE_MAXIMO = 30
+
+
+class AbrirCuentaIn(BaseModel):
+    tipo: Literal["ahorro", "corriente", "sueldo"]
+    moneda: Literal["PEN", "USD"]
+    # Holgado a propósito: la regla real (≤ 30 tras recortar, sin saltos de
+    # línea) la aplica `_nombre`, para responder INVALID_ACCOUNT_NAME y no 422.
+    nombre: Optional[str] = Field(default=None, max_length=200)
+    pin: str
+    idempotency_key: str = Field(min_length=8, max_length=64)
+
+
+class NombreIn(BaseModel):
+    nombre: Optional[str] = Field(default=None, max_length=200)
+
+
+def _nombre(crudo: Optional[str]) -> Optional[str]:
+    """Recortado; vacío es `None`. Más de 30 o con saltos de línea, error."""
+    limpio = (crudo or "").strip()
+    if not limpio:
+        return None
+    if len(limpio) > NOMBRE_MAXIMO or any(c in limpio for c in "\r\n\t"):
+        raise ApiError(
+            ErrorCode.INVALID_ACCOUNT_NAME,
+            f"El nombre puede tener hasta {NOMBRE_MAXIMO} caracteres.",
+        )
+    return limpio
+
+
+@router.post("/accounts", status_code=status.HTTP_201_CREATED)
+async def abrir_cuenta(
+    payload: AbrirCuentaIn,
+    response: Response,
+    user: User = Depends(current_user),
+    sesion: SessionRow = Depends(current_session_row),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Abre otra cuenta del titular. Pide PIN, como mover dinero.
+
+    Orden: validar el nombre, reintento idempotente, reglas de tipo y moneda,
+    tope y sueldo única (con la fila del titular bloqueada), y el PIN EL ÚLTIMO
+    para no gastar intentos en peticiones que iban a fallar igual.
+    """
+    nombre = _nombre(payload.nombre)
+
+    previa = (
+        await session.execute(
+            select(Account).where(
+                Account.user_id == user.id,
+                Account.idempotency_key == payload.idempotency_key,
+            )
+        )
+    ).scalar_one_or_none()
+    if previa is not None:
+        if (previa.tipo, previa.moneda, previa.nombre) != (payload.tipo, payload.moneda, nombre):
+            raise ApiError(
+                ErrorCode.IDEMPOTENCY_KEY_REUSED,
+                "Esa apertura ya se pidió con otros datos. Vuelve a empezar.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        response.status_code = status.HTTP_200_OK
+        return _cuenta_json(previa)
+
+    if payload.tipo == "sueldo" and payload.moneda != "PEN":
+        raise ApiError(
+            ErrorCode.INVALID_ACCOUNT_CURRENCY,
+            "La cuenta sueldo solo puede ser en soles.",
+        )
+
+    # Serializa las aperturas del MISMO titular: sin esto, dos peticiones a la
+    # vez contarían 4 cuentas cada una y abrirían la 5.ª y la 6.ª. SQLite
+    # ignora FOR UPDATE (allí las escrituras ya se serializan).
+    await session.execute(select(User.id).where(User.id == user.id).with_for_update())
+    cuantas = (
+        await session.execute(
+            select(func.count()).select_from(Account).where(Account.user_id == user.id)
+        )
+    ).scalar_one()
+    if cuantas >= accounts_service.MAX_CUENTAS:
+        raise ApiError(
+            ErrorCode.ACCOUNT_LIMIT_REACHED,
+            f"Puedes tener hasta {accounts_service.MAX_CUENTAS} cuentas.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    if payload.tipo == "sueldo":
+        ya_hay = (
+            await session.execute(
+                select(Account.id).where(Account.user_id == user.id, Account.tipo == "sueldo")
+            )
+        ).first()
+        if ya_hay is not None:
+            raise _sueldo_repetida()
+
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
+
+    try:
+        cuenta = await accounts_service.abrir_cuenta(
+            session,
+            user.id,
+            tipo=payload.tipo,
+            moneda=payload.moneda,
+            nombre=nombre,
+            idempotency_key=payload.idempotency_key,
+        )
+    except IntegrityError:
+        # Otra apertura de sueldo ganó la carrera: el índice parcial la frenó.
+        await session.rollback()
+        raise _sueldo_repetida()
+    cuerpo = _cuenta_json(cuenta)
+    await session.commit()
+    return cuerpo
+
+
+def _sueldo_repetida() -> ApiError:
+    return ApiError(
+        ErrorCode.SALARY_ACCOUNT_EXISTS,
+        "Ya tienes una cuenta sueldo.",
+        status_code=status.HTTP_409_CONFLICT,
+    )
+
+
+@router.patch("/accounts/{cuenta_id}/nombre")
+async def renombrar_cuenta(
+    cuenta_id: str,
+    payload: NombreIn,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Sin PIN: no mueve dinero y el nombre solo lo ve su titular."""
+    nombre = _nombre(payload.nombre)
+    cuenta = (
+        await session.execute(
+            select(Account).where(Account.id == cuenta_id, Account.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if cuenta is None:
+        raise ApiError(
+            ErrorCode.ACCOUNT_NOT_FOUND,
+            "No encontramos esa cuenta.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    cuenta.nombre = nombre
+    cuerpo = _cuenta_json(cuenta)
+    await session.commit()
+    return cuerpo
