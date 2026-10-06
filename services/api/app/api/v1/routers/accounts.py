@@ -209,6 +209,7 @@ def _movimiento_json(fila) -> dict:
         "estado": tx.estado,
         "direccion": entry.direccion,
         "monto": entry.monto,
+        "moneda": entry.moneda,
         "contraparte": contraparte,
         "motivo": motivo,
         "saldo_posterior": entry.saldo_posterior,

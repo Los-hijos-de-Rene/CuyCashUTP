@@ -12,6 +12,7 @@ from app.services.rate_limit import CONSULTAS_MAXIMAS, VentanaDeslizante
 from tests.conftest import PIN_DE_PRUEBA
 
 INEXISTENTE = "99999999"
+INEXISTENTE_ID = "00000000-0000-0000-0000-000000000000"
 
 
 async def _resolver(client, titular, dni=INEXISTENTE):
@@ -24,10 +25,10 @@ async def _agotar_por_directorio(client, titular):
         assert r.status_code == 404
 
 
-def _envio(origen, dni, clave="envio-cupo-001"):
+def _envio(origen, destino, clave="envio-cupo-001"):
     return {
         "cuenta_origen_id": origen,
-        "destinatario_dni": dni,
+        "cuenta_destino_id": destino,
         "monto_centimos": 100,
         "pin": PIN_DE_PRUEBA,
         "idempotency_key": clave,
@@ -214,7 +215,7 @@ async def test_agotar_el_cupo_por_directorio_lo_agota_para_transferir(
     await _agotar_por_directorio(client, registrado)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, INEXISTENTE), headers=registrado.auth
+        "/v1/transfers", json=_envio(origen, INEXISTENTE_ID), headers=registrado.auth
     )
     assert r.status_code == 429
     assert r.json()["code"] == "RATE_LIMITED"
@@ -228,7 +229,7 @@ async def test_agotar_el_cupo_por_transferir_lo_agota_para_el_directorio(
     for i in range(CONSULTAS_MAXIMAS):
         r = await client.post(
             "/v1/transfers",
-            json=_envio(origen, INEXISTENTE, "envio-cupo-%03d" % i),
+            json=_envio(origen, INEXISTENTE_ID, "envio-cupo-%03d" % i),
             headers=registrado.auth,
         )
         assert r.status_code == 404, r.text
@@ -266,7 +267,7 @@ async def test_transferir_sin_agotar_el_cupo_no_se_ve_afectado(
     )
     assert r.status_code == 201
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni), headers=registrado.auth
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado)), headers=registrado.auth
     )
     assert r.status_code == 201, r.text
 
