@@ -303,6 +303,9 @@ async def reset_pin(payload: ResetPinIn, session: AsyncSession = Depends(get_ses
     # Cambiar el PIN cierra TODAS las sesiones, incluida la de este teléfono:
     # restablecer no otorga acceso.
     revocadas = await sessions.revoke_all(session, user.id)
+    # Y las huellas de todos los teléfonos: si no, la huella abriría la
+    # sesión que el restablecimiento acaba de cerrar.
+    await biometric.revoke(session, user.id)
     await session.commit()
     return {"revoked_sessions": revocadas}
 

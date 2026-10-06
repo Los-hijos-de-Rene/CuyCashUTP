@@ -112,3 +112,23 @@ async def test_los_fallos_con_huella_no_suman_intentos(client, registrado):
         headers={"X-Device-Id": f"dev-{registrado.dni}"},
     )
     assert ok.json()["result"] == "session"
+
+
+async def test_restablecer_el_pin_revoca_la_huella(client, registrado, otp_codes):
+    from tests.test_otp_y_recuperacion import abrir_reto, verificar
+
+    credencial = (await _activar(client, registrado)).json()["credential"]
+
+    reto = await abrir_reto(client, identifier=f"{registrado.dni}@correo.pe")
+    ticket = (
+        await verificar(client, reto["challenge_id"], otp_codes[-1]["code"])
+    ).json()["otp_ticket"]
+    r = await client.post(
+        "/v1/auth/pin/reset", json={"otp_ticket": ticket, "new_pin": "314159"}
+    )
+    assert r.status_code == 200
+
+    # Restablecer el PIN no otorga acceso: tampoco con la huella de antes.
+    assert (
+        await _entrar(client, registrado.dni, credencial, f"dev-{registrado.dni}")
+    ).status_code == 401
