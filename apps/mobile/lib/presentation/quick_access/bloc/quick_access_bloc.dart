@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:core_kernel/core_kernel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../feature/auth/application/auth_actions.dart';
+import '../../../feature/auth/domain/auth_failure.dart';
 import '../../../feature/device/application/device_actions.dart';
 import '../../../feature/lockout/domain/lockout_policy.dart';
 import '../../../feature/device/domain/remembered_user.dart';
@@ -57,13 +59,25 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
       return;
     }
     final pin = '${state.pin}${event.digit}';
-    emit(state.copyWith(pin: pin, lastWrong: false));
+    emit(state.copyWith(pin: pin, lastWrong: false, biometricFailed: false));
     if (pin.length < 6) return;
 
     emit(state.copyWith(status: QuickAccessStatus.verifying));
     final result = await _auth.signIn(identifier: state.user.dni, pin: pin);
     await result.match(
       (failure) async {
+        if (failure case ServerFailure(failure: DeviceVerificationRequired())) {
+          // El PIN fue correcto: no es un intento fallido. Falta verificar el
+          // teléfono, y eso lo hace el login con su OTP.
+          emit(
+            state.copyWith(
+              status: QuickAccessStatus.idle,
+              pin: '',
+              needsDeviceVerification: true,
+            ),
+          );
+          return;
+        }
         final lockout = await _device.registerFailedAttempt(_now());
         if (lockout.isLocked(_now())) {
           emit(
@@ -106,7 +120,13 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
         !state.biometricAvailable) {
       return;
     }
-    emit(state.copyWith(status: QuickAccessStatus.verifying, lastWrong: false));
+    emit(
+      state.copyWith(
+        status: QuickAccessStatus.verifying,
+        lastWrong: false,
+        biometricFailed: false,
+      ),
+    );
     final resultado = await _biometric(
       dni: state.user.dni,
       reason: event.reason,
@@ -116,8 +136,13 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
         // La sesión llega por el stream → home.
         await _device.resetLockout();
         emit(state.copyWith(status: QuickAccessStatus.idle));
-      case BiometricSignInCancelled() || BiometricSignInFailed():
+      case BiometricSignInCancelled():
         emit(state.copyWith(status: QuickAccessStatus.idle));
+      case BiometricSignInFailed():
+        // Antes volvía en silencio y parecía que el botón no hacía nada.
+        emit(
+          state.copyWith(status: QuickAccessStatus.idle, biometricFailed: true),
+        );
       case BiometricSignInUnavailable():
         emit(
           state.copyWith(

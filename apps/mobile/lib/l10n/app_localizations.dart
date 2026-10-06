@@ -922,6 +922,12 @@ abstract class AppLocalizations {
   /// **'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.'**
   String get quickAccessBiometricRevoked;
 
+  /// No description provided for @quickAccessBiometricFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.'**
+  String get quickAccessBiometricFailed;
+
   /// No description provided for @notYou.
   ///
   /// In es, this message translates to:

@@ -6,6 +6,7 @@ import 'package:cuycash/feature/biometric/infrastructure/memory_biometric_gate.d
 import 'package:cuycash/feature/device/application/device_actions.dart';
 import 'package:cuycash/feature/device/domain/remembered_user.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
+import 'package:cuycash/feature/lockout/domain/lockout_policy.dart';
 import 'package:cuycash/feature/security/application/biometric_sign_in_use_case.dart';
 import 'package:cuycash/feature/security/infrastructure/memory_security_state.dart';
 import 'package:cuycash/presentation/quick_access/bloc/quick_access_bloc.dart';
@@ -105,6 +106,29 @@ void main() {
     verify: (b) => expect(b.state.lockedUntil, isNotNull),
   );
 
+  test('PIN correcto en un teléfono desvinculado: pide verificarlo y NO cuenta '
+      'como intento fallido', () async {
+    final store = MemoryDeviceStore();
+    final b = build(
+      auth: MemoryAuthRepository(deviceTrusted: false),
+      device: store,
+    );
+    addTearDown(b.close);
+
+    for (final d in [0, 0, 0, 0, 0, 0]) {
+      b.add(QuickAccessEvent.digitPressed(d));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(b.state.needsDeviceVerification, isTrue);
+    expect(b.state.status, QuickAccessStatus.idle);
+    expect(b.state.pin, '');
+    expect(b.state.lastWrong, isFalse);
+    expect(b.state.attemptsLeft, LockoutPolicy.maxAttempts);
+    expect(b.state.lockedUntil, isNull);
+    expect((await store.readLockout()).failedAttempts, 0);
+  });
+
   group('huella', () {
     late MemorySecurityState estado;
     late MemoryAuthRepository auth;
@@ -185,6 +209,21 @@ void main() {
       await pulsar(b);
       expect(b.state.biometricAvailable, isFalse);
       expect(b.state.biometricRevoked, isFalse);
+    });
+
+    test('huella leída pero sin sesión: avisa en vez de callarse', () async {
+      gate.outcome = BiometricOutcome.failed;
+      final b = await armar();
+      await pulsar(b);
+      expect(b.state.biometricFailed, isTrue);
+      expect(b.state.biometricAvailable, isTrue);
+      expect(b.state.status, QuickAccessStatus.idle);
+      expect(auth.currentSession, isNull);
+
+      // Un nuevo intento borra el aviso anterior.
+      gate.outcome = BiometricOutcome.success;
+      await pulsar(b);
+      expect(b.state.biometricFailed, isFalse);
     });
 
     test('revocada: oculta la huella y marca el aviso', () async {

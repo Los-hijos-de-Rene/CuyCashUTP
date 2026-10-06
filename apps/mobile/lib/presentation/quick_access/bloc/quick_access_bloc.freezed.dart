@@ -384,7 +384,11 @@ mixin _$QuickAccessState {
 
  RememberedUser get user; String get pin; QuickAccessStatus get status; int get attemptsLeft; bool get lastWrong;/// Hay credencial guardada y el sistema puede pedir la huella.
  bool get biometricAvailable;/// El servidor rechazó la credencial: se borró y hay que entrar con PIN.
- bool get biometricRevoked; DateTime? get lockedUntil;/// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
+ bool get biometricRevoked;/// La huella se leyó pero no se pudo abrir sesión (servidor o red): se
+/// avisa y se puede reintentar o usar el PIN.
+ bool get biometricFailed;/// PIN correcto, pero este teléfono dejó de ser de confianza (lo
+/// desvincularon): la pantalla lleva al login, que corre el OTP.
+ bool get needsDeviceVerification; DateTime? get lockedUntil;/// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
  Duration? get nextLockout;
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
@@ -396,16 +400,16 @@ $QuickAccessStateCopyWith<QuickAccessState> get copyWith => _$QuickAccessStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricRevoked, biometricRevoked) || other.biometricRevoked == biometricRevoked)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricRevoked, biometricRevoked) || other.biometricRevoked == biometricRevoked)&&(identical(other.biometricFailed, biometricFailed) || other.biometricFailed == biometricFailed)&&(identical(other.needsDeviceVerification, needsDeviceVerification) || other.needsDeviceVerification == needsDeviceVerification)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,biometricAvailable,biometricRevoked,lockedUntil,nextLockout);
+int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,biometricAvailable,biometricRevoked,biometricFailed,needsDeviceVerification,lockedUntil,nextLockout);
 
 @override
 String toString() {
-  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, biometricAvailable: $biometricAvailable, biometricRevoked: $biometricRevoked, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
+  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, biometricAvailable: $biometricAvailable, biometricRevoked: $biometricRevoked, biometricFailed: $biometricFailed, needsDeviceVerification: $needsDeviceVerification, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
 }
 
 
@@ -416,7 +420,7 @@ abstract mixin class $QuickAccessStateCopyWith<$Res>  {
   factory $QuickAccessStateCopyWith(QuickAccessState value, $Res Function(QuickAccessState) _then) = _$QuickAccessStateCopyWithImpl;
 @useResult
 $Res call({
- RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, bool biometricAvailable, bool biometricRevoked, DateTime? lockedUntil, Duration? nextLockout
+ RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, bool biometricAvailable, bool biometricRevoked, bool biometricFailed, bool needsDeviceVerification, DateTime? lockedUntil, Duration? nextLockout
 });
 
 
@@ -433,7 +437,7 @@ class _$QuickAccessStateCopyWithImpl<$Res>
 
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? biometricAvailable = null,Object? biometricRevoked = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? biometricAvailable = null,Object? biometricRevoked = null,Object? biometricFailed = null,Object? needsDeviceVerification = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
   return _then(_self.copyWith(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as RememberedUser,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
@@ -442,6 +446,8 @@ as QuickAccessStatus,attemptsLeft: null == attemptsLeft ? _self.attemptsLeft : a
 as int,lastWrong: null == lastWrong ? _self.lastWrong : lastWrong // ignore: cast_nullable_to_non_nullable
 as bool,biometricAvailable: null == biometricAvailable ? _self.biometricAvailable : biometricAvailable // ignore: cast_nullable_to_non_nullable
 as bool,biometricRevoked: null == biometricRevoked ? _self.biometricRevoked : biometricRevoked // ignore: cast_nullable_to_non_nullable
+as bool,biometricFailed: null == biometricFailed ? _self.biometricFailed : biometricFailed // ignore: cast_nullable_to_non_nullable
+as bool,needsDeviceVerification: null == needsDeviceVerification ? _self.needsDeviceVerification : needsDeviceVerification // ignore: cast_nullable_to_non_nullable
 as bool,lockedUntil: freezed == lockedUntil ? _self.lockedUntil : lockedUntil // ignore: cast_nullable_to_non_nullable
 as DateTime?,nextLockout: freezed == nextLockout ? _self.nextLockout : nextLockout // ignore: cast_nullable_to_non_nullable
 as Duration?,
@@ -529,10 +535,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  bool biometricFailed,  bool needsDeviceVerification,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuickAccessState() when $default != null:
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.lockedUntil,_that.nextLockout);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.biometricFailed,_that.needsDeviceVerification,_that.lockedUntil,_that.nextLockout);case _:
   return orElse();
 
 }
@@ -550,10 +556,10 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  DateTime? lockedUntil,  Duration? nextLockout)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  bool biometricFailed,  bool needsDeviceVerification,  DateTime? lockedUntil,  Duration? nextLockout)  $default,) {final _that = this;
 switch (_that) {
 case _QuickAccessState():
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.lockedUntil,_that.nextLockout);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.biometricFailed,_that.needsDeviceVerification,_that.lockedUntil,_that.nextLockout);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -570,10 +576,10 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RememberedUser user,  String pin,  QuickAccessStatus status,  int attemptsLeft,  bool lastWrong,  bool biometricAvailable,  bool biometricRevoked,  bool biometricFailed,  bool needsDeviceVerification,  DateTime? lockedUntil,  Duration? nextLockout)?  $default,) {final _that = this;
 switch (_that) {
 case _QuickAccessState() when $default != null:
-return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.lockedUntil,_that.nextLockout);case _:
+return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastWrong,_that.biometricAvailable,_that.biometricRevoked,_that.biometricFailed,_that.needsDeviceVerification,_that.lockedUntil,_that.nextLockout);case _:
   return null;
 
 }
@@ -585,7 +591,7 @@ return $default(_that.user,_that.pin,_that.status,_that.attemptsLeft,_that.lastW
 
 
 class _QuickAccessState implements QuickAccessState {
-  const _QuickAccessState({required this.user, this.pin = '', this.status = QuickAccessStatus.idle, this.attemptsLeft = LockoutPolicy.maxAttempts, this.lastWrong = false, this.biometricAvailable = false, this.biometricRevoked = false, this.lockedUntil, this.nextLockout});
+  const _QuickAccessState({required this.user, this.pin = '', this.status = QuickAccessStatus.idle, this.attemptsLeft = LockoutPolicy.maxAttempts, this.lastWrong = false, this.biometricAvailable = false, this.biometricRevoked = false, this.biometricFailed = false, this.needsDeviceVerification = false, this.lockedUntil, this.nextLockout});
   
 
 @override final  RememberedUser user;
@@ -597,6 +603,12 @@ class _QuickAccessState implements QuickAccessState {
 @override@JsonKey() final  bool biometricAvailable;
 /// El servidor rechazó la credencial: se borró y hay que entrar con PIN.
 @override@JsonKey() final  bool biometricRevoked;
+/// La huella se leyó pero no se pudo abrir sesión (servidor o red): se
+/// avisa y se puede reintentar o usar el PIN.
+@override@JsonKey() final  bool biometricFailed;
+/// PIN correcto, pero este teléfono dejó de ser de confianza (lo
+/// desvincularon): la pantalla lleva al login, que corre el OTP.
+@override@JsonKey() final  bool needsDeviceVerification;
 @override final  DateTime? lockedUntil;
 /// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
 @override final  Duration? nextLockout;
@@ -611,16 +623,16 @@ _$QuickAccessStateCopyWith<_QuickAccessState> get copyWith => __$QuickAccessStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricRevoked, biometricRevoked) || other.biometricRevoked == biometricRevoked)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuickAccessState&&(identical(other.user, user) || other.user == user)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.status, status) || other.status == status)&&(identical(other.attemptsLeft, attemptsLeft) || other.attemptsLeft == attemptsLeft)&&(identical(other.lastWrong, lastWrong) || other.lastWrong == lastWrong)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricRevoked, biometricRevoked) || other.biometricRevoked == biometricRevoked)&&(identical(other.biometricFailed, biometricFailed) || other.biometricFailed == biometricFailed)&&(identical(other.needsDeviceVerification, needsDeviceVerification) || other.needsDeviceVerification == needsDeviceVerification)&&(identical(other.lockedUntil, lockedUntil) || other.lockedUntil == lockedUntil)&&(identical(other.nextLockout, nextLockout) || other.nextLockout == nextLockout));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,biometricAvailable,biometricRevoked,lockedUntil,nextLockout);
+int get hashCode => Object.hash(runtimeType,user,pin,status,attemptsLeft,lastWrong,biometricAvailable,biometricRevoked,biometricFailed,needsDeviceVerification,lockedUntil,nextLockout);
 
 @override
 String toString() {
-  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, biometricAvailable: $biometricAvailable, biometricRevoked: $biometricRevoked, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
+  return 'QuickAccessState(user: $user, pin: $pin, status: $status, attemptsLeft: $attemptsLeft, lastWrong: $lastWrong, biometricAvailable: $biometricAvailable, biometricRevoked: $biometricRevoked, biometricFailed: $biometricFailed, needsDeviceVerification: $needsDeviceVerification, lockedUntil: $lockedUntil, nextLockout: $nextLockout)';
 }
 
 
@@ -631,7 +643,7 @@ abstract mixin class _$QuickAccessStateCopyWith<$Res> implements $QuickAccessSta
   factory _$QuickAccessStateCopyWith(_QuickAccessState value, $Res Function(_QuickAccessState) _then) = __$QuickAccessStateCopyWithImpl;
 @override @useResult
 $Res call({
- RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, bool biometricAvailable, bool biometricRevoked, DateTime? lockedUntil, Duration? nextLockout
+ RememberedUser user, String pin, QuickAccessStatus status, int attemptsLeft, bool lastWrong, bool biometricAvailable, bool biometricRevoked, bool biometricFailed, bool needsDeviceVerification, DateTime? lockedUntil, Duration? nextLockout
 });
 
 
@@ -648,7 +660,7 @@ class __$QuickAccessStateCopyWithImpl<$Res>
 
 /// Create a copy of QuickAccessState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? biometricAvailable = null,Object? biometricRevoked = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? pin = null,Object? status = null,Object? attemptsLeft = null,Object? lastWrong = null,Object? biometricAvailable = null,Object? biometricRevoked = null,Object? biometricFailed = null,Object? needsDeviceVerification = null,Object? lockedUntil = freezed,Object? nextLockout = freezed,}) {
   return _then(_QuickAccessState(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as RememberedUser,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
@@ -657,6 +669,8 @@ as QuickAccessStatus,attemptsLeft: null == attemptsLeft ? _self.attemptsLeft : a
 as int,lastWrong: null == lastWrong ? _self.lastWrong : lastWrong // ignore: cast_nullable_to_non_nullable
 as bool,biometricAvailable: null == biometricAvailable ? _self.biometricAvailable : biometricAvailable // ignore: cast_nullable_to_non_nullable
 as bool,biometricRevoked: null == biometricRevoked ? _self.biometricRevoked : biometricRevoked // ignore: cast_nullable_to_non_nullable
+as bool,biometricFailed: null == biometricFailed ? _self.biometricFailed : biometricFailed // ignore: cast_nullable_to_non_nullable
+as bool,needsDeviceVerification: null == needsDeviceVerification ? _self.needsDeviceVerification : needsDeviceVerification // ignore: cast_nullable_to_non_nullable
 as bool,lockedUntil: freezed == lockedUntil ? _self.lockedUntil : lockedUntil // ignore: cast_nullable_to_non_nullable
 as DateTime?,nextLockout: freezed == nextLockout ? _self.nextLockout : nextLockout // ignore: cast_nullable_to_non_nullable
 as Duration?,

@@ -37,8 +37,15 @@ class QuickAccessScreen extends StatelessWidget {
         body: SafeArea(
           child: BlocConsumer<QuickAccessBloc, QuickAccessState>(
             listenWhen: (p, c) =>
-                p.lockedUntil != c.lockedUntil && c.lockedUntil != null,
+                (p.lockedUntil != c.lockedUntil && c.lockedUntil != null) ||
+                (!p.needsDeviceVerification && c.needsDeviceVerification),
             listener: (context, state) {
+              if (state.needsDeviceVerification) {
+                // PIN correcto en un teléfono que ya no es de confianza: el
+                // login, con el DNI puesto, corre el OTP de dispositivo.
+                context.go(AppRoutes.login, extra: state.user.dni);
+                return;
+              }
               final lockedUntil = state.lockedUntil;
               if (lockedUntil == null) return;
               context.go(
@@ -120,6 +127,16 @@ class QuickAccessScreen extends StatelessWidget {
                       child: InfoStrip(
                         icon: Icons.fingerprint,
                         text: l10n.quickAccessBiometricRevoked,
+                      ),
+                    ),
+                  if (state.biometricFailed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: InfoStrip(
+                        icon: Icons.fingerprint,
+                        text: l10n.quickAccessBiometricFailed,
                       ),
                     ),
                   const Spacer(),

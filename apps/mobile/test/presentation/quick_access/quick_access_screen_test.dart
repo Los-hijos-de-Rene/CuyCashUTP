@@ -1,5 +1,6 @@
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
+import 'package:cuycash/feature/biometric/domain/biometric_gate.dart';
 import 'package:cuycash/feature/biometric/infrastructure/memory_biometric_gate.dart';
 import 'package:cuycash/feature/device/application/device_actions.dart';
 import 'package:cuycash/feature/device/domain/remembered_user.dart';
@@ -7,12 +8,14 @@ import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/feature/security/application/biometric_sign_in_use_case.dart';
 import 'package:cuycash/feature/security/infrastructure/memory_security_state.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
+import 'package:cuycash/presentation/app/app_routes.dart';
 import 'package:cuycash/presentation/quick_access/bloc/quick_access_bloc.dart';
 import 'package:cuycash/presentation/quick_access/quick_access_screen.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   late MemorySecurityState estado;
@@ -97,6 +100,80 @@ void main() {
 
     expect(find.byIcon(Icons.fingerprint), findsNothing);
   });
+
+  testWidgets('huella leída sin sesión: avisa y deja reintentar', (
+    tester,
+  ) async {
+    estado.credentials['ok'] = estado.thisDeviceId;
+    await store.saveBiometricCredential('ok');
+    gate.outcome = BiometricOutcome.failed;
+    await pumpQuickAccess(tester);
+
+    await tester.tap(find.byIcon(Icons.fingerprint));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.',
+      ),
+      findsOneWidget,
+    );
+    expect(auth.currentSession, isNull);
+  });
+
+  testWidgets(
+    'teléfono desvinculado: el PIN correcto lleva al login con el DNI',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      auth = MemoryAuthRepository(security: estado, deviceTrusted: false);
+      final bloc = QuickAccessBloc(
+        auth: AuthActions(auth),
+        device: DeviceActions(store),
+        biometric: BiometricSignInUseCase(auth: auth, gate: gate, store: store),
+        user: user,
+        clock: () => DateTime(2026),
+      );
+      addTearDown(bloc.close);
+      final router = GoRouter(
+        initialLocation: AppRoutes.quickAccess,
+        routes: [
+          GoRoute(
+            path: AppRoutes.quickAccess,
+            builder: (_, _) => BlocProvider.value(
+              value: bloc,
+              child: const QuickAccessScreen(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoutes.login,
+            builder: (_, state) => Text('login:${state.extra}'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          theme: CuyCashTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < 6; i++) {
+        await tester.tap(find.text('0'));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.text('login:${user.dni}'), findsOneWidget);
+      expect((await store.readLockout()).failedAttempts, 0);
+    },
+  );
 
   testWidgets('credencial revocada: la borra, oculta el botón y avisa', (
     tester,

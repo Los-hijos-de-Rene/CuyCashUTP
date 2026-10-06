@@ -471,6 +471,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.';
 
   @override
+  String get quickAccessBiometricFailed =>
+      'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.';
+
+  @override
   String notYou(String name) {
     return '¿No eres $name?';
   }
