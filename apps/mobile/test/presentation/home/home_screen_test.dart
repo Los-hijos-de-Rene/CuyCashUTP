@@ -129,7 +129,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('S/ 1,250.40'), findsOneWidget);
-      expect(find.text('Billetera ••••4521'), findsOneWidget);
+      expect(find.text('S/ · Billetera ••••4521'), findsOneWidget);
       expect(find.text('B*** D*** A***'), findsOneWidget);
       // El signo lo pone la UI sobre el valor absoluto.
       expect(find.text('- S/ 45.00'), findsOneWidget);
@@ -344,6 +344,50 @@ void main() {
       expect(fallido.recibidos, [const AccountEvent.started()]);
     },
   );
+
+  testWidgets('el lápiz abre la hoja y guardar "Casa" renombra la tarjeta', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Cambiar el nombre de la cuenta').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Casa');
+    await tester.tap(find.text('Guardar'));
+    // El bloc nació fuera de FakeAsync: su respuesta llega en el reloj real.
+    await tester.runAsync(() => account.stream.firstWhere((s) => !s.renaming));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Casa'), findsOneWidget);
+    expect(find.text('Nombre de la cuenta'), findsNothing);
+  });
+
+  testWidgets('con cinco cuentas no hay tarjeta de abrir otra', (tester) async {
+    Account cuenta(int i) => Account(
+      id: 'c$i',
+      numero: '1910000000000$i'.padRight(14, '0'),
+      tipo: AccountType.ahorro,
+      moneda: Currency.pen,
+      estado: 'activa',
+      saldoDisponible: const Money.soles(1000),
+      saldoContable: const Money.soles(1000),
+    );
+    final b = _BlocConEstado(
+      AccountState(
+        status: AccountStatus.ready,
+        cuentas: [for (var i = 0; i < 5; i++) cuenta(i)],
+        seleccionada: 4,
+      ),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapWith(b));
+    await tester.pump();
+
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('Abrir otra cuenta'), findsNothing);
+  });
 
   testWidgets('un refresco fallido avisa sin quitar el saldo', (tester) async {
     final b = _BlocConEstado(

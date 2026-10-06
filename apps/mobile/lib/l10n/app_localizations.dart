@@ -1402,6 +1402,114 @@ abstract class AppLocalizations {
   /// **'Billetera {masked}'**
   String homeWalletMask(String masked);
 
+  /// No description provided for @accountTypeAhorroLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ahorros'**
+  String get accountTypeAhorroLong;
+
+  /// No description provided for @accountTypeCorrienteLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta corriente'**
+  String get accountTypeCorrienteLong;
+
+  /// No description provided for @accountTypeSueldoLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta sueldo'**
+  String get accountTypeSueldoLong;
+
+  /// No description provided for @accountTypeAhorroShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros'**
+  String get accountTypeAhorroShort;
+
+  /// No description provided for @accountTypeCorrienteShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente'**
+  String get accountTypeCorrienteShort;
+
+  /// No description provided for @accountTypeSueldoShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sueldo'**
+  String get accountTypeSueldoShort;
+
+  /// No description provided for @currencyPenName.
+  ///
+  /// In es, this message translates to:
+  /// **'Soles'**
+  String get currencyPenName;
+
+  /// No description provided for @currencyUsdName.
+  ///
+  /// In es, this message translates to:
+  /// **'Dólares'**
+  String get currencyUsdName;
+
+  /// No description provided for @homeAccountPage.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta {actual} de {total}'**
+  String homeAccountPage(int actual, int total);
+
+  /// No description provided for @homeRenameTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar el nombre de la cuenta'**
+  String get homeRenameTooltip;
+
+  /// No description provided for @homeOpenAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir otra cuenta'**
+  String get homeOpenAccountTitle;
+
+  /// No description provided for @homeOpenAccountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros, corriente o sueldo, en soles o dólares'**
+  String get homeOpenAccountHint;
+
+  /// No description provided for @renameAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de la cuenta'**
+  String get renameAccountTitle;
+
+  /// No description provided for @renameAccountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Viaje'**
+  String get renameAccountHint;
+
+  /// No description provided for @renameAccountSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get renameAccountSave;
+
+  /// No description provided for @renameAccountClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar nombre'**
+  String get renameAccountClear;
+
+  /// No description provided for @renameAccountError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos guardar el nombre. Inténtalo de nuevo.'**
+  String get renameAccountError;
+
+  /// No description provided for @renameAccountTooLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Usa hasta 30 caracteres.'**
+  String get renameAccountTooLong;
+
   /// No description provided for @homeActionSend.
   ///
   /// In es, this message translates to:

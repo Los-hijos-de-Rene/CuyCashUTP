@@ -782,6 +782,64 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get accountTypeAhorroLong => 'Cuenta de ahorros';
+
+  @override
+  String get accountTypeCorrienteLong => 'Cuenta corriente';
+
+  @override
+  String get accountTypeSueldoLong => 'Cuenta sueldo';
+
+  @override
+  String get accountTypeAhorroShort => 'Ahorros';
+
+  @override
+  String get accountTypeCorrienteShort => 'Corriente';
+
+  @override
+  String get accountTypeSueldoShort => 'Sueldo';
+
+  @override
+  String get currencyPenName => 'Soles';
+
+  @override
+  String get currencyUsdName => 'Dólares';
+
+  @override
+  String homeAccountPage(int actual, int total) {
+    return 'Cuenta $actual de $total';
+  }
+
+  @override
+  String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
+
+  @override
+  String get homeOpenAccountTitle => 'Abrir otra cuenta';
+
+  @override
+  String get homeOpenAccountHint =>
+      'Ahorros, corriente o sueldo, en soles o dólares';
+
+  @override
+  String get renameAccountTitle => 'Nombre de la cuenta';
+
+  @override
+  String get renameAccountHint => 'Ej. Viaje';
+
+  @override
+  String get renameAccountSave => 'Guardar';
+
+  @override
+  String get renameAccountClear => 'Quitar nombre';
+
+  @override
+  String get renameAccountError =>
+      'No pudimos guardar el nombre. Inténtalo de nuevo.';
+
+  @override
+  String get renameAccountTooLong => 'Usa hasta 30 caracteres.';
+
+  @override
   String get homeActionSend => 'Enviar';
 
   @override

@@ -1,25 +1,22 @@
-import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/format/money_format.dart';
+import '../../../feature/account/domain/account.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../account/account_label.dart';
 
 /// Card de saldo sobre Eucalipto, con el ojo para ocultarlo.
 ///
 /// Ocultar el saldo es local y efímero a propósito: es una comodidad de la
 /// sesión, no una preferencia que deba sobrevivir al reinicio.
 class BalanceCard extends StatefulWidget {
-  const BalanceCard({
-    required this.balance,
-    required this.walletMasked,
-    super.key,
-  });
+  const BalanceCard({required this.cuenta, this.onRename, super.key});
 
-  final Money balance;
+  final Account cuenta;
 
-  /// Número de la cuenta ya enmascarado (`••••4521`).
-  final String walletMasked;
+  /// `null` = sin lápiz para cambiar el nombre.
+  final VoidCallback? onRename;
 
   @override
   State<BalanceCard> createState() => _BalanceCardState();
@@ -48,12 +45,25 @@ class _BalanceCardState extends State<BalanceCard> {
             children: [
               Expanded(
                 child: Text(
-                  l10n.homeBalanceLabel,
+                  accountLabel(l10n, widget.cuenta),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: CuyCashTypography.bodyMd.copyWith(
                     color: CuyCashColors.onPrimaryContainer,
                   ),
                 ),
               ),
+              if (widget.onRename != null)
+                IconButton(
+                  onPressed: widget.onRename,
+                  tooltip: l10n.homeRenameTooltip,
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 20,
+                    color: CuyCashColors.onPrimaryContainer,
+                  ),
+                ),
               IconButton(
                 onPressed: () => setState(() => _hidden = !_hidden),
                 tooltip: _hidden ? l10n.homeShowBalance : l10n.homeHideBalance,
@@ -67,12 +77,19 @@ class _BalanceCardState extends State<BalanceCard> {
             ],
           ),
           const SizedBox(height: CuyCashSpacing.stackXs),
-          Text(
-            _hidden ? l10n.homeBalanceHidden(widget.balance.currency.symbol)
-                :  formatMoney(widget.balance),
-            style: CuyCashTypography.displayLg.copyWith(
-              color: CuyCashColors.accentOnDark,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          // Un saldo largo se encoge en vez de partirse: la tarjeta tiene alto fijo.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _hidden
+                  ? l10n.homeBalanceHidden(widget.cuenta.moneda.symbol)
+                  : formatMoney(widget.cuenta.saldoDisponible),
+              maxLines: 1,
+              style: CuyCashTypography.displayLg.copyWith(
+                color: CuyCashColors.accentOnDark,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
           const SizedBox(height: CuyCashSpacing.stackSm),
@@ -84,10 +101,15 @@ class _BalanceCardState extends State<BalanceCard> {
                 color: CuyCashColors.onPrimaryContainer,
               ),
               const SizedBox(width: CuyCashSpacing.stackSm),
-              Text(
-                l10n.homeWalletMask(widget.walletMasked),
-                style: CuyCashTypography.bodyMd.copyWith(
-                  color: CuyCashColors.onPrimaryContainer,
+              Expanded(
+                child: Text(
+                  '${widget.cuenta.moneda.symbol} · '
+                  '${l10n.homeWalletMask(widget.cuenta.numeroMasked)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: CuyCashTypography.bodyMd.copyWith(
+                    color: CuyCashColors.onPrimaryContainer,
+                  ),
                 ),
               ),
             ],
