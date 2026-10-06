@@ -8,6 +8,7 @@ import '../../core/injection/modules/beneficiary_module.dart';
 import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
+import '../../core/injection/modules/profile_module.dart';
 import '../../core/injection/modules/register_module.dart';
 import '../../core/injection/modules/transfer_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
@@ -32,6 +33,8 @@ import '../recover/pin_actualizado_screen.dart';
 import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
+import '../profile/personal_data/bloc/personal_data_bloc.dart';
+import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
 import '../lockout/access_blocked_screen.dart';
 import '../lockout/blocked_args.dart';
@@ -288,6 +291,14 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             child: MovementDetailScreen(transactionId: id),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.perfilDatos,
+        builder: (context, state) => BlocProvider(
+          create: (_) => PersonalDataBloc(ProfileModule.create(deps))
+            ..add(const PersonalDataEvent.started()),
+          child: const PersonalDataScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.recargar,

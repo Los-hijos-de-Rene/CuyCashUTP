@@ -1226,4 +1226,32 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get topUpDoneReused =>
       'Esta recarga ya estaba registrada. No se cobró otra vez.';
+
+  @override
+  String get personalDataTitle => 'Datos personales';
+
+  @override
+  String get personalDataNames => 'Nombres';
+
+  @override
+  String get personalDataSurnames => 'Apellidos';
+
+  @override
+  String get personalDataEmail => 'Correo';
+
+  @override
+  String get personalDataAlias => 'Alias';
+
+  @override
+  String get personalDataSince => 'Cliente desde';
+
+  @override
+  String get personalDataVerified => 'Identidad verificada';
+
+  @override
+  String get personalDataReadOnly =>
+      'Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.';
+
+  @override
+  String get personalDataError => 'No pudimos cargar tus datos.';
 }

@@ -382,5 +382,14 @@
   "topUpErrorNetwork": "No pudimos confirmar tu recarga. Pudo haberse realizado: reintenta y, si ya se acreditó, no se cobrará dos veces.",
   "topUpErrorUnexpected": "Algo salió mal y no pudimos confirmar tu recarga. Reintenta y, si ya se acreditó, no se cobrará dos veces.",
   "topUpDoneHeadline": "¡Recarga realizada!",
-  "topUpDoneReused": "Esta recarga ya estaba registrada. No se cobró otra vez."
+  "topUpDoneReused": "Esta recarga ya estaba registrada. No se cobró otra vez.",
+  "personalDataTitle": "Datos personales",
+  "personalDataNames": "Nombres",
+  "personalDataSurnames": "Apellidos",
+  "personalDataEmail": "Correo",
+  "personalDataAlias": "Alias",
+  "personalDataSince": "Cliente desde",
+  "personalDataVerified": "Identidad verificada",
+  "personalDataReadOnly": "Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.",
+  "personalDataError": "No pudimos cargar tus datos."
 }

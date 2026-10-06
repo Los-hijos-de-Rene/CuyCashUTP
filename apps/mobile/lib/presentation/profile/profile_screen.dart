@@ -1,10 +1,12 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../feature/device/application/device_actions.dart';
 import '../../feature/device/domain/remembered_user.dart';
 import '../../l10n/app_localizations.dart';
+import '../app/app_routes.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../quick_access/widgets/switch_user_dialog.dart';
 import '../session/remembered_user_builder.dart';
@@ -70,7 +72,7 @@ class ProfileScreen extends StatelessWidget {
                   ProfileOptionTile(
                     icon: Icons.badge_outlined,
                     label: l10n.profileItemPersonalData,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilDatos),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(

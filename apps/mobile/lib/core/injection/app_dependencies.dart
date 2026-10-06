@@ -8,6 +8,8 @@ import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
 import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
+import '../../feature/profile/application/profile_actions.dart';
+import '../../feature/profile/domain/profile_repository.dart';
 import '../../feature/transfer/application/transfer_actions.dart';
 import '../../feature/transfer/domain/pending_transfer_store.dart';
 import '../../feature/transfer/domain/transfer_repository.dart';
@@ -27,6 +29,7 @@ class AppDependencies {
     required this.transferRepository,
     required this.pendingTransferStore,
     required this.beneficiaryRepository,
+    required this.profileRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -58,6 +61,10 @@ class AppDependencies {
   final BeneficiaryRepository beneficiaryRepository;
   BeneficiaryActions get beneficiaryActions =>
       BeneficiaryActions(beneficiaryRepository);
+
+  /// Datos del titular y alias. Los blocs consumen [profileActions].
+  final ProfileRepository profileRepository;
+  ProfileActions get profileActions => ProfileActions(profileRepository);
 
   final LockoutPolicy lockoutPolicy;
 }

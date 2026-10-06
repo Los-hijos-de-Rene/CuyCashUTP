@@ -2175,6 +2175,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Esta recarga ya estaba registrada. No se cobró otra vez.'**
   String get topUpDoneReused;
+
+  /// No description provided for @personalDataTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos personales'**
+  String get personalDataTitle;
+
+  /// No description provided for @personalDataNames.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombres'**
+  String get personalDataNames;
+
+  /// No description provided for @personalDataSurnames.
+  ///
+  /// In es, this message translates to:
+  /// **'Apellidos'**
+  String get personalDataSurnames;
+
+  /// No description provided for @personalDataEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo'**
+  String get personalDataEmail;
+
+  /// No description provided for @personalDataAlias.
+  ///
+  /// In es, this message translates to:
+  /// **'Alias'**
+  String get personalDataAlias;
+
+  /// No description provided for @personalDataSince.
+  ///
+  /// In es, this message translates to:
+  /// **'Cliente desde'**
+  String get personalDataSince;
+
+  /// No description provided for @personalDataVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada'**
+  String get personalDataVerified;
+
+  /// No description provided for @personalDataReadOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.'**
+  String get personalDataReadOnly;
+
+  /// No description provided for @personalDataError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus datos.'**
+  String get personalDataError;
 }
 
 class _AppLocalizationsDelegate
