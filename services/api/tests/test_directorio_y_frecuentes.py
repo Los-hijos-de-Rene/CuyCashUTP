@@ -39,7 +39,7 @@ async def _cuenta_id(client, titular) -> str:
 
 
 @pytest.mark.asyncio
-async def test_resolver_devuelve_el_nombre_enmascarado(
+async def test_resolver_devuelve_el_nombre_enmascarado_y_sus_cuentas(
     client, registrado, otro_registrado
 ):
     r = await _resolver(client, registrado, otro_registrado.dni)
@@ -49,7 +49,47 @@ async def test_resolver_devuelve_el_nombre_enmascarado(
     assert cuerpo["nombre_enmascarado"] == "L*** A*** Q***"
     assert "Luis" not in str(cuerpo)
     assert "Quispe" not in str(cuerpo)
-    assert cuerpo["cuenta_destino_numero_masked"].startswith("••••")
+    [cuenta] = cuerpo["cuentas"]
+    assert cuenta["tipo"] == "ahorro"
+    assert cuenta["moneda"] == "PEN"
+    assert cuenta["numero_masked"].startswith("••••")
+    assert len(cuenta["numero_masked"]) == 8
+    assert cuenta["nombre"] is None
+    assert set(cuenta) == {"cuenta_id", "tipo", "moneda", "numero_masked", "nombre"}
+
+
+@pytest.mark.asyncio
+async def test_resolver_lista_todas_las_cuentas_activas_en_orden(
+    client, registrado, otro_registrado
+):
+    for clave, tipo, moneda in (("r-000001", "corriente", "USD"), ("r-000002", "sueldo", "PEN")):
+        r = await client.post(
+            "/v1/accounts",
+            json={"tipo": tipo, "moneda": moneda, "nombre": "Secreto", "pin": PIN_DE_PRUEBA,
+                  "idempotency_key": clave},
+            headers=otro_registrado.auth,
+        )
+        assert r.status_code == 201
+    cuentas = (await _resolver(client, registrado, otro_registrado.dni)).json()["cuentas"]
+    assert [(c["tipo"], c["moneda"]) for c in cuentas] == [
+        ("ahorro", "PEN"), ("corriente", "USD"), ("sueldo", "PEN")
+    ]
+    # El nombre que el otro le puso a sus cuentas no sale a terceros.
+    assert all(c["nombre"] is None for c in cuentas)
+    assert "Secreto" not in str(cuentas)
+
+
+@pytest.mark.asyncio
+async def test_resolver_el_propio_dni_lista_mis_cuentas_con_su_nombre(client, registrado):
+    await client.post(
+        "/v1/accounts",
+        json={"tipo": "ahorro", "moneda": "USD", "nombre": "Viaje", "pin": PIN_DE_PRUEBA,
+              "idempotency_key": "propia-01"},
+        headers=registrado.auth,
+    )
+    r = await _resolver(client, registrado, registrado.dni)
+    assert r.status_code == 200
+    assert [c["nombre"] for c in r.json()["cuentas"]] == [None, "Viaje"]
 
 
 @pytest.mark.asyncio
@@ -117,9 +157,26 @@ async def test_un_destinatario_con_la_cuenta_cerrada_no_se_resuelve(
 
 
 @pytest.mark.asyncio
-async def test_resolver_el_propio_dni_es_rechazado(client, registrado):
-    r = await _resolver(client, registrado, registrado.dni)
-    assert r.json()["code"] == "SELF_TRANSFER"
+async def test_una_cuenta_bloqueada_no_aparece_pero_las_demas_si(
+    client, registrado, otro_registrado, db_de_client
+):
+    from sqlalchemy import select, update
+    from app.db.models import Account
+
+    await client.post(
+        "/v1/accounts",
+        json={"tipo": "corriente", "moneda": "PEN", "pin": PIN_DE_PRUEBA,
+              "idempotency_key": "bloq-0001"},
+        headers=otro_registrado.auth,
+    )
+    await db_de_client.execute(
+        update(Account)
+        .where(Account.user_id == otro_registrado.user_id, Account.tipo == "ahorro")
+        .values(estado="bloqueada")
+    )
+    await db_de_client.commit()
+    cuentas = (await _resolver(client, registrado, otro_registrado.dni)).json()["cuentas"]
+    assert [c["tipo"] for c in cuentas] == ["corriente"]
 
 
 # --- Tope de consultas -------------------------------------------------------

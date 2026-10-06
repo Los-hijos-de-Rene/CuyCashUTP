@@ -11,7 +11,7 @@ alta de frecuentes y en `POST /v1/transfers`) descuenta del mismo presupuesto,
 ver `app.services.rate_limit`.
 """
 
-from typing import Tuple
+from typing import List, Tuple
 
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
@@ -44,29 +44,46 @@ def enmascarar(nombres: str, apellidos: str) -> str:
     return " ".join("{}***".format(p[0].upper()) for p in partes)
 
 
-async def _destinatario(session: AsyncSession, dni: str) -> Tuple[User, Account]:
-    fila = (
+def cuenta_publica_json(c: Account, *, propia: bool) -> dict:
+    """
+    Lo que se puede decir de una cuenta a quien quiere enviarle dinero.
+
+    `cuenta_id` es el UUID: no revela el número completo ni el DNI. El nombre
+    que el titular le puso a su cuenta es suyo: solo sale cuando la cuenta es
+    del que pregunta.
+    """
+    return {
+        "cuenta_id": c.id,
+        "tipo": c.tipo,
+        "moneda": c.moneda,
+        "numero_masked": "••••{}".format(c.numero[-4:]),
+        "nombre": c.nombre if propia else None,
+    }
+
+
+async def _destinatario(session: AsyncSession, dni: str) -> Tuple[User, List[Account]]:
+    filas = (
         await session.execute(
             select(User, Account)
             .join(Account, Account.user_id == User.id)
             .where(
                 User.dni == dni,
                 Account.estado == "activa",
-                Account.tipo == "ahorro",
+                Account.tipo != "sistema",
             )
             .order_by(Account.created_at, Account.id)
         )
-    ).first()
-    if fila is None:
-        # Una persona con la cuenta bloqueada o cerrada cae aquí, y es lo
-        # correcto: existe pero no puede recibir, así que no es un
+    ).all()
+    if not filas:
+        # Una persona con todas sus cuentas bloqueadas o cerradas cae aquí, y
+        # es lo correcto: existe pero no puede recibir, así que no es un
         # destinatario. La respuesta es idéntica a la de un DNI inexistente.
         raise ApiError(
             ErrorCode.RECIPIENT_NOT_FOUND,
             "No encontramos a nadie con ese DNI en CuyCash.",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    return fila[0], fila[1]
+    return filas[0][0], [cuenta for _, cuenta in filas]
 
 
 @router.get("/directory/resolve")
@@ -75,15 +92,16 @@ async def resolver(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    if dni == user.dni:
-        raise ApiError(ErrorCode.SELF_TRANSFER, "No puedes enviarte dinero a ti mismo.")
-
+    # El propio DNI ya no es un error: lista las otras cuentas del titular para
+    # pasar dinero entre ellas. Igual descuenta del presupuesto, para que el
+    # tope no dependa de qué DNI se teclea.
     consumir_consulta_de_destinatario(user.id)
-    destinatario, cuenta = await _destinatario(session, dni)
+    destinatario, cuentas = await _destinatario(session, dni)
+    propia = destinatario.id == user.id
     return {
         "dni": destinatario.dni,
         "nombre_enmascarado": enmascarar(destinatario.nombres, destinatario.apellidos),
-        "cuenta_destino_numero_masked": "••••{}".format(cuenta.numero[-4:]),
+        "cuentas": [cuenta_publica_json(c, propia=propia) for c in cuentas],
     }
 
 
