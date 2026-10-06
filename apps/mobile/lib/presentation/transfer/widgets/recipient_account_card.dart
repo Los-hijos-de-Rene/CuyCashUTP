@@ -32,10 +32,13 @@ class RecipientAccountCard extends StatelessWidget {
       cuenta.numeroMasked,
     );
     final activa = onTap != null;
+    final motivo = motivoDeshabilitada;
     return Semantics(
       button: activa,
       enabled: activa,
-      label: l10n.transferRecipientAccountSemantics(linea),
+      label: !activa && motivo != null
+          ? l10n.transferRecipientAccountDisabledSemantics(linea, motivo)
+          : l10n.transferRecipientAccountSemantics(linea),
       excludeSemantics: true,
       child: Opacity(
         opacity: activa ? 1 : 0.5,

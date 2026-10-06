@@ -1844,6 +1844,12 @@ abstract class AppLocalizations {
   /// **'Enviar a {linea}'**
   String transferRecipientAccountSemantics(String linea);
 
+  /// No description provided for @transferRecipientAccountDisabledSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'{linea}. {motivo}'**
+  String transferRecipientAccountDisabledSemantics(String linea, String motivo);
+
   /// No description provided for @transferContinue.
   ///
   /// In es, this message translates to:
@@ -2171,8 +2177,14 @@ abstract class AppLocalizations {
   /// No description provided for @transferFrequentSemantics.
   ///
   /// In es, this message translates to:
+  /// **'Enviar a {name}, {cuenta}'**
+  String transferFrequentSemantics(String name, String cuenta);
+
+  /// No description provided for @transferFrequentSemanticsNoAccount.
+  ///
+  /// In es, this message translates to:
   /// **'Enviar a {name}'**
-  String transferFrequentSemantics(String name);
+  String transferFrequentSemanticsNoAccount(String name);
 
   /// No description provided for @transferSaveFrequentTitle.
   ///
@@ -2233,6 +2245,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuenta destino'**
   String get movementDetailDestinationAccount;
+
+  /// No description provided for @movementDetailSourceAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta origen'**
+  String get movementDetailSourceAccount;
 
   /// No description provided for @movementDetailReason.
   ///

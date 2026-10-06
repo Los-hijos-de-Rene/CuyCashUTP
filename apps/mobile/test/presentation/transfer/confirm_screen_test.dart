@@ -203,6 +203,11 @@ void main() {
     expect(find.textContaining('J*** M*** R***'), findsOneWidget);
     // El monto sale una vez, con su formato, sin signo.
     expect(find.text('S/ 50.00'), findsOneWidget);
+    // Origen y destino, con su rótulo.
+    expect(find.text('Cuenta destino'), findsOneWidget);
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
+    expect(find.text('Cuenta origen'), findsOneWidget);
+    expect(find.text('Cuenta de ahorros · ••••4521'), findsOneWidget);
   });
 
   testWidgets(

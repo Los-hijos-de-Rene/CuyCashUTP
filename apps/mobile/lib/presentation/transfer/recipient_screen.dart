@@ -66,7 +66,8 @@ class _RecipientScreenState extends State<RecipientScreen> {
     if (bloc.intentSealed) return;
     final origen = bloc.state.cuenta;
     switch (b.cuenta) {
-      case final RecipientAccount c when origen != null && c.moneda != origen.moneda:
+      case final RecipientAccount c
+          when origen != null && c.moneda != origen.moneda:
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -93,7 +94,9 @@ class _RecipientScreenState extends State<RecipientScreen> {
         // búsqueda anterior: se limpia ANTES de elegir (limpiar borra el
         // destinatario).
         _controller.clear();
-        context.read<TransferBloc>().add(const TransferEvent.recipientCleared());
+        context.read<TransferBloc>().add(
+          const TransferEvent.recipientCleared(),
+        );
         _elegir(
           Recipient(
             dni: b.dni,
@@ -238,7 +241,8 @@ class _RecipientScreenState extends State<RecipientScreen> {
                         semanticsLabel: l10n.transferSearching,
                       ),
                     ),
-                  if (directorio != null) ..._cuentas(context, state, directorio),
+                  if (directorio != null)
+                    ..._cuentas(context, state, directorio),
                   if (frecuentes != null) ...[
                     const SizedBox(height: CuyCashSpacing.stackMd),
                     frecuentes(_onFrequentSelected),

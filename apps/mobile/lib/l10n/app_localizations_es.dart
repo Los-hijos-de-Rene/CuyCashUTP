@@ -1034,6 +1034,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String transferRecipientAccountDisabledSemantics(
+    String linea,
+    String motivo,
+  ) {
+    return '$linea. $motivo';
+  }
+
+  @override
   String get transferContinue => 'Continuar';
 
   @override
@@ -1239,7 +1247,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferFrequentsTitle => 'Frecuentes';
 
   @override
-  String transferFrequentSemantics(String name) {
+  String transferFrequentSemantics(String name, String cuenta) {
+    return 'Enviar a $name, $cuenta';
+  }
+
+  @override
+  String transferFrequentSemanticsNoAccount(String name) {
     return 'Enviar a $name';
   }
 
@@ -1275,6 +1288,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get movementDetailDestinationAccount => 'Cuenta destino';
+
+  @override
+  String get movementDetailSourceAccount => 'Cuenta origen';
 
   @override
   String get movementDetailReason => 'Motivo';
