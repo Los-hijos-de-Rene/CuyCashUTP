@@ -75,7 +75,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
   /// usuario no puede inventar una intención nueva (otro monto u otro
   /// destinatario, con otra clave) mientras la anterior sigue en el aire: solo
   /// reintentar con la MISMA clave o abandonar el flujo.
-  bool get _intentSealed =>
+  bool get intentSealed =>
       state.status == TransferStatus.submitting ||
       state.status == TransferStatus.done ||
       state.outcomeUnknown;
@@ -88,7 +88,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientRequested event,
     Emitter<TransferState> emit,
   ) async {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     final search = ++_search;
     emit(
       state.copyWith(
@@ -117,7 +117,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientCleared event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     _search++;
     emit(
       state.copyWith(
@@ -134,7 +134,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientSelected event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     final elegido = event.destinatario;
     final origen = state.cuenta;
     if (origen != null && elegido.cuenta.cuentaId == origen.id) {
@@ -164,7 +164,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferAmountEntered event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     // El motivo se limita en la UI Y aquí: el cliente HTTP no lo recorta y el
     // backend responde 422 (error que el usuario no podría entender).
     final motivo = TransferLimits.normalizarMotivo(event.motivo);
@@ -199,7 +199,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferSaveFrequentToggled event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     emit(state.copyWith(guardarFrecuente: event.value));
   }
 
@@ -207,7 +207,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferFrequentNicknameChanged event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     emit(state.copyWith(apodoFrecuente: event.value));
   }
 

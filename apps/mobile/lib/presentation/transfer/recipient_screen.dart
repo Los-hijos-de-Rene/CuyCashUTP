@@ -60,7 +60,11 @@ class _RecipientScreenState extends State<RecipientScreen> {
   /// Un frecuente que ya trae su cuenta pasa directo al monto, sin consultar
   /// (no gasta presupuesto). Sin cuenta (dejó de recibir), es teclear su DNI.
   void _onFrequentSelected(Beneficiary b) {
-    final origen = context.read<TransferBloc>().state.cuenta;
+    final bloc = context.read<TransferBloc>();
+    // Con el envío sellado el bloc ignora los cambios: no tocar el campo ni
+    // navegar a un monto que seguiría mostrando el destinatario anterior.
+    if (bloc.intentSealed) return;
+    final origen = bloc.state.cuenta;
     switch (b.cuenta) {
       case final RecipientAccount c when origen != null && c.moneda != origen.moneda:
         ScaffoldMessenger.of(context)
@@ -108,6 +112,7 @@ class _RecipientScreenState extends State<RecipientScreen> {
 
   void _elegir(Recipient r) {
     final bloc = context.read<TransferBloc>();
+    if (bloc.intentSealed) return;
     // El bloc rechaza la misma cuenta y otra moneda, pero procesa el evento
     // de forma asíncrona: se repite la guarda aquí para no ir al monto sin
     // destinatario.

@@ -265,4 +265,36 @@ void main() {
     expect(find.text('Corriente · S/ · ••••5510'), findsNothing);
     expect(find.widgetWithText(TextField, '87654321'), findsNothing);
   });
+
+  testWidgets('con el envío sellado, tocar una tarjeta o un frecuente no hace '
+      'nada', (t) async {
+    final repo = FakeTransferRepository(
+      alEnviar: (_) async => left(const GlobalFailure.server(
+        TransferFailure.network(),
+      )),
+    );
+    final bloc = await pump(
+      t,
+      repo: repo,
+      frecuentes: [_frecuente(cuenta: cuentaDeDestinoDePrueba)],
+    );
+    await t.enterText(find.byType(TextField), '87654321');
+    await t.pumpAndSettle();
+    bloc
+      ..add(TransferEvent.recipientSelected(destinatarioDePrueba))
+      ..add(const TransferEvent.amountEntered(monto: Money.soles(5000)))
+      ..add(const TransferEvent.confirmationOpened());
+    await t.pumpAndSettle();
+    bloc.add(const TransferEvent.submitted(pin: '000000'));
+    await t.pumpAndSettle();
+    expect(bloc.state.outcomeUnknown, isTrue);
+
+    await t.tap(find.text('Corriente · S/ · ••••5510'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Mamá'));
+    await t.pumpAndSettle();
+    expect(find.text('MONTO'), findsNothing);
+    expect(find.widgetWithText(TextField, '87654321'), findsOneWidget);
+    expect(bloc.state.destinatario?.cuenta.cuentaId, 'acc-ext-1');
+  });
 }
