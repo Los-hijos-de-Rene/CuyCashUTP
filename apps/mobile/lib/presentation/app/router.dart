@@ -59,6 +59,7 @@ import '../transfer/recipient_screen.dart';
 import '../transfer/widgets/frequent_section.dart';
 import '../auth/login_screen.dart';
 import 'app_redirect.dart';
+import 'close_on_lockout.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -73,11 +74,13 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
     },
     routes: [
       GoRoute(
-          path: AppRoutes.splash,
-          builder: (context, state) => const SplashScreen()),
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
-          path: AppRoutes.onboarding,
-          builder: (context, state) => const OnboardingScreen()),
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         // El DNI viaja como `extra` al retomar tras un bloqueo vencido.
@@ -147,7 +150,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.recuperarCancelado,
         builder: (context, state) => const FlujoCanceladoScreen(
-            variante: FlujoCanceladoVariante.recuperacion),
+          variante: FlujoCanceladoVariante.recuperacion,
+        ),
       ),
       GoRoute(
         path: AppRoutes.ingresarDispositivo,
@@ -174,7 +178,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.ingresarCancelado,
         builder: (context, state) => const FlujoCanceladoScreen(
-            variante: FlujoCanceladoVariante.ingreso),
+          variante: FlujoCanceladoVariante.ingreso,
+        ),
       ),
       GoRoute(
         path: AppRoutes.quickAccess,
@@ -188,7 +193,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
               return MultiRepositoryProvider(
                 providers: [
                   RepositoryProvider<AuthActions>.value(
-                      value: AuthActions(deps.authRepository)),
+                    value: AuthActions(deps.authRepository),
+                  ),
                   RepositoryProvider<DeviceActions>.value(value: device),
                 ],
                 child: BlocProvider(
@@ -291,8 +297,9 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return BlocProvider(
-            create: (_) => MovementDetailBloc(AccountModule.create(deps))
-              ..add(MovementDetailEvent.opened(id)),
+            create: (_) =>
+                MovementDetailBloc(AccountModule.create(deps))
+                  ..add(MovementDetailEvent.opened(id)),
             child: MovementDetailScreen(transactionId: id),
           );
         },
@@ -300,8 +307,9 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.perfilDatos,
         builder: (context, state) => BlocProvider(
-          create: (_) => PersonalDataBloc(ProfileModule.create(deps))
-            ..add(const PersonalDataEvent.started()),
+          create: (_) =>
+              PersonalDataBloc(ProfileModule.create(deps))
+                ..add(const PersonalDataEvent.started()),
           child: const PersonalDataScreen(),
         ),
       ),
@@ -322,7 +330,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state) => BlocProvider(
           create: (_) => ChangePinBloc(SecurityModule.create(deps)),
           child: ChangePinScreen(
-            onLocked: (until) => _cerrarPorBloqueo(context, authBloc, until),
+            onLocked: (until) =>
+                closeOnLockout(GoRouter.of(context), authBloc, until),
           ),
         ),
       ),
@@ -352,50 +361,29 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.home,
                 builder: (context, state) => BlocProvider(
-                      create: (_) => AccountBloc(AccountModule.create(deps))
+                  create: (_) =>
+                      AccountBloc(AccountModule.create(deps))
                         ..add(const AccountEvent.started()),
-                      child: const RefreshAfterSend(child: HomeScreen()),
-                    )),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
+                  child: const RefreshAfterSend(child: HomeScreen()),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.perfil,
-                builder: (context, state) => const ProfileScreen()),
-          ]),
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
         ],
       ),
     ],
-  );
-}
-
-/// El servidor ya cerró la sesión al bloquear. Un autenticado en
-/// `/bloqueado` sería devuelto al inicio por `appRedirect`, así que primero se
-/// cierra la sesión local y DESPUÉS se navega.
-Future<void> _cerrarPorBloqueo(
-  BuildContext context,
-  AuthBloc authBloc,
-  DateTime until,
-) async {
-  final router = GoRouter.of(context);
-  final dni = switch (authBloc.state) {
-    AuthAuthenticated(:final session) => session.identifier,
-    AuthUnauthenticated() => null,
-  };
-  // Si ya no hay sesión, esperar a `AuthUnauthenticated` no terminaría nunca.
-  if (authBloc.state is! AuthUnauthenticated) {
-    authBloc.add(const AuthEvent.signedOut());
-    await authBloc.stream.firstWhere((s) => s is AuthUnauthenticated);
-  }
-  router.go(
-    AppRoutes.blocked,
-    extra: BlockedArgs(
-      origin: BlockedOrigin.login,
-      lockedUntil: until,
-      resumeDni: dni,
-    ),
   );
 }

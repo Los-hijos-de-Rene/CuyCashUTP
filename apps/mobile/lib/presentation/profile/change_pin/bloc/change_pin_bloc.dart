@@ -23,7 +23,11 @@ class ChangePinBloc extends Bloc<ChangePinEvent, ChangePinState> {
   ChangePinBloc(this._actions) : super(const ChangePinState()) {
     on<ChangePinDigitPressed>(_onDigit);
     on<ChangePinBackspace>((event, emit) {
-      if (state.status != ChangePinStatus.idle || state.pin.isEmpty) return;
+      if (_locked ||
+          state.status != ChangePinStatus.idle ||
+          state.pin.isEmpty) {
+        return;
+      }
       emit(
         state.copyWith(
           pin: state.pin.substring(0, state.pin.length - 1),
@@ -36,11 +40,19 @@ class ChangePinBloc extends Bloc<ChangePinEvent, ChangePinState> {
 
   final SecurityActions _actions;
 
+  /// Tras el bloqueo el estado es terminal: el servidor ya cerró la sesión y
+  /// el teclado no debe reenviar nada contra la cuenta bloqueada.
+  bool get _locked => state.lockedUntil != null;
+
   Future<void> _onDigit(
     ChangePinDigitPressed event,
     Emitter<ChangePinState> emit,
   ) async {
-    if (state.status != ChangePinStatus.idle || state.pin.length >= 6) return;
+    if (_locked ||
+        state.status != ChangePinStatus.idle ||
+        state.pin.length >= 6) {
+      return;
+    }
     final pin = '${state.pin}${event.digit}';
     emit(state.copyWith(pin: pin, error: null));
     if (pin.length < 6) return;
@@ -94,6 +106,8 @@ class ChangePinBloc extends Bloc<ChangePinEvent, ChangePinState> {
             state.copyWith(
               status: ChangePinStatus.idle,
               pin: '',
+              currentPin: '',
+              newPin: '',
               lockedUntil: until,
             ),
           ServerFailure(failure: SecurityWeakPin()) => state.copyWith(
@@ -130,7 +144,7 @@ class ChangePinBloc extends Bloc<ChangePinEvent, ChangePinState> {
   }
 
   void _onBack(ChangePinBack event, Emitter<ChangePinState> emit) {
-    if (state.status != ChangePinStatus.idle) return;
+    if (_locked || state.status != ChangePinStatus.idle) return;
     switch (state.step) {
       case ChangePinStep.actual:
         return;

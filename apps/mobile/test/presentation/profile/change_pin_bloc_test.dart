@@ -148,4 +148,30 @@ void main() {
     expect(b.state.lockedUntil, isNotNull);
     await b.close();
   });
+
+  test(
+    'tras el bloqueo es terminal: sin PIN en memoria y sin entrada',
+    () async {
+      final b = _bloc();
+      for (var i = 0; i < LockoutPolicy.maxAttempts; i++) {
+        _teclear(b, '111222');
+        _teclear(b, '502718');
+        _teclear(b, '502718');
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      final bloqueado = b.state;
+      expect(bloqueado.lockedUntil, isNotNull);
+      expect(bloqueado.pin, isEmpty);
+      expect(bloqueado.currentPin, isEmpty);
+      expect(bloqueado.newPin, isEmpty);
+
+      b.add(const ChangePinEvent.digitPressed(1));
+      b.add(const ChangePinEvent.backspace());
+      b.add(const ChangePinEvent.back());
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+
+      expect(b.state, bloqueado);
+      await b.close();
+    },
+  );
 }
