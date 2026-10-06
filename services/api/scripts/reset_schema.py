@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings  # noqa: E402
 from app.db import models  # noqa: E402,F401  (registra las tablas en Base.metadata)
-from app.db.base import Base  # noqa: E402
+from app.db.base import Base, _engine_config  # noqa: E402
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
 
@@ -50,7 +50,12 @@ async def main() -> None:
         )
         raise SystemExit(1)
 
-    engine = create_async_engine(destino)
+    # La MISMA normalización que usa el servicio: una cadena copiada del panel
+    # de Neon viene como `postgresql://` y con parámetros de libpq
+    # (`sslmode`, `channel_binding`) que asyncpg no entiende. Sin esto, el
+    # script pedía psycopg2 y moría antes de conectarse.
+    url, connect_args = _engine_config(destino)
+    engine = create_async_engine(url, connect_args=connect_args)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
