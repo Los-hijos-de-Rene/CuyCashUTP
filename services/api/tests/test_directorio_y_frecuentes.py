@@ -243,7 +243,7 @@ async def test_guardar_un_frecuente_comparte_el_mismo_cupo(client, registrado):
 
     r = await client.post(
         "/v1/beneficiaries",
-        json={"dni": INEXISTENTE, "apodo": "X"},
+        json={"cuenta_destino_id": INEXISTENTE_ID, "apodo": "X"},
         headers=registrado.auth,
     )
     assert r.status_code == 429
@@ -342,61 +342,98 @@ async def test_un_nombre_raro_no_rompe_la_resolucion(
 # --- Frecuentes --------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="Task 6: frecuentes por cuenta")
+async def _guardar(client, titular, cuenta_id, apodo="Luis"):
+    return await client.post(
+        "/v1/beneficiaries",
+        json={"cuenta_destino_id": cuenta_id, "apodo": apodo},
+        headers=titular.auth,
+    )
+
+
 @pytest.mark.asyncio
-async def test_guardar_dos_veces_el_mismo_dni_actualiza_el_apodo(
+async def test_guardar_dos_veces_la_misma_cuenta_actualiza_el_apodo(
     client, registrado, otro_registrado
 ):
+    cid = await _cuenta_id(client, otro_registrado)
     for apodo in ("Luis", "Lucho"):
-        r = await client.post(
-            "/v1/beneficiaries",
-            json={"dni": otro_registrado.dni, "apodo": apodo},
-            headers=registrado.auth,
-        )
-        assert r.status_code == 201
+        assert (await _guardar(client, registrado, cid, apodo)).status_code == 201
 
-    r = await client.get("/v1/beneficiaries", headers=registrado.auth)
-    lista = r.json()["beneficiarios"]
+    lista = (await client.get("/v1/beneficiaries", headers=registrado.auth)).json()[
+        "beneficiarios"
+    ]
     assert len(lista) == 1
-    assert lista[0]["apodo"] == "Lucho"
-    assert lista[0]["nombre_enmascarado"] == "L*** A*** Q***"
+    b = lista[0]
+    assert b["apodo"] == "Lucho"
+    assert b["dni"] == otro_registrado.dni
+    assert b["nombre_enmascarado"] == "L*** A*** Q***"
+    assert b["cuenta"]["cuenta_id"] == cid
+    assert b["cuenta"]["moneda"] == "PEN"
+    assert b["cuenta"]["numero_masked"].startswith("••••")
+    assert b["cuenta"]["nombre"] is None
 
 
-@pytest.mark.skip(reason="Task 6: frecuentes por cuenta")
+@pytest.mark.asyncio
+async def test_dos_cuentas_de_la_misma_persona_son_dos_frecuentes(
+    client, registrado, otro_registrado
+):
+    primera = await _cuenta_id(client, otro_registrado)
+    r = await client.post(
+        "/v1/accounts",
+        json={"tipo": "ahorro", "moneda": "USD", "pin": PIN_DE_PRUEBA, "idempotency_key": "fr-000001"},
+        headers=otro_registrado.auth,
+    )
+    segunda = r.json()["id"]
+    await _guardar(client, registrado, primera, "Luis soles")
+    await _guardar(client, registrado, segunda, "Luis dólares")
+    lista = (await client.get("/v1/beneficiaries", headers=registrado.auth)).json()["beneficiarios"]
+    assert [b["cuenta"]["moneda"] for b in lista] == ["USD", "PEN"]  # más reciente primero
+
+
+@pytest.mark.asyncio
+async def test_un_frecuente_cuya_cuenta_se_bloquea_queda_sin_cuenta(
+    client, registrado, otro_registrado, db_de_client
+):
+    from sqlalchemy import update
+
+    from app.db.models import Account
+
+    cid = await _cuenta_id(client, otro_registrado)
+    await _guardar(client, registrado, cid)
+    await db_de_client.execute(update(Account).where(Account.id == cid).values(estado="cerrada"))
+    await db_de_client.commit()
+    [b] = (await client.get("/v1/beneficiaries", headers=registrado.auth)).json()["beneficiarios"]
+    assert b["cuenta"] is None
+    assert b["dni"] == otro_registrado.dni
+
+
+@pytest.mark.asyncio
+async def test_se_puede_guardar_una_cuenta_propia_pero_no_una_inexistente_ni_una_caja(
+    client, registrado, db_de_client
+):
+    from app.services import accounts as accounts_service
+
+    propia = await _cuenta_id(client, registrado)
+    assert (await _guardar(client, registrado, propia, "Mi ahorro")).status_code == 201
+    caja = await accounts_service.cuenta_de_sistema(db_de_client, "PEN")
+    await db_de_client.commit()
+    for cid in (INEXISTENTE_ID, caja.id):
+        r = await _guardar(client, registrado, cid, "?")
+        assert r.status_code == 404
+        assert r.json()["code"] == "RECIPIENT_NOT_FOUND"
+
+
 @pytest.mark.asyncio
 async def test_los_beneficiarios_son_de_cada_titular(client, registrado, otro_registrado):
-    await client.post(
-        "/v1/beneficiaries",
-        json={"dni": otro_registrado.dni, "apodo": "Luis"},
-        headers=registrado.auth,
-    )
+    await _guardar(client, registrado, await _cuenta_id(client, otro_registrado))
     r = await client.get("/v1/beneficiaries", headers=otro_registrado.auth)
     assert r.json()["beneficiarios"] == []
 
 
 @pytest.mark.asyncio
-async def test_no_se_puede_guardar_a_uno_mismo_ni_a_un_inexistente(client, registrado):
-    r = await client.post(
-        "/v1/beneficiaries", json={"dni": registrado.dni, "apodo": "Yo"}, headers=registrado.auth
-    )
-    assert r.json()["code"] == "SELF_TRANSFER"
-    r = await client.post(
-        "/v1/beneficiaries", json={"dni": INEXISTENTE, "apodo": "?"}, headers=registrado.auth
-    )
-    assert r.status_code == 404
-    assert r.json()["code"] == "RECIPIENT_NOT_FOUND"
-
-
-@pytest.mark.skip(reason="Task 6: frecuentes por cuenta")
-@pytest.mark.asyncio
 async def test_eliminar_un_frecuente_y_no_poder_borrar_el_ajeno(
     client, registrado, otro_registrado
 ):
-    await client.post(
-        "/v1/beneficiaries",
-        json={"dni": otro_registrado.dni, "apodo": "Luis"},
-        headers=registrado.auth,
-    )
+    await _guardar(client, registrado, await _cuenta_id(client, otro_registrado))
     bid = (await client.get("/v1/beneficiaries", headers=registrado.auth)).json()[
         "beneficiarios"
     ][0]["id"]
@@ -419,7 +456,6 @@ async def test_los_frecuentes_exigen_sesion(client):
     assert (await client.delete("/v1/beneficiaries/x")).status_code == 401
 
 
-@pytest.mark.skip(reason="Task 6: frecuentes por cuenta")
 @pytest.mark.asyncio
 async def test_guardar_el_mismo_frecuente_a_la_vez_no_da_500(
     client, registrado, otro_registrado
@@ -427,11 +463,12 @@ async def test_guardar_el_mismo_frecuente_a_la_vez_no_da_500(
     """El doble toque en "guardar" es normal en móvil: todas deben acabar en 201."""
     import asyncio
 
+    cid = await _cuenta_id(client, otro_registrado)
     respuestas = await asyncio.gather(
         *[
             client.post(
                 "/v1/beneficiaries",
-                json={"dni": otro_registrado.dni, "apodo": "Luis%d" % i},
+                json={"cuenta_destino_id": cid, "apodo": "Luis%d" % i},
                 headers=registrado.auth,
             )
             for i in range(6)
