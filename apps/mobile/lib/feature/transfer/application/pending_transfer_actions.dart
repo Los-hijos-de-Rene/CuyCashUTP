@@ -1,5 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 
+import '../../account/domain/account_type.dart';
 import '../domain/pending_transfer_store.dart';
 
 /// Recuerda la clave de idempotencia de un envío que pudo haberse ejecutado,
@@ -43,6 +44,14 @@ class PendingTransferActions {
     required String cuentaId,
     required Money monto,
   }) => 'recarga|$cuentaId|${monto.centimos}';
+
+  /// Huella de una APERTURA de cuenta: comparte almacén con envíos y recargas
+  /// porque el riesgo es el mismo (no saber si se ejecutó).
+  static String huellaApertura({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+  }) => 'abrir|${tipo.code}|${moneda.code}|${nombre ?? ''}';
 
   Map<String, PendingTransfer> _vigentes(Map<String, PendingTransfer> todas) {
     final ahora = _clock().toUtc();

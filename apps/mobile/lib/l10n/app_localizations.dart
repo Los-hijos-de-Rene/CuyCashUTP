@@ -2625,6 +2625,126 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Listo, ya puedes entrar con tu huella o rostro.'**
   String get biometricSettingsEnabled;
+
+  /// No description provided for @openAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir cuenta'**
+  String get openAccountTitle;
+
+  /// No description provided for @openAccountHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué cuenta quieres abrir?'**
+  String get openAccountHeadline;
+
+  /// No description provided for @openAccountTypeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de cuenta'**
+  String get openAccountTypeLabel;
+
+  /// No description provided for @openAccountCurrencyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get openAccountCurrencyLabel;
+
+  /// No description provided for @openAccountNameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre (opcional)'**
+  String get openAccountNameLabel;
+
+  /// No description provided for @openAccountNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Viaje'**
+  String get openAccountNameHint;
+
+  /// No description provided for @openAccountSalaryOnlyPen.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta sueldo es solo en soles.'**
+  String get openAccountSalaryOnlyPen;
+
+  /// No description provided for @openAccountSalaryTaken.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes una cuenta sueldo.'**
+  String get openAccountSalaryTaken;
+
+  /// No description provided for @openAccountContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get openAccountContinue;
+
+  /// No description provided for @openAccountPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get openAccountPinHeadline;
+
+  /// No description provided for @openAccountPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vas a abrir: {cuenta} en {moneda}'**
+  String openAccountPinSubtitle(String cuenta, String moneda);
+
+  /// No description provided for @openAccountCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir cuenta'**
+  String get openAccountCta;
+
+  /// No description provided for @openAccountRetryCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get openAccountRetryCta;
+
+  /// No description provided for @openAccountErrorLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes 5 cuentas, el máximo.'**
+  String get openAccountErrorLimit;
+
+  /// No description provided for @openAccountErrorSalary.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes una cuenta sueldo.'**
+  String get openAccountErrorSalary;
+
+  /// No description provided for @openAccountErrorCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta sueldo es solo en soles.'**
+  String get openAccountErrorCurrency;
+
+  /// No description provided for @openAccountErrorName.
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre puede tener hasta 30 caracteres.'**
+  String get openAccountErrorName;
+
+  /// No description provided for @openAccountErrorKeyReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa apertura ya se pidió con otros datos. Vuelve a empezar.'**
+  String get openAccountErrorKeyReused;
+
+  /// No description provided for @openAccountErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.'**
+  String get openAccountErrorNetwork;
+
+  /// No description provided for @openAccountErrorUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.'**
+  String get openAccountErrorUnexpected;
 }
 
 class _AppLocalizationsDelegate

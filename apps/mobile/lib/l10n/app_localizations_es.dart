@@ -1509,4 +1509,70 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get biometricSettingsEnabled =>
       'Listo, ya puedes entrar con tu huella o rostro.';
+
+  @override
+  String get openAccountTitle => 'Abrir cuenta';
+
+  @override
+  String get openAccountHeadline => '¿Qué cuenta quieres abrir?';
+
+  @override
+  String get openAccountTypeLabel => 'Tipo de cuenta';
+
+  @override
+  String get openAccountCurrencyLabel => 'Moneda';
+
+  @override
+  String get openAccountNameLabel => 'Nombre (opcional)';
+
+  @override
+  String get openAccountNameHint => 'Ej. Viaje';
+
+  @override
+  String get openAccountSalaryOnlyPen => 'La cuenta sueldo es solo en soles.';
+
+  @override
+  String get openAccountSalaryTaken => 'Ya tienes una cuenta sueldo.';
+
+  @override
+  String get openAccountContinue => 'Continuar';
+
+  @override
+  String get openAccountPinHeadline => 'Confirma con tu PIN';
+
+  @override
+  String openAccountPinSubtitle(String cuenta, String moneda) {
+    return 'Vas a abrir: $cuenta en $moneda';
+  }
+
+  @override
+  String get openAccountCta => 'Abrir cuenta';
+
+  @override
+  String get openAccountRetryCta => 'Reintentar';
+
+  @override
+  String get openAccountErrorLimit => 'Ya tienes 5 cuentas, el máximo.';
+
+  @override
+  String get openAccountErrorSalary => 'Ya tienes una cuenta sueldo.';
+
+  @override
+  String get openAccountErrorCurrency => 'La cuenta sueldo es solo en soles.';
+
+  @override
+  String get openAccountErrorName =>
+      'El nombre puede tener hasta 30 caracteres.';
+
+  @override
+  String get openAccountErrorKeyReused =>
+      'Esa apertura ya se pidió con otros datos. Vuelve a empezar.';
+
+  @override
+  String get openAccountErrorNetwork =>
+      'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.';
+
+  @override
+  String get openAccountErrorUnexpected =>
+      'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.';
 }

@@ -56,6 +56,8 @@ import '../splash/splash_screen.dart';
 import '../transfer/amount_screen.dart';
 import '../transfer/bloc/transfer_bloc.dart';
 import '../transfer/confirm_screen.dart';
+import '../account_open/bloc/open_account_bloc.dart';
+import '../account_open/open_account_screen.dart';
 import '../topup/bloc/topup_bloc.dart';
 import '../topup/topup_screen.dart';
 import '../transfer/receipt_screen.dart';
@@ -361,6 +363,25 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             onLocked: (until) =>
                 closeOnLockout(GoRouter.of(context), authBloc, until),
           ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.abrirCuenta,
+        // Las cuentas actuales viajan como `extra` desde el inicio: sin ellas
+        // (deep link) no se sabe si ya hay sueldo ni cuántas hay.
+        redirect: (context, state) =>
+            state.extra is List<Account> ? null : AppRoutes.home,
+        builder: (context, state) => BlocProvider(
+          create: (_) => OpenAccountBloc(
+            AccountModule.create(deps),
+            pending: TransferModule.pending(deps),
+            userId: switch (authBloc.state) {
+              AuthAuthenticated(:final session) => session.userId,
+              AuthUnauthenticated() => '',
+            },
+            cuentas: state.extra as List<Account>,
+          )..add(const OpenAccountEvent.opened()),
+          child: const OpenAccountScreen(),
         ),
       ),
       GoRoute(
