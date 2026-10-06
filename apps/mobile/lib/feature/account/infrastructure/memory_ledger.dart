@@ -135,45 +135,45 @@ class MemoryLedger {
           saldoContable: Money.soles(125040),
         ),
         [
-      MovementDetail(
-        transactionId: tx1,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.debito,
-        monto: const Money.soles(4500),
-        // Enmascarada: en un DÉBITO el backend solo da lo que ya dio
-        // `/directory/resolve`, porque la operación la eligió quien envía.
-        contraparte: 'B*** D*** A***',
-        saldoPosterior: const Money.soles(125040),
-        fecha: a(hoy, 14, 30),
-        estado: 'confirmada',
-        cuentaDestinoMasked: '••••7732',
-      ),
-      MovementDetail(
-        transactionId: tx2,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.credito,
-        monto: const Money.soles(120000),
-        // Completa: es un CRÉDITO, y recibir no es algo que uno se provoque.
-        contraparte: 'Jenny Marisol Ruiz',
-        saldoPosterior: const Money.soles(129540),
-        fecha: a(hoy, 9, 15),
-        estado: 'confirmada',
-        // Como el backend: el destino de la transferencia, que en un crédito
-        // es la cuenta propia.
-        cuentaDestinoMasked: '••••4521',
-      ),
-      MovementDetail(
-        transactionId: tx3,
-        tipo: MovementKind.transferencia,
-        direccion: MovementDirection.debito,
-        monto: const Money.soles(1850),
-        contraparte: 'M*** L*** C***',
-        saldoPosterior: const Money.soles(9540),
-        fecha: a(ayer, 13, 5),
-        estado: 'confirmada',
-        cuentaDestinoMasked: '••••1908',
-      ),
-],
+          MovementDetail(
+            transactionId: tx1,
+            tipo: MovementKind.transferencia,
+            direccion: MovementDirection.debito,
+            monto: const Money.soles(4500),
+            // Enmascarada: en un DÉBITO el backend solo da lo que ya dio
+            // `/directory/resolve`, porque la operación la eligió quien envía.
+            contraparte: 'B*** D*** A***',
+            saldoPosterior: const Money.soles(125040),
+            fecha: a(hoy, 14, 30),
+            estado: 'confirmada',
+            cuentaDestinoMasked: '••••7732',
+          ),
+          MovementDetail(
+            transactionId: tx2,
+            tipo: MovementKind.transferencia,
+            direccion: MovementDirection.credito,
+            monto: const Money.soles(120000),
+            // Completa: es un CRÉDITO, y recibir no es algo que uno se provoque.
+            contraparte: 'Jenny Marisol Ruiz',
+            saldoPosterior: const Money.soles(129540),
+            fecha: a(hoy, 9, 15),
+            estado: 'confirmada',
+            // Como el backend: el destino de la transferencia, que en un crédito
+            // es la cuenta propia.
+            cuentaDestinoMasked: '••••4521',
+          ),
+          MovementDetail(
+            transactionId: tx3,
+            tipo: MovementKind.transferencia,
+            direccion: MovementDirection.debito,
+            monto: const Money.soles(1850),
+            contraparte: 'M*** L*** C***',
+            saldoPosterior: const Money.soles(9540),
+            fecha: a(ayer, 13, 5),
+            estado: 'confirmada',
+            cuentaDestinoMasked: '••••1908',
+          ),
+        ],
       ),
       _Fila(
         const Account(

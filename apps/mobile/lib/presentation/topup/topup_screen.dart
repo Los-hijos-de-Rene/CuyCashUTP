@@ -72,7 +72,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
     final monto = _parsed;
     if (monto == null) return l10n.transferAmountInvalid;
     if (monto < TransferLimits.montoMinimo(widget.cuenta.moneda)) {
-      return l10n.transferAmountZero(formatMoney(Money.zero(widget.cuenta.moneda)));
+      return l10n.transferAmountZero(
+        formatMoney(Money.zero(widget.cuenta.moneda)),
+      );
     }
     if (monto > TransferLimits.montoMaximo(widget.cuenta.moneda)) {
       return l10n.topUpAmountOverMax(
@@ -247,7 +249,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     for (final unidades in _quickAmounts)
                       ActionChip(
                         label: Text(
-                          formatMoney(Money(unidades * 100, widget.cuenta.moneda)),
+                          formatMoney(
+                            Money(unidades * 100, widget.cuenta.moneda),
+                          ),
                         ),
                         onPressed: bloqueado
                             ? null

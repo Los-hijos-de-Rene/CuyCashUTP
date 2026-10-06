@@ -91,6 +91,9 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
             seleccionada: data.indice,
             movimientos: data.page.items,
             nextCursor: data.page.nextCursor,
+            // Un renombrado en vuelo no es de este refresco: no se pisa.
+            renaming: state.renaming,
+            renameFailure: state.renameFailure,
           );
         },
       ),

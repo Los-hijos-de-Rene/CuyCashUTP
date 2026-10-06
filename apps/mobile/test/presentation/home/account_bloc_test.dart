@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/application/account_actions.dart';
@@ -461,5 +463,49 @@ void main() {
         expect(b.state.renameFailure, isNull);
       },
     );
+
+    test(
+      'un refresco que termina durante un renombrado no apaga renaming',
+      () async {
+        final repo = _RenombraLento(MemoryAccountRepository(clock: _reloj));
+        final b = AccountBloc(AccountActions(repo));
+        addTearDown(b.close);
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+
+        b.add(
+          const AccountEvent.renameRequested(
+            cuentaId: MemoryLedger.cuentaSueldoId,
+            nombre: 'Planilla',
+          ),
+        );
+        await b.stream.firstWhere((s) => s.renaming);
+        b.add(const AccountEvent.refreshed());
+        await b.stream.firstWhere((s) => s.refreshing);
+        await b.stream.firstWhere((s) => !s.refreshing);
+        // El refresco terminó; el renombrado sigue en vuelo.
+        expect(b.state.renaming, isTrue);
+
+        repo.liberar.complete();
+        await b.stream.firstWhere((s) => !s.renaming);
+        expect(b.state.renameFailure, isNull);
+      },
+    );
   });
+}
+
+/// Repo cuyo `renombrar` espera a [liberar].
+class _RenombraLento extends _GuionRepo {
+  _RenombraLento(super.inner);
+
+  final Completer<void> liberar = Completer<void>();
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) async {
+    await liberar.future;
+    return super.renombrar(cuentaId, nombre);
+  }
 }

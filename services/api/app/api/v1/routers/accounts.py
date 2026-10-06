@@ -133,7 +133,7 @@ async def listar_cuentas(
         await session.execute(
             select(Account)
             .where(Account.user_id == user.id)
-            .order_by(Account.created_at)
+            .order_by(Account.created_at, Account.id)
         )
     ).scalars().all()
     return {"cuentas": [_cuenta_json(c) for c in filas]}
@@ -358,6 +358,10 @@ async def abrir_cuenta(
         )
     ).scalar_one_or_none()
     if previa is not None:
+        # A propósito el reintento idempotente responde 200 ANTES de pedir el
+        # PIN: la cuenta es del propio titular y no se mueve dinero, a
+        # diferencia de /transfers (donde el PIN va antes de cualquier
+        # repetición).
         if (previa.tipo, previa.moneda, previa.nombre) != (payload.tipo, payload.moneda, nombre):
             raise ApiError(
                 ErrorCode.IDEMPOTENCY_KEY_REUSED,

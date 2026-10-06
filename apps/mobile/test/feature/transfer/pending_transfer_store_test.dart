@@ -102,6 +102,20 @@ void main() {
         expect(await acciones.hasPending('u1'), isFalse);
       });
 
+      test(
+        'hasPending ignora las aperturas de cuenta salvo que se pidan',
+        () async {
+          await acciones.remember('u1', 'abrir|ahorro|PEN|', 'clave-a');
+          expect(await acciones.hasPending('u1'), isFalse);
+          expect(
+            await acciones.hasPending('u1', incluirAperturas: true),
+            isTrue,
+          );
+          await acciones.remember('u1', huella, 'clave-1');
+          expect(await acciones.hasPending('u1'), isTrue);
+        },
+      );
+
       test('al guardar se limpian las caducadas', () async {
         await acciones.remember('u1', 'vieja', 'clave-v');
         ahora = ahora.add(const Duration(hours: 30));

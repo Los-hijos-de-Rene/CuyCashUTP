@@ -69,8 +69,16 @@ class PendingTransferActions {
   /// ¿Hay CUALQUIER envío pendiente vigente de este usuario? Sirve para avisar
   /// cuando la intención nueva no coincide exacta con la pendiente (otro
   /// monto, otro motivo...) y por eso no se puede reconocer como repetida.
-  Future<bool> hasPending(String userId) async =>
-      _vigentes(await _store.readAll(userId)).isNotEmpty;
+  ///
+  /// Las aperturas de cuenta (`abrir|...`) comparten almacén pero no cuentan
+  /// por defecto: un envío o una recarga no deben avisar de "un envío sin
+  /// resolver" cuando lo pendiente es abrir una cuenta.
+  Future<bool> hasPending(
+    String userId, {
+    bool incluirAperturas = false,
+  }) async => _vigentes(
+    await _store.readAll(userId),
+  ).keys.any((h) => incluirAperturas || !h.startsWith('abrir|'));
 
   /// Anota la clave de esta intención (y limpia las caducadas). `false` si NO
   /// quedó guardada: el envío debe seguir, pero el usuario sin red de
