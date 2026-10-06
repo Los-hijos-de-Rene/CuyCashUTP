@@ -56,8 +56,7 @@ class _RenameAccountSheetState extends State<RenameAccountSheet> {
     return BlocConsumer<AccountBloc, AccountState>(
       listenWhen: (a, b) => a.renaming && !b.renaming,
       listener: (context, state) {
-        if (!_intentado || state.renameFailure == null)
-          Navigator.of(context).pop();
+        if (state.renameFailure == null) Navigator.of(context).pop();
       },
       builder: (context, state) {
         final largo =
