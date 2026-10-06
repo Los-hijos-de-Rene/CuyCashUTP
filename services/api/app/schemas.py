@@ -57,3 +57,9 @@ class ChallengeOut(BaseModel):
     cooldown_until: datetime
     attempts_left: int
     resends_left: int
+
+
+class AliasIn(BaseModel):
+    # Holgado a propósito: la regla real (`@` + 3–20 de [a-z0-9_.]) la aplica
+    # el router tras normalizar, para responder INVALID_ALIAS y no un 422 genérico.
+    alias: str = Field(max_length=60)
