@@ -398,5 +398,19 @@
   "personalDataSince": "Cliente desde",
   "personalDataVerified": "Identidad verificada",
   "personalDataReadOnly": "Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.",
-  "personalDataError": "No pudimos cargar tus datos."
+  "personalDataError": "No pudimos cargar tus datos.",
+  "changePinTitle": "Cambiar mi PIN",
+  "changePinCurrentHeadline": "Ingresa tu PIN actual",
+  "changePinCurrentSubtitle": "Lo usamos para confirmar que eres tú.",
+  "changePinNewHeadline": "Crea tu nuevo PIN",
+  "changePinNewSubtitle": "Elige 6 dígitos que no uses en otro lado.",
+  "changePinConfirmHeadline": "Confirma tu nuevo PIN",
+  "changePinConfirmSubtitle": "Escríbelo otra vez.",
+  "changePinWrong": "{count, plural, =1{PIN actual incorrecto. Te queda 1 intento.} other{PIN actual incorrecto. Te quedan {count} intentos.}}",
+  "@changePinWrong": {"placeholders": {"count": {"type": "int"}}},
+  "changePinUnknown": "No sabemos si tu PIN cambió. Intenta entrar con el nuevo o con el anterior.",
+  "changePinDoneTitle": "Tu PIN cambió",
+  "changePinDoneOthers": "{count, plural, =0{Desde ahora entra con tu nuevo PIN.} =1{Cerramos tu sesión en 1 dispositivo.} other{Cerramos tu sesión en {count} dispositivos.}}",
+  "@changePinDoneOthers": {"placeholders": {"count": {"type": "int"}}},
+  "changePinDoneCta": "Listo"
 }

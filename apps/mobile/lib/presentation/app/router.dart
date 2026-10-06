@@ -10,6 +10,7 @@ import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
 import '../../core/injection/modules/profile_module.dart';
 import '../../core/injection/modules/register_module.dart';
+import '../../core/injection/modules/security_module.dart';
 import '../../core/injection/modules/transfer_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/auth/domain/auth_session.dart';
@@ -34,6 +35,8 @@ import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
 import '../profile/alias/bloc/edit_alias_bloc.dart';
+import '../profile/change_pin/bloc/change_pin_bloc.dart';
+import '../profile/change_pin/change_pin_screen.dart';
 import '../profile/alias/edit_alias_screen.dart';
 import '../profile/personal_data/bloc/personal_data_bloc.dart';
 import '../profile/personal_data/personal_data_screen.dart';
@@ -315,6 +318,15 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         ),
       ),
       GoRoute(
+        path: AppRoutes.perfilPin,
+        builder: (context, state) => BlocProvider(
+          create: (_) => ChangePinBloc(SecurityModule.create(deps)),
+          child: ChangePinScreen(
+            onLocked: (until) => _cerrarPorBloqueo(context, authBloc, until),
+          ),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.recargar,
         // La cuenta viaja como `extra` desde el inicio; sin ella (deep link)
         // no hay dónde recargar.
@@ -357,5 +369,33 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         ],
       ),
     ],
+  );
+}
+
+/// El servidor ya cerró la sesión al bloquear. Un autenticado en
+/// `/bloqueado` sería devuelto al inicio por `appRedirect`, así que primero se
+/// cierra la sesión local y DESPUÉS se navega.
+Future<void> _cerrarPorBloqueo(
+  BuildContext context,
+  AuthBloc authBloc,
+  DateTime until,
+) async {
+  final router = GoRouter.of(context);
+  final dni = switch (authBloc.state) {
+    AuthAuthenticated(:final session) => session.identifier,
+    AuthUnauthenticated() => null,
+  };
+  // Si ya no hay sesión, esperar a `AuthUnauthenticated` no terminaría nunca.
+  if (authBloc.state is! AuthUnauthenticated) {
+    authBloc.add(const AuthEvent.signedOut());
+    await authBloc.stream.firstWhere((s) => s is AuthUnauthenticated);
+  }
+  router.go(
+    AppRoutes.blocked,
+    extra: BlockedArgs(
+      origin: BlockedOrigin.login,
+      lockedUntil: until,
+      resumeDni: dni,
+    ),
   );
 }

@@ -1278,4 +1278,60 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get personalDataError => 'No pudimos cargar tus datos.';
+
+  @override
+  String get changePinTitle => 'Cambiar mi PIN';
+
+  @override
+  String get changePinCurrentHeadline => 'Ingresa tu PIN actual';
+
+  @override
+  String get changePinCurrentSubtitle =>
+      'Lo usamos para confirmar que eres tú.';
+
+  @override
+  String get changePinNewHeadline => 'Crea tu nuevo PIN';
+
+  @override
+  String get changePinNewSubtitle =>
+      'Elige 6 dígitos que no uses en otro lado.';
+
+  @override
+  String get changePinConfirmHeadline => 'Confirma tu nuevo PIN';
+
+  @override
+  String get changePinConfirmSubtitle => 'Escríbelo otra vez.';
+
+  @override
+  String changePinWrong(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN actual incorrecto. Te quedan $count intentos.',
+      one: 'PIN actual incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get changePinUnknown =>
+      'No sabemos si tu PIN cambió. Intenta entrar con el nuevo o con el anterior.';
+
+  @override
+  String get changePinDoneTitle => 'Tu PIN cambió';
+
+  @override
+  String changePinDoneOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Cerramos tu sesión en $count dispositivos.',
+      one: 'Cerramos tu sesión en 1 dispositivo.',
+      zero: 'Desde ahora entra con tu nuevo PIN.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get changePinDoneCta => 'Listo';
 }

@@ -2271,6 +2271,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No pudimos cargar tus datos.'**
   String get personalDataError;
+
+  /// No description provided for @changePinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar mi PIN'**
+  String get changePinTitle;
+
+  /// No description provided for @changePinCurrentHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu PIN actual'**
+  String get changePinCurrentHeadline;
+
+  /// No description provided for @changePinCurrentSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo usamos para confirmar que eres tú.'**
+  String get changePinCurrentSubtitle;
+
+  /// No description provided for @changePinNewHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu nuevo PIN'**
+  String get changePinNewHeadline;
+
+  /// No description provided for @changePinNewSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige 6 dígitos que no uses en otro lado.'**
+  String get changePinNewSubtitle;
+
+  /// No description provided for @changePinConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu nuevo PIN'**
+  String get changePinConfirmHeadline;
+
+  /// No description provided for @changePinConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escríbelo otra vez.'**
+  String get changePinConfirmSubtitle;
+
+  /// No description provided for @changePinWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{PIN actual incorrecto. Te queda 1 intento.} other{PIN actual incorrecto. Te quedan {count} intentos.}}'**
+  String changePinWrong(int count);
+
+  /// No description provided for @changePinUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabemos si tu PIN cambió. Intenta entrar con el nuevo o con el anterior.'**
+  String get changePinUnknown;
+
+  /// No description provided for @changePinDoneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu PIN cambió'**
+  String get changePinDoneTitle;
+
+  /// No description provided for @changePinDoneOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Desde ahora entra con tu nuevo PIN.} =1{Cerramos tu sesión en 1 dispositivo.} other{Cerramos tu sesión en {count} dispositivos.}}'**
+  String changePinDoneOthers(int count);
+
+  /// No description provided for @changePinDoneCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get changePinDoneCta;
 }
 
 class _AppLocalizationsDelegate

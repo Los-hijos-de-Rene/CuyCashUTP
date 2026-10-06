@@ -111,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfileOptionTile(
                     icon: Icons.password_outlined,
                     label: l10n.profileItemChangePin,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilPin),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
