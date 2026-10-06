@@ -38,14 +38,25 @@ class SecureDeviceStore implements DeviceStore {
 
   @override
   Future<void> clearUser() async {
-    await _storage.delete(key: _userKey);
-    // Otro usuario en este teléfono no hereda la huella del anterior.
-    await _storage.delete(key: _biometricKey);
+    try {
+      await _storage.delete(key: _userKey);
+    } finally {
+      // Otro usuario en este teléfono no hereda la huella del anterior: se
+      // intenta aunque borrar el usuario haya fallado.
+      await _storage.delete(key: _biometricKey);
+    }
   }
 
+  /// Un almacén ilegible (p. ej. el Keystore invalidado tras cambiar el
+  /// bloqueo de pantalla) cuenta como "sin credencial": se entra con PIN.
   @override
-  Future<String?> readBiometricCredential() =>
-      _storage.read(key: _biometricKey);
+  Future<String?> readBiometricCredential() async {
+    try {
+      return await _storage.read(key: _biometricKey);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<bool> saveBiometricCredential(String credential) async {
