@@ -17,7 +17,8 @@ class MemoryProfileRepository implements ProfileRepository {
     apellidos: 'Ruiz Salas',
     emailMasked: 'j•••••@correo.pe',
     alias: '@jheampierre',
-    kycVerified: true,
+    // Como el backend real: nadie escribe aún `kyc_status`, queda pendiente.
+    kycVerified: false,
     clienteDesde: DateTime.utc(2026, 9, 1, 15),
   );
 

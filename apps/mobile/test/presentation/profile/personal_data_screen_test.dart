@@ -70,7 +70,15 @@ void main() {
   });
 
   testWidgets('muestra los datos y el sello de verificación', (tester) async {
-    await tester.pumpWidget(_app(MemoryProfileRepository()));
+    // El sello solo sale con el KYC confirmado; la demo, como el backend
+    // real hoy, lo tiene pendiente (R7).
+    await tester.pumpWidget(
+      _app(
+        MemoryProfileRepository(
+          initial: MemoryProfileRepository.demo.copyWith(kycVerified: true),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Jheampierre'), findsOneWidget);

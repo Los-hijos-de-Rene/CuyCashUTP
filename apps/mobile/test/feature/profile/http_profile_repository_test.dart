@@ -41,7 +41,7 @@ class FakeProfileBackend implements HttpClientAdapter {
         'apellidos': 'Ruiz',
         'email_masked': 'j•••••@correo.pe',
         'alias': alias,
-        'kyc_status': 'verified',
+        'kyc_status': 'pending',
         'created_at': '2026-09-01T15:00:00.000000Z',
       });
     }
@@ -96,6 +96,22 @@ void main() {
         type: DioExceptionType.connectionError,
       );
     expect(falloDe(await construir(backend).me()), isA<ProfileNetworkFailure>());
+  });
+
+  test('kyc_status verified es kycVerified=true', () async {
+    final backend = FakeProfileBackend();
+    final repo = construir(backend);
+    backend.forced = (status: 200, body: {
+      'dni': '71234567',
+      'nombres': 'J',
+      'apellidos': 'R',
+      'email_masked': 'j•••••@c.pe',
+      'alias': '@j',
+      'kyc_status': 'verified',
+      'created_at': '2026-09-01T15:00:00.000000Z',
+    });
+    final datos = (await repo.me()).getRight().toNullable();
+    expect(datos?.kycVerified, isTrue);
   });
 
   test('kyc_status distinto de verified es kycVerified=false', () async {

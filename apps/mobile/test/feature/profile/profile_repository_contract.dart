@@ -26,7 +26,8 @@ void probarContratoDePerfil(
       expect(datos.dni, dni);
       expect(datos.alias, aliasInicial);
       expect(datos.emailMasked, contains('•'));
-      expect(datos.kycVerified, isTrue);
+      // Ningún backend escribe aún el resultado del KYC (R7).
+      expect(datos.kycVerified, isFalse);
       expect(datos.clienteDesde.isUtc, isTrue);
     });
 
