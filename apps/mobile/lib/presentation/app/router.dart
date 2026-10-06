@@ -33,6 +33,8 @@ import '../recover/pin_actualizado_screen.dart';
 import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
+import '../profile/alias/bloc/edit_alias_bloc.dart';
+import '../profile/alias/edit_alias_screen.dart';
 import '../profile/personal_data/bloc/personal_data_bloc.dart';
 import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
@@ -298,6 +300,18 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           create: (_) => PersonalDataBloc(ProfileModule.create(deps))
             ..add(const PersonalDataEvent.started()),
           child: const PersonalDataScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilAlias,
+        builder: (context, state) => BlocProvider(
+          create: (_) => EditAliasBloc(
+            profile: ProfileModule.create(deps),
+            device: DeviceModule.create(deps),
+            // El alias vigente llega del perfil; sin él se parte vacío.
+            initial: state.extra as String? ?? '',
+          ),
+          child: const EditAliasScreen(),
         ),
       ),
       GoRoute(

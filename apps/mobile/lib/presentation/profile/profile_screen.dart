@@ -17,8 +17,15 @@ import 'widgets/profile_option_tile.dart';
 /// Perfil: identidad de la sesión (dato real del servicio de auth), datos de la
 /// cuenta y cierre de sesión. Las opciones sin feature detrás lo dicen en vez de
 /// no hacer nada.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _userKey = GlobalKey<RememberedUserBuilderState>();
 
   void _notYet(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -46,6 +53,7 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: CuyCashColors.surfaceContainerLow,
       ),
       body: RememberedUserBuilder(
+        key: _userKey,
         builder: (context, user) => ListView(
           padding: const EdgeInsets.fromLTRB(
             CuyCashSpacing.marginMobile,
@@ -78,7 +86,18 @@ class ProfileScreen extends StatelessWidget {
                   ProfileOptionTile(
                     icon: Icons.alternate_email,
                     label: l10n.profileItemAlias,
-                    onTap: () => _notYet(context),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final cambio = await context.push<bool>(
+                          AppRoutes.perfilAlias,
+                          extra: user.alias);
+                      if (cambio != true) return;
+                      await _userKey.currentState?.reload();
+                      messenger
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                            SnackBar(content: Text(l10n.aliasSaved)));
+                    },
                   ),
                 ],
               ),

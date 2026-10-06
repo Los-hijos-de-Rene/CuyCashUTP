@@ -4,6 +4,7 @@ import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart'
 import 'package:cuycash/feature/lockout/application/identifier_lockout_actions.dart';
 import 'package:cuycash/feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import 'package:cuycash/feature/device/application/device_actions.dart';
+import 'package:cuycash/feature/device/domain/remembered_user.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/auth/bloc/auth_bloc.dart';
@@ -116,5 +117,57 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('DATOS'), findsOneWidget);
+  });
+
+  testWidgets('al volver de editar el alias con true muestra el nuevo',
+      (tester) async {
+    final device = DeviceActions(MemoryDeviceStore());
+    await device.saveUser(const RememberedUser(
+        dni: '12345678', fullName: 'Ana Pérez', alias: '@viejo'));
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
+        GoRoute(
+          path: '/perfil/alias',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                // Lo que hace el bloc al guardar: actualiza el almacén.
+                await device.saveUser(const RememberedUser(
+                    dni: '12345678', fullName: 'Ana Pérez', alias: '@nuevo'));
+                if (context.mounted) context.pop(true);
+              },
+              child: const Text('GUARDAR'),
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [RepositoryProvider<DeviceActions>.value(value: device)],
+        child: BlocProvider.value(
+          value: bloc,
+          child: MaterialApp.router(
+            theme: CuyCashTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('@viejo'), findsWidgets);
+
+    await tester.tap(find.text('Editar mi alias'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('GUARDAR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('@nuevo'), findsWidgets);
+    expect(find.text('@viejo'), findsNothing);
+    expect(find.text('Listo, tu alias cambió.'), findsOneWidget);
   });
 }

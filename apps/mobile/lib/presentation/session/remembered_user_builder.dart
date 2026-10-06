@@ -18,19 +18,20 @@ class RememberedUserBuilder extends StatefulWidget {
   final Widget Function(BuildContext context, RememberedUser user) builder;
 
   @override
-  State<RememberedUserBuilder> createState() => _RememberedUserBuilderState();
+  State<RememberedUserBuilder> createState() => RememberedUserBuilderState();
 }
 
-class _RememberedUserBuilderState extends State<RememberedUserBuilder> {
+class RememberedUserBuilderState extends State<RememberedUserBuilder> {
   RememberedUser? _stored;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    reload();
   }
 
-  Future<void> _load() async {
+  /// Vuelve a leer el usuario del almacén (p. ej. tras editar el alias).
+  Future<void> reload() async {
     final user = await context.read<DeviceActions>().readUser();
     if (!mounted || user == null) return;
     setState(() => _stored = user);

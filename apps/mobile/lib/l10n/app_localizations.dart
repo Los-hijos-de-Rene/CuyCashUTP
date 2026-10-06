@@ -1546,6 +1546,48 @@ abstract class AppLocalizations {
   /// **'Editar mi alias'**
   String get profileItemAlias;
 
+  /// No description provided for @aliasTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar mi alias'**
+  String get aliasTitle;
+
+  /// No description provided for @aliasLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu alias'**
+  String get aliasLabel;
+
+  /// No description provided for @aliasHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.'**
+  String get aliasHelp;
+
+  /// No description provided for @aliasInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.'**
+  String get aliasInvalid;
+
+  /// No description provided for @aliasSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get aliasSave;
+
+  /// No description provided for @aliasSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, tu alias cambió.'**
+  String get aliasSaved;
+
+  /// No description provided for @aliasNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos guardar tu alias. Revisa tu conexión e inténtalo de nuevo.'**
+  String get aliasNetwork;
+
   /// No description provided for @profileItemChangePin.
   ///
   /// In es, this message translates to:

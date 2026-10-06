@@ -853,6 +853,30 @@ class AppLocalizationsEs extends AppLocalizations {
   String get profileItemAlias => 'Editar mi alias';
 
   @override
+  String get aliasTitle => 'Editar mi alias';
+
+  @override
+  String get aliasLabel => 'Tu alias';
+
+  @override
+  String get aliasHelp =>
+      'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.';
+
+  @override
+  String get aliasInvalid =>
+      'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.';
+
+  @override
+  String get aliasSave => 'Guardar';
+
+  @override
+  String get aliasSaved => 'Listo, tu alias cambió.';
+
+  @override
+  String get aliasNetwork =>
+      'No pudimos guardar tu alias. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
   String get profileItemChangePin => 'Cambiar mi PIN';
 
   @override
