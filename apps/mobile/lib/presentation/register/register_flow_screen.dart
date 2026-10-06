@@ -48,24 +48,36 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    return BlocListener<RegisterBloc, RegisterState>(
+      // La huella no se pudo activar: primero el aviso y DESPUÉS la sesión.
+      // La sesión lleva a /home y desmonta esta pantalla; el SnackBar vive en
+      // el ScaffoldMessenger de la app, así que sigue visible al llegar.
+      listenWhen: (antes, ahora) =>
+          !antes.biometricEnrollFailed && ahora.biometricEnrollFailed,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.registerBiometricLater)));
+        context.read<RegisterBloc>().add(
+          const RegisterEvent.biometricNoticeShown(),
+        );
+      },
+      child: _buildFlow(context, l10n),
+    );
+  }
+
+  Widget _buildFlow(BuildContext context, AppLocalizations l10n) {
     return BlocConsumer<RegisterBloc, RegisterState>(
       // Un fallo del alta o de la activación tiene que verse. Sin esto, el
       // botón de la pantalla de éxito podía no hacer nada y nadie se enteraba.
       listenWhen: (antes, ahora) =>
-          (antes.submitError != ahora.submitError &&
-              ahora.submitError != null) ||
-          (!antes.biometricEnrollFailed && ahora.biometricEnrollFailed),
+          antes.submitError != ahora.submitError && ahora.submitError != null,
       listener: (context, state) {
         final error = state.submitError;
-        final texto = state.biometricEnrollFailed
-            ? l10n.registerBiometricLater
-            : error == null
-            ? null
-            : authErrorText(l10n, error);
-        if (texto == null) return;
+        if (error == null) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(texto)));
+          ..showSnackBar(SnackBar(content: Text(authErrorText(l10n, error))));
       },
       builder: (context, state) {
         final createdSession = state.createdSession;

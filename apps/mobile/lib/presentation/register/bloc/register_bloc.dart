@@ -99,27 +99,45 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       );
     });
     on<RegisterAccountOpened>((event, emit) async {
-      final session = state.createdSession;
-      if (session == null) return;
-      // El resultado SÍ se mira: antes se descartaba, y una activación
-      // imposible dejaba el botón muerto sin éxito ni error.
-      final resultado = await _actions.activate(session);
-      if (resultado.isLeft()) {
-        resultado.match(
-          (failure) => emit(state.copyWith(submitError: _errorFor(failure))),
-          (_) => null,
+      if (state.createdSession == null) return;
+      // La huella va ANTES de abrir la sesión: abrirla lleva a /home y cierra
+      // este bloc, y el aviso de fallo ya no tendría dónde mostrarse. El alta
+      // ya dejó el token, así que el servidor acepta el enrolamiento.
+      // Si el aviso ya salió (reintento tras fallar la activación), no se
+      // vuelve a pedir la huella.
+      final quiereHuella =
+          state.draft.biometricEnabled &&
+          state.biometricAvailable &&
+          !state.biometricEnrollFailed;
+      if (quiereHuella) {
+        final huella = await _biometric(
+          pin: state.draft.pin,
+          reason: event.biometricReason,
         );
-        return;
+        if (isClosed) return;
+        if (huella.isLeft()) {
+          // La huella nunca deshace el alta: se avisa, y la pantalla, tras
+          // mostrar el aviso, manda `biometricNoticeShown` para abrir la cuenta.
+          emit(state.copyWith(biometricEnrollFailed: true));
+          return;
+        }
       }
-      if (!state.draft.biometricEnabled || !state.biometricAvailable) return;
-      // La huella nunca deshace el alta: un fallo solo enciende el aviso.
-      final huella = await _biometric(
-        pin: state.draft.pin,
-        reason: event.biometricReason,
-      );
-      if (isClosed) return;
-      if (huella.isLeft()) emit(state.copyWith(biometricEnrollFailed: true));
+      await _activate(emit);
     });
+    on<RegisterBiometricNoticeShown>((event, emit) => _activate(emit));
+  }
+
+  /// Abre la sesión creada por el alta. El resultado SÍ se mira: antes se
+  /// descartaba, y una activación imposible dejaba el botón muerto.
+  Future<void> _activate(Emitter<RegisterState> emit) async {
+    final session = state.createdSession;
+    if (session == null) return;
+    final resultado = await _actions.activate(session);
+    if (isClosed) return;
+    resultado.match(
+      (failure) => emit(state.copyWith(submitError: _errorFor(failure))),
+      (_) => null, // éxito → la sesión llega por el stream → /home
+    );
   }
 
   final EnableBiometricUseCase _biometric;

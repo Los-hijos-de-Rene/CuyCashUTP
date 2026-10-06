@@ -55,7 +55,7 @@ extension RegisterEventPatterns on RegisterEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult Function( RegisterPinBackspace value)?  pinBackspace,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,TResult Function( RegisterAccountOpened value)?  accountOpened,TResult Function( RegisterBiometricChecked value)?  biometricChecked,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult Function( RegisterPinBackspace value)?  pinBackspace,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,TResult Function( RegisterAccountOpened value)?  accountOpened,TResult Function( RegisterBiometricNoticeShown value)?  biometricNoticeShown,TResult Function( RegisterBiometricChecked value)?  biometricChecked,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -70,7 +70,8 @@ return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != 
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
 return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that);case RegisterBiometricChecked() when biometricChecked != null:
+return accountOpened(_that);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown(_that);case RegisterBiometricChecked() when biometricChecked != null:
 return biometricChecked(_that);case _:
   return orElse();
 
@@ -89,7 +90,7 @@ return biometricChecked(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinDigitPressed value)  pinDigitPressed,required TResult Function( RegisterPinBackspace value)  pinBackspace,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,required TResult Function( RegisterAccountOpened value)  accountOpened,required TResult Function( RegisterBiometricChecked value)  biometricChecked,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinDigitPressed value)  pinDigitPressed,required TResult Function( RegisterPinBackspace value)  pinBackspace,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,required TResult Function( RegisterAccountOpened value)  accountOpened,required TResult Function( RegisterBiometricNoticeShown value)  biometricNoticeShown,required TResult Function( RegisterBiometricChecked value)  biometricChecked,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
@@ -104,7 +105,8 @@ return biometricToggled(_that);case RegisterStepAdvanced():
 return stepAdvanced(_that);case RegisterStepBack():
 return stepBack(_that);case RegisterSubmitted():
 return submitted(_that);case RegisterAccountOpened():
-return accountOpened(_that);case RegisterBiometricChecked():
+return accountOpened(_that);case RegisterBiometricNoticeShown():
+return biometricNoticeShown(_that);case RegisterBiometricChecked():
 return biometricChecked(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -119,7 +121,7 @@ return biometricChecked(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult? Function( RegisterPinBackspace value)?  pinBackspace,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,TResult? Function( RegisterAccountOpened value)?  accountOpened,TResult? Function( RegisterBiometricChecked value)?  biometricChecked,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult? Function( RegisterPinBackspace value)?  pinBackspace,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,TResult? Function( RegisterAccountOpened value)?  accountOpened,TResult? Function( RegisterBiometricNoticeShown value)?  biometricNoticeShown,TResult? Function( RegisterBiometricChecked value)?  biometricChecked,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -134,7 +136,8 @@ return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != 
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
 return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that);case RegisterBiometricChecked() when biometricChecked != null:
+return accountOpened(_that);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown(_that);case RegisterBiometricChecked() when biometricChecked != null:
 return biometricChecked(_that);case _:
   return null;
 
@@ -152,7 +155,7 @@ return biometricChecked(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side,  Uint8List image)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( int digit)?  pinDigitPressed,TResult Function()?  pinBackspace,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,TResult Function( String biometricReason)?  accountOpened,TResult Function()?  biometricChecked,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side,  Uint8List image)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( int digit)?  pinDigitPressed,TResult Function()?  pinBackspace,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,TResult Function( String biometricReason)?  accountOpened,TResult Function()?  biometricNoticeShown,TResult Function()?  biometricChecked,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -166,7 +169,8 @@ return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanc
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
 return submitted();case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that.biometricReason);case RegisterBiometricChecked() when biometricChecked != null:
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown();case RegisterBiometricChecked() when biometricChecked != null:
 return biometricChecked();case _:
   return orElse();
 
@@ -185,7 +189,7 @@ return biometricChecked();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side,  Uint8List image)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( int digit)  pinDigitPressed,required TResult Function()  pinBackspace,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,required TResult Function( String biometricReason)  accountOpened,required TResult Function()  biometricChecked,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side,  Uint8List image)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( int digit)  pinDigitPressed,required TResult Function()  pinBackspace,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,required TResult Function( String biometricReason)  accountOpened,required TResult Function()  biometricNoticeShown,required TResult Function()  biometricChecked,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
 return fieldChanged(_that.field,_that.value);case RegisterCaptured():
@@ -199,7 +203,8 @@ return biometricToggled(_that.value);case RegisterStepAdvanced():
 return stepAdvanced();case RegisterStepBack():
 return stepBack();case RegisterSubmitted():
 return submitted();case RegisterAccountOpened():
-return accountOpened(_that.biometricReason);case RegisterBiometricChecked():
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown():
+return biometricNoticeShown();case RegisterBiometricChecked():
 return biometricChecked();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -214,7 +219,7 @@ return biometricChecked();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side,  Uint8List image)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( int digit)?  pinDigitPressed,TResult? Function()?  pinBackspace,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,TResult? Function( String biometricReason)?  accountOpened,TResult? Function()?  biometricChecked,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side,  Uint8List image)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( int digit)?  pinDigitPressed,TResult? Function()?  pinBackspace,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,TResult? Function( String biometricReason)?  accountOpened,TResult? Function()?  biometricNoticeShown,TResult? Function()?  biometricChecked,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -228,7 +233,8 @@ return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanc
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
 return submitted();case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that.biometricReason);case RegisterBiometricChecked() when biometricChecked != null:
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown();case RegisterBiometricChecked() when biometricChecked != null:
 return biometricChecked();case _:
   return null;
 
@@ -828,6 +834,38 @@ as String,
 
 
 }
+
+/// @nodoc
+
+
+class RegisterBiometricNoticeShown implements RegisterEvent {
+  const RegisterBiometricNoticeShown();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterBiometricNoticeShown);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEvent.biometricNoticeShown()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 

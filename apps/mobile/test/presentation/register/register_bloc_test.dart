@@ -225,7 +225,12 @@ void main() {
     },
   );
 
-  test('al abrir la cuenta con la huella encendida, la activa', () async {
+  test('al abrir la cuenta con la huella encendida, la activa ANTES de abrir '
+      'la sesión', () async {
+    // Activar la sesión saca al usuario del registro (y cierra el bloc): la
+    // huella tiene que quedar resuelta antes.
+    final sesionAlGuardar = <Object?>[];
+    store = _StoreEspia(() => sesionAlGuardar.add(auth.currentSession));
     final b = construirBloc()..add(const RegisterEvent.biometricChecked());
     await recorrerHastaCrearCuenta(b, pin: _pinAlta);
 
@@ -233,11 +238,14 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 10));
 
     expect(await store.readBiometricCredential(), isNotNull);
+    expect(sesionAlGuardar, [isNull]);
+    expect(auth.currentSession?.identifier, '87654321');
     expect(b.state.biometricEnrollFailed, isFalse);
     await b.close();
   });
 
-  test('si activar la huella falla, el alta sigue y se avisa', () async {
+  test('si activar la huella falla, avisa primero y abre la sesión cuando la '
+      'pantalla confirma el aviso', () async {
     store.failCredentialWrites = true;
     final b = construirBloc()..add(const RegisterEvent.biometricChecked());
     await recorrerHastaCrearCuenta(b, pin: _pinAlta);
@@ -245,8 +253,43 @@ void main() {
     b.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
     await Future<void>.delayed(const Duration(milliseconds: 10));
 
+    // El aviso sale con la sesión aún cerrada: si se abriera, el router
+    // dejaría el registro antes de mostrarlo.
     expect(b.state.biometricEnrollFailed, isTrue);
+    expect(auth.currentSession, isNull);
+
+    b.add(const RegisterEvent.biometricNoticeShown());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(auth.currentSession?.identifier, '87654321');
+    await b.close();
+  });
+
+  test('un reintento tras el aviso no vuelve a pedir la huella', () async {
+    store.failCredentialWrites = true;
+    final b = construirBloc()..add(const RegisterEvent.biometricChecked());
+    await recorrerHastaCrearCuenta(b, pin: _pinAlta);
+    b.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    final pedidas = gate.prompts;
+
+    b.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(gate.prompts, pedidas);
     expect(auth.currentSession, isNotNull);
     await b.close();
   });
+}
+
+/// Store que avisa cuándo se guarda la credencial, para ver el orden.
+class _StoreEspia extends MemoryDeviceStore {
+  _StoreEspia(this._alGuardar);
+  final void Function() _alGuardar;
+
+  @override
+  Future<bool> saveBiometricCredential(String credential) {
+    _alGuardar();
+    return super.saveBiometricCredential(credential);
+  }
 }
