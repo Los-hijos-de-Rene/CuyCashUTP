@@ -133,8 +133,8 @@ Cada una con `domain/application/infrastructure` y su `Memory*` funcional (regla
   `clearBiometricCredential`. Se borra también al cerrar sesión con cambio de usuario
   (`clearUser`).
 - `buildAuthenticatedDio` y el `dio` de auth mandan `X-Device-Name`. El nombre se resuelve una vez
-  con `device_info_plus` al armar el grafo en `envs/shared` (formato `android · Samsung SM-A546E` /
-  `ios · iPhone14,5`).
+  con `device_info_plus` al armar el grafo en `envs/shared` (formato `android|Samsung SM-A546E` /
+  `ios|iPhone14,5`) (ver ruling R4: ASCII).
 - `AppDependencies` gana `profileRepository`, `securityRepository`, `biometricGate`; módulos
   `ProfileModule`, `SecurityModule`, `BiometricModule`.
 - Dependencias: `local_auth`, `device_info_plus`. Android: `MainActivity` hereda de
