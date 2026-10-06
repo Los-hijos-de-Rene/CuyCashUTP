@@ -434,6 +434,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pinRuleNoSequence => 'Sin secuencias como 123456';
 
   @override
+  String get registerBiometricLater =>
+      'No pudimos activar tu huella. Puedes hacerlo desde tu perfil, en Acceso biométrico.';
+
+  @override
+  String get registerBiometricReason =>
+      'Confirma tu huella o rostro para entrar más rápido a CuyCash';
+
+  @override
   String get biometricTitle => 'Activar acceso biométrico';
 
   @override
@@ -453,6 +461,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get quickAccessPrompt => 'Ingresa tu PIN de seguridad';
+
+  @override
+  String get quickAccessBiometricReason =>
+      'Confirma que eres tú para entrar a CuyCash';
+
+  @override
+  String get quickAccessBiometricRevoked =>
+      'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.';
+
+  @override
+  String get quickAccessBiometricFailed =>
+      'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.';
 
   @override
   String notYou(String name) {
@@ -853,6 +873,30 @@ class AppLocalizationsEs extends AppLocalizations {
   String get profileItemAlias => 'Editar mi alias';
 
   @override
+  String get aliasTitle => 'Editar mi alias';
+
+  @override
+  String get aliasLabel => 'Tu alias';
+
+  @override
+  String get aliasHelp =>
+      'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.';
+
+  @override
+  String get aliasInvalid =>
+      'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.';
+
+  @override
+  String get aliasSave => 'Guardar';
+
+  @override
+  String get aliasSaved => 'Listo, tu alias cambió.';
+
+  @override
+  String get aliasNetwork =>
+      'No pudimos guardar tu alias. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
   String get profileItemChangePin => 'Cambiar mi PIN';
 
   @override
@@ -1226,4 +1270,174 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get topUpDoneReused =>
       'Esta recarga ya estaba registrada. No se cobró otra vez.';
+
+  @override
+  String get personalDataTitle => 'Datos personales';
+
+  @override
+  String get personalDataNames => 'Nombres';
+
+  @override
+  String get personalDataSurnames => 'Apellidos';
+
+  @override
+  String get personalDataEmail => 'Correo';
+
+  @override
+  String get personalDataAlias => 'Alias';
+
+  @override
+  String get personalDataSince => 'Cliente desde';
+
+  @override
+  String get personalDataVerified => 'Identidad verificada';
+
+  @override
+  String get personalDataReadOnly =>
+      'Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.';
+
+  @override
+  String get personalDataError => 'No pudimos cargar tus datos.';
+
+  @override
+  String get changePinTitle => 'Cambiar mi PIN';
+
+  @override
+  String get changePinCurrentHeadline => 'Ingresa tu PIN actual';
+
+  @override
+  String get changePinCurrentSubtitle =>
+      'Lo usamos para confirmar que eres tú.';
+
+  @override
+  String get changePinNewHeadline => 'Crea tu nuevo PIN';
+
+  @override
+  String get changePinNewSubtitle =>
+      'Elige 6 dígitos que no uses en otro lado.';
+
+  @override
+  String get changePinConfirmHeadline => 'Confirma tu nuevo PIN';
+
+  @override
+  String get changePinConfirmSubtitle => 'Escríbelo otra vez.';
+
+  @override
+  String changePinWrong(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN actual incorrecto. Te quedan $count intentos.',
+      one: 'PIN actual incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get changePinUnknown =>
+      'No sabemos si tu PIN cambió. Intenta entrar con el nuevo o con el anterior.';
+
+  @override
+  String get changePinDoneTitle => 'Tu PIN cambió';
+
+  @override
+  String changePinDoneOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Cerramos tu sesión en $count dispositivos.',
+      one: 'Cerramos tu sesión en 1 dispositivo.',
+      zero: 'Desde ahora entra con tu nuevo PIN.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get changePinDoneCta => 'Listo';
+
+  @override
+  String get devicesTitle => 'Dispositivos vinculados';
+
+  @override
+  String get devicesThisPhone => 'Este teléfono';
+
+  @override
+  String get devicesUnknownModel => 'Dispositivo sin nombre';
+
+  @override
+  String devicesLinkedOn(String date) {
+    return 'Vinculado el $date';
+  }
+
+  @override
+  String devicesLastUse(String date) {
+    return 'Último uso: $date';
+  }
+
+  @override
+  String get devicesBiometric => 'Con huella activa';
+
+  @override
+  String get devicesUnlink => 'Desvincular';
+
+  @override
+  String get devicesUnlinkTitle => '¿Desvincular este dispositivo?';
+
+  @override
+  String get devicesUnlinkBody =>
+      'Cerraremos su sesión y, para volver a entrar desde ahí, pediremos un código a tu correo.';
+
+  @override
+  String get devicesUnlinked => 'Listo, ese dispositivo ya no tiene acceso.';
+
+  @override
+  String get devicesCannotUnlinkCurrent =>
+      'Para salir de este teléfono, cierra sesión.';
+
+  @override
+  String get devicesError => 'No pudimos cargar tus dispositivos.';
+
+  @override
+  String get devicesHelp =>
+      'Si no reconoces alguno, desvincúlalo y cambia tu PIN.';
+
+  @override
+  String get biometricSettingsTitle => 'Acceso biométrico';
+
+  @override
+  String get biometricSettingsSwitch => 'Entrar con huella o rostro';
+
+  @override
+  String get biometricSettingsBody =>
+      'Entra a CuyCash sin escribir tu PIN. Tu PIN sigue funcionando siempre.';
+
+  @override
+  String get biometricSettingsUnavailable =>
+      'Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema y vuelve aquí.';
+
+  @override
+  String get biometricSettingsPinHeadline => 'Confirma con tu PIN';
+
+  @override
+  String get biometricSettingsPinSubtitle =>
+      'Después te pediremos tu huella o tu rostro.';
+
+  @override
+  String get biometricSettingsReason =>
+      'Confirma que eres tú para activar el acceso biométrico';
+
+  @override
+  String biometricSettingsWrong(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN incorrecto. Te quedan $count intentos.',
+      one: 'PIN incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get biometricSettingsEnabled =>
+      'Listo, ya puedes entrar con tu huella o rostro.';
 }

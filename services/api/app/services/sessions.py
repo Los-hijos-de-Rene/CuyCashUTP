@@ -68,3 +68,33 @@ async def revoke_all(session: AsyncSession, user_id: str) -> int:
     )
     await session.flush()
     return result.rowcount or 0
+
+
+async def revoke_all_except(session: AsyncSession, user_id: str, device_id: str) -> int:
+    """Cierra las sesiones del usuario en los OTROS dispositivos."""
+    result = await session.execute(
+        update(SessionRow)
+        .where(
+            SessionRow.user_id == user_id,
+            SessionRow.device_id != device_id,
+            SessionRow.revoked_at.is_(None),
+        )
+        .values(revoked_at=utcnow())
+    )
+    await session.flush()
+    return result.rowcount or 0
+
+
+async def revoke_device(session: AsyncSession, user_id: str, device_id: str) -> int:
+    """Cierra las sesiones del usuario en UN dispositivo."""
+    result = await session.execute(
+        update(SessionRow)
+        .where(
+            SessionRow.user_id == user_id,
+            SessionRow.device_id == device_id,
+            SessionRow.revoked_at.is_(None),
+        )
+        .values(revoked_at=utcnow())
+    )
+    await session.flush()
+    return result.rowcount or 0

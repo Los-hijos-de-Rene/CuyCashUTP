@@ -8,7 +8,9 @@ import '../../core/injection/modules/beneficiary_module.dart';
 import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
+import '../../core/injection/modules/profile_module.dart';
 import '../../core/injection/modules/register_module.dart';
+import '../../core/injection/modules/security_module.dart';
 import '../../core/injection/modules/transfer_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/auth/domain/auth_session.dart';
@@ -32,6 +34,16 @@ import '../recover/pin_actualizado_screen.dart';
 import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
+import '../profile/alias/bloc/edit_alias_bloc.dart';
+import '../profile/biometric/bloc/biometric_settings_bloc.dart';
+import '../profile/biometric/biometric_settings_screen.dart';
+import '../profile/change_pin/bloc/change_pin_bloc.dart';
+import '../profile/change_pin/change_pin_screen.dart';
+import '../profile/alias/edit_alias_screen.dart';
+import '../profile/devices/bloc/linked_devices_bloc.dart';
+import '../profile/devices/linked_devices_screen.dart';
+import '../profile/personal_data/bloc/personal_data_bloc.dart';
+import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
 import '../lockout/access_blocked_screen.dart';
 import '../lockout/blocked_args.dart';
@@ -51,6 +63,7 @@ import '../transfer/recipient_screen.dart';
 import '../transfer/widgets/frequent_section.dart';
 import '../auth/login_screen.dart';
 import 'app_redirect.dart';
+import 'close_on_lockout.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -65,11 +78,13 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
     },
     routes: [
       GoRoute(
-          path: AppRoutes.splash,
-          builder: (context, state) => const SplashScreen()),
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
-          path: AppRoutes.onboarding,
-          builder: (context, state) => const OnboardingScreen()),
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         // El DNI viaja como `extra` al retomar tras un bloqueo vencido.
@@ -139,7 +154,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.recuperarCancelado,
         builder: (context, state) => const FlujoCanceladoScreen(
-            variante: FlujoCanceladoVariante.recuperacion),
+          variante: FlujoCanceladoVariante.recuperacion,
+        ),
       ),
       GoRoute(
         path: AppRoutes.ingresarDispositivo,
@@ -166,7 +182,8 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.ingresarCancelado,
         builder: (context, state) => const FlujoCanceladoScreen(
-            variante: FlujoCanceladoVariante.ingreso),
+          variante: FlujoCanceladoVariante.ingreso,
+        ),
       ),
       GoRoute(
         path: AppRoutes.quickAccess,
@@ -180,15 +197,17 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
               return MultiRepositoryProvider(
                 providers: [
                   RepositoryProvider<AuthActions>.value(
-                      value: AuthActions(deps.authRepository)),
+                    value: AuthActions(deps.authRepository),
+                  ),
                   RepositoryProvider<DeviceActions>.value(value: device),
                 ],
                 child: BlocProvider(
                   create: (_) => QuickAccessBloc(
                     auth: AuthActions(deps.authRepository),
                     device: device,
+                    biometric: SecurityModule.biometricSignIn(deps),
                     user: user,
-                  ),
+                  )..add(const QuickAccessEvent.started()),
                   child: const QuickAccessScreen(),
                 ),
               );
@@ -283,11 +302,66 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return BlocProvider(
-            create: (_) => MovementDetailBloc(AccountModule.create(deps))
-              ..add(MovementDetailEvent.opened(id)),
+            create: (_) =>
+                MovementDetailBloc(AccountModule.create(deps))
+                  ..add(MovementDetailEvent.opened(id)),
             child: MovementDetailScreen(transactionId: id),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.perfilDatos,
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              PersonalDataBloc(ProfileModule.create(deps))
+                ..add(const PersonalDataEvent.started()),
+          child: const PersonalDataScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilAlias,
+        builder: (context, state) => BlocProvider(
+          create: (_) => EditAliasBloc(
+            profile: ProfileModule.create(deps),
+            device: DeviceModule.create(deps),
+            // El alias vigente llega del perfil; sin él se parte vacío.
+            initial: state.extra as String? ?? '',
+          ),
+          child: const EditAliasScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilDispositivos,
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              LinkedDevicesBloc(SecurityModule.create(deps))
+                ..add(const LinkedDevicesEvent.started()),
+          child: const LinkedDevicesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilPin,
+        builder: (context, state) => BlocProvider(
+          create: (_) => ChangePinBloc(SecurityModule.create(deps)),
+          child: ChangePinScreen(
+            onLocked: (until) =>
+                closeOnLockout(GoRouter.of(context), authBloc, until),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilBiometria,
+        builder: (context, state) => BlocProvider(
+          create: (_) => BiometricSettingsBloc(
+            enable: SecurityModule.enableBiometric(deps),
+            disable: SecurityModule.disableBiometric(deps),
+            device: DeviceModule.create(deps),
+          )..add(const BiometricSettingsEvent.started()),
+          child: BiometricSettingsScreen(
+            onLocked: (until) =>
+                closeOnLockout(GoRouter.of(context), authBloc, until),
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutes.recargar,
@@ -315,20 +389,27 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.home,
                 builder: (context, state) => BlocProvider(
-                      create: (_) => AccountBloc(AccountModule.create(deps))
+                  create: (_) =>
+                      AccountBloc(AccountModule.create(deps))
                         ..add(const AccountEvent.started()),
-                      child: const RefreshAfterSend(child: HomeScreen()),
-                    )),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
+                  child: const RefreshAfterSend(child: HomeScreen()),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.perfil,
-                builder: (context, state) => const ProfileScreen()),
-          ]),
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
         ],
       ),
     ],

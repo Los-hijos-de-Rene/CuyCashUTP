@@ -37,8 +37,15 @@ class QuickAccessScreen extends StatelessWidget {
         body: SafeArea(
           child: BlocConsumer<QuickAccessBloc, QuickAccessState>(
             listenWhen: (p, c) =>
-                p.lockedUntil != c.lockedUntil && c.lockedUntil != null,
+                (p.lockedUntil != c.lockedUntil && c.lockedUntil != null) ||
+                (!p.needsDeviceVerification && c.needsDeviceVerification),
             listener: (context, state) {
+              if (state.needsDeviceVerification) {
+                // PIN correcto en un teléfono que ya no es de confianza: el
+                // login, con el DNI puesto, corre el OTP de dispositivo.
+                context.go(AppRoutes.login, extra: state.user.dni);
+                return;
+              }
               final lockedUntil = state.lockedUntil;
               if (lockedUntil == null) return;
               context.go(
@@ -112,6 +119,26 @@ class QuickAccessScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                  if (state.biometricRevoked)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: InfoStrip(
+                        icon: Icons.fingerprint,
+                        text: l10n.quickAccessBiometricRevoked,
+                      ),
+                    ),
+                  if (state.biometricFailed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: InfoStrip(
+                        icon: Icons.fingerprint,
+                        text: l10n.quickAccessBiometricFailed,
+                      ),
+                    ),
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -122,8 +149,13 @@ class QuickAccessScreen extends StatelessWidget {
                           bloc.add(QuickAccessEvent.digitPressed(d)),
                       onBackspace: () =>
                           bloc.add(const QuickAccessEvent.backspace()),
-                      onBiometric: () =>
-                          bloc.add(const QuickAccessEvent.biometric()),
+                      onBiometric: state.biometricAvailable
+                          ? () => bloc.add(
+                              QuickAccessEvent.biometric(
+                                reason: l10n.quickAccessBiometricReason,
+                              ),
+                            )
+                          : null,
                       enabled: state.status != QuickAccessStatus.verifying,
                     ),
                   ),

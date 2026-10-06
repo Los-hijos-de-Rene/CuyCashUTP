@@ -18,6 +18,16 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 - Recarga de saldo: cash-in **simulado** contra una cuenta de sistema (la caja
   de CuyCash), la única que puede quedar en negativo.
 - Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+- Perfil: datos personales (solo lectura), alias, cambio de PIN con sesión
+  abierta (cierra los otros teléfonos), dispositivos vinculados y acceso
+  biométrico real: la huella libera una credencial emitida por el servidor
+  (`/v1/auth/sessions/biometric`), revocable al desvincular o cambiar el PIN.
+  Rutas: `GET /v1/me`, `PATCH /v1/me/alias`, `GET /v1/devices`,
+  `DELETE /v1/devices/{id}`, `POST /v1/auth/pin/change`,
+  `POST /v1/auth/biometric/enroll`, `DELETE /v1/auth/biometric/current`,
+  `POST /v1/auth/sessions/biometric`. La app manda `X-Device-Name` como ASCII
+  `plataforma|modelo` (p. ej. `android|Samsung SM-A546E`), saneado a ASCII
+  imprimible (`formatDeviceName`, `core/env/device_name.dart`).
 
 **Sigue sin existir** (no asumas que hay código de esto): transferencia
 interbancaria y CCI, pagos y cobro por QR, préstamos, antifraude, conciliación
@@ -29,6 +39,13 @@ su propio doble (la app contra `Memory*`, el backend por HTTP con su suite). La
 verificación en un emulador del flavor `local` contra `services/api` **nunca se
 ha ejecutado**; el guion está en `docs/verificacion-manual.md`, con los pasos de
 pantalla marcados como inferidos del código.
+
+El diálogo real de `local_auth` (Android/iOS) no se ha probado en un teléfono;
+los tests usan `MemoryBiometricGate`.
+
+**Brecha conocida: `kyc_status`.** Nada en el backend lo escribe: queda en
+`pending`. La pantalla de datos personales muestra el sello "Identidad
+verificada" solo si el servidor dice `verified`, así que hoy nunca aparece.
 
 **Concurrencia sin probar.** Los dos tests marcados `postgres` (envíos cruzados
 y misma clave en paralelo) **nunca se han ejecutado contra un Postgres real**:
@@ -48,7 +65,7 @@ Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
   cambiar app y contrato en un mismo commit.
 
 Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
-Flutter); UI + Bloc en `presentation/<x>/`. Features actuales: `auth`, `kyc`,
+Flutter); UI + Bloc en `presentation/<x>/`. Features actuales: `auth`, `kyc`, `profile`, `security`, `biometric`,
 `otp`, `device`, `lockout`, `account`, `transfer`, `beneficiary`. (La recarga
 vive en `transfer`; su UI en `presentation/topup/`.)
 
@@ -58,6 +75,8 @@ feature, `envs/<flavor>.dart` decide qué implementación recibe. Cada
 
 ## Flavors
 - `mock` — repos en memoria (PIN válido `000000`). Default de desarrollo + tests.
+  `MemorySecurityState` fija el DNI `70123456`: el acceso biométrico en mock
+  solo funciona con ese DNI.
 - `local` — contra `services/api` (`config.local.json`).
 - `production` — contra el backend desplegado (`config.production.json`).
 
@@ -93,7 +112,11 @@ completa en `docs/sla-kpi.md`.
 - Token de desafío de liveness: 180 s de vigencia.
 - `verify-full`: ≤ 5 s, y se llama **una sola vez al final**.
 - Autenticación biométrica o por PIN: < 1.5 s, siempre con PIN de contingencia.
-- Bloqueo automático de cuenta al 5.º intento fallido.
+  La huella usa una sola petición con SHA-256; **sin medición automatizada**
+  del 1.5 s.
+- Bloqueo automático de cuenta al 5.º intento fallido. (El código bloquea al
+  3.er intento: `IDENTIFIER_MAX_ATTEMPTS = 3` en el backend y
+  `LockoutPolicy.maxAttempts` en la app.)
 - Onboarding completo: < 5 min, con ≥ 85 % de finalización.
 - Motor transaccional: < 200 ms por operación; libro mayor atómico (débito y
   crédito en la misma transacción de base de datos). La atomicidad está

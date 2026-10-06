@@ -17,6 +17,7 @@ class CuyCashTextField extends StatelessWidget {
     this.errorText,
     this.onChanged,
     this.prefixIcon,
+    this.prefixText,
     this.maxLength,
     this.helperText,
     this.autofocus = false,
@@ -34,6 +35,9 @@ class CuyCashTextField extends StatelessWidget {
   final String? errorText;
   final ValueChanged<String>? onChanged;
   final IconData? prefixIcon;
+
+  /// Texto fijo antes de lo escrito (p. ej. el `@` del alias).
+  final String? prefixText;
   final int? maxLength;
   final String? helperText;
   final bool autofocus;
@@ -74,6 +78,7 @@ class CuyCashTextField extends StatelessWidget {
             errorText: errorText,
             helperText: helperText,
             counterText: '',
+            prefixText: prefixText,
             prefixIcon: prefixIcon == null
                 ? null
                 : Icon(prefixIcon, color: CuyCashColors.outline, size: 20),

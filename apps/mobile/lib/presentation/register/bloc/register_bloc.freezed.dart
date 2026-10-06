@@ -55,7 +55,7 @@ extension RegisterEventPatterns on RegisterEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult Function( RegisterPinBackspace value)?  pinBackspace,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,TResult Function( RegisterAccountOpened value)?  accountOpened,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RegisterFieldChanged value)?  fieldChanged,TResult Function( RegisterCaptured value)?  captured,TResult Function( RegisterCaptureFailed value)?  captureFailed,TResult Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult Function( RegisterPinBackspace value)?  pinBackspace,TResult Function( RegisterBiometricToggled value)?  biometricToggled,TResult Function( RegisterStepAdvanced value)?  stepAdvanced,TResult Function( RegisterStepBack value)?  stepBack,TResult Function( RegisterSubmitted value)?  submitted,TResult Function( RegisterAccountOpened value)?  accountOpened,TResult Function( RegisterBiometricNoticeShown value)?  biometricNoticeShown,TResult Function( RegisterBiometricChecked value)?  biometricChecked,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -70,7 +70,9 @@ return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != 
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
 return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that);case _:
+return accountOpened(_that);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown(_that);case RegisterBiometricChecked() when biometricChecked != null:
+return biometricChecked(_that);case _:
   return orElse();
 
 }
@@ -88,7 +90,7 @@ return accountOpened(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinDigitPressed value)  pinDigitPressed,required TResult Function( RegisterPinBackspace value)  pinBackspace,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,required TResult Function( RegisterAccountOpened value)  accountOpened,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RegisterFieldChanged value)  fieldChanged,required TResult Function( RegisterCaptured value)  captured,required TResult Function( RegisterCaptureFailed value)  captureFailed,required TResult Function( RegisterFaceScanStarted value)  faceScanStarted,required TResult Function( RegisterFaceScanCompleted value)  faceScanCompleted,required TResult Function( RegisterPinDigitPressed value)  pinDigitPressed,required TResult Function( RegisterPinBackspace value)  pinBackspace,required TResult Function( RegisterBiometricToggled value)  biometricToggled,required TResult Function( RegisterStepAdvanced value)  stepAdvanced,required TResult Function( RegisterStepBack value)  stepBack,required TResult Function( RegisterSubmitted value)  submitted,required TResult Function( RegisterAccountOpened value)  accountOpened,required TResult Function( RegisterBiometricNoticeShown value)  biometricNoticeShown,required TResult Function( RegisterBiometricChecked value)  biometricChecked,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
@@ -103,7 +105,9 @@ return biometricToggled(_that);case RegisterStepAdvanced():
 return stepAdvanced(_that);case RegisterStepBack():
 return stepBack(_that);case RegisterSubmitted():
 return submitted(_that);case RegisterAccountOpened():
-return accountOpened(_that);}
+return accountOpened(_that);case RegisterBiometricNoticeShown():
+return biometricNoticeShown(_that);case RegisterBiometricChecked():
+return biometricChecked(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -117,7 +121,7 @@ return accountOpened(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult? Function( RegisterPinBackspace value)?  pinBackspace,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,TResult? Function( RegisterAccountOpened value)?  accountOpened,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RegisterFieldChanged value)?  fieldChanged,TResult? Function( RegisterCaptured value)?  captured,TResult? Function( RegisterCaptureFailed value)?  captureFailed,TResult? Function( RegisterFaceScanStarted value)?  faceScanStarted,TResult? Function( RegisterFaceScanCompleted value)?  faceScanCompleted,TResult? Function( RegisterPinDigitPressed value)?  pinDigitPressed,TResult? Function( RegisterPinBackspace value)?  pinBackspace,TResult? Function( RegisterBiometricToggled value)?  biometricToggled,TResult? Function( RegisterStepAdvanced value)?  stepAdvanced,TResult? Function( RegisterStepBack value)?  stepBack,TResult? Function( RegisterSubmitted value)?  submitted,TResult? Function( RegisterAccountOpened value)?  accountOpened,TResult? Function( RegisterBiometricNoticeShown value)?  biometricNoticeShown,TResult? Function( RegisterBiometricChecked value)?  biometricChecked,}){
 final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
@@ -132,7 +136,9 @@ return biometricToggled(_that);case RegisterStepAdvanced() when stepAdvanced != 
 return stepAdvanced(_that);case RegisterStepBack() when stepBack != null:
 return stepBack(_that);case RegisterSubmitted() when submitted != null:
 return submitted(_that);case RegisterAccountOpened() when accountOpened != null:
-return accountOpened(_that);case _:
+return accountOpened(_that);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown(_that);case RegisterBiometricChecked() when biometricChecked != null:
+return biometricChecked(_that);case _:
   return null;
 
 }
@@ -149,7 +155,7 @@ return accountOpened(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side,  Uint8List image)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( int digit)?  pinDigitPressed,TResult Function()?  pinBackspace,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,TResult Function()?  accountOpened,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterField field,  String value)?  fieldChanged,TResult Function( DocSide side,  Uint8List image)?  captured,TResult Function( DocSide side)?  captureFailed,TResult Function()?  faceScanStarted,TResult Function()?  faceScanCompleted,TResult Function( int digit)?  pinDigitPressed,TResult Function()?  pinBackspace,TResult Function( bool value)?  biometricToggled,TResult Function()?  stepAdvanced,TResult Function()?  stepBack,TResult Function()?  submitted,TResult Function( String biometricReason)?  accountOpened,TResult Function()?  biometricNoticeShown,TResult Function()?  biometricChecked,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -163,7 +169,9 @@ return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanc
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
 return submitted();case RegisterAccountOpened() when accountOpened != null:
-return accountOpened();case _:
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown();case RegisterBiometricChecked() when biometricChecked != null:
+return biometricChecked();case _:
   return orElse();
 
 }
@@ -181,7 +189,7 @@ return accountOpened();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side,  Uint8List image)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( int digit)  pinDigitPressed,required TResult Function()  pinBackspace,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,required TResult Function()  accountOpened,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterField field,  String value)  fieldChanged,required TResult Function( DocSide side,  Uint8List image)  captured,required TResult Function( DocSide side)  captureFailed,required TResult Function()  faceScanStarted,required TResult Function()  faceScanCompleted,required TResult Function( int digit)  pinDigitPressed,required TResult Function()  pinBackspace,required TResult Function( bool value)  biometricToggled,required TResult Function()  stepAdvanced,required TResult Function()  stepBack,required TResult Function()  submitted,required TResult Function( String biometricReason)  accountOpened,required TResult Function()  biometricNoticeShown,required TResult Function()  biometricChecked,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged():
 return fieldChanged(_that.field,_that.value);case RegisterCaptured():
@@ -195,7 +203,9 @@ return biometricToggled(_that.value);case RegisterStepAdvanced():
 return stepAdvanced();case RegisterStepBack():
 return stepBack();case RegisterSubmitted():
 return submitted();case RegisterAccountOpened():
-return accountOpened();}
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown():
+return biometricNoticeShown();case RegisterBiometricChecked():
+return biometricChecked();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -209,7 +219,7 @@ return accountOpened();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side,  Uint8List image)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( int digit)?  pinDigitPressed,TResult? Function()?  pinBackspace,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,TResult? Function()?  accountOpened,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterField field,  String value)?  fieldChanged,TResult? Function( DocSide side,  Uint8List image)?  captured,TResult? Function( DocSide side)?  captureFailed,TResult? Function()?  faceScanStarted,TResult? Function()?  faceScanCompleted,TResult? Function( int digit)?  pinDigitPressed,TResult? Function()?  pinBackspace,TResult? Function( bool value)?  biometricToggled,TResult? Function()?  stepAdvanced,TResult? Function()?  stepBack,TResult? Function()?  submitted,TResult? Function( String biometricReason)?  accountOpened,TResult? Function()?  biometricNoticeShown,TResult? Function()?  biometricChecked,}) {final _that = this;
 switch (_that) {
 case RegisterFieldChanged() when fieldChanged != null:
 return fieldChanged(_that.field,_that.value);case RegisterCaptured() when captured != null:
@@ -223,7 +233,9 @@ return biometricToggled(_that.value);case RegisterStepAdvanced() when stepAdvanc
 return stepAdvanced();case RegisterStepBack() when stepBack != null:
 return stepBack();case RegisterSubmitted() when submitted != null:
 return submitted();case RegisterAccountOpened() when accountOpened != null:
-return accountOpened();case _:
+return accountOpened(_that.biometricReason);case RegisterBiometricNoticeShown() when biometricNoticeShown != null:
+return biometricNoticeShown();case RegisterBiometricChecked() when biometricChecked != null:
+return biometricChecked();case _:
   return null;
 
 }
@@ -761,7 +773,73 @@ String toString() {
 
 
 class RegisterAccountOpened implements RegisterEvent {
-  const RegisterAccountOpened();
+  const RegisterAccountOpened({required this.biometricReason});
+  
+
+ final  String biometricReason;
+
+/// Create a copy of RegisterEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RegisterAccountOpenedCopyWith<RegisterAccountOpened> get copyWith => _$RegisterAccountOpenedCopyWithImpl<RegisterAccountOpened>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAccountOpened&&(identical(other.biometricReason, biometricReason) || other.biometricReason == biometricReason));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,biometricReason);
+
+@override
+String toString() {
+  return 'RegisterEvent.accountOpened(biometricReason: $biometricReason)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RegisterAccountOpenedCopyWith<$Res> implements $RegisterEventCopyWith<$Res> {
+  factory $RegisterAccountOpenedCopyWith(RegisterAccountOpened value, $Res Function(RegisterAccountOpened) _then) = _$RegisterAccountOpenedCopyWithImpl;
+@useResult
+$Res call({
+ String biometricReason
+});
+
+
+
+
+}
+/// @nodoc
+class _$RegisterAccountOpenedCopyWithImpl<$Res>
+    implements $RegisterAccountOpenedCopyWith<$Res> {
+  _$RegisterAccountOpenedCopyWithImpl(this._self, this._then);
+
+  final RegisterAccountOpened _self;
+  final $Res Function(RegisterAccountOpened) _then;
+
+/// Create a copy of RegisterEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? biometricReason = null,}) {
+  return _then(RegisterAccountOpened(
+biometricReason: null == biometricReason ? _self.biometricReason : biometricReason // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class RegisterBiometricNoticeShown implements RegisterEvent {
+  const RegisterBiometricNoticeShown();
   
 
 
@@ -771,7 +849,7 @@ class RegisterAccountOpened implements RegisterEvent {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAccountOpened);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterBiometricNoticeShown);
 }
 
 
@@ -780,7 +858,39 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'RegisterEvent.accountOpened()';
+  return 'RegisterEvent.biometricNoticeShown()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class RegisterBiometricChecked implements RegisterEvent {
+  const RegisterBiometricChecked();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterBiometricChecked);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEvent.biometricChecked()';
 }
 
 
@@ -1361,7 +1471,9 @@ mixin _$RegisterState {
 
  int get step; SecurityStep get securityStep; bool get pinMismatch; RegisterDraft get draft; RegisterErrors get errors; RegisterStatus get status; AuthError? get submitError;// Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
 // pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
- AuthSession? get createdSession;
+ AuthSession? get createdSession;// ¿El teléfono tiene sensor? Sin él, el paso 4C no ofrece la huella.
+ bool get biometricAvailable;// La huella no pudo activarse tras el alta. No deshace la cuenta.
+ bool get biometricEnrollFailed;
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1372,16 +1484,16 @@ $RegisterStateCopyWith<RegisterState> get copyWith => _$RegisterStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.securityStep, securityStep) || other.securityStep == securityStep)&&(identical(other.pinMismatch, pinMismatch) || other.pinMismatch == pinMismatch)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.securityStep, securityStep) || other.securityStep == securityStep)&&(identical(other.pinMismatch, pinMismatch) || other.pinMismatch == pinMismatch)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricEnrollFailed, biometricEnrollFailed) || other.biometricEnrollFailed == biometricEnrollFailed));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,securityStep,pinMismatch,draft,errors,status,submitError,createdSession);
+int get hashCode => Object.hash(runtimeType,step,securityStep,pinMismatch,draft,errors,status,submitError,createdSession,biometricAvailable,biometricEnrollFailed);
 
 @override
 String toString() {
-  return 'RegisterState(step: $step, securityStep: $securityStep, pinMismatch: $pinMismatch, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession)';
+  return 'RegisterState(step: $step, securityStep: $securityStep, pinMismatch: $pinMismatch, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession, biometricAvailable: $biometricAvailable, biometricEnrollFailed: $biometricEnrollFailed)';
 }
 
 
@@ -1392,7 +1504,7 @@ abstract mixin class $RegisterStateCopyWith<$Res>  {
   factory $RegisterStateCopyWith(RegisterState value, $Res Function(RegisterState) _then) = _$RegisterStateCopyWithImpl;
 @useResult
 $Res call({
- int step, SecurityStep securityStep, bool pinMismatch, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession
+ int step, SecurityStep securityStep, bool pinMismatch, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession, bool biometricAvailable, bool biometricEnrollFailed
 });
 
 
@@ -1409,7 +1521,7 @@ class _$RegisterStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? securityStep = null,Object? pinMismatch = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? securityStep = null,Object? pinMismatch = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,Object? biometricAvailable = null,Object? biometricEnrollFailed = null,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as int,securityStep: null == securityStep ? _self.securityStep : securityStep // ignore: cast_nullable_to_non_nullable
@@ -1419,7 +1531,9 @@ as RegisterDraft,errors: null == errors ? _self.errors : errors // ignore: cast_
 as RegisterErrors,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as RegisterStatus,submitError: freezed == submitError ? _self.submitError : submitError // ignore: cast_nullable_to_non_nullable
 as AuthError?,createdSession: freezed == createdSession ? _self.createdSession : createdSession // ignore: cast_nullable_to_non_nullable
-as AuthSession?,
+as AuthSession?,biometricAvailable: null == biometricAvailable ? _self.biometricAvailable : biometricAvailable // ignore: cast_nullable_to_non_nullable
+as bool,biometricEnrollFailed: null == biometricEnrollFailed ? _self.biometricEnrollFailed : biometricEnrollFailed // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of RegisterState
@@ -1522,10 +1636,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession,  bool biometricAvailable,  bool biometricEnrollFailed)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterState() when $default != null:
-return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
+return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession,_that.biometricAvailable,_that.biometricEnrollFailed);case _:
   return orElse();
 
 }
@@ -1543,10 +1657,10 @@ return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession,  bool biometricAvailable,  bool biometricEnrollFailed)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterState():
-return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
+return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession,_that.biometricAvailable,_that.biometricEnrollFailed);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1563,10 +1677,10 @@ return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int step,  SecurityStep securityStep,  bool pinMismatch,  RegisterDraft draft,  RegisterErrors errors,  RegisterStatus status,  AuthError? submitError,  AuthSession? createdSession,  bool biometricAvailable,  bool biometricEnrollFailed)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterState() when $default != null:
-return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession);case _:
+return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_that.errors,_that.status,_that.submitError,_that.createdSession,_that.biometricAvailable,_that.biometricEnrollFailed);case _:
   return null;
 
 }
@@ -1578,7 +1692,7 @@ return $default(_that.step,_that.securityStep,_that.pinMismatch,_that.draft,_tha
 
 
 class _RegisterState extends RegisterState {
-  const _RegisterState({this.step = 0, this.securityStep = SecurityStep.crear, this.pinMismatch = false, this.draft = const RegisterDraft(), this.errors = const RegisterErrors(), this.status = RegisterStatus.editing, this.submitError, this.createdSession}): super._();
+  const _RegisterState({this.step = 0, this.securityStep = SecurityStep.crear, this.pinMismatch = false, this.draft = const RegisterDraft(), this.errors = const RegisterErrors(), this.status = RegisterStatus.editing, this.submitError, this.createdSession, this.biometricAvailable = false, this.biometricEnrollFailed = false}): super._();
   
 
 @override@JsonKey() final  int step;
@@ -1591,6 +1705,10 @@ class _RegisterState extends RegisterState {
 // Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
 // pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
 @override final  AuthSession? createdSession;
+// ¿El teléfono tiene sensor? Sin él, el paso 4C no ofrece la huella.
+@override@JsonKey() final  bool biometricAvailable;
+// La huella no pudo activarse tras el alta. No deshace la cuenta.
+@override@JsonKey() final  bool biometricEnrollFailed;
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
@@ -1602,16 +1720,16 @@ _$RegisterStateCopyWith<_RegisterState> get copyWith => __$RegisterStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.securityStep, securityStep) || other.securityStep == securityStep)&&(identical(other.pinMismatch, pinMismatch) || other.pinMismatch == pinMismatch)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterState&&(identical(other.step, step) || other.step == step)&&(identical(other.securityStep, securityStep) || other.securityStep == securityStep)&&(identical(other.pinMismatch, pinMismatch) || other.pinMismatch == pinMismatch)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.errors, errors) || other.errors == errors)&&(identical(other.status, status) || other.status == status)&&(identical(other.submitError, submitError) || other.submitError == submitError)&&(identical(other.createdSession, createdSession) || other.createdSession == createdSession)&&(identical(other.biometricAvailable, biometricAvailable) || other.biometricAvailable == biometricAvailable)&&(identical(other.biometricEnrollFailed, biometricEnrollFailed) || other.biometricEnrollFailed == biometricEnrollFailed));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,securityStep,pinMismatch,draft,errors,status,submitError,createdSession);
+int get hashCode => Object.hash(runtimeType,step,securityStep,pinMismatch,draft,errors,status,submitError,createdSession,biometricAvailable,biometricEnrollFailed);
 
 @override
 String toString() {
-  return 'RegisterState(step: $step, securityStep: $securityStep, pinMismatch: $pinMismatch, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession)';
+  return 'RegisterState(step: $step, securityStep: $securityStep, pinMismatch: $pinMismatch, draft: $draft, errors: $errors, status: $status, submitError: $submitError, createdSession: $createdSession, biometricAvailable: $biometricAvailable, biometricEnrollFailed: $biometricEnrollFailed)';
 }
 
 
@@ -1622,7 +1740,7 @@ abstract mixin class _$RegisterStateCopyWith<$Res> implements $RegisterStateCopy
   factory _$RegisterStateCopyWith(_RegisterState value, $Res Function(_RegisterState) _then) = __$RegisterStateCopyWithImpl;
 @override @useResult
 $Res call({
- int step, SecurityStep securityStep, bool pinMismatch, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession
+ int step, SecurityStep securityStep, bool pinMismatch, RegisterDraft draft, RegisterErrors errors, RegisterStatus status, AuthError? submitError, AuthSession? createdSession, bool biometricAvailable, bool biometricEnrollFailed
 });
 
 
@@ -1639,7 +1757,7 @@ class __$RegisterStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? securityStep = null,Object? pinMismatch = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? securityStep = null,Object? pinMismatch = null,Object? draft = null,Object? errors = null,Object? status = null,Object? submitError = freezed,Object? createdSession = freezed,Object? biometricAvailable = null,Object? biometricEnrollFailed = null,}) {
   return _then(_RegisterState(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as int,securityStep: null == securityStep ? _self.securityStep : securityStep // ignore: cast_nullable_to_non_nullable
@@ -1649,7 +1767,9 @@ as RegisterDraft,errors: null == errors ? _self.errors : errors // ignore: cast_
 as RegisterErrors,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as RegisterStatus,submitError: freezed == submitError ? _self.submitError : submitError // ignore: cast_nullable_to_non_nullable
 as AuthError?,createdSession: freezed == createdSession ? _self.createdSession : createdSession // ignore: cast_nullable_to_non_nullable
-as AuthSession?,
+as AuthSession?,biometricAvailable: null == biometricAvailable ? _self.biometricAvailable : biometricAvailable // ignore: cast_nullable_to_non_nullable
+as bool,biometricEnrollFailed: null == biometricEnrollFailed ? _self.biometricEnrollFailed : biometricEnrollFailed // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

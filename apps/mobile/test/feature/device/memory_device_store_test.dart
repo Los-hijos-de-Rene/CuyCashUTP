@@ -24,6 +24,16 @@ void main() {
     expect(await store.readLockout(), const LockoutState());
   });
 
+  test('clearUser también borra la credencial biométrica', () async {
+    final store = MemoryDeviceStore();
+    expect(await store.saveBiometricCredential('s3cr3t'), isTrue);
+    expect(await store.readBiometricCredential(), 's3cr3t');
+
+    await store.clearUser();
+
+    expect(await store.readBiometricCredential(), isNull);
+  });
+
   test('RememberedUser.initials', () {
     expect(const RememberedUser(dni: '1', fullName: 'Juan Pérez', alias: '@j').initials, 'JP');
     expect(const RememberedUser(dni: '1', fullName: 'Juan', alias: '@j').initials, 'J');

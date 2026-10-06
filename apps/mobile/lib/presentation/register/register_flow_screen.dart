@@ -48,6 +48,25 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    return BlocListener<RegisterBloc, RegisterState>(
+      // La huella no se pudo activar: primero el aviso y DESPUÉS la sesión.
+      // La sesión lleva a /home y desmonta esta pantalla; el SnackBar vive en
+      // el ScaffoldMessenger de la app, así que sigue visible al llegar.
+      listenWhen: (antes, ahora) =>
+          !antes.biometricEnrollFailed && ahora.biometricEnrollFailed,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.registerBiometricLater)));
+        context.read<RegisterBloc>().add(
+          const RegisterEvent.biometricNoticeShown(),
+        );
+      },
+      child: _buildFlow(context, l10n),
+    );
+  }
+
+  Widget _buildFlow(BuildContext context, AppLocalizations l10n) {
     return BlocConsumer<RegisterBloc, RegisterState>(
       // Un fallo del alta o de la activación tiene que verse. Sin esto, el
       // botón de la pantalla de éxito podía no hacer nada y nadie se enteraba.
@@ -66,7 +85,9 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
           return RegisterSuccessScreen(
             session: createdSession,
             onOpenAccount: () => context.read<RegisterBloc>().add(
-              const RegisterEvent.accountOpened(),
+              RegisterEvent.accountOpened(
+                biometricReason: l10n.registerBiometricReason,
+              ),
             ),
           );
         }

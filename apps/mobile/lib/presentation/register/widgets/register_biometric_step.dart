@@ -18,21 +18,25 @@ class RegisterBiometricStep extends StatelessWidget {
         final bloc = context.read<RegisterBloc>();
         return ListView(
           padding: const EdgeInsets.symmetric(
-              horizontal: CuyCashSpacing.marginMobile),
+            horizontal: CuyCashSpacing.marginMobile,
+          ),
           children: [
             Text(l10n.biometricHeadline, style: CuyCashTypography.headlineSm),
             const SizedBox(height: CuyCashSpacing.stackXs),
             Text(
               l10n.biometricBody,
-              style: CuyCashTypography.bodyLg
-                  .copyWith(color: CuyCashColors.secondaryText),
+              style: CuyCashTypography.bodyLg.copyWith(
+                color: CuyCashColors.secondaryText,
+              ),
             ),
-            const SizedBox(height: CuyCashSpacing.stackXl),
-            _BiometricCard(
-              enabled: state.draft.biometricEnabled,
-              onChanged: (value) =>
-                  bloc.add(RegisterEvent.biometricToggled(value)),
-            ),
+            if (state.biometricAvailable) ...[
+              const SizedBox(height: CuyCashSpacing.stackXl),
+              _BiometricCard(
+                enabled: state.draft.biometricEnabled,
+                onChanged: (value) =>
+                    bloc.add(RegisterEvent.biometricToggled(value)),
+              ),
+            ],
           ],
         );
       },
@@ -55,9 +59,10 @@ class _BiometricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(CuyCashRadii.card),
         boxShadow: const [
           BoxShadow(
-              color: CuyCashColors.ambientShadow,
-              blurRadius: 12,
-              offset: Offset(0, 2)),
+            color: CuyCashColors.ambientShadow,
+            blurRadius: 12,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -69,8 +74,11 @@ class _BiometricCard extends StatelessWidget {
               color: CuyCashColors.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(CuyCashRadii.sm),
             ),
-            child: const Icon(Icons.fingerprint,
-                size: 20, color: CuyCashColors.primaryContainer),
+            child: const Icon(
+              Icons.fingerprint,
+              size: 20,
+              color: CuyCashColors.primaryContainer,
+            ),
           ),
           const SizedBox(width: CuyCashSpacing.stackMd),
           Expanded(

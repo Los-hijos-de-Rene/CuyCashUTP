@@ -54,6 +54,10 @@ class Device(Base):
     device_id: Mapped[str] = mapped_column(String(128), index=True)
     trusted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Lo que el teléfono declara de sí mismo (`X-Device-Name`). Solo para
+    # mostrar en "Dispositivos vinculados": nada de seguridad se decide con él.
+    nombre: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    plataforma: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
 
 class Session(Base):
@@ -70,6 +74,25 @@ class Session(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class BiometricCredential(Base):
+    """
+    Secreto que la huella libera para abrir sesión sin teclear el PIN.
+
+    Ligado a (usuario, dispositivo): de otro teléfono no sirve. Se guarda el
+    hash, como los tokens de sesión. Revocarlo es poner `revoked_at`; una
+    fila revocada nunca vuelve a valer.
+    """
+
+    __tablename__ = "biometric_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    device_id: Mapped[str] = mapped_column(String(128), index=True)
+    secret_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 

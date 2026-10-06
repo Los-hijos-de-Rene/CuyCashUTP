@@ -11,6 +11,7 @@ import 'package:cuycash/presentation/register/widgets/register_document_step.dar
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'register_test_support.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// El flavor viaja por el árbol igual que en la app: la pantalla de captura lo
@@ -44,7 +45,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()));
+    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
     addTearDown(bloc.close);
     await tester.pumpWidget(_wrap(bloc, flavor: flavor));
     await tester.pumpAndSettle();

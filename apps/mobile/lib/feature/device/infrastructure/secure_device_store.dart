@@ -17,6 +17,7 @@ class SecureDeviceStore implements DeviceStore {
   static const _userKey = 'cuycash.remembered_user';
   static const _lockoutKey = 'cuycash.lockout';
   static const _deviceIdKey = 'cuycash.device_id';
+  static const _biometricKey = 'cuycash.biometric_credential';
 
   @override
   Future<RememberedUser?> readUser() async {
@@ -36,7 +37,40 @@ class SecureDeviceStore implements DeviceStore {
       _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
 
   @override
-  Future<void> clearUser() => _storage.delete(key: _userKey);
+  Future<void> clearUser() async {
+    try {
+      await _storage.delete(key: _userKey);
+    } finally {
+      // Otro usuario en este teléfono no hereda la huella del anterior: se
+      // intenta aunque borrar el usuario haya fallado.
+      await _storage.delete(key: _biometricKey);
+    }
+  }
+
+  /// Un almacén ilegible (p. ej. el Keystore invalidado tras cambiar el
+  /// bloqueo de pantalla) cuenta como "sin credencial": se entra con PIN.
+  @override
+  Future<String?> readBiometricCredential() async {
+    try {
+      return await _storage.read(key: _biometricKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> saveBiometricCredential(String credential) async {
+    try {
+      await _storage.write(key: _biometricKey, value: credential);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> clearBiometricCredential() =>
+      _storage.delete(key: _biometricKey);
 
   @override
   Future<String> deviceId() async {

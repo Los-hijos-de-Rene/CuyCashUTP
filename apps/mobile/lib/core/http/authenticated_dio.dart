@@ -27,6 +27,7 @@ const _tokenAttached = 'cuycash.tokenAttached';
 Dio buildAuthenticatedDio({
   required String baseUrl,
   required String deviceId,
+  String? deviceName,
   required String? Function() readToken,
   required void Function() onUnauthenticated,
   Duration connectTimeout = const Duration(seconds: 20),
@@ -44,7 +45,12 @@ Dio buildAuthenticatedDio({
       // red. Separadas, se consigue lo uno y lo otro.
       connectTimeout: connectTimeout,
       receiveTimeout: receiveTimeout,
-      headers: {'X-Device-Id': deviceId},
+      headers: {
+        'X-Device-Id': deviceId,
+        // Solo para mostrar en "Dispositivos vinculados"; nada de seguridad
+        // depende de él.
+        'X-Device-Name': ?deviceName,
+      },
       // Los 4xx son respuestas de negocio (sin saldo, PIN errado), no
       // excepciones: se leen y se mapean a failures.
       validateStatus: (status) => status != null && status < 500,

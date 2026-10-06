@@ -3,11 +3,16 @@ import '../../feature/account/domain/account_repository.dart';
 import '../../feature/auth/domain/auth_repository.dart';
 import '../../feature/beneficiary/application/beneficiary_actions.dart';
 import '../../feature/beneficiary/domain/beneficiary_repository.dart';
+import '../../feature/biometric/domain/biometric_gate.dart';
 import '../../feature/device/domain/device_store.dart';
 import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
 import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
+import '../../feature/profile/application/profile_actions.dart';
+import '../../feature/profile/domain/profile_repository.dart';
+import '../../feature/security/application/security_actions.dart';
+import '../../feature/security/domain/security_repository.dart';
 import '../../feature/transfer/application/transfer_actions.dart';
 import '../../feature/transfer/domain/pending_transfer_store.dart';
 import '../../feature/transfer/domain/transfer_repository.dart';
@@ -27,6 +32,9 @@ class AppDependencies {
     required this.transferRepository,
     required this.pendingTransferStore,
     required this.beneficiaryRepository,
+    required this.profileRepository,
+    required this.securityRepository,
+    required this.biometricGate,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -58,6 +66,18 @@ class AppDependencies {
   final BeneficiaryRepository beneficiaryRepository;
   BeneficiaryActions get beneficiaryActions =>
       BeneficiaryActions(beneficiaryRepository);
+
+  /// Datos del titular y alias. Los blocs consumen [profileActions].
+  final ProfileRepository profileRepository;
+  ProfileActions get profileActions => ProfileActions(profileRepository);
+
+  /// Cambio de PIN, dispositivos y huella. Los blocs consumen
+  /// [securityActions] o los use cases de `feature/security/application`.
+  final SecurityRepository securityRepository;
+  SecurityActions get securityActions => SecurityActions(securityRepository);
+
+  /// Huella o rostro del sistema: solo responde "¿es el dueño?".
+  final BiometricGate biometricGate;
 
   final LockoutPolicy lockoutPolicy;
 }

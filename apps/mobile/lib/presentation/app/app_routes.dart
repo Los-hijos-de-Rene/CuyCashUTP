@@ -6,6 +6,13 @@ abstract final class AppRoutes {
   static const registro = '/registro';
   static const home = '/home';
   static const perfil = '/perfil';
+  // Subpantallas del perfil. Se abren con `push` sobre la pestaña y fuera del
+  // shell, para que tapen la barra inferior como el detalle de movimiento.
+  static const perfilDatos = '/perfil/datos';
+  static const perfilAlias = '/perfil/alias';
+  static const perfilPin = '/perfil/pin';
+  static const perfilBiometria = '/perfil/biometria';
+  static const perfilDispositivos = '/perfil/dispositivos';
   static const quickAccess = '/acceso-rapido';
   static const blocked = '/bloqueado';
 

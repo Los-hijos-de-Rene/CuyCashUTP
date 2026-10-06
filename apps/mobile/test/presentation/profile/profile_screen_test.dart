@@ -4,6 +4,7 @@ import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart'
 import 'package:cuycash/feature/lockout/application/identifier_lockout_actions.dart';
 import 'package:cuycash/feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import 'package:cuycash/feature/device/application/device_actions.dart';
+import 'package:cuycash/feature/device/domain/remembered_user.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/auth/bloc/auth_bloc.dart';
@@ -12,6 +13,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   // El bloc se crea fuera de testWidgets para que su StreamSubscription
@@ -36,47 +38,136 @@ void main() {
     await bloc.close();
   });
 
-  testWidgets('muestra el identificador y cerrar sesión abre diálogo y signOut',
-      (tester) async {
-    final device = DeviceActions(MemoryDeviceStore());
+  testWidgets(
+    'muestra el identificador y cerrar sesión abre diálogo y signOut',
+    (tester) async {
+      final device = DeviceActions(MemoryDeviceStore());
 
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [RepositoryProvider<DeviceActions>.value(value: device)],
+          child: BlocProvider.value(
+            value: bloc,
+            child: MaterialApp(
+              theme: CuyCashTheme.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const ProfileScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('12345678'), findsOneWidget);
+
+      // El perfil ahora scrollea: "Cerrar sesión" cierra la lista, así que hay
+      // que traerlo a pantalla antes de tocarlo.
+      await tester.scrollUntilVisible(find.byType(SecondaryButton), 300);
+      await tester.pumpAndSettle();
+
+      // Tocar "Cerrar sesión" abre el diálogo de confirmación
+      await tester.tap(find.byType(SecondaryButton));
+      await tester.pumpAndSettle();
+
+      // El diálogo debe ser visible; confirmar con el botón primary del diálogo
+      expect(find.byType(Dialog), findsOneWidget);
+
+      // Tap the confirm button (PrimaryButton inside the dialog)
+      final primaryButtons = find.byType(PrimaryButton);
+      await tester.tap(primaryButtons.first);
+      await tester.pumpAndSettle();
+
+      expect(repo.currentSession, isNull);
+    },
+  );
+
+  testWidgets('"Datos personales" navega a su pantalla', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
+        GoRoute(
+          path: '/perfil/datos',
+          builder: (_, _) => const Scaffold(body: Text('DATOS')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
     await tester.pumpWidget(
       MultiRepositoryProvider(
         providers: [
-          RepositoryProvider<DeviceActions>.value(value: device),
+          RepositoryProvider<DeviceActions>.value(
+            value: DeviceActions(MemoryDeviceStore()),
+          ),
         ],
         child: BlocProvider.value(
           value: bloc,
-          child: MaterialApp(
+          child: MaterialApp.router(
             theme: CuyCashTheme.light(),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const ProfileScreen(),
+            routerConfig: router,
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('12345678'), findsOneWidget);
-
-    // El perfil ahora scrollea: "Cerrar sesión" cierra la lista, así que hay
-    // que traerlo a pantalla antes de tocarlo.
-    await tester.scrollUntilVisible(find.byType(SecondaryButton), 300);
+    await tester.tap(find.text('Datos personales'));
     await tester.pumpAndSettle();
 
-    // Tocar "Cerrar sesión" abre el diálogo de confirmación
-    await tester.tap(find.byType(SecondaryButton));
+    expect(find.text('DATOS'), findsOneWidget);
+  });
+
+  testWidgets('al volver de editar el alias con true muestra el nuevo',
+      (tester) async {
+    final device = DeviceActions(MemoryDeviceStore());
+    await device.saveUser(const RememberedUser(
+        dni: '12345678', fullName: 'Ana Pérez', alias: '@viejo'));
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProfileScreen()),
+        GoRoute(
+          path: '/perfil/alias',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                // Lo que hace el bloc al guardar: actualiza el almacén.
+                await device.saveUser(const RememberedUser(
+                    dni: '12345678', fullName: 'Ana Pérez', alias: '@nuevo'));
+                if (context.mounted) context.pop(true);
+              },
+              child: const Text('GUARDAR'),
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [RepositoryProvider<DeviceActions>.value(value: device)],
+        child: BlocProvider.value(
+          value: bloc,
+          child: MaterialApp.router(
+            theme: CuyCashTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('@viejo'), findsWidgets);
+
+    await tester.tap(find.text('Editar mi alias'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('GUARDAR'));
     await tester.pumpAndSettle();
 
-    // El diálogo debe ser visible; confirmar con el botón primary del diálogo
-    expect(find.byType(Dialog), findsOneWidget);
-
-    // Tap the confirm button (PrimaryButton inside the dialog)
-    final primaryButtons = find.byType(PrimaryButton);
-    await tester.tap(primaryButtons.first);
-    await tester.pumpAndSettle();
-
-    expect(repo.currentSession, isNull);
+    expect(find.text('@nuevo'), findsWidgets);
+    expect(find.text('@viejo'), findsNothing);
+    expect(find.text('Listo, tu alias cambió.'), findsOneWidget);
   });
 }

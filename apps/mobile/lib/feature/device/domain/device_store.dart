@@ -6,7 +6,19 @@ import 'remembered_user.dart';
 abstract interface class DeviceStore {
   Future<RememberedUser?> readUser();
   Future<void> saveUser(RememberedUser user);
+
+  /// Olvida al usuario Y su credencial biométrica: otro usuario en este
+  /// teléfono no hereda la huella del anterior.
   Future<void> clearUser();
+
+  /// Credencial biométrica de ESTE teléfono para el usuario recordado.
+  Future<String?> readBiometricCredential();
+
+  /// `false` si no se pudo escribir: quien activó la huella debe revocarla en
+  /// el servidor para no dejar una credencial huérfana.
+  Future<bool> saveBiometricCredential(String credential);
+
+  Future<void> clearBiometricCredential();
 
   /// Identificador estable de ESTE teléfono. Lo exige el backend para
   /// reconocer dispositivos de confianza y para su contador de intentos.

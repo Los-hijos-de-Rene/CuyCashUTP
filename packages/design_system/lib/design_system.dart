@@ -18,5 +18,6 @@ export 'src/pin_keypad.dart';
 export 'src/pin_submitting_notice.dart';
 export 'src/primary_button.dart';
 export 'src/secondary_button.dart';
+export 'src/skeleton_box.dart';
 export 'src/step_segments.dart';
 export 'src/surface_card.dart';

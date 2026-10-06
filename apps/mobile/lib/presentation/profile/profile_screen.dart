@@ -1,10 +1,12 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../feature/device/application/device_actions.dart';
 import '../../feature/device/domain/remembered_user.dart';
 import '../../l10n/app_localizations.dart';
+import '../app/app_routes.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../quick_access/widgets/switch_user_dialog.dart';
 import '../session/remembered_user_builder.dart';
@@ -15,8 +17,15 @@ import 'widgets/profile_option_tile.dart';
 /// Perfil: identidad de la sesión (dato real del servicio de auth), datos de la
 /// cuenta y cierre de sesión. Las opciones sin feature detrás lo dicen en vez de
 /// no hacer nada.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _userKey = GlobalKey<RememberedUserBuilderState>();
 
   void _notYet(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -44,6 +53,7 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: CuyCashColors.surfaceContainerLow,
       ),
       body: RememberedUserBuilder(
+        key: _userKey,
         builder: (context, user) => ListView(
           padding: const EdgeInsets.fromLTRB(
             CuyCashSpacing.marginMobile,
@@ -59,24 +69,38 @@ class ProfileScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  ProfileDataRow(
-                      label: l10n.profileDniLabel, value: user.dni),
+                  ProfileDataRow(label: l10n.profileDniLabel, value: user.dni),
                   if (user.alias.isNotEmpty) ...[
                     const Divider(height: 1, color: CuyCashColors.divider),
                     ProfileDataRow(
-                        label: l10n.profileAliasLabel, value: user.alias),
+                      label: l10n.profileAliasLabel,
+                      value: user.alias,
+                    ),
                   ],
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
                     icon: Icons.badge_outlined,
                     label: l10n.profileItemPersonalData,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilDatos),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
                     icon: Icons.alternate_email,
                     label: l10n.profileItemAlias,
-                    onTap: () => _notYet(context),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final cambio = await context.push<bool>(
+                        AppRoutes.perfilAlias,
+                        extra: user.alias,
+                      );
+                      if (cambio != true) return;
+                      await _userKey.currentState?.reload();
+                      messenger
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(content: Text(l10n.aliasSaved)),
+                        );
+                    },
                   ),
                 ],
               ),
@@ -90,19 +114,19 @@ class ProfileScreen extends StatelessWidget {
                   ProfileOptionTile(
                     icon: Icons.password_outlined,
                     label: l10n.profileItemChangePin,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilPin),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
                     icon: Icons.fingerprint,
                     label: l10n.profileItemBiometrics,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilBiometria),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
                     icon: Icons.devices_outlined,
                     label: l10n.profileItemDevices,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilDispositivos),
                   ),
                 ],
               ),
@@ -145,12 +169,15 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(
-          left: CuyCashSpacing.stackXs,
-          bottom: CuyCashSpacing.stackSm,
-        ),
-        child: Text(text,
-            style: CuyCashTypography.labelMd
-                .copyWith(color: CuyCashColors.secondaryText)),
-      );
+    padding: const EdgeInsets.only(
+      left: CuyCashSpacing.stackXs,
+      bottom: CuyCashSpacing.stackSm,
+    ),
+    child: Text(
+      text,
+      style: CuyCashTypography.labelMd.copyWith(
+        color: CuyCashColors.secondaryText,
+      ),
+    ),
+  );
 }

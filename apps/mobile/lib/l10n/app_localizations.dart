@@ -862,6 +862,18 @@ abstract class AppLocalizations {
   /// **'Sin secuencias como 123456'**
   String get pinRuleNoSequence;
 
+  /// No description provided for @registerBiometricLater.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos activar tu huella. Puedes hacerlo desde tu perfil, en Acceso biométrico.'**
+  String get registerBiometricLater;
+
+  /// No description provided for @registerBiometricReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu huella o rostro para entrar más rápido a CuyCash'**
+  String get registerBiometricReason;
+
   /// No description provided for @biometricTitle.
   ///
   /// In es, this message translates to:
@@ -897,6 +909,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ingresa tu PIN de seguridad'**
   String get quickAccessPrompt;
+
+  /// No description provided for @quickAccessBiometricReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que eres tú para entrar a CuyCash'**
+  String get quickAccessBiometricReason;
+
+  /// No description provided for @quickAccessBiometricRevoked.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.'**
+  String get quickAccessBiometricRevoked;
+
+  /// No description provided for @quickAccessBiometricFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.'**
+  String get quickAccessBiometricFailed;
 
   /// No description provided for @notYou.
   ///
@@ -1546,6 +1576,48 @@ abstract class AppLocalizations {
   /// **'Editar mi alias'**
   String get profileItemAlias;
 
+  /// No description provided for @aliasTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar mi alias'**
+  String get aliasTitle;
+
+  /// No description provided for @aliasLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu alias'**
+  String get aliasLabel;
+
+  /// No description provided for @aliasHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.'**
+  String get aliasHelp;
+
+  /// No description provided for @aliasInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.'**
+  String get aliasInvalid;
+
+  /// No description provided for @aliasSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get aliasSave;
+
+  /// No description provided for @aliasSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, tu alias cambió.'**
+  String get aliasSaved;
+
+  /// No description provided for @aliasNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos guardar tu alias. Revisa tu conexión e inténtalo de nuevo.'**
+  String get aliasNetwork;
+
   /// No description provided for @profileItemChangePin.
   ///
   /// In es, this message translates to:
@@ -2175,6 +2247,264 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Esta recarga ya estaba registrada. No se cobró otra vez.'**
   String get topUpDoneReused;
+
+  /// No description provided for @personalDataTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos personales'**
+  String get personalDataTitle;
+
+  /// No description provided for @personalDataNames.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombres'**
+  String get personalDataNames;
+
+  /// No description provided for @personalDataSurnames.
+  ///
+  /// In es, this message translates to:
+  /// **'Apellidos'**
+  String get personalDataSurnames;
+
+  /// No description provided for @personalDataEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo'**
+  String get personalDataEmail;
+
+  /// No description provided for @personalDataAlias.
+  ///
+  /// In es, this message translates to:
+  /// **'Alias'**
+  String get personalDataAlias;
+
+  /// No description provided for @personalDataSince.
+  ///
+  /// In es, this message translates to:
+  /// **'Cliente desde'**
+  String get personalDataSince;
+
+  /// No description provided for @personalDataVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada'**
+  String get personalDataVerified;
+
+  /// No description provided for @personalDataReadOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Estos datos vienen de tu verificación de identidad. Si alguno no es correcto, escríbenos por WhatsApp.'**
+  String get personalDataReadOnly;
+
+  /// No description provided for @personalDataError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus datos.'**
+  String get personalDataError;
+
+  /// No description provided for @changePinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar mi PIN'**
+  String get changePinTitle;
+
+  /// No description provided for @changePinCurrentHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu PIN actual'**
+  String get changePinCurrentHeadline;
+
+  /// No description provided for @changePinCurrentSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo usamos para confirmar que eres tú.'**
+  String get changePinCurrentSubtitle;
+
+  /// No description provided for @changePinNewHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu nuevo PIN'**
+  String get changePinNewHeadline;
+
+  /// No description provided for @changePinNewSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige 6 dígitos que no uses en otro lado.'**
+  String get changePinNewSubtitle;
+
+  /// No description provided for @changePinConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu nuevo PIN'**
+  String get changePinConfirmHeadline;
+
+  /// No description provided for @changePinConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escríbelo otra vez.'**
+  String get changePinConfirmSubtitle;
+
+  /// No description provided for @changePinWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{PIN actual incorrecto. Te queda 1 intento.} other{PIN actual incorrecto. Te quedan {count} intentos.}}'**
+  String changePinWrong(int count);
+
+  /// No description provided for @changePinUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'No sabemos si tu PIN cambió. Intenta entrar con el nuevo o con el anterior.'**
+  String get changePinUnknown;
+
+  /// No description provided for @changePinDoneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu PIN cambió'**
+  String get changePinDoneTitle;
+
+  /// No description provided for @changePinDoneOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Desde ahora entra con tu nuevo PIN.} =1{Cerramos tu sesión en 1 dispositivo.} other{Cerramos tu sesión en {count} dispositivos.}}'**
+  String changePinDoneOthers(int count);
+
+  /// No description provided for @changePinDoneCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get changePinDoneCta;
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivos vinculados'**
+  String get devicesTitle;
+
+  /// No description provided for @devicesThisPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Este teléfono'**
+  String get devicesThisPhone;
+
+  /// No description provided for @devicesUnknownModel.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivo sin nombre'**
+  String get devicesUnknownModel;
+
+  /// No description provided for @devicesLinkedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Vinculado el {date}'**
+  String devicesLinkedOn(String date);
+
+  /// No description provided for @devicesLastUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Último uso: {date}'**
+  String devicesLastUse(String date);
+
+  /// No description provided for @devicesBiometric.
+  ///
+  /// In es, this message translates to:
+  /// **'Con huella activa'**
+  String get devicesBiometric;
+
+  /// No description provided for @devicesUnlink.
+  ///
+  /// In es, this message translates to:
+  /// **'Desvincular'**
+  String get devicesUnlink;
+
+  /// No description provided for @devicesUnlinkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Desvincular este dispositivo?'**
+  String get devicesUnlinkTitle;
+
+  /// No description provided for @devicesUnlinkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerraremos su sesión y, para volver a entrar desde ahí, pediremos un código a tu correo.'**
+  String get devicesUnlinkBody;
+
+  /// No description provided for @devicesUnlinked.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, ese dispositivo ya no tiene acceso.'**
+  String get devicesUnlinked;
+
+  /// No description provided for @devicesCannotUnlinkCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Para salir de este teléfono, cierra sesión.'**
+  String get devicesCannotUnlinkCurrent;
+
+  /// No description provided for @devicesError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus dispositivos.'**
+  String get devicesError;
+
+  /// No description provided for @devicesHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no reconoces alguno, desvincúlalo y cambia tu PIN.'**
+  String get devicesHelp;
+
+  /// No description provided for @biometricSettingsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso biométrico'**
+  String get biometricSettingsTitle;
+
+  /// No description provided for @biometricSettingsSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Entrar con huella o rostro'**
+  String get biometricSettingsSwitch;
+
+  /// No description provided for @biometricSettingsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Entra a CuyCash sin escribir tu PIN. Tu PIN sigue funcionando siempre.'**
+  String get biometricSettingsBody;
+
+  /// No description provided for @biometricSettingsUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema y vuelve aquí.'**
+  String get biometricSettingsUnavailable;
+
+  /// No description provided for @biometricSettingsPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get biometricSettingsPinHeadline;
+
+  /// No description provided for @biometricSettingsPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Después te pediremos tu huella o tu rostro.'**
+  String get biometricSettingsPinSubtitle;
+
+  /// No description provided for @biometricSettingsReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que eres tú para activar el acceso biométrico'**
+  String get biometricSettingsReason;
+
+  /// No description provided for @biometricSettingsWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {count} intentos.}}'**
+  String biometricSettingsWrong(int count);
+
+  /// No description provided for @biometricSettingsEnabled.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, ya puedes entrar con tu huella o rostro.'**
+  String get biometricSettingsEnabled;
 }
 
 class _AppLocalizationsDelegate
