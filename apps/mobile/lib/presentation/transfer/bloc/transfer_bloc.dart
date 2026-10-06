@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../feature/account/domain/account.dart';
+import '../../../feature/beneficiary/application/beneficiary_actions.dart';
 import '../../../feature/transfer/application/pending_transfer_actions.dart';
 import '../../../feature/transfer/application/transfer_actions.dart';
 import '../../../feature/transfer/domain/recipient.dart';
@@ -37,7 +38,9 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     required PendingTransferActions pending,
     required String userId,
     String Function()? newKey,
+    BeneficiaryActions? beneficiaries,
   }) : _pending = pending,
+       _beneficiaries = beneficiaries,
        _userId = userId,
        _newKey = newKey ?? IdempotencyKey.generate,
        super(const TransferState()) {
@@ -49,9 +52,17 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     on<TransferAmountEntered>(_onAmountEntered);
     on<TransferConfirmationOpened>(_onConfirmationOpened);
     on<TransferSubmitted>(_onSubmitted);
+    on<TransferSaveFrequentToggled>(_onSaveFrequentToggled);
   }
 
   final TransferActions _actions;
+
+  /// `null` = este flujo no guarda frecuentes.
+  final BeneficiaryActions? _beneficiaries;
+
+  /// ¿Este flujo sabe guardar frecuentes? La pantalla de monto solo ofrece el
+  /// interruptor si es así: uno que no hace nada mentiría.
+  bool get puedeGuardarFrecuentes => _beneficiaries != null;
   final PendingTransferActions _pending;
   final String _userId;
   final String Function() _newKey;
@@ -151,6 +162,14 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     );
   }
 
+  void _onSaveFrequentToggled(
+    TransferSaveFrequentToggled event,
+    Emitter<TransferState> emit,
+  ) {
+    if (_intentSealed) return;
+    emit(state.copyWith(guardarFrecuente: event.value));
+  }
+
   Future<void> _onConfirmationOpened(
     TransferConfirmationOpened event,
     Emitter<TransferState> emit,
@@ -239,6 +258,26 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
             state.copyWith(status: TransferStatus.done, constancia: receipt),
       ),
     );
+    if (result.isRight()) await _saveFrequent(emit);
+  }
+
+  /// Guarda al destinatario DESPUÉS de un envío exitoso, nunca antes: el
+  /// destinatario de una operación que falló no es un frecuente. Si no se
+  /// puede guardar el envío sigue siendo válido; solo se avisa en la
+  /// constancia. Guardar gasta presupuesto de consultas y puede dar 429.
+  Future<void> _saveFrequent(Emitter<TransferState> emit) async {
+    final beneficiaries = _beneficiaries;
+    final destinatario = state.destinatario;
+    if (!state.guardarFrecuente ||
+        beneficiaries == null ||
+        destinatario == null) {
+      return;
+    }
+    final saved = await beneficiaries.guardar(
+      destinatario.dni,
+      destinatario.nombreEnmascarado,
+    );
+    if (saved.isLeft()) emit(state.copyWith(frecuenteNoGuardado: true));
   }
 
   TransferFailure _flatten(GlobalFailure<TransferFailure> failure) =>

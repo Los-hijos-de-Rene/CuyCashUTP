@@ -1,6 +1,8 @@
 import '../../feature/account/application/account_actions.dart';
 import '../../feature/account/domain/account_repository.dart';
 import '../../feature/auth/domain/auth_repository.dart';
+import '../../feature/beneficiary/application/beneficiary_actions.dart';
+import '../../feature/beneficiary/domain/beneficiary_repository.dart';
 import '../../feature/device/domain/device_store.dart';
 import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
@@ -24,6 +26,7 @@ class AppDependencies {
     required this.accountRepository,
     required this.transferRepository,
     required this.pendingTransferStore,
+    required this.beneficiaryRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -50,6 +53,11 @@ class AppDependencies {
 
   /// Claves de idempotencia de envíos que pudieron ejecutarse, por usuario.
   final PendingTransferStore pendingTransferStore;
+
+  /// Frecuentes. Los blocs consumen [beneficiaryActions].
+  final BeneficiaryRepository beneficiaryRepository;
+  BeneficiaryActions get beneficiaryActions =>
+      BeneficiaryActions(beneficiaryRepository);
 
   final LockoutPolicy lockoutPolicy;
 }

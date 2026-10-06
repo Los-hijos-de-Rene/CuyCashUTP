@@ -60,6 +60,10 @@ class MemoryTransferRepository implements TransferRepository {
     ),
   };
 
+  /// Cliente de demo por DNI, o `null`. Lo reutilizan otros `Memory*` (los
+  /// frecuentes) para no inventar un padrón aparte.
+  static Recipient? destinatarioConocido(String dni) => _destinatarios[dni];
+
   final DateTime Function() _clock;
   final int maxIntentos;
   final Duration bloqueo;

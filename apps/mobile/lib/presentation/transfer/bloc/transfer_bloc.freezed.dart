@@ -55,7 +55,7 @@ extension TransferEventPatterns on TransferEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TransferStarted value)?  started,TResult Function( TransferRecipientRequested value)?  recipientRequested,TResult Function( TransferRecipientCleared value)?  recipientCleared,TResult Function( TransferAmountEntered value)?  amountEntered,TResult Function( TransferConfirmationOpened value)?  confirmationOpened,TResult Function( TransferSubmitted value)?  submitted,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TransferStarted value)?  started,TResult Function( TransferRecipientRequested value)?  recipientRequested,TResult Function( TransferRecipientCleared value)?  recipientCleared,TResult Function( TransferAmountEntered value)?  amountEntered,TResult Function( TransferConfirmationOpened value)?  confirmationOpened,TResult Function( TransferSubmitted value)?  submitted,TResult Function( TransferSaveFrequentToggled value)?  saveFrequentToggled,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
@@ -64,7 +64,8 @@ return recipientRequested(_that);case TransferRecipientCleared() when recipientC
 return recipientCleared(_that);case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that);case TransferConfirmationOpened() when confirmationOpened != null:
 return confirmationOpened(_that);case TransferSubmitted() when submitted != null:
-return submitted(_that);case _:
+return submitted(_that);case TransferSaveFrequentToggled() when saveFrequentToggled != null:
+return saveFrequentToggled(_that);case _:
   return orElse();
 
 }
@@ -82,7 +83,7 @@ return submitted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TransferStarted value)  started,required TResult Function( TransferRecipientRequested value)  recipientRequested,required TResult Function( TransferRecipientCleared value)  recipientCleared,required TResult Function( TransferAmountEntered value)  amountEntered,required TResult Function( TransferConfirmationOpened value)  confirmationOpened,required TResult Function( TransferSubmitted value)  submitted,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TransferStarted value)  started,required TResult Function( TransferRecipientRequested value)  recipientRequested,required TResult Function( TransferRecipientCleared value)  recipientCleared,required TResult Function( TransferAmountEntered value)  amountEntered,required TResult Function( TransferConfirmationOpened value)  confirmationOpened,required TResult Function( TransferSubmitted value)  submitted,required TResult Function( TransferSaveFrequentToggled value)  saveFrequentToggled,}){
 final _that = this;
 switch (_that) {
 case TransferStarted():
@@ -91,7 +92,8 @@ return recipientRequested(_that);case TransferRecipientCleared():
 return recipientCleared(_that);case TransferAmountEntered():
 return amountEntered(_that);case TransferConfirmationOpened():
 return confirmationOpened(_that);case TransferSubmitted():
-return submitted(_that);}
+return submitted(_that);case TransferSaveFrequentToggled():
+return saveFrequentToggled(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -105,7 +107,7 @@ return submitted(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TransferStarted value)?  started,TResult? Function( TransferRecipientRequested value)?  recipientRequested,TResult? Function( TransferRecipientCleared value)?  recipientCleared,TResult? Function( TransferAmountEntered value)?  amountEntered,TResult? Function( TransferConfirmationOpened value)?  confirmationOpened,TResult? Function( TransferSubmitted value)?  submitted,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TransferStarted value)?  started,TResult? Function( TransferRecipientRequested value)?  recipientRequested,TResult? Function( TransferRecipientCleared value)?  recipientCleared,TResult? Function( TransferAmountEntered value)?  amountEntered,TResult? Function( TransferConfirmationOpened value)?  confirmationOpened,TResult? Function( TransferSubmitted value)?  submitted,TResult? Function( TransferSaveFrequentToggled value)?  saveFrequentToggled,}){
 final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
@@ -114,7 +116,8 @@ return recipientRequested(_that);case TransferRecipientCleared() when recipientC
 return recipientCleared(_that);case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that);case TransferConfirmationOpened() when confirmationOpened != null:
 return confirmationOpened(_that);case TransferSubmitted() when submitted != null:
-return submitted(_that);case _:
+return submitted(_that);case TransferSaveFrequentToggled() when saveFrequentToggled != null:
+return saveFrequentToggled(_that);case _:
   return null;
 
 }
@@ -131,7 +134,7 @@ return submitted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( Account cuenta)?  started,TResult Function( String dni)?  recipientRequested,TResult Function()?  recipientCleared,TResult Function( Money monto,  String? motivo)?  amountEntered,TResult Function()?  confirmationOpened,TResult Function( String pin)?  submitted,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( Account cuenta)?  started,TResult Function( String dni)?  recipientRequested,TResult Function()?  recipientCleared,TResult Function( Money monto,  String? motivo)?  amountEntered,TResult Function()?  confirmationOpened,TResult Function( String pin)?  submitted,TResult Function( bool value)?  saveFrequentToggled,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
 return started(_that.cuenta);case TransferRecipientRequested() when recipientRequested != null:
@@ -139,7 +142,8 @@ return recipientRequested(_that.dni);case TransferRecipientCleared() when recipi
 return recipientCleared();case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened() when confirmationOpened != null:
 return confirmationOpened();case TransferSubmitted() when submitted != null:
-return submitted(_that.pin);case _:
+return submitted(_that.pin);case TransferSaveFrequentToggled() when saveFrequentToggled != null:
+return saveFrequentToggled(_that.value);case _:
   return orElse();
 
 }
@@ -157,7 +161,7 @@ return submitted(_that.pin);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( Account cuenta)  started,required TResult Function( String dni)  recipientRequested,required TResult Function()  recipientCleared,required TResult Function( Money monto,  String? motivo)  amountEntered,required TResult Function()  confirmationOpened,required TResult Function( String pin)  submitted,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( Account cuenta)  started,required TResult Function( String dni)  recipientRequested,required TResult Function()  recipientCleared,required TResult Function( Money monto,  String? motivo)  amountEntered,required TResult Function()  confirmationOpened,required TResult Function( String pin)  submitted,required TResult Function( bool value)  saveFrequentToggled,}) {final _that = this;
 switch (_that) {
 case TransferStarted():
 return started(_that.cuenta);case TransferRecipientRequested():
@@ -165,7 +169,8 @@ return recipientRequested(_that.dni);case TransferRecipientCleared():
 return recipientCleared();case TransferAmountEntered():
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened():
 return confirmationOpened();case TransferSubmitted():
-return submitted(_that.pin);}
+return submitted(_that.pin);case TransferSaveFrequentToggled():
+return saveFrequentToggled(_that.value);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -179,7 +184,7 @@ return submitted(_that.pin);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( Account cuenta)?  started,TResult? Function( String dni)?  recipientRequested,TResult? Function()?  recipientCleared,TResult? Function( Money monto,  String? motivo)?  amountEntered,TResult? Function()?  confirmationOpened,TResult? Function( String pin)?  submitted,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( Account cuenta)?  started,TResult? Function( String dni)?  recipientRequested,TResult? Function()?  recipientCleared,TResult? Function( Money monto,  String? motivo)?  amountEntered,TResult? Function()?  confirmationOpened,TResult? Function( String pin)?  submitted,TResult? Function( bool value)?  saveFrequentToggled,}) {final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
 return started(_that.cuenta);case TransferRecipientRequested() when recipientRequested != null:
@@ -187,7 +192,8 @@ return recipientRequested(_that.dni);case TransferRecipientCleared() when recipi
 return recipientCleared();case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened() when confirmationOpened != null:
 return confirmationOpened();case TransferSubmitted() when submitted != null:
-return submitted(_that.pin);case _:
+return submitted(_that.pin);case TransferSaveFrequentToggled() when saveFrequentToggled != null:
+return saveFrequentToggled(_that.value);case _:
   return null;
 
 }
@@ -526,11 +532,77 @@ as String,
 }
 
 /// @nodoc
+
+
+class TransferSaveFrequentToggled implements TransferEvent {
+  const TransferSaveFrequentToggled(this.value);
+  
+
+ final  bool value;
+
+/// Create a copy of TransferEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TransferSaveFrequentToggledCopyWith<TransferSaveFrequentToggled> get copyWith => _$TransferSaveFrequentToggledCopyWithImpl<TransferSaveFrequentToggled>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferSaveFrequentToggled&&(identical(other.value, value) || other.value == value));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,value);
+
+@override
+String toString() {
+  return 'TransferEvent.saveFrequentToggled(value: $value)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TransferSaveFrequentToggledCopyWith<$Res> implements $TransferEventCopyWith<$Res> {
+  factory $TransferSaveFrequentToggledCopyWith(TransferSaveFrequentToggled value, $Res Function(TransferSaveFrequentToggled) _then) = _$TransferSaveFrequentToggledCopyWithImpl;
+@useResult
+$Res call({
+ bool value
+});
+
+
+
+
+}
+/// @nodoc
+class _$TransferSaveFrequentToggledCopyWithImpl<$Res>
+    implements $TransferSaveFrequentToggledCopyWith<$Res> {
+  _$TransferSaveFrequentToggledCopyWithImpl(this._self, this._then);
+
+  final TransferSaveFrequentToggled _self;
+  final $Res Function(TransferSaveFrequentToggled) _then;
+
+/// Create a copy of TransferEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? value = null,}) {
+  return _then(TransferSaveFrequentToggled(
+null == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$TransferState {
 
- TransferStatus get status; Account? get cuenta; Recipient? get destinatario; Money? get monto; String? get motivo;/// Reservado para "guardar como frecuente" (`feature/beneficiary`, tarea
-/// 16). Sin UI hasta entonces: un interruptor que no hace nada mentiría.
- bool get guardarFrecuente;/// Identifica la INTENCIÓN de enviar este monto a este destinatario. Se
+ TransferStatus get status; Account? get cuenta; Recipient? get destinatario; Money? get monto; String? get motivo;/// "Guardar como frecuente": se aplica DESPUÉS de un envío exitoso.
+ bool get guardarFrecuente;/// El envío salió bien pero guardar al destinatario como frecuente falló.
+ bool get frecuenteNoGuardado;/// Identifica la INTENCIÓN de enviar este monto a este destinatario. Se
 /// fija al abrir la confirmación y solo se borra si cambia la intención;
 /// jamás entre reintentos. Vacía = aún no hay intención.
  String get idempotencyKey;/// El último fallo (de la búsqueda o del envío, según la pantalla).
@@ -554,16 +626,16 @@ $TransferStateCopyWith<TransferState> get copyWith => _$TransferStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.pendingElsewhere, pendingElsewhere) || other.pendingElsewhere == pendingElsewhere)&&(identical(other.keyUnsaved, keyUnsaved) || other.keyUnsaved == keyUnsaved)&&(identical(other.constancia, constancia) || other.constancia == constancia));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.frecuenteNoGuardado, frecuenteNoGuardado) || other.frecuenteNoGuardado == frecuenteNoGuardado)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.pendingElsewhere, pendingElsewhere) || other.pendingElsewhere == pendingElsewhere)&&(identical(other.keyUnsaved, keyUnsaved) || other.keyUnsaved == keyUnsaved)&&(identical(other.constancia, constancia) || other.constancia == constancia));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,outcomeUnknown,pendingElsewhere,keyUnsaved,constancia);
+int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,frecuenteNoGuardado,idempotencyKey,failure,outcomeUnknown,pendingElsewhere,keyUnsaved,constancia);
 
 @override
 String toString() {
-  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, pendingElsewhere: $pendingElsewhere, keyUnsaved: $keyUnsaved, constancia: $constancia)';
+  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, frecuenteNoGuardado: $frecuenteNoGuardado, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, pendingElsewhere: $pendingElsewhere, keyUnsaved: $keyUnsaved, constancia: $constancia)';
 }
 
 
@@ -574,7 +646,7 @@ abstract mixin class $TransferStateCopyWith<$Res>  {
   factory $TransferStateCopyWith(TransferState value, $Res Function(TransferState) _then) = _$TransferStateCopyWithImpl;
 @useResult
 $Res call({
- TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, bool pendingElsewhere, bool keyUnsaved, TransferReceipt? constancia
+ TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, bool frecuenteNoGuardado, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, bool pendingElsewhere, bool keyUnsaved, TransferReceipt? constancia
 });
 
 
@@ -591,7 +663,7 @@ class _$TransferStateCopyWithImpl<$Res>
 
 /// Create a copy of TransferState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? pendingElsewhere = null,Object? keyUnsaved = null,Object? constancia = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? frecuenteNoGuardado = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? pendingElsewhere = null,Object? keyUnsaved = null,Object? constancia = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TransferStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -599,6 +671,7 @@ as Account?,destinatario: freezed == destinatario ? _self.destinatario : destina
 as Recipient?,monto: freezed == monto ? _self.monto : monto // ignore: cast_nullable_to_non_nullable
 as Money?,motivo: freezed == motivo ? _self.motivo : motivo // ignore: cast_nullable_to_non_nullable
 as String?,guardarFrecuente: null == guardarFrecuente ? _self.guardarFrecuente : guardarFrecuente // ignore: cast_nullable_to_non_nullable
+as bool,frecuenteNoGuardado: null == frecuenteNoGuardado ? _self.frecuenteNoGuardado : frecuenteNoGuardado // ignore: cast_nullable_to_non_nullable
 as bool,idempotencyKey: null == idempotencyKey ? _self.idempotencyKey : idempotencyKey // ignore: cast_nullable_to_non_nullable
 as String,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as TransferFailure?,outcomeUnknown: null == outcomeUnknown ? _self.outcomeUnknown : outcomeUnknown // ignore: cast_nullable_to_non_nullable
@@ -690,10 +763,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  bool frecuenteNoGuardado,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransferState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.frecuenteNoGuardado,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
   return orElse();
 
 }
@@ -711,10 +784,10 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  bool frecuenteNoGuardado,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)  $default,) {final _that = this;
 switch (_that) {
 case _TransferState():
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.frecuenteNoGuardado,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -731,10 +804,10 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TransferStatus status,  Account? cuenta,  Recipient? destinatario,  Money? monto,  String? motivo,  bool guardarFrecuente,  bool frecuenteNoGuardado,  String idempotencyKey,  TransferFailure? failure,  bool outcomeUnknown,  bool pendingElsewhere,  bool keyUnsaved,  TransferReceipt? constancia)?  $default,) {final _that = this;
 switch (_that) {
 case _TransferState() when $default != null:
-return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
+return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.motivo,_that.guardarFrecuente,_that.frecuenteNoGuardado,_that.idempotencyKey,_that.failure,_that.outcomeUnknown,_that.pendingElsewhere,_that.keyUnsaved,_that.constancia);case _:
   return null;
 
 }
@@ -746,7 +819,7 @@ return $default(_that.status,_that.cuenta,_that.destinatario,_that.monto,_that.m
 
 
 class _TransferState implements TransferState {
-  const _TransferState({this.status = TransferStatus.idle, this.cuenta, this.destinatario, this.monto, this.motivo, this.guardarFrecuente = false, this.idempotencyKey = '', this.failure, this.outcomeUnknown = false, this.pendingElsewhere = false, this.keyUnsaved = false, this.constancia});
+  const _TransferState({this.status = TransferStatus.idle, this.cuenta, this.destinatario, this.monto, this.motivo, this.guardarFrecuente = false, this.frecuenteNoGuardado = false, this.idempotencyKey = '', this.failure, this.outcomeUnknown = false, this.pendingElsewhere = false, this.keyUnsaved = false, this.constancia});
   
 
 @override@JsonKey() final  TransferStatus status;
@@ -754,9 +827,10 @@ class _TransferState implements TransferState {
 @override final  Recipient? destinatario;
 @override final  Money? monto;
 @override final  String? motivo;
-/// Reservado para "guardar como frecuente" (`feature/beneficiary`, tarea
-/// 16). Sin UI hasta entonces: un interruptor que no hace nada mentiría.
+/// "Guardar como frecuente": se aplica DESPUÉS de un envío exitoso.
 @override@JsonKey() final  bool guardarFrecuente;
+/// El envío salió bien pero guardar al destinatario como frecuente falló.
+@override@JsonKey() final  bool frecuenteNoGuardado;
 /// Identifica la INTENCIÓN de enviar este monto a este destinatario. Se
 /// fija al abrir la confirmación y solo se borra si cambia la intención;
 /// jamás entre reintentos. Vacía = aún no hay intención.
@@ -787,16 +861,16 @@ _$TransferStateCopyWith<_TransferState> get copyWith => __$TransferStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.pendingElsewhere, pendingElsewhere) || other.pendingElsewhere == pendingElsewhere)&&(identical(other.keyUnsaved, keyUnsaved) || other.keyUnsaved == keyUnsaved)&&(identical(other.constancia, constancia) || other.constancia == constancia));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransferState&&(identical(other.status, status) || other.status == status)&&(identical(other.cuenta, cuenta) || other.cuenta == cuenta)&&(identical(other.destinatario, destinatario) || other.destinatario == destinatario)&&(identical(other.monto, monto) || other.monto == monto)&&(identical(other.motivo, motivo) || other.motivo == motivo)&&(identical(other.guardarFrecuente, guardarFrecuente) || other.guardarFrecuente == guardarFrecuente)&&(identical(other.frecuenteNoGuardado, frecuenteNoGuardado) || other.frecuenteNoGuardado == frecuenteNoGuardado)&&(identical(other.idempotencyKey, idempotencyKey) || other.idempotencyKey == idempotencyKey)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.outcomeUnknown, outcomeUnknown) || other.outcomeUnknown == outcomeUnknown)&&(identical(other.pendingElsewhere, pendingElsewhere) || other.pendingElsewhere == pendingElsewhere)&&(identical(other.keyUnsaved, keyUnsaved) || other.keyUnsaved == keyUnsaved)&&(identical(other.constancia, constancia) || other.constancia == constancia));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,idempotencyKey,failure,outcomeUnknown,pendingElsewhere,keyUnsaved,constancia);
+int get hashCode => Object.hash(runtimeType,status,cuenta,destinatario,monto,motivo,guardarFrecuente,frecuenteNoGuardado,idempotencyKey,failure,outcomeUnknown,pendingElsewhere,keyUnsaved,constancia);
 
 @override
 String toString() {
-  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, pendingElsewhere: $pendingElsewhere, keyUnsaved: $keyUnsaved, constancia: $constancia)';
+  return 'TransferState(status: $status, cuenta: $cuenta, destinatario: $destinatario, monto: $monto, motivo: $motivo, guardarFrecuente: $guardarFrecuente, frecuenteNoGuardado: $frecuenteNoGuardado, idempotencyKey: $idempotencyKey, failure: $failure, outcomeUnknown: $outcomeUnknown, pendingElsewhere: $pendingElsewhere, keyUnsaved: $keyUnsaved, constancia: $constancia)';
 }
 
 
@@ -807,7 +881,7 @@ abstract mixin class _$TransferStateCopyWith<$Res> implements $TransferStateCopy
   factory _$TransferStateCopyWith(_TransferState value, $Res Function(_TransferState) _then) = __$TransferStateCopyWithImpl;
 @override @useResult
 $Res call({
- TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, bool pendingElsewhere, bool keyUnsaved, TransferReceipt? constancia
+ TransferStatus status, Account? cuenta, Recipient? destinatario, Money? monto, String? motivo, bool guardarFrecuente, bool frecuenteNoGuardado, String idempotencyKey, TransferFailure? failure, bool outcomeUnknown, bool pendingElsewhere, bool keyUnsaved, TransferReceipt? constancia
 });
 
 
@@ -824,7 +898,7 @@ class __$TransferStateCopyWithImpl<$Res>
 
 /// Create a copy of TransferState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? pendingElsewhere = null,Object? keyUnsaved = null,Object? constancia = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? cuenta = freezed,Object? destinatario = freezed,Object? monto = freezed,Object? motivo = freezed,Object? guardarFrecuente = null,Object? frecuenteNoGuardado = null,Object? idempotencyKey = null,Object? failure = freezed,Object? outcomeUnknown = null,Object? pendingElsewhere = null,Object? keyUnsaved = null,Object? constancia = freezed,}) {
   return _then(_TransferState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TransferStatus,cuenta: freezed == cuenta ? _self.cuenta : cuenta // ignore: cast_nullable_to_non_nullable
@@ -832,6 +906,7 @@ as Account?,destinatario: freezed == destinatario ? _self.destinatario : destina
 as Recipient?,monto: freezed == monto ? _self.monto : monto // ignore: cast_nullable_to_non_nullable
 as Money?,motivo: freezed == motivo ? _self.motivo : motivo // ignore: cast_nullable_to_non_nullable
 as String?,guardarFrecuente: null == guardarFrecuente ? _self.guardarFrecuente : guardarFrecuente // ignore: cast_nullable_to_non_nullable
+as bool,frecuenteNoGuardado: null == frecuenteNoGuardado ? _self.frecuenteNoGuardado : frecuenteNoGuardado // ignore: cast_nullable_to_non_nullable
 as bool,idempotencyKey: null == idempotencyKey ? _self.idempotencyKey : idempotencyKey // ignore: cast_nullable_to_non_nullable
 as String,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as TransferFailure?,outcomeUnknown: null == outcomeUnknown ? _self.outcomeUnknown : outcomeUnknown // ignore: cast_nullable_to_non_nullable

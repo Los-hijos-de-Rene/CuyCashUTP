@@ -2,11 +2,10 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-
-import '../../core/format/soles.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
+import '../movement/widgets/receipt_card.dart';
+import '../movement/widgets/share_receipt_button.dart';
 import 'bloc/transfer_bloc.dart';
 
 /// Constancia del envío. El nombre del destinatario sale del `Recipient` ya
@@ -23,6 +22,21 @@ class ReceiptScreen extends StatelessWidget {
     final state = context.watch<TransferBloc>().state;
     final constancia = state.constancia;
     final destinatario = state.destinatario;
+    final card = constancia == null
+        ? null
+        : ReceiptCard(
+            headline: l10n.transferReceiptHeadline,
+            monto: constancia.monto,
+            fecha: constancia.fecha,
+            transactionId: constancia.transactionId,
+            // Una constancia existe solo si el servidor confirmó.
+            estado: 'confirmada',
+            contraparteLabel: l10n.transferReceiptTo,
+            contraparte: destinatario?.nombreEnmascarado,
+            cuentaDestinoMasked: destinatario?.cuentaDestinoMasked,
+            motivo: state.motivo,
+            reutilizada: constancia.reutilizada,
+          );
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -39,55 +53,21 @@ class ReceiptScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.check_circle,
-                  size: 56,
-                  color: CuyCashColors.success,
-                ),
-                const SizedBox(height: CuyCashSpacing.stackMd),
-                Text(
-                  l10n.transferReceiptHeadline,
-                  style: CuyCashTypography.headlineSm,
-                ),
-                if (constancia != null) ...[
-                  const SizedBox(height: CuyCashSpacing.stackXs),
-                  Text(
-                    formatSoles(constancia.monto),
-                    style: CuyCashTypography.headlineMd,
+                if (card != null)
+                  Expanded(child: SingleChildScrollView(child: card)),
+                if (card == null) const Spacer(),
+                if (state.frecuenteNoGuardado) ...[
+                  const SizedBox(height: CuyCashSpacing.stackMd),
+                  InfoStrip(
+                    icon: Icons.info_outline,
+                    text: l10n.transferFrequentNotSaved,
                   ),
-                  const SizedBox(height: CuyCashSpacing.stackLg),
-                  SurfaceCard(
-                    child: Column(
-                      children: [
-                        if (destinatario != null)
-                          _Line(
-                            label: l10n.transferReceiptTo,
-                            value:
-                                '${destinatario.nombreEnmascarado} · '
-                                '${destinatario.cuentaDestinoMasked}',
-                          ),
-                        _Line(
-                          label: l10n.transferReceiptDate,
-                          value: DateFormat(
-                            'dd/MM/yyyy HH:mm',
-                          ).format(constancia.fecha.toLocal()),
-                        ),
-                        _Line(
-                          label: l10n.transferReceiptId,
-                          value: constancia.transactionId,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (constancia.reutilizada) ...[
-                    const SizedBox(height: CuyCashSpacing.stackMd),
-                    InfoStrip(
-                      icon: Icons.info_outline,
-                      text: l10n.transferReceiptReused,
-                    ),
-                  ],
                 ],
-                const Spacer(),
+                if (card != null) ...[
+                  const SizedBox(height: CuyCashSpacing.stackMd),
+                  ShareReceiptButton(text: card.shareText(l10n)),
+                ],
+                const SizedBox(height: CuyCashSpacing.stackSm),
                 PrimaryButton(
                   label: l10n.transferReceiptHome,
                   onPressed: () => context.go(AppRoutes.home),
@@ -96,34 +76,6 @@ class ReceiptScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Line extends StatelessWidget {
-  const _Line({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: CuyCashSpacing.stackXs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: CuyCashTypography.bodyMd),
-          const SizedBox(width: CuyCashSpacing.stackMd),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: CuyCashTypography.labelMd,
-            ),
-          ),
-        ],
       ),
     );
   }

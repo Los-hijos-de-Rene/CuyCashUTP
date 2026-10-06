@@ -15,6 +15,11 @@ abstract final class AppRoutes {
   static const enviarConfirmar = '/enviar/confirmar';
   static const enviarConstancia = '/enviar/constancia';
 
+  // Detalle de un movimiento del historial.
+  static const movimiento = '/movimientos/:id';
+  static String movimientoDe(String transactionId) =>
+      '/movimientos/${Uri.encodeComponent(transactionId)}';
+
   // Recarga de saldo (una sola pantalla: monto + PIN).
   static const recargar = '/recargar';
 

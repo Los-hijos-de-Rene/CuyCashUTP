@@ -18,9 +18,9 @@ class RecipientScreen extends StatefulWidget {
   /// Cuenta de origen: la que el inicio ya muestra.
   final Account cuenta;
 
-  /// Hueco de la fila de "Frecuentes". `feature/beneficiary` nace en la tarea
-  /// 16; hasta entonces queda vacío y nada lo rellena.
-  final Widget? frecuentes;
+  /// Fila de "Frecuentes". Recibe qué hacer al tocar uno: rellenar el DNI y
+  /// buscarlo. Sin ella (tests del flujo sin frecuentes) no hay fila.
+  final Widget Function(ValueChanged<String> onSelected)? frecuentes;
 
   @override
   State<RecipientScreen> createState() => _RecipientScreenState();
@@ -52,9 +52,19 @@ class _RecipientScreenState extends State<RecipientScreen> {
     }
   }
 
+  /// Tocar un frecuente es teclear su DNI: mismo camino, misma búsqueda.
+  void _onFrequentSelected(String dni) {
+    _controller.value = TextEditingValue(
+      text: dni,
+      selection: TextSelection.collapsed(offset: dni.length),
+    );
+    _onChanged(dni);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final frecuentes = widget.frecuentes;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.transferRecipientTitle)),
       body: SafeArea(
@@ -100,7 +110,10 @@ class _RecipientScreenState extends State<RecipientScreen> {
                     ),
                   if (destinatario != null)
                     _RecipientCard(recipient: destinatario),
-                  ?widget.frecuentes,
+                  if (frecuentes != null) ...[
+                    const SizedBox(height: CuyCashSpacing.stackMd),
+                    frecuentes(_onFrequentSelected),
+                  ],
                   const Spacer(),
                   PrimaryButton(
                     label: l10n.transferContinue,

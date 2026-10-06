@@ -1085,6 +1085,80 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferReceiptHome => 'Volver al inicio';
 
   @override
+  String get transferFrequentsTitle => 'Frecuentes';
+
+  @override
+  String transferFrequentSemantics(String name) {
+    return 'Enviar a $name';
+  }
+
+  @override
+  String get transferSaveFrequentTitle => 'Guardar como frecuente';
+
+  @override
+  String get transferSaveFrequentHint =>
+      'Si el envío sale bien, podrás elegirlo la próxima vez sin escribir el DNI.';
+
+  @override
+  String get transferFrequentNotSaved =>
+      'El envío se realizó, pero no pudimos guardar a esta persona como frecuente.';
+
+  @override
+  String get movementDetailTitle => 'Detalle del movimiento';
+
+  @override
+  String get movementDetailNotFound => 'No encontramos este movimiento.';
+
+  @override
+  String get movementDetailError =>
+      'No pudimos cargar el movimiento. Inténtalo de nuevo.';
+
+  @override
+  String get movementDetailCounterparty => 'Con';
+
+  @override
+  String get movementDetailReceivedFrom => 'Recibido de';
+
+  @override
+  String get movementDetailDestinationAccount => 'Cuenta destino';
+
+  @override
+  String get movementDetailReason => 'Motivo';
+
+  @override
+  String get movementDetailStatus => 'Estado';
+
+  @override
+  String get movementDetailBalanceAfter => 'Saldo posterior';
+
+  @override
+  String get movementStatusConfirmed => 'Confirmada';
+
+  @override
+  String get movementStatusPending => 'Pendiente';
+
+  @override
+  String get movementStatusReverted => 'Revertida';
+
+  @override
+  String get movementHeadlineSent => 'Enviaste';
+
+  @override
+  String get movementHeadlineReceived => 'Recibiste';
+
+  @override
+  String get movementHeadlineTopUp => 'Recarga de saldo';
+
+  @override
+  String get movementHeadlineOther => 'Movimiento';
+
+  @override
+  String get movementShare => 'Compartir constancia';
+
+  @override
+  String get movementShareHeader => 'Constancia de CuyCash';
+
+  @override
   String get topUpTitle => 'Recargar saldo';
 
   @override

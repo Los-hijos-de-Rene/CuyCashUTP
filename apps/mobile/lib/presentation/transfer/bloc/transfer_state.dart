@@ -17,9 +17,11 @@ abstract class TransferState with _$TransferState {
     Money? monto,
     String? motivo,
 
-    /// Reservado para "guardar como frecuente" (`feature/beneficiary`, tarea
-    /// 16). Sin UI hasta entonces: un interruptor que no hace nada mentiría.
+    /// "Guardar como frecuente": se aplica DESPUÉS de un envío exitoso.
     @Default(false) bool guardarFrecuente,
+
+    /// El envío salió bien pero guardar al destinatario como frecuente falló.
+    @Default(false) bool frecuenteNoGuardado,
 
     /// Identifica la INTENCIÓN de enviar este monto a este destinatario. Se
     /// fija al abrir la confirmación y solo se borra si cambia la intención;

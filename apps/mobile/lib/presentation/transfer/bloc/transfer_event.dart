@@ -24,4 +24,8 @@ sealed class TransferEvent with _$TransferEvent {
   /// El usuario confirmó con su PIN. Se ignora si ya hay un envío en curso.
   const factory TransferEvent.submitted({required String pin}) =
       TransferSubmitted;
+
+  /// El usuario encendió o apagó "guardar como frecuente".
+  const factory TransferEvent.saveFrequentToggled(bool value) =
+      TransferSaveFrequentToggled;
 }

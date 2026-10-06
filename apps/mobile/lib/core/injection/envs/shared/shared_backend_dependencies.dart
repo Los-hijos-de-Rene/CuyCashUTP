@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../feature/account/infrastructure/http_account_repository.dart';
 import '../../../../feature/auth/infrastructure/http_auth_repository.dart';
+import '../../../../feature/beneficiary/infrastructure/http_beneficiary_repository.dart';
 import '../../../../feature/device/domain/device_store.dart';
 import '../../../../feature/device/infrastructure/secure_device_store.dart';
 import '../../../../feature/kyc/domain/kyc_repository.dart';
@@ -61,6 +62,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     accountRepository: HttpAccountRepository(dio: dio),
     transferRepository: HttpTransferRepository(dio: dio),
     pendingTransferStore: const SharedPrefsPendingTransferStore(),
+    beneficiaryRepository: HttpBeneficiaryRepository(dio: dio),
   );
 }
 

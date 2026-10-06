@@ -166,6 +166,26 @@ class _AmountScreenState extends State<AmountScreen> {
                 controller: _motivo,
                 maxLength: TransferLimits.motivoMaxLength,
               ),
+              if (context.read<TransferBloc>().puedeGuardarFrecuentes) ...[
+                const SizedBox(height: CuyCashSpacing.stackMd),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    l10n.transferSaveFrequentTitle,
+                    style: CuyCashTypography.bodyLg,
+                  ),
+                  subtitle: Text(
+                    l10n.transferSaveFrequentHint,
+                    style: CuyCashTypography.bodyMd.copyWith(
+                      color: CuyCashColors.secondaryText,
+                    ),
+                  ),
+                  value: state.guardarFrecuente,
+                  onChanged: (value) => context.read<TransferBloc>().add(
+                    TransferEvent.saveFrequentToggled(value),
+                  ),
+                ),
+              ],
               const SizedBox(height: CuyCashSpacing.stackLg),
               PrimaryButton(
                 label: l10n.transferContinue,

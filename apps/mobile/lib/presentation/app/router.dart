@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/injection/app_dependencies.dart';
 import '../../core/injection/modules/account_module.dart';
+import '../../core/injection/modules/beneficiary_module.dart';
 import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
@@ -19,6 +20,8 @@ import '../auth/bloc/auth_bloc.dart';
 import '../home/bloc/account_bloc.dart';
 import '../home/home_screen.dart';
 import '../home/refresh_after_send.dart';
+import '../movement/bloc/movement_detail_bloc.dart';
+import '../movement/movement_detail_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../otp/bloc/otp_bloc.dart';
 import '../otp/flujo_cancelado_screen.dart';
@@ -45,6 +48,7 @@ import '../topup/bloc/topup_bloc.dart';
 import '../topup/topup_screen.dart';
 import '../transfer/receipt_screen.dart';
 import '../transfer/recipient_screen.dart';
+import '../transfer/widgets/frequent_section.dart';
 import '../auth/login_screen.dart';
 import 'app_redirect.dart';
 import 'app_routes.dart';
@@ -231,6 +235,7 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           create: (_) => TransferBloc(
             TransferModule.create(deps),
             pending: TransferModule.pending(deps),
+            beneficiaries: BeneficiaryModule.create(deps),
             // Las claves pendientes son de ESTE usuario y de nadie más.
             userId: switch (authBloc.state) {
               AuthAuthenticated(:final session) => session.userId,
@@ -246,7 +251,13 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
               // La cuenta viaja como `extra` desde el inicio. Sin ella (deep
               // link) no hay desde dónde enviar.
               if (state.extra case final Account cuenta) {
-                return RecipientScreen(cuenta: cuenta);
+                return RecipientScreen(
+                  cuenta: cuenta,
+                  frecuentes: (onSelected) => FrequentSection(
+                    actions: BeneficiaryModule.create(deps),
+                    onSelected: onSelected,
+                  ),
+                );
               }
               return const SplashScreen();
             },
@@ -266,6 +277,17 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             builder: (context, state) => const ReceiptScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.movimiento,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return BlocProvider(
+            create: (_) => MovementDetailBloc(AccountModule.create(deps))
+              ..add(MovementDetailEvent.opened(id)),
+            child: MovementDetailScreen(transactionId: id),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.recargar,

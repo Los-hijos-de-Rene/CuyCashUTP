@@ -1,9 +1,11 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../feature/account/domain/movement.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../app/app_routes.dart';
 import '../movement_amount_label.dart';
 
 /// Lista de últimos movimientos del libro mayor.
@@ -73,67 +75,70 @@ class _MovementRow extends StatelessWidget {
       MovementKind.transferencia ||
       MovementKind.otro => isIncome ? Icons.south_west : Icons.north_east,
     };
-    return Padding(
-      padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isIncome
-                  ? CuyCashColors.successSoft
-                  : CuyCashColors.surfaceContainerHigh,
+    return InkWell(
+      onTap: () => context.push(AppRoutes.movimientoDe(movement.transactionId)),
+      child: Padding(
+        padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isIncome
+                    ? CuyCashColors.successSoft
+                    : CuyCashColors.surfaceContainerHigh,
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isIncome
+                    ? CuyCashColors.success
+                    : CuyCashColors.secondaryText,
+              ),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isIncome
-                  ? CuyCashColors.success
-                  : CuyCashColors.secondaryText,
+            const SizedBox(width: CuyCashSpacing.stackSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    movement.contraparte ?? l10n.homeMovementFallbackTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: CuyCashTypography.bodyMd.copyWith(
+                      color: CuyCashColors.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(when, style: CuyCashTypography.labelSm),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: CuyCashSpacing.stackSm + 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: CuyCashSpacing.stackSm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  movement.contraparte ?? l10n.homeMovementFallbackTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  movementAmountLabel(movement),
                   style: CuyCashTypography.bodyMd.copyWith(
-                    color: CuyCashColors.onSurface,
-                    fontWeight: FontWeight.w500,
+                    color: isIncome
+                        ? CuyCashColors.success
+                        : CuyCashColors.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                Text(when, style: CuyCashTypography.labelSm),
+                Text(
+                  l10n.homeMovementCompleted,
+                  style: CuyCashTypography.labelSm,
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: CuyCashSpacing.stackSm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                movementAmountLabel(movement),
-                style: CuyCashTypography.bodyMd.copyWith(
-                  color: isIncome
-                      ? CuyCashColors.success
-                      : CuyCashColors.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              Text(
-                l10n.homeMovementCompleted,
-                style: CuyCashTypography.labelSm,
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

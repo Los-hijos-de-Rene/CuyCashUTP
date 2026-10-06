@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../feature/account/infrastructure/memory_account_repository.dart';
 import '../../../feature/account/infrastructure/memory_ledger.dart';
 import '../../../feature/auth/infrastructure/memory_auth_repository.dart';
+import '../../../feature/beneficiary/infrastructure/memory_beneficiary_repository.dart';
 import '../../../feature/device/infrastructure/secure_device_store.dart';
 import '../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../feature/lockout/domain/lockout_policy.dart';
@@ -36,6 +37,7 @@ Future<AppDependencies> buildMockDependencies() async {
       ledger: ledger,
     ),
     pendingTransferStore: MemoryPendingTransferStore(),
+    beneficiaryRepository: MemoryBeneficiaryRepository(clock: DateTime.now),
     // Bloqueo de 10/20/30 s para poder ver la pantalla completa al probar.
     lockoutPolicy: const LockoutPolicy.mock(),
   );

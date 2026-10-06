@@ -1924,6 +1924,144 @@ abstract class AppLocalizations {
   /// **'Volver al inicio'**
   String get transferReceiptHome;
 
+  /// No description provided for @transferFrequentsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Frecuentes'**
+  String get transferFrequentsTitle;
+
+  /// No description provided for @transferFrequentSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar a {name}'**
+  String transferFrequentSemantics(String name);
+
+  /// No description provided for @transferSaveFrequentTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar como frecuente'**
+  String get transferSaveFrequentTitle;
+
+  /// No description provided for @transferSaveFrequentHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si el envío sale bien, podrás elegirlo la próxima vez sin escribir el DNI.'**
+  String get transferSaveFrequentHint;
+
+  /// No description provided for @transferFrequentNotSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'El envío se realizó, pero no pudimos guardar a esta persona como frecuente.'**
+  String get transferFrequentNotSaved;
+
+  /// No description provided for @movementDetailTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalle del movimiento'**
+  String get movementDetailTitle;
+
+  /// No description provided for @movementDetailNotFound.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontramos este movimiento.'**
+  String get movementDetailNotFound;
+
+  /// No description provided for @movementDetailError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar el movimiento. Inténtalo de nuevo.'**
+  String get movementDetailError;
+
+  /// No description provided for @movementDetailCounterparty.
+  ///
+  /// In es, this message translates to:
+  /// **'Con'**
+  String get movementDetailCounterparty;
+
+  /// No description provided for @movementDetailReceivedFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Recibido de'**
+  String get movementDetailReceivedFrom;
+
+  /// No description provided for @movementDetailDestinationAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta destino'**
+  String get movementDetailDestinationAccount;
+
+  /// No description provided for @movementDetailReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo'**
+  String get movementDetailReason;
+
+  /// No description provided for @movementDetailStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get movementDetailStatus;
+
+  /// No description provided for @movementDetailBalanceAfter.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo posterior'**
+  String get movementDetailBalanceAfter;
+
+  /// No description provided for @movementStatusConfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmada'**
+  String get movementStatusConfirmed;
+
+  /// No description provided for @movementStatusPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendiente'**
+  String get movementStatusPending;
+
+  /// No description provided for @movementStatusReverted.
+  ///
+  /// In es, this message translates to:
+  /// **'Revertida'**
+  String get movementStatusReverted;
+
+  /// No description provided for @movementHeadlineSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviaste'**
+  String get movementHeadlineSent;
+
+  /// No description provided for @movementHeadlineReceived.
+  ///
+  /// In es, this message translates to:
+  /// **'Recibiste'**
+  String get movementHeadlineReceived;
+
+  /// No description provided for @movementHeadlineTopUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Recarga de saldo'**
+  String get movementHeadlineTopUp;
+
+  /// No description provided for @movementHeadlineOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimiento'**
+  String get movementHeadlineOther;
+
+  /// No description provided for @movementShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir constancia'**
+  String get movementShare;
+
+  /// No description provided for @movementShareHeader.
+  ///
+  /// In es, this message translates to:
+  /// **'Constancia de CuyCash'**
+  String get movementShareHeader;
+
   /// No description provided for @topUpTitle.
   ///
   /// In es, this message translates to:
