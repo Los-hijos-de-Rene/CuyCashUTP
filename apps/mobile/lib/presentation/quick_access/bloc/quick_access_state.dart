@@ -10,7 +10,14 @@ abstract class QuickAccessState with _$QuickAccessState {
     @Default(QuickAccessStatus.idle) QuickAccessStatus status,
     @Default(LockoutPolicy.maxAttempts) int attemptsLeft,
     @Default(false) bool lastWrong,
+
+    /// Hay credencial guardada y el sistema puede pedir la huella.
+    @Default(false) bool biometricAvailable,
+
+    /// El servidor rechazó la credencial: se borró y hay que entrar con PIN.
+    @Default(false) bool biometricRevoked,
     DateTime? lockedUntil,
+
     /// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
     Duration? nextLockout,
   }) = _QuickAccessState;

@@ -455,6 +455,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get quickAccessPrompt => 'Ingresa tu PIN de seguridad';
 
   @override
+  String get quickAccessBiometricReason =>
+      'Confirma que eres tú para entrar a CuyCash';
+
+  @override
+  String get quickAccessBiometricRevoked =>
+      'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.';
+
+  @override
   String notYou(String name) {
     return '¿No eres $name?';
   }

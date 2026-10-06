@@ -898,6 +898,18 @@ abstract class AppLocalizations {
   /// **'Ingresa tu PIN de seguridad'**
   String get quickAccessPrompt;
 
+  /// No description provided for @quickAccessBiometricReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que eres tú para entrar a CuyCash'**
+  String get quickAccessBiometricReason;
+
+  /// No description provided for @quickAccessBiometricRevoked.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.'**
+  String get quickAccessBiometricRevoked;
+
   /// No description provided for @notYou.
   ///
   /// In es, this message translates to:

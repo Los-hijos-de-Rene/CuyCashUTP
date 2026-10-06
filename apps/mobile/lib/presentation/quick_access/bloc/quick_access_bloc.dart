@@ -4,10 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../feature/auth/application/auth_actions.dart';
-import '../../../feature/auth/domain/auth_session.dart';
 import '../../../feature/device/application/device_actions.dart';
 import '../../../feature/lockout/domain/lockout_policy.dart';
 import '../../../feature/device/domain/remembered_user.dart';
+import '../../../feature/security/application/biometric_sign_in_use_case.dart';
 
 part 'quick_access_bloc.freezed.dart';
 part 'quick_access_event.dart';
@@ -21,24 +21,32 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
   QuickAccessBloc({
     required AuthActions auth,
     required DeviceActions device,
+    required BiometricSignInUseCase biometric,
     required RememberedUser user,
     DateTime Function()? clock,
-  })  : _auth = auth,
-        _device = device,
-        _now = clock ?? DateTime.now,
-        super(QuickAccessState(user: user)) {
+  }) : _auth = auth,
+       _biometric = biometric,
+       _device = device,
+       _now = clock ?? DateTime.now,
+       super(QuickAccessState(user: user)) {
     on<QuickAccessDigitPressed>(_onDigit);
     on<QuickAccessBackspace>((event, emit) {
       if (state.pin.isNotEmpty && state.status == QuickAccessStatus.idle) {
-        emit(state.copyWith(
-            pin: state.pin.substring(0, state.pin.length - 1), lastWrong: false));
+        emit(
+          state.copyWith(
+            pin: state.pin.substring(0, state.pin.length - 1),
+            lastWrong: false,
+          ),
+        );
       }
     });
+    on<QuickAccessStarted>(_onStarted);
     on<QuickAccessBiometric>(_onBiometric);
   }
 
   final AuthActions _auth;
   final DeviceActions _device;
+  final BiometricSignInUseCase _biometric;
   final DateTime Function() _now;
 
   Future<void> _onDigit(
@@ -58,18 +66,23 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
       (failure) async {
         final lockout = await _device.registerFailedAttempt(_now());
         if (lockout.isLocked(_now())) {
-          emit(state.copyWith(
+          emit(
+            state.copyWith(
               status: QuickAccessStatus.idle,
               pin: '',
-              lockedUntil: lockout.lockedUntil));
+              lockedUntil: lockout.lockedUntil,
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            status: QuickAccessStatus.idle,
-            pin: '',
-            lastWrong: true,
-            attemptsLeft: LockoutPolicy.maxAttempts - lockout.failedAttempts,
-            nextLockout: _device.policy.nextLockoutFor(lockout.level),
-          ));
+          emit(
+            state.copyWith(
+              status: QuickAccessStatus.idle,
+              pin: '',
+              lastWrong: true,
+              attemptsLeft: LockoutPolicy.maxAttempts - lockout.failedAttempts,
+              nextLockout: _device.policy.nextLockoutFor(lockout.level),
+            ),
+          );
         }
       },
       (_) async {
@@ -78,17 +91,53 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
     );
   }
 
+  Future<void> _onStarted(
+    QuickAccessStarted event,
+    Emitter<QuickAccessState> emit,
+  ) async {
+    emit(state.copyWith(biometricAvailable: await _biometric.canUse()));
+  }
+
   Future<void> _onBiometric(
     QuickAccessBiometric event,
     Emitter<QuickAccessState> emit,
   ) async {
-    // Biometría simulada: éxito inmediato → activa la sesión del recordado.
-    await _device.resetLockout();
-    await _auth.activate(AuthSession(
-      userId: 'mem-${state.user.dni.hashCode}',
-      identifier: state.user.dni,
-      alias: state.user.alias,
-      fullName: state.user.fullName,
-    ));
+    if (state.status == QuickAccessStatus.verifying ||
+        !state.biometricAvailable) {
+      return;
+    }
+    emit(state.copyWith(status: QuickAccessStatus.verifying, lastWrong: false));
+    final resultado = await _biometric(
+      dni: state.user.dni,
+      reason: event.reason,
+    );
+    switch (resultado) {
+      case BiometricSignInSuccess():
+        // La sesión llega por el stream → home.
+        await _device.resetLockout();
+        emit(state.copyWith(status: QuickAccessStatus.idle));
+      case BiometricSignInCancelled() || BiometricSignInFailed():
+        emit(state.copyWith(status: QuickAccessStatus.idle));
+      case BiometricSignInUnavailable():
+        emit(
+          state.copyWith(
+            status: QuickAccessStatus.idle,
+            biometricAvailable: false,
+          ),
+        );
+      case BiometricSignInRevoked():
+        emit(
+          state.copyWith(
+            status: QuickAccessStatus.idle,
+            biometricAvailable: false,
+            biometricRevoked: true,
+          ),
+        );
+      case BiometricSignInLocked(:final until):
+        // La pantalla ya navega a /bloqueado al ver lockedUntil.
+        emit(
+          state.copyWith(status: QuickAccessStatus.idle, lockedUntil: until),
+        );
+    }
   }
 }

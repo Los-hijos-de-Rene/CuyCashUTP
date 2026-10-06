@@ -205,8 +205,9 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
                   create: (_) => QuickAccessBloc(
                     auth: AuthActions(deps.authRepository),
                     device: device,
+                    biometric: SecurityModule.biometricSignIn(deps),
                     user: user,
-                  ),
+                  )..add(const QuickAccessEvent.started()),
                   child: const QuickAccessScreen(),
                 ),
               );

@@ -112,6 +112,16 @@ class QuickAccessScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                  if (state.biometricRevoked)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: InfoStrip(
+                        icon: Icons.fingerprint,
+                        text: l10n.quickAccessBiometricRevoked,
+                      ),
+                    ),
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -122,8 +132,13 @@ class QuickAccessScreen extends StatelessWidget {
                           bloc.add(QuickAccessEvent.digitPressed(d)),
                       onBackspace: () =>
                           bloc.add(const QuickAccessEvent.backspace()),
-                      onBiometric: () =>
-                          bloc.add(const QuickAccessEvent.biometric()),
+                      onBiometric: state.biometricAvailable
+                          ? () => bloc.add(
+                              QuickAccessEvent.biometric(
+                                reason: l10n.quickAccessBiometricReason,
+                              ),
+                            )
+                          : null,
                       enabled: state.status != QuickAccessStatus.verifying,
                     ),
                   ),

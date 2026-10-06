@@ -145,6 +145,8 @@
   "quickAccessGreeting": "Hola, {name}",
   "@quickAccessGreeting": { "placeholders": { "name": { "type": "String" } } },
   "quickAccessPrompt": "Ingresa tu PIN de seguridad",
+  "quickAccessBiometricReason": "Confirma que eres tú para entrar a CuyCash",
+  "quickAccessBiometricRevoked": "Tu acceso con huella ya no es válido. Entra con tu PIN y vuelve a activarlo desde tu perfil.",
   "notYou": "¿No eres {name}?",
   "@notYou": { "placeholders": { "name": { "type": "String" } } },
   "forgotPinAction": "Olvidé mi PIN",
