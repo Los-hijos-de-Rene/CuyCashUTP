@@ -2421,6 +2421,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Si no reconoces alguno, desvincúlalo y cambia tu PIN.'**
   String get devicesHelp;
+
+  /// No description provided for @biometricSettingsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso biométrico'**
+  String get biometricSettingsTitle;
+
+  /// No description provided for @biometricSettingsSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Entrar con huella o rostro'**
+  String get biometricSettingsSwitch;
+
+  /// No description provided for @biometricSettingsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Entra a CuyCash sin escribir tu PIN. Tu PIN sigue funcionando siempre.'**
+  String get biometricSettingsBody;
+
+  /// No description provided for @biometricSettingsUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema y vuelve aquí.'**
+  String get biometricSettingsUnavailable;
+
+  /// No description provided for @biometricSettingsPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get biometricSettingsPinHeadline;
+
+  /// No description provided for @biometricSettingsPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Después te pediremos tu huella o tu rostro.'**
+  String get biometricSettingsPinSubtitle;
+
+  /// No description provided for @biometricSettingsReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que eres tú para activar el acceso biométrico'**
+  String get biometricSettingsReason;
+
+  /// No description provided for @biometricSettingsWrong.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {count} intentos.}}'**
+  String biometricSettingsWrong(int count);
+
+  /// No description provided for @biometricSettingsEnabled.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, ya puedes entrar con tu huella o rostro.'**
+  String get biometricSettingsEnabled;
 }
 
 class _AppLocalizationsDelegate

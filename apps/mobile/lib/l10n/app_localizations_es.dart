@@ -1380,4 +1380,44 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get devicesHelp =>
       'Si no reconoces alguno, desvincúlalo y cambia tu PIN.';
+
+  @override
+  String get biometricSettingsTitle => 'Acceso biométrico';
+
+  @override
+  String get biometricSettingsSwitch => 'Entrar con huella o rostro';
+
+  @override
+  String get biometricSettingsBody =>
+      'Entra a CuyCash sin escribir tu PIN. Tu PIN sigue funcionando siempre.';
+
+  @override
+  String get biometricSettingsUnavailable =>
+      'Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema y vuelve aquí.';
+
+  @override
+  String get biometricSettingsPinHeadline => 'Confirma con tu PIN';
+
+  @override
+  String get biometricSettingsPinSubtitle =>
+      'Después te pediremos tu huella o tu rostro.';
+
+  @override
+  String get biometricSettingsReason =>
+      'Confirma que eres tú para activar el acceso biométrico';
+
+  @override
+  String biometricSettingsWrong(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN incorrecto. Te quedan $count intentos.',
+      one: 'PIN incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get biometricSettingsEnabled =>
+      'Listo, ya puedes entrar con tu huella o rostro.';
 }

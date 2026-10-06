@@ -427,5 +427,15 @@
   "devicesUnlinked": "Listo, ese dispositivo ya no tiene acceso.",
   "devicesCannotUnlinkCurrent": "Para salir de este teléfono, cierra sesión.",
   "devicesError": "No pudimos cargar tus dispositivos.",
-  "devicesHelp": "Si no reconoces alguno, desvincúlalo y cambia tu PIN."
+  "devicesHelp": "Si no reconoces alguno, desvincúlalo y cambia tu PIN.",
+  "biometricSettingsTitle": "Acceso biométrico",
+  "biometricSettingsSwitch": "Entrar con huella o rostro",
+  "biometricSettingsBody": "Entra a CuyCash sin escribir tu PIN. Tu PIN sigue funcionando siempre.",
+  "biometricSettingsUnavailable": "Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema y vuelve aquí.",
+  "biometricSettingsPinHeadline": "Confirma con tu PIN",
+  "biometricSettingsPinSubtitle": "Después te pediremos tu huella o tu rostro.",
+  "biometricSettingsReason": "Confirma que eres tú para activar el acceso biométrico",
+  "biometricSettingsWrong": "{count, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {count} intentos.}}",
+  "@biometricSettingsWrong": {"placeholders": {"count": {"type": "int"}}},
+  "biometricSettingsEnabled": "Listo, ya puedes entrar con tu huella o rostro."
 }

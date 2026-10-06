@@ -35,6 +35,8 @@ import '../recover/recovery_handoff.dart';
 import '../recover/recuperar_acceso_screen.dart';
 import '../recover/restablecer_pin_screen.dart';
 import '../profile/alias/bloc/edit_alias_bloc.dart';
+import '../profile/biometric/bloc/biometric_settings_bloc.dart';
+import '../profile/biometric/biometric_settings_screen.dart';
 import '../profile/change_pin/bloc/change_pin_bloc.dart';
 import '../profile/change_pin/change_pin_screen.dart';
 import '../profile/alias/edit_alias_screen.dart';
@@ -341,6 +343,20 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
         builder: (context, state) => BlocProvider(
           create: (_) => ChangePinBloc(SecurityModule.create(deps)),
           child: ChangePinScreen(
+            onLocked: (until) =>
+                closeOnLockout(GoRouter.of(context), authBloc, until),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilBiometria,
+        builder: (context, state) => BlocProvider(
+          create: (_) => BiometricSettingsBloc(
+            enable: SecurityModule.enableBiometric(deps),
+            disable: SecurityModule.disableBiometric(deps),
+            device: DeviceModule.create(deps),
+          )..add(const BiometricSettingsEvent.started()),
+          child: BiometricSettingsScreen(
             onLocked: (until) =>
                 closeOnLockout(GoRouter.of(context), authBloc, until),
           ),

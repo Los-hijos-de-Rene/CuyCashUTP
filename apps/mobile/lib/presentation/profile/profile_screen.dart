@@ -120,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfileOptionTile(
                     icon: Icons.fingerprint,
                     label: l10n.profileItemBiometrics,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilBiometria),
                   ),
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
