@@ -9,18 +9,17 @@ import 'package:flutter_test/flutter_test.dart';
 /// Premisas del escenario que [construir] debe entregar, SIEMPRE con estado
 /// nuevo en cada llamada (cada test gasta presupuesto de consultas):
 ///
-/// - Titular [dniPropio].
-/// - Los únicos clientes son [dniConocido] y [dniConocido2], con nombre
-///   enmascarado.
+/// - [cuentaConocida] y [cuentaConocida2] son dos cuentas de la MISMA persona
+///   [dniConocido], con nombre enmascarado. Ninguna otra cuenta existe.
 /// - Presupuesto de [consultasMaximas] consultas de destinatario, que
 ///   `guardar` consume (también cuando solo actualiza el apodo).
 /// - Lista vacía al empezar.
 void probarContratoDeBeneficiarios(
   String nombre,
   BeneficiaryRepository Function() construir, {
-  required String dniPropio,
   required String dniConocido,
-  required String dniConocido2,
+  required String cuentaConocida,
+  required String cuentaConocida2,
   required int consultasMaximas,
 }) {
   BeneficiaryFailure falloDe(Result<BeneficiaryFailure, Object?> r) {
@@ -37,52 +36,62 @@ void probarContratoDeBeneficiarios(
       expect(valorDe(await construir().listar()), isEmpty);
     });
 
-    test('guardar crea el frecuente con su apodo y su nombre enmascarado',
-        () async {
+    test('guardar crea el frecuente con su cuenta', () async {
       final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'Carlos'));
+      valorDe(
+        await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Carlos'),
+      );
 
       final lista = valorDe(await repo.listar());
       expect(lista, hasLength(1));
-      expect(lista.single.id, isNotEmpty);
-      expect(lista.single.dni, dniConocido);
-      expect(lista.single.apodo, 'Carlos');
-      expect(lista.single.nombreEnmascarado, contains('***'));
+      final b = lista.single;
+      expect(b.id, isNotEmpty);
+      expect(b.dni, dniConocido);
+      expect(b.apodo, 'Carlos');
+      expect(b.nombreEnmascarado, contains('***'));
+      expect(b.cuenta?.cuentaId, cuentaConocida);
+      expect(b.cuenta?.numeroMasked, startsWith('••••'));
+    });
+
+    test('dos cuentas de la misma persona son dos frecuentes', () async {
+      final repo = construir();
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'A'));
+      valorDe(
+        await repo.guardar(cuentaDestinoId: cuentaConocida2, apodo: 'B'),
+      );
+      expect(valorDe(await repo.listar()).map((b) => b.apodo), ['B', 'A']);
+    });
+
+    test('guardar dos veces la misma cuenta actualiza el apodo', () async {
+      final repo = construir();
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'A'));
+      final id = valorDe(await repo.listar()).single.id;
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'B'));
+
+      final lista = valorDe(await repo.listar());
+      expect(lista.single.apodo, 'B');
+      expect(lista.single.id, id, reason: 'el upsert conserva la fila');
+    });
+
+    test('una cuenta inexistente es recipientNotFound', () async {
+      expect(
+        falloDe(
+          await construir().guardar(cuentaDestinoId: 'no-existe', apodo: 'X'),
+        ),
+        isA<BeneficiaryRecipientNotFound>(),
+      );
     });
 
     test('el apodo que llega es el que se guarda, tal cual', () async {
       final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'Mamá Ñañita'));
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Mamá Ñañita'));
 
       expect(valorDe(await repo.listar()).single.apodo, 'Mamá Ñañita');
     });
 
-    test('guardar dos veces el mismo DNI actualiza el apodo', () async {
-      final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'Carlos'));
-      final id = valorDe(await repo.listar()).single.id;
-      valorDe(await repo.guardar(dniConocido, 'Carlitos'));
-
-      final suyos = valorDe(await repo.listar())
-          .where((b) => b.dni == dniConocido)
-          .toList();
-      expect(suyos, hasLength(1));
-      expect(suyos.single.apodo, 'Carlitos');
-      expect(suyos.single.id, id, reason: 'el upsert conserva la fila');
-    });
-
-    test('el más reciente va primero', () async {
-      final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'Primero'));
-      valorDe(await repo.guardar(dniConocido2, 'Segundo'));
-
-      final lista = valorDe(await repo.listar());
-      expect(lista.map((b) => b.apodo), ['Segundo', 'Primero']);
-    });
-
     test('eliminar quita el frecuente', () async {
       final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'Carlos'));
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Carlos'));
       final Beneficiary b = valorDe(await repo.listar()).single;
 
       valorDe(await repo.eliminar(b.id));
@@ -95,29 +104,12 @@ void probarContratoDeBeneficiarios(
       r.match((f) => fail('No debía fallar: $f'), (_) {});
     });
 
-    test('guardar un DNI que no está en CuyCash devuelve recipientNotFound',
-        () async {
-      final r = await construir().guardar('99999999', 'Fantasma');
-      expect(falloDe(r), isA<BeneficiaryRecipientNotFound>());
-    });
-
-    test('un DNI no guardado por no existir no ensucia la lista', () async {
-      final repo = construir();
-      await repo.guardar('99999999', 'Fantasma');
-      expect(valorDe(await repo.listar()), isEmpty);
-    });
-
-    test('guardarse a uno mismo devuelve selfTransfer', () async {
-      final r = await construir().guardar(dniPropio, 'Yo');
-      expect(falloDe(r), isA<BeneficiarySelfTransfer>());
-    });
-
     test('un apodo de 40 caracteres entra; uno de 80 es un fallo, no una '
         'excepción', () async {
       final repo = construir();
-      valorDe(await repo.guardar(dniConocido, 'x' * 40));
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'x' * 40));
 
-      final r = await repo.guardar(dniConocido, 'x' * 80);
+      final r = await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'x' * 80);
       expect(falloDe(r), isA<BeneficiaryUnexpectedFailure>());
       expect(valorDe(await repo.listar()).single.apodo, 'x' * 40);
     });
@@ -126,10 +118,10 @@ void probarContratoDeBeneficiarios(
         'devuelve rateLimited con espera', () async {
       final repo = construir();
       for (var i = 0; i < consultasMaximas; i++) {
-        valorDe(await repo.guardar(dniConocido, 'Carlos'));
+        valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Carlos'));
       }
 
-      final f = falloDe(await repo.guardar(dniConocido, 'Carlos'));
+      final f = falloDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Carlos'));
       expect(f, isA<BeneficiaryRateLimited>());
       expect((f as BeneficiaryRateLimited).reintentarEn, isNotNull);
     });
@@ -140,7 +132,7 @@ void probarContratoDeBeneficiarios(
         valorDe(await repo.listar());
         valorDe(await repo.eliminar('x'));
       }
-      valorDe(await repo.guardar(dniConocido, 'Carlos'));
+      valorDe(await repo.guardar(cuentaDestinoId: cuentaConocida, apodo: 'Carlos'));
     });
   });
 }

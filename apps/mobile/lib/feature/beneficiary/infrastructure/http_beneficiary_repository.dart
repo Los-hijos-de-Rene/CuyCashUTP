@@ -2,6 +2,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../../transfer/domain/recipient_account.dart';
 import '../domain/beneficiary.dart';
 import '../domain/beneficiary_failure.dart';
 import '../domain/beneficiary_repository.dart';
@@ -33,16 +34,23 @@ class HttpBeneficiaryRepository implements BeneficiaryRepository {
               dni: b['dni'] as String,
               apodo: b['apodo'] as String,
               nombreEnmascarado: b['nombre_enmascarado'] as String?,
+              cuenta: switch (b['cuenta']) {
+                final Map<String, dynamic> c => recipientAccountFromJson(c),
+                _ => null,
+              },
             ),
         ]);
       });
 
   @override
-  FutureResult<BeneficiaryFailure, Unit> guardar(String dni, String apodo) =>
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  }) =>
       _guard(() async {
         final response = await _dio.post<dynamic>(
           '/v1/beneficiaries',
-          data: {'dni': dni, 'apodo': apodo},
+          data: {'cuenta_destino_id': cuentaDestinoId, 'apodo': apodo},
         );
         if (_failureFor(response) case final f?) {
           return left(GlobalFailure.server(f));
@@ -77,7 +85,6 @@ class HttpBeneficiaryRepository implements BeneficiaryRepository {
     final body = data is Map ? data : const <Object?, Object?>{};
     return switch (body['code']) {
       'RECIPIENT_NOT_FOUND' => const BeneficiaryFailure.recipientNotFound(),
-      'SELF_TRANSFER' => const BeneficiaryFailure.selfTransfer(),
       // 429 con `retry_after_seconds` en la raíz (opcional para el failure).
       'RATE_LIMITED' => BeneficiaryFailure.rateLimited(
         switch (body['retry_after_seconds']) {

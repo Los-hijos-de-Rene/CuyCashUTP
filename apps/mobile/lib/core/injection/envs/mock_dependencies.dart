@@ -43,7 +43,10 @@ Future<AppDependencies> buildMockDependencies() async {
       ledger: ledger,
     ),
     pendingTransferStore: MemoryPendingTransferStore(),
-    beneficiaryRepository: MemoryBeneficiaryRepository(clock: DateTime.now),
+    beneficiaryRepository: MemoryBeneficiaryRepository(
+      clock: DateTime.now,
+      ledger: ledger,
+    ),
     profileRepository: MemoryProfileRepository(),
     securityRepository: MemorySecurityRepository(security, clock: DateTime.now),
     biometricGate: MemoryBiometricGate(),
