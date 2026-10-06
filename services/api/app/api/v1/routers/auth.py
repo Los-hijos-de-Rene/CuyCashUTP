@@ -331,3 +331,84 @@ async def change_pin(
     await biometric.revoke(session, user.id, except_device=row.device_id)
     await session.commit()
     return {"revoked_sessions": revocadas}
+
+
+@router.post("/biometric/enroll")
+async def enroll_biometric(
+    payload: EnrollBiometricIn,
+    row: SessionRow = Depends(current_session_row),
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """El secreto se devuelve UNA vez; el servidor solo guarda su hash."""
+    await pin_check.verify(session, user, payload.pin, row)
+    secreto = await biometric.issue(session, user.id, row.device_id)
+    await session.commit()
+    return {"credential": secreto}
+
+
+@router.delete("/biometric/current", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_biometric(
+    row: SessionRow = Depends(current_session_row),
+    session: AsyncSession = Depends(get_session),
+):
+    await biometric.revoke(session, row.user_id, device_id=row.device_id)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _biometria_rechazada() -> ApiError:
+    # UN solo rechazo para todo: credencial inventada, revocada, de otro
+    # teléfono, de otro DNI o DNI inexistente. Distinguirlos delataría cuáles
+    # DNI tienen huella activa.
+    return ApiError(
+        ErrorCode.BIOMETRIC_REVOKED,
+        "Entra con tu PIN.",
+        status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+@router.post("/sessions/biometric")
+async def biometric_session(
+    payload: BiometricSessionIn,
+    x_device_id: str = Header(...),
+    x_device_name: Optional[str] = Header(None),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    No suma intentos al bloqueo: el secreto tiene 256 bits y no se adivina.
+    Pero SÍ respeta un bloqueo vigente: la huella no es un atajo para saltarlo.
+    """
+    for kind, value in (("dni", payload.dni), ("device", x_device_id)):
+        bloqueo = await lockout.locked_until(session, kind, value)
+        if bloqueo is not None:
+            code = ErrorCode.IDENTIFIER_LOCKED if kind == "dni" else ErrorCode.DEVICE_LOCKED
+            raise ApiError(
+                code,
+                "El ingreso está bloqueado por ahora.",
+                status_code=status.HTTP_423_LOCKED,
+                extra={"locked_until": bloqueo.isoformat()},
+            )
+
+    user = (
+        await session.execute(select(User).where(User.dni == payload.dni))
+    ).scalars().first()
+    if user is None or not await biometric.valid_for(
+        session, user.id, x_device_id, payload.credential
+    ):
+        raise _biometria_rechazada()
+
+    vinculado = (
+        await session.execute(
+            select(Device).where(Device.user_id == user.id, Device.device_id == x_device_id)
+        )
+    ).scalars().one()
+    vinculado.last_seen_at = utcnow()
+    devices.touch(vinculado, x_device_name)
+    token, _ = await sessions.open_session(session, user.id, x_device_id)
+    await session.commit()
+    return {
+        "result": "session",
+        "session_token": token,
+        "user": {"id": user.id, "dni": user.dni, "alias": user.alias},
+    }
