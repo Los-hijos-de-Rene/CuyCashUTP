@@ -66,7 +66,13 @@ class _RecipientScreenState extends State<RecipientScreen> {
     final l10n = AppLocalizations.of(context);
     final frecuentes = widget.frecuentes;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.transferRecipientTitle)),
+      appBar: AppBar(
+        // Es la primera página del navegador del ShellRoute del envío: para
+        // ese navegador no hay nada detrás y el AppBar no pondría la flecha.
+        // `context.pop()` de go_router sí cierra el flujo entero.
+        leading: BackButton(onPressed: () => context.pop()),
+        title: Text(l10n.transferRecipientTitle),
+      ),
       body: SafeArea(
         child: BlocBuilder<TransferBloc, TransferState>(
           builder: (context, state) {

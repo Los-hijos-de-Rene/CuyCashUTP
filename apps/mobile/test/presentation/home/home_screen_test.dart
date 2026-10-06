@@ -21,6 +21,7 @@ import 'package:cuycash/presentation/home/home_screen.dart';
 import 'package:cuycash/presentation/home/widgets/movements_card.dart';
 import 'package:cuycash/presentation/home/widgets/quick_actions_row.dart';
 import 'package:cuycash/presentation/home/widgets/balance_card.dart';
+import 'package:cuycash/presentation/home/widgets/home_skeleton.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,7 +91,7 @@ void main() {
     expect(find.text('Datos de demostración'), findsNothing);
   });
 
-  testWidgets('mientras carga muestra el indicador y no el saldo', (
+  testWidgets('mientras carga muestra la silueta y no el saldo', (
     tester,
   ) async {
     final lento = AccountBloc(AccountActions(MemoryAccountRepository()));
@@ -114,7 +115,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(HomeSkeleton), findsOneWidget);
+    expect(find.bySemanticsLabel('Cargando tu cuenta'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(BalanceCard), findsNothing);
   });
 
@@ -165,7 +168,9 @@ void main() {
     expect(find.text('Aún no tienes movimientos'), findsOneWidget);
   });
 
-  testWidgets('QuickActionsRow emite el HomeAction correcto', (tester) async {
+  testWidgets('QuickActionsRow solo muestra las listas y emite su HomeAction', (
+    tester,
+  ) async {
     final emitted = <HomeAction>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -176,28 +181,30 @@ void main() {
       ),
     );
 
-    for (final label in ['Enviar', 'Cobrar', 'Recargar', 'Retirar']) {
+    expect(find.text('Cobrar'), findsNothing);
+    expect(find.text('Retirar'), findsNothing);
+    for (final label in ['Enviar', 'Recargar']) {
       await tester.tap(find.text(label));
     }
 
-    expect(emitted, [
-      HomeAction.send,
-      HomeAction.charge,
-      HomeAction.topUp,
-      HomeAction.withdraw,
-    ]);
+    expect(emitted, [HomeAction.send, HomeAction.topUp]);
   });
 
-  testWidgets('las acciones sin pantalla todavía avisan en vez de callar', (
+  testWidgets('lo que aún no tiene pantalla se oculta en vez de avisar', (
     tester,
   ) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Cobrar'));
-    await tester.pump();
-
-    expect(find.text('Disponible en una próxima versión.'), findsOneWidget);
+    expect(find.text('Cobrar'), findsNothing);
+    expect(find.text('Retirar'), findsNothing);
+    expect(find.text('WasiBot'), findsNothing);
+    expect(find.text('Ver todo'), findsNothing);
+    expect(find.byTooltip('Notificaciones'), findsNothing);
+    // Lo que sí existe sigue ahí.
+    expect(find.text('Enviar'), findsOneWidget);
+    expect(find.text('Recargar'), findsOneWidget);
+    expect(find.text('Últimos movimientos'), findsOneWidget);
   });
 
   Widget wrapWith(AccountBloc b) => RepositoryProvider<DeviceActions>.value(

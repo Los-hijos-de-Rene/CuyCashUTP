@@ -2155,8 +2155,20 @@ abstract class AppLocalizations {
   /// No description provided for @topUpSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Elige el monto y confirma con tu PIN de 6 dígitos.'**
+  /// **'Elige el monto. En el siguiente paso lo confirmas con tu PIN.'**
   String get topUpSubtitle;
+
+  /// No description provided for @topUpConfirmHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu recarga'**
+  String get topUpConfirmHeadline;
+
+  /// No description provided for @topUpConfirmSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu PIN de 6 dígitos para autorizarla.'**
+  String get topUpConfirmSubtitle;
 
   /// No description provided for @topUpAmountOverMax.
   ///

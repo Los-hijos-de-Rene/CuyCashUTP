@@ -11,6 +11,7 @@ import 'bloc/account_bloc.dart';
 import 'home_action.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/home_header.dart';
+import 'widgets/home_skeleton.dart';
 import 'widgets/insight_card.dart';
 import 'widgets/movements_card.dart';
 import 'widgets/quick_actions_row.dart';
@@ -24,11 +25,17 @@ void _showMessage(BuildContext context, String message) {
 void _showComingSoon(BuildContext context) =>
     _showMessage(context, AppLocalizations.of(context).comingSoon);
 
+/// Muestra los ganchos que aún no tienen feature detrás (campana, WasiBot,
+/// "Ver todo"). Apagado: se ocultan en vez de avisar "próximamente". Las
+/// acciones rápidas se rigen por [HomeAction.ready].
+const _showUnfinished = false;
+
 /// Inicio: saldo y movimientos del libro mayor (los trae [AccountBloc]).
 ///
-/// El resto de la pantalla (WasiBot, notificaciones) sigue siendo un gancho sin
-/// feature detrás. Enviar y recargar abren su flujo; cobrar y retirar avisan
-/// "próximamente" hasta que existan sus pantallas.
+/// El resto de la pantalla (WasiBot, notificaciones, "Ver todo") sigue siendo
+/// un gancho sin feature detrás y está oculto ([_showUnfinished]). Enviar y
+/// recargar abren su flujo; cobrar y retirar están ocultos hasta que existan
+/// sus pantallas, y si se muestran avisan "próximamente".
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -55,13 +62,13 @@ class HomeScreen extends StatelessWidget {
         } else {
           // La recarga avisa con `true` si hubo algún intento: el saldo se
           // vuelve a pedir para que el nuevo se vea.
-          context
-              .push<bool>(AppRoutes.recargar, extra: cuenta)
-              .then((huboIntento) {
-                if (huboIntento == true) {
-                  bloc.add(const AccountEvent.refreshed());
-                }
-              });
+          context.push<bool>(AppRoutes.recargar, extra: cuenta).then((
+            huboIntento,
+          ) {
+            if (huboIntento == true) {
+              bloc.add(const AccountEvent.refreshed());
+            }
+          });
         }
       case HomeAction.charge:
       case HomeAction.withdraw:
@@ -104,7 +111,9 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   HomeHeader(
                     user: user,
-                    onNotifications: () => _showComingSoon(context),
+                    onNotifications: _showUnfinished
+                        ? () => _showComingSoon(context)
+                        : null,
                   ),
                   const SizedBox(height: CuyCashSpacing.stackMd),
                   BlocBuilder<AccountBloc, AccountState>(
@@ -130,14 +139,8 @@ class _AccountBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return switch (state.status) {
-      AccountStatus.loading => Padding(
-        padding: const EdgeInsets.symmetric(vertical: CuyCashSpacing.stackLg),
-        child: Center(
-          child: CircularProgressIndicator(semanticsLabel: l10n.homeLoading),
-        ),
-      ),
+      AccountStatus.loading => const HomeSkeleton(),
       AccountStatus.error => _ErrorView(failure: state.failure),
       AccountStatus.ready => _ReadyView(state: state, onAction: onAction),
     };
@@ -169,8 +172,10 @@ class _ReadyView extends StatelessWidget {
           const SizedBox(height: CuyCashSpacing.stackMd),
         ],
         QuickActionsRow(onAction: (a) => onAction(context, a)),
-        const SizedBox(height: CuyCashSpacing.stackMd),
-        InsightCard(onTap: () => _showComingSoon(context)),
+        if (_showUnfinished) ...[
+          const SizedBox(height: CuyCashSpacing.stackMd),
+          InsightCard(onTap: () => _showComingSoon(context)),
+        ],
         const SizedBox(height: CuyCashSpacing.stackLg),
         Row(
           children: [
@@ -180,10 +185,11 @@ class _ReadyView extends StatelessWidget {
                 style: CuyCashTypography.titleMd,
               ),
             ),
-            GhostButton(
-              label: l10n.homeSeeAll,
-              onPressed: () => _showComingSoon(context),
-            ),
+            if (_showUnfinished)
+              GhostButton(
+                label: l10n.homeSeeAll,
+                onPressed: () => _showComingSoon(context),
+              ),
           ],
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
