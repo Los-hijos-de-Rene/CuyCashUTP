@@ -2343,6 +2343,84 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Listo'**
   String get changePinDoneCta;
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivos vinculados'**
+  String get devicesTitle;
+
+  /// No description provided for @devicesThisPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Este teléfono'**
+  String get devicesThisPhone;
+
+  /// No description provided for @devicesUnknownModel.
+  ///
+  /// In es, this message translates to:
+  /// **'Dispositivo sin nombre'**
+  String get devicesUnknownModel;
+
+  /// No description provided for @devicesLinkedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Vinculado el {date}'**
+  String devicesLinkedOn(String date);
+
+  /// No description provided for @devicesLastUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Último uso: {date}'**
+  String devicesLastUse(String date);
+
+  /// No description provided for @devicesBiometric.
+  ///
+  /// In es, this message translates to:
+  /// **'Con huella activa'**
+  String get devicesBiometric;
+
+  /// No description provided for @devicesUnlink.
+  ///
+  /// In es, this message translates to:
+  /// **'Desvincular'**
+  String get devicesUnlink;
+
+  /// No description provided for @devicesUnlinkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Desvincular este dispositivo?'**
+  String get devicesUnlinkTitle;
+
+  /// No description provided for @devicesUnlinkBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerraremos su sesión y, para volver a entrar desde ahí, pediremos un código a tu correo.'**
+  String get devicesUnlinkBody;
+
+  /// No description provided for @devicesUnlinked.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, ese dispositivo ya no tiene acceso.'**
+  String get devicesUnlinked;
+
+  /// No description provided for @devicesCannotUnlinkCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'Para salir de este teléfono, cierra sesión.'**
+  String get devicesCannotUnlinkCurrent;
+
+  /// No description provided for @devicesError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus dispositivos.'**
+  String get devicesError;
+
+  /// No description provided for @devicesHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no reconoces alguno, desvincúlalo y cambia tu PIN.'**
+  String get devicesHelp;
 }
 
 class _AppLocalizationsDelegate

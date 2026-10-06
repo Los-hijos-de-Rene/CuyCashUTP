@@ -1334,4 +1334,50 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get changePinDoneCta => 'Listo';
+
+  @override
+  String get devicesTitle => 'Dispositivos vinculados';
+
+  @override
+  String get devicesThisPhone => 'Este teléfono';
+
+  @override
+  String get devicesUnknownModel => 'Dispositivo sin nombre';
+
+  @override
+  String devicesLinkedOn(String date) {
+    return 'Vinculado el $date';
+  }
+
+  @override
+  String devicesLastUse(String date) {
+    return 'Último uso: $date';
+  }
+
+  @override
+  String get devicesBiometric => 'Con huella activa';
+
+  @override
+  String get devicesUnlink => 'Desvincular';
+
+  @override
+  String get devicesUnlinkTitle => '¿Desvincular este dispositivo?';
+
+  @override
+  String get devicesUnlinkBody =>
+      'Cerraremos su sesión y, para volver a entrar desde ahí, pediremos un código a tu correo.';
+
+  @override
+  String get devicesUnlinked => 'Listo, ese dispositivo ya no tiene acceso.';
+
+  @override
+  String get devicesCannotUnlinkCurrent =>
+      'Para salir de este teléfono, cierra sesión.';
+
+  @override
+  String get devicesError => 'No pudimos cargar tus dispositivos.';
+
+  @override
+  String get devicesHelp =>
+      'Si no reconoces alguno, desvincúlalo y cambia tu PIN.';
 }

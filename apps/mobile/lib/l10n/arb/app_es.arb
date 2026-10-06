@@ -412,5 +412,20 @@
   "changePinDoneTitle": "Tu PIN cambió",
   "changePinDoneOthers": "{count, plural, =0{Desde ahora entra con tu nuevo PIN.} =1{Cerramos tu sesión en 1 dispositivo.} other{Cerramos tu sesión en {count} dispositivos.}}",
   "@changePinDoneOthers": {"placeholders": {"count": {"type": "int"}}},
-  "changePinDoneCta": "Listo"
+  "changePinDoneCta": "Listo",
+  "devicesTitle": "Dispositivos vinculados",
+  "devicesThisPhone": "Este teléfono",
+  "devicesUnknownModel": "Dispositivo sin nombre",
+  "devicesLinkedOn": "Vinculado el {date}",
+  "@devicesLinkedOn": {"placeholders": {"date": {"type": "String"}}},
+  "devicesLastUse": "Último uso: {date}",
+  "@devicesLastUse": {"placeholders": {"date": {"type": "String"}}},
+  "devicesBiometric": "Con huella activa",
+  "devicesUnlink": "Desvincular",
+  "devicesUnlinkTitle": "¿Desvincular este dispositivo?",
+  "devicesUnlinkBody": "Cerraremos su sesión y, para volver a entrar desde ahí, pediremos un código a tu correo.",
+  "devicesUnlinked": "Listo, ese dispositivo ya no tiene acceso.",
+  "devicesCannotUnlinkCurrent": "Para salir de este teléfono, cierra sesión.",
+  "devicesError": "No pudimos cargar tus dispositivos.",
+  "devicesHelp": "Si no reconoces alguno, desvincúlalo y cambia tu PIN."
 }

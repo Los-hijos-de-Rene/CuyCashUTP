@@ -69,12 +69,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  ProfileDataRow(
-                      label: l10n.profileDniLabel, value: user.dni),
+                  ProfileDataRow(label: l10n.profileDniLabel, value: user.dni),
                   if (user.alias.isNotEmpty) ...[
                     const Divider(height: 1, color: CuyCashColors.divider),
                     ProfileDataRow(
-                        label: l10n.profileAliasLabel, value: user.alias),
+                      label: l10n.profileAliasLabel,
+                      value: user.alias,
+                    ),
                   ],
                   const Divider(height: 1, color: CuyCashColors.divider),
                   ProfileOptionTile(
@@ -89,14 +90,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () async {
                       final messenger = ScaffoldMessenger.of(context);
                       final cambio = await context.push<bool>(
-                          AppRoutes.perfilAlias,
-                          extra: user.alias);
+                        AppRoutes.perfilAlias,
+                        extra: user.alias,
+                      );
                       if (cambio != true) return;
                       await _userKey.currentState?.reload();
                       messenger
                         ..hideCurrentSnackBar()
                         ..showSnackBar(
-                            SnackBar(content: Text(l10n.aliasSaved)));
+                          SnackBar(content: Text(l10n.aliasSaved)),
+                        );
                     },
                   ),
                 ],
@@ -123,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfileOptionTile(
                     icon: Icons.devices_outlined,
                     label: l10n.profileItemDevices,
-                    onTap: () => _notYet(context),
+                    onTap: () => context.push(AppRoutes.perfilDispositivos),
                   ),
                 ],
               ),
@@ -166,12 +169,15 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(
-          left: CuyCashSpacing.stackXs,
-          bottom: CuyCashSpacing.stackSm,
-        ),
-        child: Text(text,
-            style: CuyCashTypography.labelMd
-                .copyWith(color: CuyCashColors.secondaryText)),
-      );
+    padding: const EdgeInsets.only(
+      left: CuyCashSpacing.stackXs,
+      bottom: CuyCashSpacing.stackSm,
+    ),
+    child: Text(
+      text,
+      style: CuyCashTypography.labelMd.copyWith(
+        color: CuyCashColors.secondaryText,
+      ),
+    ),
+  );
 }

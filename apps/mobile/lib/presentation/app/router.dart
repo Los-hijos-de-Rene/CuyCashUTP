@@ -38,6 +38,8 @@ import '../profile/alias/bloc/edit_alias_bloc.dart';
 import '../profile/change_pin/bloc/change_pin_bloc.dart';
 import '../profile/change_pin/change_pin_screen.dart';
 import '../profile/alias/edit_alias_screen.dart';
+import '../profile/devices/bloc/linked_devices_bloc.dart';
+import '../profile/devices/linked_devices_screen.dart';
 import '../profile/personal_data/bloc/personal_data_bloc.dart';
 import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
@@ -323,6 +325,15 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             initial: state.extra as String? ?? '',
           ),
           child: const EditAliasScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.perfilDispositivos,
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              LinkedDevicesBloc(SecurityModule.create(deps))
+                ..add(const LinkedDevicesEvent.started()),
+          child: const LinkedDevicesScreen(),
         ),
       ),
       GoRoute(
