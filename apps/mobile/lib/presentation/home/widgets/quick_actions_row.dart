@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../home_action.dart';
 
-/// Las cuatro acciones de dinero. Notifica con [HomeAction], no con el texto:
-/// la pantalla decide qué hacer con cada una.
+/// Las acciones de dinero que ya tienen pantalla ([HomeAction.ready]). Notifica
+/// con [HomeAction], no con el texto: la pantalla decide qué hacer con cada una.
 class QuickActionsRow extends StatelessWidget {
   const QuickActionsRow({required this.onAction, super.key});
 
@@ -19,7 +19,7 @@ class QuickActionsRow extends StatelessWidget {
       (HomeAction.charge, Icons.qr_code_scanner, l10n.homeActionCharge),
       (HomeAction.topUp, Icons.add_circle_outline, l10n.homeActionTopUp),
       (HomeAction.withdraw, Icons.south_east, l10n.homeActionWithdraw),
-    ];
+    ].where((a) => a.$1.ready).toList();
     return Row(
       children: [
         for (final (index, action) in actions.indexed) ...[

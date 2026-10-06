@@ -10,6 +10,8 @@ class HomeHeader extends StatelessWidget {
   const HomeHeader({required this.user, this.onNotifications, super.key});
 
   final RememberedUser user;
+
+  /// Sin él no hay campana: las notificaciones aún no existen.
   final VoidCallback? onNotifications;
 
   /// El saludo depende de la hora del teléfono; no hay dato de servidor que
@@ -49,17 +51,20 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(
-          onPressed: onNotifications,
-          tooltip: l10n.homeNotifications,
-          icon: const Icon(Icons.notifications_none,
-              color: CuyCashColors.primaryContainer),
-          style: IconButton.styleFrom(
-            backgroundColor: CuyCashColors.surfaceContainerLowest,
-            side: const BorderSide(color: CuyCashColors.divider),
-            minimumSize: const Size.square(44),
+        if (onNotifications case final onNotifications?)
+          IconButton(
+            onPressed: onNotifications,
+            tooltip: l10n.homeNotifications,
+            icon: const Icon(
+              Icons.notifications_none,
+              color: CuyCashColors.primaryContainer,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: CuyCashColors.surfaceContainerLowest,
+              side: const BorderSide(color: CuyCashColors.divider),
+              minimumSize: const Size.square(44),
+            ),
           ),
-        ),
       ],
     );
   }
