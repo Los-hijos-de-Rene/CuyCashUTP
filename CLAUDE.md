@@ -16,11 +16,13 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
   `POST /v1/accounts`, `PATCH /v1/accounts/{id}/nombre`.
 - Libro mayor con partida doble: toda operación de dinero pasa por
   `services/api/app/services/ledger.py`, con idempotencia y bloqueo de fila.
-- Envío de dinero entre titulares de CuyCash, identificando al destinatario por
-  DNI y confirmando con PIN. Resolver un DNI devuelve el nombre enmascarado.
+- Envío de dinero a una cuenta de CuyCash: se busca por DNI, se elige una de sus
+  cuentas (misma moneda que la de origen) y se confirma con PIN; también entre
+  cuentas propias. Resolver un DNI devuelve el nombre enmascarado y sus cuentas
+  (`••••NNNN`, tipo, moneda).
 - Recarga de saldo: cash-in **simulado** contra una cuenta de sistema (la caja
   de CuyCash), la única que puede quedar en negativo.
-- Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+- Frecuentes por cuenta (tocar uno va directo al monto), detalle de movimiento y constancia compartible.
 - Perfil: datos personales (solo lectura), alias, cambio de PIN con sesión
   abierta (cierra los otros teléfonos), dispositivos vinculados y acceso
   biométrico real: la huella libera una credencial emitida por el servidor
