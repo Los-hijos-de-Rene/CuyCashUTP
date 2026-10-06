@@ -4,6 +4,44 @@ import 'package:cuycash/core/http/authenticated_dio.dart';
 
 void main() {
   group('buildAuthenticatedDio', () {
+    test('manda X-Device-Name cuando se conoce el nombre', () async {
+      late RequestOptions vista;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'd1',
+        deviceName: 'android|Pixel 8',
+        readToken: () => null,
+        onUnauthenticated: () {},
+      );
+      dio.httpClientAdapter = _Adaptador((options) {
+        vista = options;
+        return ResponseBody.fromString('{}', 200);
+      });
+
+      await dio.get<dynamic>('/v1/me');
+
+      expect(vista.headers['X-Device-Name'], 'android|Pixel 8');
+      expect(vista.headers['X-Device-Id'], 'd1');
+    });
+
+    test('sin nombre no inventa la cabecera', () async {
+      late RequestOptions vista;
+      final dio = buildAuthenticatedDio(
+        baseUrl: 'http://test',
+        deviceId: 'd1',
+        readToken: () => null,
+        onUnauthenticated: () {},
+      );
+      dio.httpClientAdapter = _Adaptador((options) {
+        vista = options;
+        return ResponseBody.fromString('{}', 200);
+      });
+
+      await dio.get<dynamic>('/v1/me');
+
+      expect(vista.headers.containsKey('X-Device-Name'), isFalse);
+    });
+
     test('adjunta el token vigente en cada petición', () async {
       late RequestOptions vista;
       final dio = buildAuthenticatedDio(

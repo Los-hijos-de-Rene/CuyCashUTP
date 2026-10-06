@@ -13,6 +13,7 @@ import '../../../../feature/otp/infrastructure/http_otp_repository.dart';
 import '../../../../feature/transfer/infrastructure/http_transfer_repository.dart';
 import '../../../../feature/transfer/infrastructure/shared_prefs_pending_transfer_store.dart';
 import '../../../env/app_env.dart';
+import '../../../env/device_name.dart';
 import '../../../http/authenticated_dio.dart';
 import '../../../http/close_session_on_expiry.dart';
 import '../../../http/session_token_holder.dart';
@@ -29,6 +30,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
   // El backend exige `X-Device-Id` en cada llamada: se resuelve una vez, al
   // armar el grafo, para que ningún repositorio tenga que esperarlo después.
   final deviceId = await deviceStore.deviceId();
+  final deviceName = await describeThisDevice();
   final baseUrl = AppEnv.authBaseUrl;
 
   // Un único `Dio` autenticado para auth y para las features con dinero. El
@@ -39,6 +41,7 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
   final dio = buildAuthenticatedDio(
     baseUrl: baseUrl,
     deviceId: deviceId,
+    deviceName: deviceName,
     readToken: () => tokenHolder.token,
     // Sesión vencida: ver `closeSessionOnExpiry`.
     onUnauthenticated: () => closeSessionOnExpiry(authRepository)(),
@@ -53,8 +56,10 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     flavor: flavor,
     authRepository: authRepository,
     deviceStore: deviceStore,
-    otpRepository:
-        HttpOtpRepository.withConfig(baseUrl: baseUrl, deviceId: deviceId),
+    otpRepository: HttpOtpRepository.withConfig(
+      baseUrl: baseUrl,
+      deviceId: deviceId,
+    ),
     // El bloqueo real lo lleva el servidor y llega en la respuesta. Este store
     // queda para el acceso rápido, que sí es local a este teléfono.
     identifierLockoutStore: MemoryIdentifierLockoutStore(),
