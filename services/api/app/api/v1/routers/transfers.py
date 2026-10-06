@@ -20,12 +20,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.routers.accounts import _iso
 from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
-from app.core.security import averify_pin
 from app.db.base import get_session
 from app.db.models import Account, LedgerEntry, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
 from app.services import accounts as accounts_service
-from app.services import lockout
+from app.services.autorizacion import exigir_pin_de_operacion
 from app.services.rate_limit import consumir_consulta_de_destinatario
 from app.services.ledger import Asiento, post
 
@@ -168,62 +167,6 @@ async def _buscar_cuenta_propia(
     return cuenta
 
 
-def _bloqueado(hasta, code: str = ErrorCode.IDENTIFIER_LOCKED) -> ApiError:
-    return ApiError(
-        code,
-        "Tu cuenta está bloqueada por ahora.",
-        status_code=status.HTTP_423_LOCKED,
-        extra={"locked_until": hasta.isoformat()},
-    )
-
-
-async def _exigir_pin(
-    session: AsyncSession, user: User, device_id: str, pin: str
-) -> None:
-    """
-    Autoriza el movimiento con el PIN. Los fallos alimentan el MISMO bloqueo que
-    el login (sujeto `dni`, y de paso el del dispositivo): se agotan los
-    intentos se gasten entrando o enviando.
-    """
-    for kind, value, code in (
-        ("dni", user.dni, ErrorCode.IDENTIFIER_LOCKED),
-        ("device", device_id, ErrorCode.DEVICE_LOCKED),
-    ):
-        hasta = await lockout.locked_until(session, kind, value)
-        if hasta is not None:
-            raise _bloqueado(hasta, code)
-
-    if await averify_pin(pin, user.pin_hash):
-        # Sin commit: viaja con el movimiento. Si el movimiento falla, el
-        # reinicio del contador se descarta con él, lo cual es lo prudente.
-        # OJO: esto escribe una `LoginAttempt(succeeded=True)` por cada
-        # movimiento. `login_attempts` ya no es solo el registro de ingresos:
-        # una auditoría leerá "sesión iniciada" donde hubo una transferencia.
-        await lockout.register_success(session, user.dni, device_id)
-        return
-
-    disparo = await lockout.register_failure_detail(session, user.dni, device_id)
-    restantes = await lockout.attempts_left(session, user.dni)
-    # El fallo TIENE que persistirse antes de lanzar el error: al propagarse la
-    # excepción la sesión se cierra sin commit y el intento no contaría nunca,
-    # con lo que el bloqueo sería decorativo.
-    await session.commit()
-    if disparo is not None:
-        hasta, kind = disparo
-        raise _bloqueado(
-            hasta,
-            ErrorCode.IDENTIFIER_LOCKED if kind == "dni" else ErrorCode.DEVICE_LOCKED,
-        )
-    raise ApiError(
-        ErrorCode.INVALID_CREDENTIALS,
-        "PIN incorrecto.",
-        # 403 y no 401: la sesión es válida, lo que falla es la autorización de
-        # ESTA operación. Un 401 haría que el cliente cerrara la sesión.
-        status_code=status.HTTP_403_FORBIDDEN,
-        extra={"intentos_restantes": restantes},
-    )
-
-
 def _respuesta(tx: Transaction, monto: int) -> dict:
     return {
         "transaction_id": tx.id,
@@ -299,7 +242,7 @@ async def transferir(
             )
 
     _validar_monto(payload.monto_centimos)
-    await _exigir_pin(session, user, sesion.device_id, payload.pin)
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
     # Cuentas y montos ya los incorpora el motor a la huella; solo se aporta lo
     # que él no ve. El motivo en blanco y el ausente son la misma petición.
@@ -353,7 +296,7 @@ async def recargar(
         session, user, payload.cuenta_id, payload.idempotency_key
     )
     _validar_monto(payload.monto_centimos)
-    await _exigir_pin(session, user, sesion.device_id, payload.pin)
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
     caja = await accounts_service.cuenta_de_sistema(session)
     tx, reutilizada = await post(
