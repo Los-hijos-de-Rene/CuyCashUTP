@@ -1,5 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/injection/envs/mock_dependencies.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_account_repository.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_ledger.dart';
@@ -103,6 +104,35 @@ void main() {
       idempotencyKey: 'envio-0002',
     );
     expect(await saldo(), const Money.soles(125040));
+  });
+
+  test('el titular de demo tiene tres cuentas y cada una su saldo', () async {
+    final lista = (await cuentas.cuentas()).getRight().toNullable()!;
+    expect(lista.map((c) => (c.id, c.tipo, c.moneda, c.saldoDisponible)), [
+      ('acc-demo-1', AccountType.ahorro, Currency.pen, const Money.soles(125040)),
+      ('acc-demo-2', AccountType.sueldo, Currency.pen, const Money.soles(350000)),
+      ('acc-demo-3', AccountType.ahorro, Currency.usd, const Money.dolares(12000)),
+    ]);
+  });
+
+  test('recargar una cuenta no toca el saldo de las otras', () async {
+    await transferencias.recargar(
+      cuentaId: MemoryLedger.cuentaDolaresId,
+      monto: const Money.dolares(500),
+      pin: MemoryTransferRepository.pinValido,
+      idempotencyKey: 'recarga-usd-0001',
+    );
+    final lista = (await cuentas.cuentas()).getRight().toNullable()!;
+    expect(lista[0].saldoDisponible, const Money.soles(125040));
+    expect(lista[2].saldoDisponible, const Money.dolares(12500));
+    final movs = (await cuentas.movimientos(MemoryLedger.cuentaDolaresId)).getRight().toNullable()!;
+    expect(movs.items.single.monto, const Money.dolares(500));
+  });
+
+  test('las cuentas sin movimientos devuelven una página vacía', () async {
+    final p = (await cuentas.movimientos(MemoryLedger.cuentaSueldoId)).getRight().toNullable()!;
+    expect(p.items, isEmpty);
+    expect(p.nextCursor, isNull);
   });
 
   test(

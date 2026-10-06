@@ -1,6 +1,7 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/application/account_actions.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
 import 'package:cuycash/feature/account/domain/account_repository.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
@@ -252,7 +253,7 @@ void main() {
           cuenta: Account(
             id: 'a',
             numero: '19100000004521',
-            tipo: 'ahorro',
+            tipo: AccountType.ahorro,
             moneda: Currency.pen,
             estado: 'activa',
             saldoDisponible: Money.soles(125040),
@@ -350,7 +351,7 @@ void main() {
         cuenta: const Account(
           id: 'a',
           numero: '19100000004521',
-          tipo: 'ahorro',
+          tipo: AccountType.ahorro,
           moneda: Currency.pen,
           estado: 'activa',
           saldoDisponible: Money.soles(125040),

@@ -142,6 +142,7 @@ class MemoryTransferRepository implements TransferRepository {
 
   /// Registra la operación o devuelve la original si la clave ya existía.
   Result<TransferFailure, TransferReceipt> _postear({
+    required String cuentaId,
     required String huella,
     required String idempotencyKey,
     required Money monto,
@@ -170,6 +171,7 @@ class MemoryTransferRepository implements TransferRepository {
       fecha: _clock().toUtc(),
     );
     _ledger.registrar(
+      cuentaId: cuentaId,
       transactionId: constancia.transactionId,
       tipo: direccion == MovementDirection.debito
           ? MovementKind.transferencia
@@ -194,7 +196,7 @@ class MemoryTransferRepository implements TransferRepository {
     required String pin,
     required String idempotencyKey,
   }) async {
-    if (cuentaOrigenId != cuentaId) {
+    if (_ledger.cuenta(cuentaOrigenId) == null) {
       return _falla(const TransferFailure.accountNotFound());
     }
     if (destinatarioDni == dniPropio) {
@@ -213,10 +215,12 @@ class MemoryTransferRepository implements TransferRepository {
         '${monto.centimos}|$nota';
     // Una clave ya registrada no mira el saldo: el backend devuelve la
     // original (o 409 si los datos cambiaron) sin recontar.
-    if (!_operaciones.containsKey(idempotencyKey) && _ledger.saldo < monto) {
+    if (!_operaciones.containsKey(idempotencyKey) &&
+        _ledger.saldoDe(cuentaOrigenId) < monto) {
       return _falla(const TransferFailure.insufficientFunds());
     }
     return _postear(
+      cuentaId: cuentaOrigenId,
       huella: huella,
       idempotencyKey: idempotencyKey,
       monto: monto,
@@ -234,13 +238,14 @@ class MemoryTransferRepository implements TransferRepository {
     required String pin,
     required String idempotencyKey,
   }) async {
-    if (cuentaId != MemoryTransferRepository.cuentaId) {
+    if (_ledger.cuenta(cuentaId) == null) {
       return _falla(const TransferFailure.accountNotFound());
     }
     if (_validarMonto(monto) case final f?) return _falla(f);
     if (_exigirPin(pin) case final f?) return _falla(f);
 
     return _postear(
+      cuentaId: cuentaId,
       huella: 'recarga|$cuentaId|${monto.centimos}',
       idempotencyKey: idempotencyKey,
       monto: monto,

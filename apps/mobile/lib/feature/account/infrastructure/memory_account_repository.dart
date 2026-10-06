@@ -39,40 +39,29 @@ class MemoryAccountRepository implements AccountRepository {
   final int pageSize;
   final MemoryLedger _ledger;
 
-  List<MovementDetail> get _movimientos => _ledger.movimientos;
-
-  Account get _cuenta => Account(
-    id: cuentaId,
-    numero: '19100000004521',
-    tipo: 'ahorro',
-    moneda: Currency.pen,
-    estado: 'activa',
-    saldoDisponible: _ledger.saldo,
-    saldoContable: _ledger.saldo,
-  );
-
   @override
   FutureResult<AccountFailure, List<Account>> cuentas() async =>
-      right([_cuenta]);
+      right(_ledger.cuentas);
 
   @override
   FutureResult<AccountFailure, MovementPage> movimientos(
     String cuentaId, {
     String? cursor,
   }) async {
-    if (cuentaId != _cuenta.id) {
+    if (_ledger.cuenta(cuentaId) == null) {
       return left(const GlobalFailure.server(AccountFailure.accountNotFound()));
     }
+    final todos = _ledger.movimientosDe(cuentaId);
     final inicio = switch (int.tryParse(cursor ?? '')) {
-      final int i when i >= 0 && i < _movimientos.length => i,
+      final int i when i >= 0 && i < todos.length => i,
       _ => 0,
     };
     final fin = inicio + pageSize;
-    final hayMas = fin < _movimientos.length;
+    final hayMas = fin < todos.length;
     return right(
       MovementPage(
       items: List.unmodifiable(
-        _movimientos.sublist(inicio, hayMas ? fin : _movimientos.length),
+        todos.sublist(inicio, hayMas ? fin : todos.length),
       ),
       nextCursor: hayMas ? '$fin' : null,
       ),
@@ -83,8 +72,10 @@ class MemoryAccountRepository implements AccountRepository {
   FutureResult<AccountFailure, MovementDetail> movimiento(
     String transactionId,
   ) async {
-    for (final m in _movimientos) {
-      if (m.transactionId == transactionId) return right(m);
+    for (final c in _ledger.cuentas) {
+      for (final m in _ledger.movimientosDe(c.id)) {
+        if (m.transactionId == transactionId) return right(m);
+      }
     }
     return left(const GlobalFailure.server(AccountFailure.accountNotFound()));
   }

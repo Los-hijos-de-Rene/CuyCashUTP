@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 
 import '../domain/account.dart';
 import '../domain/account_failure.dart';
+import '../domain/account_type.dart';
 import '../domain/account_repository.dart';
 import '../domain/movement.dart';
 
@@ -77,9 +78,12 @@ class HttpAccountRepository implements AccountRepository {
     return Account(
         id: j['id'] as String,
         numero: j['numero'] as String,
-        tipo: j['tipo'] as String,
+        tipo:
+            AccountType.fromCode(j['tipo'] as String) ??
+            (throw FormatException('Tipo desconocido: ${j['tipo']}')),
       moneda: moneda,
         estado: j['estado'] as String,
+        nombre: j['nombre'] as String?,
       saldoDisponible: Money(j['saldo_disponible'] as int, moneda),
       saldoContable: Money(j['saldo_contable'] as int, moneda),
       );

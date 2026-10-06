@@ -1,5 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/beneficiary/application/beneficiary_actions.dart';
 import 'package:cuycash/feature/beneficiary/domain/beneficiary.dart';
 import 'package:cuycash/feature/beneficiary/domain/beneficiary_failure.dart';
@@ -17,7 +18,7 @@ import 'fake_transfer_repositories.dart';
 const _cuenta = Account(
   id: MemoryTransferRepository.cuentaId,
   numero: '19100000004521',
-  tipo: 'ahorro',
+  tipo: AccountType.ahorro,
   moneda: Currency.pen,
   estado: 'activa',
   saldoDisponible: Money.soles(125040),

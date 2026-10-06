@@ -106,6 +106,7 @@ class FakeAccountsBackend implements HttpClientAdapter {
               'tipo': 'ahorro',
               'moneda': 'PEN',
               'estado': 'activa',
+              'nombre': null,
               'saldo_disponible': 125040,
               'saldo_contable': 125040,
             },
@@ -242,6 +243,28 @@ void main() {
         expect(r.isLeft(), isTrue);
       },
     );
+
+    test('un tipo de cuenta desconocido es inesperado', () async {
+      backend.forced = (
+        status: 200,
+        body: {
+          'cuentas': [
+            {
+              'id': 'x',
+              'numero': '19100000000099',
+              'tipo': 'cts',
+              'moneda': 'PEN',
+              'estado': 'activa',
+              'nombre': null,
+              'saldo_disponible': 0,
+              'saldo_contable': 0,
+            },
+          ],
+        },
+      );
+
+      expect((await repo.cuentas()).isLeft(), isTrue);
+    });
 
     test('una cuenta con moneda desconocida es inesperada, no soles', () async {
       backend.forced = (

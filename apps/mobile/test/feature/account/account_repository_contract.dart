@@ -2,6 +2,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
 import 'package:cuycash/feature/account/domain/account_repository.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -40,6 +41,14 @@ void probarContratoDeCuentas(
       expect(cuentas, isNotEmpty);
       expect(cuentas.first.moneda, Currency.pen);
       expect(cuentas.first.estado, 'activa');
+    });
+
+    test('cada cuenta trae tipo, moneda y nombre', () async {
+      final c = await primeraCuenta(construir());
+
+      expect(c.tipo, AccountType.ahorro);
+      expect(c.moneda, Currency.pen);
+      expect(c.nombre, isNull);
     });
 
     test('el saldo es Money en céntimos exactos', () async {
