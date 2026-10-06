@@ -4,6 +4,8 @@
 	<dict>
 	<key>NSCameraUsageDescription</key>
 	<string>CuyCash usa la cámara para escanear tu DNI y verificar tu identidad al abrir la cuenta.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>CuyCash usa Face ID para que entres a tu cuenta sin escribir tu PIN.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Permite hablar con el microservicio de KYC en la red local durante el

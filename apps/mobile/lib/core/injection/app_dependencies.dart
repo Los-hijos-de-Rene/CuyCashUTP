@@ -3,6 +3,7 @@ import '../../feature/account/domain/account_repository.dart';
 import '../../feature/auth/domain/auth_repository.dart';
 import '../../feature/beneficiary/application/beneficiary_actions.dart';
 import '../../feature/beneficiary/domain/beneficiary_repository.dart';
+import '../../feature/biometric/domain/biometric_gate.dart';
 import '../../feature/device/domain/device_store.dart';
 import '../../feature/kyc/domain/kyc_repository.dart';
 import '../../feature/lockout/domain/identifier_lockout_store.dart';
@@ -33,6 +34,7 @@ class AppDependencies {
     required this.beneficiaryRepository,
     required this.profileRepository,
     required this.securityRepository,
+    required this.biometricGate,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -73,6 +75,9 @@ class AppDependencies {
   /// [securityActions] o los use cases de `feature/security/application`.
   final SecurityRepository securityRepository;
   SecurityActions get securityActions => SecurityActions(securityRepository);
+
+  /// Huella o rostro del sistema: solo responde "¿es el dueño?".
+  final BiometricGate biometricGate;
 
   final LockoutPolicy lockoutPolicy;
 }

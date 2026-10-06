@@ -2,6 +2,7 @@
     <!-- Verificación de identidad: se captura el DNI y el rostro del titular. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
 
     <application
         android:label="cuycash"

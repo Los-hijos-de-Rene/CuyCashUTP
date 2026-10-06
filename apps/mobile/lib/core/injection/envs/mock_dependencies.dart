@@ -4,6 +4,7 @@ import '../../../feature/account/infrastructure/memory_account_repository.dart';
 import '../../../feature/account/infrastructure/memory_ledger.dart';
 import '../../../feature/auth/infrastructure/memory_auth_repository.dart';
 import '../../../feature/beneficiary/infrastructure/memory_beneficiary_repository.dart';
+import '../../../feature/biometric/infrastructure/memory_biometric_gate.dart';
 import '../../../feature/device/infrastructure/secure_device_store.dart';
 import '../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../feature/lockout/domain/lockout_policy.dart';
@@ -45,6 +46,7 @@ Future<AppDependencies> buildMockDependencies() async {
     beneficiaryRepository: MemoryBeneficiaryRepository(clock: DateTime.now),
     profileRepository: MemoryProfileRepository(),
     securityRepository: MemorySecurityRepository(security, clock: DateTime.now),
+    biometricGate: MemoryBiometricGate(),
     // Bloqueo de 10/20/30 s para poder ver la pantalla completa al probar.
     lockoutPolicy: const LockoutPolicy.mock(),
   );
