@@ -1,9 +1,14 @@
 DNI = "12345678"
 PIN = "024689"
 DEVICE = "device-abc"
+# A propósito distinto de DEVICE: el alta vincula el teléfono que la pide, así
+# que los tests de "teléfono desconocido" tienen que entrar desde OTRO.
+DEVICE_DE_ALTA = "device-del-alta"
 
 
-async def registrar(client, dni=DNI, pin=PIN, email="juan@correo.com"):
+async def registrar(
+    client, dni=DNI, pin=PIN, email="juan@correo.com", device=DEVICE_DE_ALTA
+):
     return await client.post(
         "/v1/auth/register",
         json={
@@ -13,6 +18,7 @@ async def registrar(client, dni=DNI, pin=PIN, email="juan@correo.com"):
             "email": email,
             "pin": pin,
         },
+        headers={"X-Device-Id": device},
     )
 
 
@@ -24,14 +30,15 @@ async def autenticar(client, pin=PIN, dni=DNI, device=DEVICE):
     )
 
 
-async def test_registro_crea_la_cuenta_pero_no_abre_sesion(client):
+async def test_registro_crea_la_cuenta_y_abre_sesion(client):
     respuesta = await registrar(client)
 
     assert respuesta.status_code == 201
     cuerpo = respuesta.json()
     assert cuerpo["alias"] == "@juan"
-    # Registrarse no otorga sesión: la app la activa tras la pantalla de éxito.
-    assert "session_token" not in cuerpo
+    # El alta SÍ abre sesión: quien llega aquí ya probó su identidad con
+    # documento y liveness, y la pantalla de éxito promete entrar sin más.
+    assert cuerpo["session_token"]
 
 
 async def test_el_pin_previsible_se_rechaza(client):
@@ -115,3 +122,67 @@ async def test_bloquear_un_dni_no_bloquea_a_otro(client):
     respuesta = await autenticar(client, dni="87654321", device="telefono-2")
 
     assert respuesta.status_code == 200
+
+
+
+async def test_registrarse_abre_sesion_y_vincula_el_telefono(client):
+    """
+    El alta deja la sesión lista: el botón "Ir a mi cuenta" de la pantalla de
+    éxito no tiene nada más que hacer.
+
+    Se puede porque quien acaba de registrarse probó su identidad con documento
+    y liveness, que es una prueba más fuerte que un código por correo. Exigir
+    además el OTP de dispositivo aquí sería pedir lo menor después de lo mayor,
+    y rompería el onboarding de menos de 5 minutos.
+    """
+    r = await client.post(
+        "/v1/auth/register",
+        json={
+            "dni": "75882838",
+            "nombres": "Jair",
+            "apellidos": "Conislla",
+            "email": "jair@correo.pe",
+            "pin": "839201",
+        },
+        headers={"X-Device-Id": "telefono-de-jair"},
+    )
+    assert r.status_code == 201, r.text
+    token = r.json().get("session_token")
+    assert token, "el registro debe devolver una sesión utilizable"
+
+    # La sesión sirve de verdad: abre una ruta protegida.
+    cuentas = await client.get(
+        "/v1/accounts", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert cuentas.status_code == 200, cuentas.text
+
+    # Y el teléfono queda vinculado, así que volver a entrar no pide OTP.
+    otra = await client.post(
+        "/v1/auth/authenticate",
+        json={"identifier": "75882838", "pin": "839201"},
+        headers={"X-Device-Id": "telefono-de-jair"},
+    )
+    assert otra.json()["result"] == "session", otra.text
+
+
+
+async def test_registrarse_desde_otro_telefono_si_pide_otp(client):
+    """El vínculo es de ESE teléfono, no de la cuenta."""
+    await client.post(
+        "/v1/auth/register",
+        json={
+            "dni": "75882839",
+            "nombres": "Ana",
+            "apellidos": "Pérez",
+            "email": "ana@correo.pe",
+            "pin": "839201",
+        },
+        headers={"X-Device-Id": "telefono-de-ana"},
+    )
+
+    desde_otro = await client.post(
+        "/v1/auth/authenticate",
+        json={"identifier": "75882839", "pin": "839201"},
+        headers={"X-Device-Id": "telefono-ajeno"},
+    )
+    assert desde_otro.json()["result"] != "session", desde_otro.text

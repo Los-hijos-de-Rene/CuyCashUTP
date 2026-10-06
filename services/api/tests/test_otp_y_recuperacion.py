@@ -119,9 +119,9 @@ async def test_restablecer_el_pin_revoca_todas_las_sesiones(client, otp_codes):
         "/v1/auth/pin/reset", json={"otp_ticket": ticket, "new_pin": "314159"}
     )
 
-    # Cambiar el PIN cierra TODAS las sesiones, incluida la de este teléfono:
-    # restablecer no otorga acceso.
-    assert respuesta.json()["revoked_sessions"] == 1
+    # Cambiar el PIN cierra TODAS las sesiones: la que abrió el alta y la de
+    # este teléfono. Restablecer no otorga acceso.
+    assert respuesta.json()["revoked_sessions"] == 2
     # Y el PIN nuevo sí sirve para entrar.
     assert (await autenticar(client, pin="314159")).status_code == 200
 

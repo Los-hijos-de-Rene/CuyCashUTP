@@ -41,7 +41,11 @@ def _alias(nombres: str, dni: str) -> str:
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterIn, session: AsyncSession = Depends(get_session)):
+async def register(
+    payload: RegisterIn,
+    x_device_id: str = Header(..., alias="X-Device-Id"),
+    session: AsyncSession = Depends(get_session),
+):
     if not pin_is_valid(payload.pin):
         raise ApiError(ErrorCode.WEAK_PIN, "Elige un PIN menos previsible.")
 
@@ -62,14 +66,25 @@ async def register(payload: RegisterIn, session: AsyncSession = Depends(get_sess
     # Antes del commit a propósito: si la apertura falla, el alta entera
     # revierte. Una identidad sin cuenta no tendría quién la repare.
     await accounts.abrir_cuenta(session, user.id)
+    # El alta ABRE sesión y vincula este teléfono.
+    #
+    # Se puede porque quien llega aquí acaba de probar su identidad con
+    # documento y liveness, que es una prueba más fuerte que el código por
+    # correo con el que se vincula un teléfono en el login. Exigir además el
+    # OTP sería pedir lo menor después de lo mayor, y dejaría la pantalla de
+    # éxito sin forma de cumplir lo que promete.
+    #
+    # El vínculo es de ESTE teléfono, no de la cuenta: entrar desde otro
+    # seguirá pidiendo el código.
+    session.add(Device(user_id=user.id, device_id=x_device_id))
+    token, _ = await sessions.open_session(session, user.id, x_device_id)
     await session.commit()
-    # Crear la cuenta NO abre sesión: la app la activa después de la pantalla
-    # de éxito.
     return {
         "id": user.id,
         "dni": user.dni,
         "alias": user.alias,
         "full_name": f"{user.nombres} {user.apellidos}".strip(),
+        "session_token": token,
     }
 
 

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/security/secure_screen_scope.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
+import '../auth/auth_error_text.dart';
 import 'bloc/register_bloc.dart';
 import 'widgets/register_data_step.dart';
 import 'widgets/register_document_step.dart';
@@ -47,7 +48,18 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return BlocBuilder<RegisterBloc, RegisterState>(
+    return BlocConsumer<RegisterBloc, RegisterState>(
+      // Un fallo del alta o de la activación tiene que verse. Sin esto, el
+      // botón de la pantalla de éxito podía no hacer nada y nadie se enteraba.
+      listenWhen: (antes, ahora) =>
+          antes.submitError != ahora.submitError && ahora.submitError != null,
+      listener: (context, state) {
+        final error = state.submitError;
+        if (error == null) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(authErrorText(l10n, error))));
+      },
       builder: (context, state) {
         final createdSession = state.createdSession;
         if (createdSession != null) {

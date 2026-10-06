@@ -5,6 +5,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
 import 'package:cuycash/core/http/session_token_holder.dart';
 import 'package:cuycash/feature/auth/domain/auth_failure.dart';
+import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/http_auth_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -214,5 +215,54 @@ void main() {
     // El servidor revocó todas las sesiones, incluida la de este teléfono:
     // restablecer no otorga acceso.
     expect(repo.currentSession, isNull);
+  });
+
+
+  group('el alta deja la sesión lista', () {
+    test('register guarda el token, así que activate abre sesión', () async {
+      adapter
+        ..statusCode = 201
+        ..body = {
+          'id': 'u-1',
+          'dni': '75882838',
+          'alias': '@jair',
+          'full_name': 'Jair Conislla',
+          'session_token': 'tok-del-alta',
+        };
+
+      final creada = await repo.register(
+        dni: '75882838',
+        nombres: 'Jair',
+        apellidos: 'Conislla',
+        email: 'jair@correo.pe',
+        pin: '839201',
+      );
+      final session = creada.getRight().toNullable();
+      expect(session, isNotNull, reason: 'el alta debe devolver la sesión');
+      expect(holder.token, 'tok-del-alta',
+          reason: 'sin el token, "Ir a mi cuenta" no puede activar nada');
+
+      // Es lo que hace "Ir a mi cuenta" en la pantalla de éxito.
+      final emitidas = <AuthSession?>[];
+      repo.sessionChanges().listen(emitidas.add);
+      final activada = await repo.activate(session!);
+
+      expect(activada.isRight(), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(emitidas, hasLength(1));
+      expect(repo.currentSession, isNotNull);
+    });
+
+    test('sin token ni ticket, activate FALLA en vez de callarse', () async {
+      // Es la trampa que dejaba el botón muerto: `Future<void>` no podía
+      // reportar nada, así que el usuario no veía ni éxito ni error.
+      const session = AuthSession(userId: 'u-1', identifier: '75882838');
+
+      final resultado = await repo.activate(session);
+
+      expect(resultado.isLeft(), isTrue,
+          reason: 'activar sin credenciales debe ser un failure, no un no-op');
+      expect(repo.currentSession, isNull);
+    });
   });
 }

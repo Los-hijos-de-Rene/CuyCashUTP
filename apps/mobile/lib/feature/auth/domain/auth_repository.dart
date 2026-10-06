@@ -42,8 +42,14 @@ abstract interface class AuthRepository {
   /// [authenticate], y la emite.
   ///
   /// [otpTicket] es obligatorio contra el backend real cuando el teléfono aún
-  /// no es de confianza: es lo que acredita que se pasó por el código.
-  Future<void> activate(AuthSession session, {String? otpTicket});
+  /// no es de confianza: es lo que acredita que se pasó por el código. Tras un
+  /// alta no hace falta, porque el registro ya devuelve la sesión.
+  ///
+  /// Devuelve `Result` y no `void` a propósito: cuando no podía fallar "hacia
+  /// fuera", una activación imposible dejaba el botón de la pantalla de éxito
+  /// muerto, sin éxito ni error que mostrar.
+  FutureResult<AuthFailure, Unit> activate(AuthSession session,
+      {String? otpTicket});
 
   /// ¿El PIN propuesto es el que la cuenta ya tiene? Permite rechazarlo al
   /// terminar de escribirlo, sin esperar a que el usuario teclee doce dígitos.

@@ -80,9 +80,16 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<RegisterStepAdvanced>(_onStepAdvanced);
     on<RegisterStepBack>(_onStepBack);
     on<RegisterSubmitted>(_onSubmitted);
-    on<RegisterAccountOpened>((event, emit) {
+    on<RegisterAccountOpened>((event, emit) async {
       final session = state.createdSession;
-      if (session != null) _actions.activate(session);
+      if (session == null) return;
+      // El resultado SÍ se mira: antes se descartaba, y una activación
+      // imposible dejaba el botón muerto sin éxito ni error.
+      final resultado = await _actions.activate(session);
+      resultado.match(
+        (failure) => emit(state.copyWith(submitError: _errorFor(failure))),
+        (_) => null,
+      );
     });
   }
 

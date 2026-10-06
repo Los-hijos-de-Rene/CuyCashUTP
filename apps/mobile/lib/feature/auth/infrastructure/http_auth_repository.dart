@@ -68,8 +68,9 @@ class HttpAuthRepository implements AuthRepository {
         if (failure != null) return left(GlobalFailure.server(failure));
 
         final data = response.data ?? const {};
-        // Registrarse NO abre sesión: la app la activa tras la pantalla de
-        // éxito.
+        // El alta YA abre sesión y vincula este teléfono: se guarda el token
+        // para que "Ir a mi cuenta" solo tenga que emitir la sesión.
+        _tokenHolder.token = data['session_token'] as String?;
         return right(AuthSession(
           userId: data['id'] as String? ?? '',
           identifier: dni,
@@ -129,23 +130,40 @@ class HttpAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> activate(AuthSession session, {String? otpTicket}) async {
-    if (_tokenHolder.token != null) {
-      _emit(session);
-      return;
-    }
-    final pending = _pendingToken;
-    if (pending == null || otpTicket == null) return;
+  FutureResult<AuthFailure, Unit> activate(AuthSession session,
+          {String? otpTicket}) =>
+      _guard(() async {
+        // Ya hay token: lo deja el alta, o una sesión abierta antes.
+        if (_tokenHolder.token != null) {
+          _emit(session);
+          return right(unit);
+        }
 
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/v1/auth/sessions',
-      data: {'pending_token': pending, 'otp_ticket': otpTicket},
-    );
-    if (response.statusCode != 200) return;
-    _tokenHolder.token = response.data?['session_token'] as String?;
-    _pendingToken = null;
-    _emit(session);
-  }
+        // Camino del login desde un teléfono desconocido: hace falta el
+        // pendiente de `authenticate` y el ticket del OTP de dispositivo.
+        final pending = _pendingToken;
+        if (pending == null || otpTicket == null) {
+          // Antes esto era un `return` mudo, y el botón de la pantalla de
+          // éxito moría sin decir nada. Ahora quien llama puede mostrarlo.
+          return left(const GlobalFailure.server(AuthFailure.authUnavailable()));
+        }
+
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/v1/auth/sessions',
+          data: {'pending_token': pending, 'otp_ticket': otpTicket},
+        );
+        final failure = _failureFor(response);
+        if (failure != null) return left(GlobalFailure.server(failure));
+
+        final token = response.data?['session_token'] as String?;
+        if (token == null) {
+          return left(const GlobalFailure.server(AuthFailure.authUnavailable()));
+        }
+        _tokenHolder.token = token;
+        _pendingToken = null;
+        _emit(session);
+        return right(unit);
+      });
 
   @override
   FutureResult<AuthFailure, bool> isCurrentPin({

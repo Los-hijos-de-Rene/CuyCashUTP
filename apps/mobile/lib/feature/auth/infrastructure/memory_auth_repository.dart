@@ -119,8 +119,11 @@ class MemoryAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> activate(AuthSession session, {String? otpTicket}) async =>
-      _emit(session);
+  FutureResult<AuthFailure, Unit> activate(AuthSession session,
+      {String? otpTicket}) async {
+    _emit(session);
+    return right(unit);
+  }
 
   @override
   FutureResult<AuthFailure, Unit> signOut() async {

@@ -74,7 +74,11 @@ async def test_si_la_apertura_falla_no_queda_un_usuario_sin_cuenta(
 
     # El cliente de pruebas propaga la excepción del servidor en vez de un 500.
     with pytest.raises(RuntimeError):
-        await client.post("/v1/auth/register", json=REGISTRO)
+        await client.post(
+            "/v1/auth/register",
+            json=REGISTRO,
+            headers={"X-Device-Id": "dev-atomicidad"},
+        )
 
     await db_de_client.rollback()  # ver el estado confirmado, no uno cacheado
     usuarios = (await db_de_client.execute(select(func.count()).select_from(User))).scalar_one()

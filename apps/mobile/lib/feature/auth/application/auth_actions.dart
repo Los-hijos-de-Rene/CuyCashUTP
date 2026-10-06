@@ -57,7 +57,8 @@ class AuthActions {
         dni: dni, nombres: nombres, apellidos: apellidos, email: email, pin: pin);
 
   /// Activa (inicia sesión) una sesión creada por `register`.
-  Future<void> activate(AuthSession session, {String? otpTicket}) =>
+  FutureResult<AuthFailure, Unit> activate(AuthSession session,
+          {String? otpTicket}) =>
       _repo.activate(session, otpTicket: otpTicket);
 
   FutureResult<AuthFailure, Unit> signOut() => _repo.signOut();
