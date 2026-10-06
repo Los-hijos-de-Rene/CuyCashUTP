@@ -1,7 +1,7 @@
 """
 Lo que el teléfono declara de sí mismo en `X-Device-Name`.
 
-Formato que manda la app: `<plataforma> · <modelo>`. Una cabecera ausente o
+Formato que manda la app: `<plataforma>|<modelo>`. Una cabecera ausente o
 rara no rompe nada: es un dato para mostrar.
 """
 
@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 from app.db.models import Device
 
 _PLATAFORMAS = ("android", "ios")
-_SEPARADOR = " · "
+_SEPARADOR = "|"
 _MAXIMO = 80
 
 
@@ -20,8 +20,8 @@ def describe(header: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
     if not texto:
         return None, None
     plataforma, sep, modelo = texto.partition(_SEPARADOR)
-    if sep and plataforma in _PLATAFORMAS and modelo.strip():
-        return modelo.strip()[:_MAXIMO], plataforma
+    if sep and plataforma.strip() in _PLATAFORMAS and modelo.strip():
+        return modelo.strip()[:_MAXIMO], plataforma.strip()
     return texto[:_MAXIMO], None
 
 
