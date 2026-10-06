@@ -5,7 +5,8 @@ sealed class TransferFailure {
 
   const factory TransferFailure.insufficientFunds() = InsufficientFunds;
   const factory TransferFailure.recipientNotFound() = RecipientNotFound;
-  const factory TransferFailure.selfTransfer() = SelfTransfer;
+  const factory TransferFailure.currencyMismatch() = CurrencyMismatch;
+  const factory TransferFailure.sameAccount() = SameAccount;
   const factory TransferFailure.accountNotFound() = TransferAccountNotFound;
   const factory TransferFailure.accountBlocked() = AccountBlocked;
   const factory TransferFailure.amountOutOfRange() = AmountOutOfRange;
@@ -32,9 +33,14 @@ final class RecipientNotFound extends TransferFailure {
   const RecipientNotFound();
 }
 
-/// El destinatario es el propio titular.
-final class SelfTransfer extends TransferFailure {
-  const SelfTransfer();
+/// La cuenta destino es de otra moneda que la de origen: no hay conversión.
+final class CurrencyMismatch extends TransferFailure {
+  const CurrencyMismatch();
+}
+
+/// La cuenta destino es la misma de origen.
+final class SameAccount extends TransferFailure {
+  const SameAccount();
 }
 
 /// La cuenta de origen no existe o no es del usuario (el backend no
@@ -128,7 +134,8 @@ extension TransferFailureOutcome on TransferFailure {
     IdentifierLocked() ||
     DeviceLocked() ||
     RecipientNotFound() ||
-    SelfTransfer() ||
+    CurrencyMismatch() ||
+    SameAccount() ||
     AmountOutOfRange() ||
     AccountBlocked() ||
     IdempotencyKeyReused() ||

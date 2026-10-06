@@ -12,7 +12,6 @@ String transferResolveErrorText(
   TransferFailure failure,
 ) => switch (failure) {
   RecipientNotFound() => l10n.transferErrorRecipientNotFound,
-  SelfTransfer() => l10n.transferErrorSelfTransfer,
   RateLimited() => l10n.transferErrorSearchRateLimited,
   TransferNetworkFailure() => l10n.homeErrorNetwork,
   TransferUnauthenticated() => l10n.transferErrorUnauthenticated,
@@ -24,6 +23,8 @@ String transferResolveErrorText(
   AccountBlocked() ||
   IdempotencyKeyReused() ||
   TransferAccountNotFound() ||
+  CurrencyMismatch() ||
+  SameAccount() ||
   TransferUnexpectedFailure() => l10n.transferErrorSearchUnexpected,
 };
 
@@ -46,7 +47,8 @@ String transferSubmitErrorText(
   IdentifierLocked(:final hasta) || DeviceLocked(:final hasta) =>
     l10n.transferErrorLocked(DateFormat('HH:mm').format(hasta.toLocal())),
   RecipientNotFound() => l10n.transferErrorRecipientNotFound,
-  SelfTransfer() => l10n.transferErrorSelfTransfer,
+  CurrencyMismatch() => l10n.transferErrorCurrencyMismatch,
+  SameAccount() => l10n.transferErrorSameAccount,
   RateLimited() => l10n.transferErrorSubmitRateLimited,
   AmountOutOfRange() => l10n.transferErrorAmountOutOfRange(
         formatMoney(TransferLimits.montoMinimo(moneda)),

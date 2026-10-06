@@ -1996,11 +1996,17 @@ abstract class AppLocalizations {
   /// **'No encontramos a nadie con ese DNI en CuyCash.'**
   String get transferErrorRecipientNotFound;
 
-  /// No description provided for @transferErrorSelfTransfer.
+  /// No description provided for @transferErrorCurrencyMismatch.
   ///
   /// In es, this message translates to:
-  /// **'No puedes enviarte dinero a ti mismo.'**
-  String get transferErrorSelfTransfer;
+  /// **'Solo puedes enviar entre cuentas de la misma moneda.'**
+  String get transferErrorCurrencyMismatch;
+
+  /// No description provided for @transferErrorSameAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una cuenta distinta a la de origen.'**
+  String get transferErrorSameAccount;
 
   /// No description provided for @transferErrorSearchRateLimited.
   ///

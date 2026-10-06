@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/transfer/application/pending_transfer_actions.dart';
 import 'package:cuycash/feature/transfer/domain/pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/recipient.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_account.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_directory.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_repository.dart';
@@ -46,7 +49,7 @@ class StoreLento extends MemoryPendingTransferStore {
 Future<void> sembrarPendiente(
   PendingTransferStore store, {
   String userId = 'u1',
-  String huella = 'acc-demo-1|87654321|5000|Cena',
+  String huella = 'acc-demo-1|acc-ext-1|5000|Cena',
   DateTime? creada,
 }) => store.writeAll(userId, {
   huella: PendingTransfer(
@@ -55,21 +58,49 @@ Future<void> sembrarPendiente(
   ),
 });
 
+const cuentaDeDestinoDePrueba = RecipientAccount(
+  cuentaId: 'acc-ext-1',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
+  numeroMasked: '••••7732',
+);
+
+const directorioDePrueba = RecipientDirectory(
+  dni: '87654321',
+  nombreEnmascarado: 'J*** M*** R***',
+  cuentas: [
+    cuentaDeDestinoDePrueba,
+    RecipientAccount(
+      cuentaId: 'acc-ext-2',
+      tipo: AccountType.corriente,
+      moneda: Currency.pen,
+      numeroMasked: '••••5510',
+    ),
+    RecipientAccount(
+      cuentaId: 'acc-ext-3',
+      tipo: AccountType.ahorro,
+      moneda: Currency.usd,
+      numeroMasked: '••••0419',
+    ),
+  ],
+);
+
 const destinatarioDePrueba = Recipient(
   dni: '87654321',
   nombreEnmascarado: 'J*** M*** R***',
-  cuentaDestinoMasked: '••••7732',
+  cuenta: cuentaDeDestinoDePrueba,
 );
 
 /// Repositorio de prueba: resuelve siempre, y envía según [alEnviar]. Anota
-/// cada llamada a `enviar` con la clave y el PIN que recibió.
+/// cada llamada a `enviar` con la clave, el PIN y la cuenta destino que
+/// recibió.
 class FakeTransferRepository implements TransferRepository {
   FakeTransferRepository({this.alEnviar, this.alResolver, this.alRecargar});
 
   /// Lo que responde `enviar`; por defecto, una constancia.
   final FutureResult<TransferFailure, TransferReceipt> Function(int llamada)?
   alEnviar;
-  final FutureResult<TransferFailure, Recipient> Function(String dni)?
+  final FutureResult<TransferFailure, RecipientDirectory> Function(String dni)?
   alResolver;
 
   /// Lo que responde `recargar`; por defecto, una constancia.
@@ -81,6 +112,7 @@ class FakeTransferRepository implements TransferRepository {
 
   final claves = <String>[];
   final pines = <String>[];
+  final cuentasDestino = <String>[];
   int get llamadas => claves.length;
 
   static Result<TransferFailure, T> falla<T>(TransferFailure f) =>
@@ -93,13 +125,14 @@ class FakeTransferRepository implements TransferRepository {
   );
 
   @override
-  FutureResult<TransferFailure, Recipient> resolverDestinatario(String dni) =>
-      alResolver?.call(dni) ?? Future.value(right(destinatarioDePrueba));
+  FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
+    String dni,
+  ) => alResolver?.call(dni) ?? Future.value(right(directorioDePrueba));
 
   @override
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
     required String pin,
@@ -107,6 +140,7 @@ class FakeTransferRepository implements TransferRepository {
   }) {
     claves.add(idempotencyKey);
     pines.add(pin);
+    cuentasDestino.add(cuentaDestinoId);
     return alEnviar?.call(claves.length) ??
         Future.value(right(constanciaDe(monto)));
   }

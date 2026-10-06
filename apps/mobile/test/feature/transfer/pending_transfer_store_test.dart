@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   final huella = PendingTransferActions.huella(
     cuentaId: 'acc-1',
-    destinatarioDni: '87654321',
+    cuentaDestinoId: 'acc-ext-1',
     monto: const Money.soles(5000),
     motivo: 'Almuerzo',
   );
@@ -53,7 +53,7 @@ void main() {
         await acciones.remember('u1', huella, 'clave-1');
         final otra = PendingTransferActions.huella(
           cuentaId: 'acc-1',
-          destinatarioDni: '87654321',
+          cuentaDestinoId: 'acc-ext-1',
           monto: const Money.soles(4000),
           motivo: 'Almuerzo',
         );

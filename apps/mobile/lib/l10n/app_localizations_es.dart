@@ -1124,8 +1124,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'No encontramos a nadie con ese DNI en CuyCash.';
 
   @override
-  String get transferErrorSelfTransfer =>
-      'No puedes enviarte dinero a ti mismo.';
+  String get transferErrorCurrencyMismatch =>
+      'Solo puedes enviar entre cuentas de la misma moneda.';
+
+  @override
+  String get transferErrorSameAccount =>
+      'Elige una cuenta distinta a la de origen.';
 
   @override
   String get transferErrorSearchRateLimited =>

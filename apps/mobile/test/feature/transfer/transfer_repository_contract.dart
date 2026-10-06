@@ -1,5 +1,5 @@
 import 'package:core_kernel/core_kernel.dart';
-import 'package:cuycash/feature/transfer/domain/recipient.dart';
+import 'package:cuycash/feature/transfer/domain/recipient_directory.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_repository.dart';
@@ -15,8 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// nuevo en cada llamada (cada test gasta saldo, intentos y presupuesto):
 ///
 /// - Titular [dniPropio] con la cuenta [cuentaOrigenId] y S/ 1,250.40.
-/// - El único cliente destinatario es [dniDestino] (nombre enmascarado y
-///   cuenta `••••`).
+/// - El cliente destinatario [dniDestino] (nombre enmascarado) tiene la
+///   cuenta [cuentaDestinoId] en soles, al menos otra cuenta en soles y la
+///   cuenta [cuentaOtraMonedaId] en otra moneda que la de origen.
 /// - PIN válido [pinValido]; [maxIntentos] PIN errados seguidos bloquean por
 ///   DNI. El número NO se fija aquí: se lo pasa cada lado, y es lo que impide
 ///   que la batería certifique un número inventado (el backend real lo tiene
@@ -30,6 +31,8 @@ void probarContratoDeTransferencias(
   required String cuentaOrigenId,
   required String dniPropio,
   required String dniDestino,
+  required String cuentaDestinoId,
+  required String cuentaOtraMonedaId,
   required int consultasMaximas,
   required int maxIntentos,
 }) {
@@ -48,12 +51,12 @@ void probarContratoDeTransferencias(
     int centimos = 10000,
     String? pin,
     String clave = 'clave-0001',
-    String? dni,
+    String? destino,
     String? cuenta,
     String? motivo,
   }) => repo.enviar(
     cuentaOrigenId: cuenta ?? cuentaOrigenId,
-    destinatarioDni: dni ?? dniDestino,
+    cuentaDestinoId: destino ?? cuentaDestinoId,
     monto: Money.soles(centimos),
     motivo: motivo,
     pin: pin ?? pinValido,
@@ -75,26 +78,36 @@ void probarContratoDeTransferencias(
 
   group('$nombre · contrato de TransferRepository', () {
     group('resolverDestinatario', () {
-      test('un DNI conocido devuelve el nombre enmascarado', () async {
-        final Recipient d = valorDe(
-          await construir().resolverDestinatario(dniDestino),
-        );
+      test(
+        'un DNI conocido devuelve su nombre enmascarado y sus cuentas',
+        () async {
+          final RecipientDirectory d = valorDe(
+            await construir().resolverDestinatario(dniDestino),
+          );
 
-        expect(d.dni, dniDestino);
-        expect(d.nombreEnmascarado, contains('***'));
-        expect(d.cuentaDestinoMasked, startsWith('••••'));
-      });
+          expect(d.dni, dniDestino);
+          expect(d.nombreEnmascarado, contains('***'));
+          expect(d.cuentas, isNotEmpty);
+          expect(d.cuentas.map((c) => c.cuentaId), contains(cuentaDestinoId));
+          for (final c in d.cuentas) {
+            expect(c.numeroMasked, startsWith('••••'));
+            expect(c.nombre, isNull, reason: 'el nombre de un tercero no sale');
+          }
+        },
+      );
+
+      test(
+        'el propio DNI lista mis cuentas, con su nombre si lo tienen',
+        () async {
+          final d = valorDe(await construir().resolverDestinatario(dniPropio));
+          expect(d.cuentas.map((c) => c.cuentaId), contains(cuentaOrigenId));
+        },
+      );
 
       test('un DNI desconocido devuelve recipientNotFound', () async {
         final r = await construir().resolverDestinatario('99999999');
 
         expect(falloDe(r), isA<RecipientNotFound>());
-      });
-
-      test('el propio DNI devuelve selfTransfer', () async {
-        final r = await construir().resolverDestinatario(dniPropio);
-
-        expect(falloDe(r), isA<SelfTransfer>());
       });
 
       test('agotado el presupuesto devuelve rateLimited', () async {
@@ -279,17 +292,55 @@ void probarContratoDeTransferencias(
         );
       });
 
-      test('enviarse a sí mismo devuelve selfTransfer', () async {
-        final r = await enviar(construir(), dni: dniPropio);
-
-        expect(falloDe(r), isA<SelfTransfer>());
+      test('a la misma cuenta de origen es sameAccount', () async {
+        expect(
+          falloDe(await enviar(construir(), destino: cuentaOrigenId)),
+          isA<SameAccount>(),
+        );
       });
 
-      test('un destinatario desconocido devuelve recipientNotFound', () async {
-        final r = await enviar(construir(), dni: '99999999');
+      test(
+        'a una cuenta de otra moneda es currencyMismatch y no gasta PIN',
+        () async {
+          final repo = construir();
+          expect(
+            falloDe(
+              await enviar(repo, destino: cuentaOtraMonedaId, pin: '999999'),
+            ),
+            isA<CurrencyMismatch>(),
+          );
+          // El PIN errado no se llegó a mirar: el siguiente envío correcto
+          // pasa.
+          expect((await enviar(repo, clave: 'clave-0002')).isRight(), isTrue);
+        },
+      );
 
-        expect(falloDe(r), isA<RecipientNotFound>());
+      test('a una cuenta inexistente es recipientNotFound', () async {
+        expect(
+          falloDe(await enviar(construir(), destino: 'no-existe')),
+          isA<RecipientNotFound>(),
+        );
       });
+
+      test(
+        'la misma clave hacia otra cuenta es idempotencyKeyReused',
+        () async {
+          final repo = construir();
+          valorDe(await enviar(repo));
+          // Otra cuenta destino válida del mismo DNI, en la misma moneda: la
+          // tiene que dar el escenario (en memoria, `acc-ext-2`).
+          final otra = valorDe(await repo.resolverDestinatario(dniDestino))
+              .cuentas
+              .firstWhere(
+                (c) =>
+                    c.cuentaId != cuentaDestinoId && c.moneda == Currency.pen,
+              );
+          expect(
+            falloDe(await enviar(repo, destino: otra.cuentaId)),
+            isA<IdempotencyKeyReused>(),
+          );
+        },
+      );
 
       test('una cuenta de origen ajena devuelve accountNotFound', () async {
         final r = await enviar(construir(), cuenta: 'acc-ajena');

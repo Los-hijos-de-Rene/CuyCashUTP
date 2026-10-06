@@ -1,6 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 
-import 'recipient.dart';
+import 'recipient_directory.dart';
 import 'transfer_failure.dart';
 import 'transfer_receipt.dart';
 
@@ -14,13 +14,17 @@ import 'transfer_receipt.dart';
 /// caracteres generada UNA vez por intención del usuario y reutilizada en los
 /// reintentos.
 abstract interface class TransferRepository {
-  /// Busca al destinatario por DNI. Consume el presupuesto de consultas.
-  FutureResult<TransferFailure, Recipient> resolverDestinatario(String dni);
+  /// Busca a la persona por DNI y lista sus cuentas que pueden recibir (el
+  /// propio DNI lista las mías). Consume el presupuesto de consultas.
+  FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
+    String dni,
+  );
 
-  /// Envía [monto] desde [cuentaOrigenId] al cliente con [destinatarioDni].
+  /// Envía [monto] desde [cuentaOrigenId] a [cuentaDestinoId]. Ambas deben
+  /// ser de la misma moneda.
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
     required String pin,

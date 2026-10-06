@@ -60,7 +60,7 @@ void main() {
     () async {
       await transferencias.enviar(
         cuentaOrigenId: MemoryTransferRepository.cuentaId,
-        destinatarioDni: MemoryTransferRepository.dniDestino,
+        cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
         monto: const Money.soles(5000),
         motivo: 'Cena',
         pin: MemoryTransferRepository.pinValido,
@@ -98,7 +98,7 @@ void main() {
     );
     await transferencias.enviar(
       cuentaOrigenId: MemoryTransferRepository.cuentaId,
-      destinatarioDni: MemoryTransferRepository.dniDestino,
+      cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
       monto: const Money.soles(200000),
       pin: MemoryTransferRepository.pinValido,
       idempotencyKey: 'envio-0002',

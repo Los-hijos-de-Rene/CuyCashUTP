@@ -477,7 +477,7 @@ void main() {
       );
       final envio = PendingTransferActions.huella(
         cuentaId: 'c1',
-        destinatarioDni: '87654321',
+        cuentaDestinoId: 'acc-ext-1',
         monto: _monto,
       );
       expect(recarga, isNot(envio));

@@ -1,10 +1,12 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../../account/domain/account_type.dart';
 import '../../account/domain/movement.dart';
 import '../../account/infrastructure/memory_ledger.dart';
 import '../../lockout/domain/lockout_policy.dart';
-import '../domain/recipient.dart';
+import '../domain/recipient_account.dart';
+import '../domain/recipient_directory.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
 import '../domain/transfer_repository.dart';
@@ -12,23 +14,33 @@ import '../domain/transfer_repository.dart';
 /// Impl en memoria (flavor `mock`). Reproduce las reglas del router real
 /// (`services/api/.../transfers.py`) para que la demo no mienta:
 ///
-/// - Orden de validación idéntico: cuenta, destinatario propio, presupuesto de
-///   consultas, destinatario existente, monto y, EL ÚLTIMO, el PIN. Los fondos
-///   se miran al postear, tras el PIN.
+/// - Orden de validación idéntico: cuenta de origen, misma cuenta
+///   (`sameAccount`), presupuesto de consultas, cuenta destino existente,
+///   misma moneda (`currencyMismatch`), monto y, EL ÚLTIMO, el PIN. Los fondos
+///   se miran al postear, tras el PIN. Un REINTENTO (clave ya registrada) no
+///   vuelve a buscar el destino ni gasta presupuesto; si la clave era de un
+///   envío a OTRA cuenta responde `idempotencyKeyReused` antes del PIN.
 /// - Idempotencia: `idempotencyKey → (huella, constancia)`. La misma clave con
 ///   la misma huella devuelve la MISMA constancia (`reutilizada: true`) sin
 ///   volver a mover saldo; con otra huella, `idempotencyKeyReused`. Los
 ///   intentos fallidos NO guardan la clave.
+/// - Moneda: un [Money] en otra moneda que la de la cuenta de origen (o de la
+///   recargada) es `currencyMismatch`. El backend no puede recibirlo (manda
+///   céntimos sin moneda); aquí se rechaza para no comparar monedas distintas
+///   en el libro, que lanzaría.
 /// - Bloqueo: [maxIntentos] PIN errados seguidos bloquean por [bloqueo] (el
 ///   DNI; este mock no distingue el bloqueo de dispositivo). Un PIN correcto
 ///   reinicia la cuenta de fallos. Mientras dura, ni el PIN correcto entra.
 /// - Presupuesto de consultas: [consultasMaximas] por [ventana] deslizante,
 ///   compartidas entre `resolverDestinatario` y `enviar`, como en el backend.
 ///
-/// Datos de demo (contrato estable): titular [dniPropio] con la cuenta
-/// [cuentaId] y S/ 1,250.40, el mismo saldo que `MemoryAccountRepository`
-/// (enviar y recargar lo actualizan en el [MemoryLedger] compartido). PIN
-/// válido `000000`. Destinatarios conocidos: [dniDestino] y [dniDestino2].
+/// Datos de demo (contrato estable): titular [dniPropio] con las cuentas del
+/// [MemoryLedger] compartido ([cuentaId] con S/ 1,250.40, la de sueldo en
+/// soles y una de ahorros en dólares); enviar y recargar las actualizan, y
+/// entre cuentas propias el dinero también se acredita en la de destino. PIN
+/// válido `000000`. Terceros: [dniDestino] con [cuentaDestinoId] (ahorros
+/// S/), [cuentaDestinoCorrienteId] (corriente S/) y [cuentaDestinoDolaresId]
+/// (ahorros US$); [dniDestino2] con [cuentaDestino2Id] (ahorros S/).
 class MemoryTransferRepository implements TransferRepository {
   MemoryTransferRepository({
     required DateTime Function() clock,
@@ -46,28 +58,74 @@ class MemoryTransferRepository implements TransferRepository {
 
   static const pinValido = '000000';
   static const dniPropio = '70123456';
-  static const cuentaId = 'acc-demo-1';
+  static const nombrePropioEnmascarado = 'T*** C***';
+  static const cuentaId = MemoryLedger.cuentaId;
   static const dniDestino = '87654321';
   static const dniDestino2 = '43219876';
+  static const cuentaDestinoId = 'acc-ext-1';
+  static const cuentaDestinoCorrienteId = 'acc-ext-2';
+  static const cuentaDestinoDolaresId = 'acc-ext-3';
+  static const cuentaDestino2Id = 'acc-ext-4';
   static const montoMinimo = 1;
   static const montoMaximo = 200000;
 
-  static const _destinatarios = <String, Recipient>{
-    dniDestino: Recipient(
+  /// Padrón de terceros de la demo: por DNI, su nombre y sus cuentas.
+  static const _directorio = <String, RecipientDirectory>{
+    dniDestino: RecipientDirectory(
       dni: dniDestino,
       nombreEnmascarado: 'J*** M*** R***',
-      cuentaDestinoMasked: '••••7732',
+      cuentas: [
+        RecipientAccount(
+          cuentaId: cuentaDestinoId,
+          tipo: AccountType.ahorro,
+          moneda: Currency.pen,
+          numeroMasked: '••••7732',
+        ),
+        RecipientAccount(
+          cuentaId: cuentaDestinoCorrienteId,
+          tipo: AccountType.corriente,
+          moneda: Currency.pen,
+          numeroMasked: '••••5510',
+        ),
+        RecipientAccount(
+          cuentaId: cuentaDestinoDolaresId,
+          tipo: AccountType.ahorro,
+          moneda: Currency.usd,
+          numeroMasked: '••••0419',
+        ),
+      ],
     ),
-    dniDestino2: Recipient(
+    dniDestino2: RecipientDirectory(
       dni: dniDestino2,
       nombreEnmascarado: 'C*** A*** N***',
-      cuentaDestinoMasked: '••••1908',
+      cuentas: [
+        RecipientAccount(
+          cuentaId: cuentaDestino2Id,
+          tipo: AccountType.ahorro,
+          moneda: Currency.pen,
+          numeroMasked: '••••1908',
+        ),
+      ],
     ),
   };
 
-  /// Cliente de demo por DNI, o `null`. Lo reutilizan otros `Memory*` (los
-  /// frecuentes) para no inventar un padrón aparte.
-  static Recipient? destinatarioConocido(String dni) => _destinatarios[dni];
+  /// Una cuenta de un TERCERO de la demo por su id, con su titular; `null` si
+  /// no existe. La usan los frecuentes en memoria.
+  static ({String dni, String nombreEnmascarado, RecipientAccount cuenta})?
+  cuentaConocida(String cuentaId) {
+    for (final d in _directorio.values) {
+      for (final c in d.cuentas) {
+        if (c.cuentaId == cuentaId) {
+          return (
+            dni: d.dni,
+            nombreEnmascarado: d.nombreEnmascarado,
+            cuenta: c,
+          );
+        }
+      }
+    }
+    return null;
+  }
 
   final DateTime Function() _clock;
   final int maxIntentos;
@@ -80,8 +138,13 @@ class MemoryTransferRepository implements TransferRepository {
   DateTime? _bloqueadoHasta;
   final _consultas = <DateTime>[];
   int _secuencia = 0;
+
+  /// `destino` es la cuenta destino de un envío (`null` en una recarga).
   final _operaciones =
-      <String, ({String huella, TransferReceipt constancia})>{};
+      <
+        String,
+        ({String huella, String? destino, TransferReceipt constancia})
+      >{};
 
   Result<TransferFailure, T> _falla<T>(TransferFailure f) =>
       left(GlobalFailure.server(f));
@@ -101,14 +164,38 @@ class MemoryTransferRepository implements TransferRepository {
     return null;
   }
 
+  /// El directorio del propio titular sale del libro: sus cuentas, con nombre.
+  RecipientDirectory get _propio => RecipientDirectory(
+    dni: dniPropio,
+    nombreEnmascarado: nombrePropioEnmascarado,
+    cuentas: [
+      for (final c in _ledger.cuentas)
+        RecipientAccount(
+          cuentaId: c.id,
+          tipo: c.tipo,
+          moneda: c.moneda,
+          numeroMasked: c.numeroMasked,
+          nombre: c.nombre,
+        ),
+    ],
+  );
+
+  /// Cuenta destino por id: propia (del libro) o de un tercero.
+  RecipientAccount? _destino(String cuentaId) {
+    for (final c in _propio.cuentas) {
+      if (c.cuentaId == cuentaId) return c;
+    }
+    return cuentaConocida(cuentaId)?.cuenta;
+  }
+
   @override
-  FutureResult<TransferFailure, Recipient> resolverDestinatario(
+  FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
     String dni,
   ) async {
-    if (dni == dniPropio) return _falla(const TransferFailure.selfTransfer());
     if (_consumirConsulta() case final f?) return _falla(f);
-    return switch (_destinatarios[dni]) {
-      final Recipient r => right(r),
+    if (dni == dniPropio) return right(_propio);
+    return switch (_directorio[dni]) {
+      final RecipientDirectory d => right(d),
       _ => _falla(const TransferFailure.recipientNotFound()),
     };
   }
@@ -148,6 +235,7 @@ class MemoryTransferRepository implements TransferRepository {
     required Money monto,
     required MovementDirection direccion,
     required String? contraparte,
+    String? destino,
     String? motivo,
     String? cuentaDestinoMasked,
   }) {
@@ -183,52 +271,92 @@ class MemoryTransferRepository implements TransferRepository {
       motivo: motivo,
       cuentaDestinoMasked: cuentaDestinoMasked,
     );
-    _operaciones[idempotencyKey] = (huella: huella, constancia: constancia);
+    _operaciones[idempotencyKey] = (
+      huella: huella,
+      destino: destino,
+      constancia: constancia,
+    );
     return right(constancia);
   }
 
   @override
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
     required String pin,
     required String idempotencyKey,
   }) async {
-    if (_ledger.cuenta(cuentaOrigenId) == null) {
-      return _falla(const TransferFailure.accountNotFound());
+    final origen = _ledger.cuenta(cuentaOrigenId);
+    if (origen == null) return _falla(const TransferFailure.accountNotFound());
+    if (cuentaDestinoId == cuentaOrigenId) {
+      return _falla(const TransferFailure.sameAccount());
     }
-    if (destinatarioDni == dniPropio) {
-      return _falla(const TransferFailure.selfTransfer());
+    // Un monto en otra moneda que la del origen no se puede comparar con su
+    // saldo: se rechaza aquí, nunca como un StateError del libro.
+    if (monto.currency != origen.moneda) {
+      return _falla(const TransferFailure.currencyMismatch());
     }
-    if (_consumirConsulta() case final f?) return _falla(f);
-    if (!_destinatarios.containsKey(destinatarioDni)) {
-      return _falla(const TransferFailure.recipientNotFound());
+    final nota = (motivo ?? '').trim();
+    final huella =
+        'transferencia|$cuentaOrigenId|$cuentaDestinoId|'
+        '${monto.centimos}|$nota';
+    final previa = _operaciones[idempotencyKey];
+    final reintento = previa != null;
+    final destino = _destino(cuentaDestinoId);
+    if (reintento) {
+      // Un reintento no vuelve a buscar el destino ni gasta presupuesto. La
+      // clave de un envío a OTRA cuenta es 409 antes del PIN, como en el
+      // backend: devolver la original haría creer que fue a la elegida.
+      if (previa.destino != cuentaDestinoId) {
+        return _falla(const TransferFailure.idempotencyKeyReused());
+      }
+    } else {
+      if (_consumirConsulta() case final f?) return _falla(f);
+      if (destino == null) {
+        return _falla(const TransferFailure.recipientNotFound());
+      }
+      if (destino.moneda != origen.moneda) {
+        return _falla(const TransferFailure.currencyMismatch());
+      }
     }
     if (_validarMonto(monto) case final f?) return _falla(f);
     if (_exigirPin(pin) case final f?) return _falla(f);
-
-    final nota = (motivo ?? '').trim();
-    final huella =
-        'transferencia|$cuentaOrigenId|$destinatarioDni|'
-        '${monto.centimos}|$nota';
     // Una clave ya registrada no mira el saldo: el backend devuelve la
     // original (o 409 si los datos cambiaron) sin recontar.
-    if (!_operaciones.containsKey(idempotencyKey) &&
-        _ledger.saldoDe(cuentaOrigenId) < monto) {
+    if (!reintento && _ledger.saldoDe(cuentaOrigenId) < monto) {
       return _falla(const TransferFailure.insufficientFunds());
     }
-    return _postear(
+    final esPropia = _ledger.cuenta(cuentaDestinoId) != null;
+    final r = _postear(
       cuentaId: cuentaOrigenId,
       huella: huella,
       idempotencyKey: idempotencyKey,
       monto: monto,
       direccion: MovementDirection.debito,
-      contraparte: _destinatarios[destinatarioDni]?.nombreEnmascarado,
+      contraparte: esPropia
+          ? nombrePropioEnmascarado
+          : cuentaConocida(cuentaDestinoId)?.nombreEnmascarado,
+      destino: cuentaDestinoId,
       motivo: nota.isEmpty ? null : nota,
-      cuentaDestinoMasked: _destinatarios[destinatarioDni]?.cuentaDestinoMasked,
+      cuentaDestinoMasked: destino?.numeroMasked,
     );
+    // Entre cuentas propias el dinero también LLEGA: se acredita en el libro.
+    if (r case Right(value: final constancia) when esPropia && !reintento) {
+      _ledger.registrar(
+        cuentaId: cuentaDestinoId,
+        transactionId: constancia.transactionId,
+        tipo: MovementKind.transferencia,
+        direccion: MovementDirection.credito,
+        monto: monto,
+        fecha: constancia.fecha,
+        contraparte: nombrePropioEnmascarado,
+        motivo: nota.isEmpty ? null : nota,
+        cuentaDestinoMasked: destino?.numeroMasked,
+      );
+    }
+    return r;
   }
 
   @override
@@ -238,8 +366,10 @@ class MemoryTransferRepository implements TransferRepository {
     required String pin,
     required String idempotencyKey,
   }) async {
-    if (_ledger.cuenta(cuentaId) == null) {
-      return _falla(const TransferFailure.accountNotFound());
+    final cuenta = _ledger.cuenta(cuentaId);
+    if (cuenta == null) return _falla(const TransferFailure.accountNotFound());
+    if (monto.currency != cuenta.moneda) {
+      return _falla(const TransferFailure.currencyMismatch());
     }
     if (_validarMonto(monto) case final f?) return _falla(f);
     if (_exigirPin(pin) case final f?) return _falla(f);

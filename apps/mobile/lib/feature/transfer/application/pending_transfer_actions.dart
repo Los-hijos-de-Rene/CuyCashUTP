@@ -4,7 +4,7 @@ import '../../account/domain/account_type.dart';
 import '../domain/pending_transfer_store.dart';
 
 /// Recuerda la clave de idempotencia de un envío que pudo haberse ejecutado,
-/// ligada a su INTENCIÓN (cuenta + destinatario + monto + motivo), para que
+/// ligada a su INTENCIÓN (cuenta + cuenta destino + monto + motivo), para que
 /// reentrar al flujo con la misma intención recupere la misma clave en vez de
 /// fabricar otra y cobrar dos veces.
 ///
@@ -30,14 +30,14 @@ class PendingTransferActions {
   /// Huella estable de una intención.
   static String huella({
     required String cuentaId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
-  }) => '$cuentaId|$destinatarioDni|${monto.centimos}|${motivo ?? ''}';
+  }) => '$cuentaId|$cuentaDestinoId|${monto.centimos}|${motivo ?? ''}';
 
   /// Huella de una RECARGA: no tiene destinatario ni motivo, así que la
   /// intención es cuenta + monto. El prefijo `recarga|` la separa de la de un
-  /// envío (`cuenta|dni|monto|motivo`): un DNI son ocho dígitos, jamás
+  /// envío (`cuenta|cuentaDestino|monto|motivo`): un id de cuenta nunca es
   /// «recarga», así que ambas familias no pueden chocar. Comparten almacén,
   /// vencimiento y `hasPending` (una operación sin resolver avisa en las dos).
   static String huellaRecarga({

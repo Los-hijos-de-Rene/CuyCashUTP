@@ -10,8 +10,9 @@ import '../../l10n/app_localizations.dart';
 /// inesperado dicen "no pudimos confirmar" y NUNCA "no se recargó": pudo
 /// haberse acreditado, y reintentar con la misma clave no cobra dos veces.
 ///
-/// Fondos insuficiente, destinatario y autotransferencia no existen en una
-/// recarga: si llegaran, es una respuesta que la app no esperaba.
+/// Fondos insuficientes, destinatario, moneda distinta y misma cuenta no
+/// existen en una recarga: si llegaran, es una respuesta que la app no
+/// esperaba.
 String topUpErrorText(
   AppLocalizations l10n,
   TransferFailure failure,
@@ -34,6 +35,7 @@ String topUpErrorText(
       TransferNetworkFailure() => l10n.topUpErrorNetwork,
       InsufficientFunds() ||
       RecipientNotFound() ||
-      SelfTransfer() ||
+      CurrencyMismatch() ||
+      SameAccount() ||
       TransferUnexpectedFailure() => l10n.topUpErrorUnexpected,
     };

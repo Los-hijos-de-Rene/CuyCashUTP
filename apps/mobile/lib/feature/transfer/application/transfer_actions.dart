@@ -1,6 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 
-import '../domain/recipient.dart';
+import '../domain/recipient_directory.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
 import '../domain/transfer_repository.dart';
@@ -13,19 +13,20 @@ class TransferActions {
 
   final TransferRepository _repo;
 
-  FutureResult<TransferFailure, Recipient> resolverDestinatario(String dni) =>
-      _repo.resolverDestinatario(dni);
+  FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
+    String dni,
+  ) => _repo.resolverDestinatario(dni);
 
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
     required String pin,
     required String idempotencyKey,
   }) => _repo.enviar(
     cuentaOrigenId: cuentaOrigenId,
-    destinatarioDni: destinatarioDni,
+    cuentaDestinoId: cuentaDestinoId,
     monto: monto,
     motivo: motivo,
     pin: pin,
