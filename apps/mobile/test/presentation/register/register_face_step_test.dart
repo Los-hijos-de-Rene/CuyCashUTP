@@ -12,13 +12,14 @@ import 'package:cuycash/presentation/register/widgets/register_face_step.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'register_test_support.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late RegisterBloc bloc;
 
   Future<void> pumpStep(WidgetTester tester, {required bool active}) async {
-    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()));
+    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
     addTearDown(bloc.close);
 
     await tester.pumpWidget(

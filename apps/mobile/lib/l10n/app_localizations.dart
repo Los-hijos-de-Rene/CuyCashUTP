@@ -862,6 +862,18 @@ abstract class AppLocalizations {
   /// **'Sin secuencias como 123456'**
   String get pinRuleNoSequence;
 
+  /// No description provided for @registerBiometricLater.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos activar tu huella. Puedes hacerlo desde tu perfil, en Acceso biométrico.'**
+  String get registerBiometricLater;
+
+  /// No description provided for @registerBiometricReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu huella o rostro para entrar más rápido a CuyCash'**
+  String get registerBiometricReason;
+
   /// No description provided for @biometricTitle.
   ///
   /// In es, this message translates to:

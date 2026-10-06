@@ -434,6 +434,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pinRuleNoSequence => 'Sin secuencias como 123456';
 
   @override
+  String get registerBiometricLater =>
+      'No pudimos activar tu huella. Puedes hacerlo desde tu perfil, en Acceso biométrico.';
+
+  @override
+  String get registerBiometricReason =>
+      'Confirma tu huella o rostro para entrar más rápido a CuyCash';
+
+  @override
   String get biometricTitle => 'Activar acceso biométrico';
 
   @override

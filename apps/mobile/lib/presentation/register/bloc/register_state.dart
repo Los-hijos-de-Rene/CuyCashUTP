@@ -70,19 +70,25 @@ abstract class RegisterState with _$RegisterState {
     // Cuenta creada tras un registro exitoso (aún NO autenticada): dispara la
     // pantalla de éxito. Se activa con `RegisterEvent.accountOpened`.
     AuthSession? createdSession,
+    // ¿El teléfono tiene sensor? Sin él, el paso 4C no ofrece la huella.
+    @Default(false) bool biometricAvailable,
+    // La huella no pudo activarse tras el alta. No deshace la cuenta.
+    @Default(false) bool biometricEnrollFailed,
   }) = _RegisterState;
 
   /// ¿El paso actual permite avanzar / finalizar?
   bool get canAdvance => switch (step) {
-        0 => RegisterValidators.dataValid(draft),
-        1 => draft.dniFront == CaptureStatus.captured &&
-            draft.dniBack == CaptureStatus.captured,
-        2 => draft.faceStatus == FaceScanStatus.success,
-        // En el paso 4 solo hay botón al final: crear y confirmar avanzan
-        // solos con el sexto dígito.
-        _ => securityStep == SecurityStep.biometria &&
-            RegisterValidators.pinValid(draft.pin),
-      };
+    0 => RegisterValidators.dataValid(draft),
+    1 =>
+      draft.dniFront == CaptureStatus.captured &&
+          draft.dniBack == CaptureStatus.captured,
+    2 => draft.faceStatus == FaceScanStatus.success,
+    // En el paso 4 solo hay botón al final: crear y confirmar avanzan
+    // solos con el sexto dígito.
+    _ =>
+      securityStep == SecurityStep.biometria &&
+          RegisterValidators.pinValid(draft.pin),
+  };
 
   /// Una regla por cada condición que el sistema comprueba, ni más ni menos.
   /// Ninguna puede darse por cumplida antes de tiempo: un indicador que se

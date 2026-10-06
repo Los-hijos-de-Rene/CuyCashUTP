@@ -3,14 +3,61 @@ import 'dart:typed_data';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
+import 'package:cuycash/feature/biometric/infrastructure/memory_biometric_gate.dart';
+import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
+import 'package:cuycash/feature/security/application/enable_biometric_use_case.dart';
+import 'package:cuycash/feature/security/infrastructure/memory_security_repository.dart';
+import 'package:cuycash/feature/security/infrastructure/memory_security_state.dart';
 import 'package:cuycash/presentation/auth/bloc/auth_bloc.dart';
 import 'package:cuycash/presentation/register/bloc/register_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-RegisterBloc build([MemoryAuthRepository? repo]) =>
-    RegisterBloc(AuthActions(repo ?? MemoryAuthRepository()));
+// PIN del alta en los tests de huella: `000000` no pasa `PinRules`.
+const _pinAlta = '839201';
+
+late MemorySecurityState estado;
+late MemoryDeviceStore store;
+late MemoryBiometricGate gate;
+late MemoryAuthRepository auth;
+
+EnableBiometricUseCase _biometric() => EnableBiometricUseCase(
+  repo: MemorySecurityRepository(estado, clock: DateTime.now),
+  gate: gate,
+  store: store,
+);
+
+RegisterBloc build([MemoryAuthRepository? repo]) => RegisterBloc(
+  AuthActions(repo ?? MemoryAuthRepository()),
+  biometric: _biometric(),
+);
+
+RegisterBloc construirBloc() =>
+    RegisterBloc(AuthActions(auth), biometric: _biometric());
+
+/// Datos, PIN y envío: deja la cuenta creada pero sin activar.
+Future<void> recorrerHastaCrearCuenta(
+  RegisterBloc b, {
+  required String pin,
+}) async {
+  b.add(const RegisterEvent.fieldChanged(RegisterField.dni, '87654321'));
+  b.add(const RegisterEvent.fieldChanged(RegisterField.nombres, 'Juan'));
+  b.add(const RegisterEvent.fieldChanged(RegisterField.apellidos, 'Pérez'));
+  b.add(const RegisterEvent.fieldChanged(RegisterField.email, 'j@p.pe'));
+  for (final d in pin.split('')) {
+    b.add(RegisterEvent.pinDigitPressed(int.parse(d)));
+  }
+  b.add(const RegisterEvent.submitted());
+  await Future<void>.delayed(const Duration(milliseconds: 10));
+}
 
 void main() {
+  setUp(() {
+    estado = MemorySecurityState.demo(clock: DateTime.now, pin: _pinAlta);
+    store = MemoryDeviceStore();
+    gate = MemoryBiometricGate();
+    auth = MemoryAuthRepository(security: estado);
+  });
+
   group('validadores', () {
     test('DNI 8 dígitos', () {
       expect(RegisterValidators.dniError('12345678'), isNull);
@@ -95,13 +142,16 @@ void main() {
     'submit con PIN válido crea la cuenta (createdSession) sin autenticar aún',
     build: () {
       final repo = MemoryAuthRepository();
-      return RegisterBloc(AuthActions(repo));
+      return RegisterBloc(AuthActions(repo), biometric: _biometric());
     },
     seed: () => const RegisterState(
       step: 3,
       draft: RegisterDraft(
-        dni: '87654321', nombres: 'Juan', apellidos: 'Pérez',
-        email: 'j@p.pe', pin: '024689',
+        dni: '87654321',
+        nombres: 'Juan',
+        apellidos: 'Pérez',
+        email: 'j@p.pe',
+        pin: '024689',
       ),
     ),
     act: (b) => b.add(const RegisterEvent.submitted()),
@@ -114,11 +164,13 @@ void main() {
 
   test('accountOpened activa la sesión creada (repo.currentSession)', () async {
     final repo = MemoryAuthRepository();
-    final bloc = RegisterBloc(AuthActions(repo));
+    final bloc = RegisterBloc(AuthActions(repo), biometric: _biometric());
     addTearDown(bloc.close);
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.dni, '87654321'));
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.nombres, 'Juan'));
-    bloc.add(const RegisterEvent.fieldChanged(RegisterField.apellidos, 'Pérez'));
+    bloc.add(
+      const RegisterEvent.fieldChanged(RegisterField.apellidos, 'Pérez'),
+    );
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.email, 'j@p.pe'));
     for (final d in '024689'.split('')) {
       bloc.add(RegisterEvent.pinDigitPressed(int.parse(d)));
@@ -126,7 +178,7 @@ void main() {
     bloc.add(const RegisterEvent.submitted());
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(repo.currentSession, isNull); // aún no autenticado
-    bloc.add(const RegisterEvent.accountOpened());
+    bloc.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(repo.currentSession?.identifier, '87654321');
   });
@@ -137,18 +189,64 @@ void main() {
       final repo = MemoryAuthRepository();
       // pre-registra el DNI
       repo.register(
-          dni: '87654321', nombres: 'A', apellidos: 'B', email: 'a@b.pe', pin: '024689');
-      return RegisterBloc(AuthActions(repo));
+        dni: '87654321',
+        nombres: 'A',
+        apellidos: 'B',
+        email: 'a@b.pe',
+        pin: '024689',
+      );
+      return RegisterBloc(AuthActions(repo), biometric: _biometric());
     },
     seed: () => const RegisterState(
       step: 3,
       draft: RegisterDraft(
-        dni: '87654321', nombres: 'Juan', apellidos: 'Pérez',
-        email: 'j@p.pe', pin: '135790',
+        dni: '87654321',
+        nombres: 'Juan',
+        apellidos: 'Pérez',
+        email: 'j@p.pe',
+        pin: '135790',
       ),
     ),
     act: (b) => b.add(const RegisterEvent.submitted()),
     wait: const Duration(milliseconds: 10),
     verify: (b) => expect(b.state.submitError, AuthError.identifierTaken),
   );
+
+  blocTest<RegisterBloc, RegisterState>(
+    'sin sensor apaga la opción de huella',
+    build: () {
+      gate.available = false;
+      return construirBloc();
+    },
+    act: (b) => b.add(const RegisterEvent.biometricChecked()),
+    verify: (b) {
+      expect(b.state.biometricAvailable, isFalse);
+      expect(b.state.draft.biometricEnabled, isFalse);
+    },
+  );
+
+  test('al abrir la cuenta con la huella encendida, la activa', () async {
+    final b = construirBloc()..add(const RegisterEvent.biometricChecked());
+    await recorrerHastaCrearCuenta(b, pin: _pinAlta);
+
+    b.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(await store.readBiometricCredential(), isNotNull);
+    expect(b.state.biometricEnrollFailed, isFalse);
+    await b.close();
+  });
+
+  test('si activar la huella falla, el alta sigue y se avisa', () async {
+    store.failCredentialWrites = true;
+    final b = construirBloc()..add(const RegisterEvent.biometricChecked());
+    await recorrerHastaCrearCuenta(b, pin: _pinAlta);
+
+    b.add(const RegisterEvent.accountOpened(biometricReason: 'r'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(b.state.biometricEnrollFailed, isTrue);
+    expect(auth.currentSession, isNotNull);
+    await b.close();
+  });
 }

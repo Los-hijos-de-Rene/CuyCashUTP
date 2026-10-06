@@ -9,6 +9,7 @@ import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_failure.dart';
 import '../../../feature/auth/domain/auth_session.dart';
 import '../../../feature/auth/domain/pin_rules.dart';
+import '../../../feature/security/application/enable_biometric_use_case.dart';
 import '../../auth/bloc/auth_bloc.dart' show AuthError;
 
 part 'register_bloc.freezed.dart';
@@ -47,37 +48,81 @@ abstract final class RegisterValidators {
 /// submit final NO navega: la sesión llega por el stream de auth y el gate del
 /// router lleva a /home.
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
-  RegisterBloc(AuthActions actions)
-      : _actions = actions,
-        super(const RegisterState()) {
+  RegisterBloc(AuthActions actions, {required EnableBiometricUseCase biometric})
+    : _actions = actions,
+      _biometric = biometric,
+      super(const RegisterState()) {
     on<RegisterFieldChanged>(_onFieldChanged);
-    on<RegisterCaptured>((event, emit) =>
-        emit(_setSide(event.side, CaptureStatus.captured, event.image)));
-    on<RegisterCaptureFailed>((event, emit) => emit(_setSide(event.side, CaptureStatus.unreadable)));
-    on<RegisterFaceScanStarted>((event, emit) =>
-        emit(state.copyWith(draft: state.draft.copyWith(faceStatus: FaceScanStatus.scanning))));
-    on<RegisterFaceScanCompleted>((event, emit) =>
-        emit(state.copyWith(draft: state.draft.copyWith(faceStatus: FaceScanStatus.success))));
+    on<RegisterCaptured>(
+      (event, emit) =>
+          emit(_setSide(event.side, CaptureStatus.captured, event.image)),
+    );
+    on<RegisterCaptureFailed>(
+      (event, emit) => emit(_setSide(event.side, CaptureStatus.unreadable)),
+    );
+    on<RegisterFaceScanStarted>(
+      (event, emit) => emit(
+        state.copyWith(
+          draft: state.draft.copyWith(faceStatus: FaceScanStatus.scanning),
+        ),
+      ),
+    );
+    on<RegisterFaceScanCompleted>(
+      (event, emit) => emit(
+        state.copyWith(
+          draft: state.draft.copyWith(faceStatus: FaceScanStatus.success),
+        ),
+      ),
+    );
     on<RegisterPinDigitPressed>(_onPinDigit);
     on<RegisterPinBackspace>(_onPinBackspace);
-    on<RegisterBiometricToggled>((event, emit) =>
-        emit(state.copyWith(draft: state.draft.copyWith(biometricEnabled: event.value))));
+    on<RegisterBiometricToggled>(
+      (event, emit) => emit(
+        state.copyWith(
+          draft: state.draft.copyWith(biometricEnabled: event.value),
+        ),
+      ),
+    );
     on<RegisterStepAdvanced>(_onStepAdvanced);
     on<RegisterStepBack>(_onStepBack);
     on<RegisterSubmitted>(_onSubmitted);
+    on<RegisterBiometricChecked>((event, emit) async {
+      final available = await _biometric.isAvailable();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          biometricAvailable: available,
+          draft: available
+              ? state.draft
+              : state.draft.copyWith(biometricEnabled: false),
+        ),
+      );
+    });
     on<RegisterAccountOpened>((event, emit) async {
       final session = state.createdSession;
       if (session == null) return;
       // El resultado SÍ se mira: antes se descartaba, y una activación
       // imposible dejaba el botón muerto sin éxito ni error.
       final resultado = await _actions.activate(session);
-      resultado.match(
-        (failure) => emit(state.copyWith(submitError: _errorFor(failure))),
-        (_) => null,
+      if (resultado.isLeft()) {
+        resultado.match(
+          (failure) => emit(state.copyWith(submitError: _errorFor(failure))),
+          (_) => null,
+        );
+        return;
+      }
+      if (!state.draft.biometricEnabled || !state.biometricAvailable) return;
+      // La huella nunca deshace el alta: un fallo solo enciende el aviso.
+      final huella = await _biometric(
+        pin: state.draft.pin,
+        reason: event.biometricReason,
       );
+      if (isClosed) return;
+      if (huella.isLeft()) emit(state.copyWith(biometricEnrollFailed: true));
     });
   }
 
+  final EnableBiometricUseCase _biometric;
   final AuthActions _actions;
 
   /// Escribe en el grupo activo. Al sexto dígito, cada subpaso decide solo:
@@ -90,35 +135,45 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         if (state.draft.pin.length >= 6) return;
         final pin = '${state.draft.pin}${event.digit}';
         final next = state.copyWith(
-            draft: state.draft.copyWith(pin: pin),
-            pinMismatch: false,
-            submitError: null);
+          draft: state.draft.copyWith(pin: pin),
+          pinMismatch: false,
+          submitError: null,
+        );
         // Con seis dígitos que incumplen una regla NO se avanza: la checklist
         // ya dice cuál falta y el usuario corrige ahí mismo.
-        emit(pin.length == 6 && RegisterValidators.pinValid(pin)
-            ? next.copyWith(securityStep: SecurityStep.confirmar)
-            : next);
+        emit(
+          pin.length == 6 && RegisterValidators.pinValid(pin)
+              ? next.copyWith(securityStep: SecurityStep.confirmar)
+              : next,
+        );
       case SecurityStep.confirmar:
         if (state.draft.confirmPin.length >= 6) return;
         final confirm = '${state.draft.confirmPin}${event.digit}';
         if (confirm.length < 6) {
-          emit(state.copyWith(
+          emit(
+            state.copyWith(
               draft: state.draft.copyWith(confirmPin: confirm),
-              pinMismatch: false));
+              pinMismatch: false,
+            ),
+          );
           return;
         }
         if (confirm == state.draft.pin) {
-          emit(state.copyWith(
-            draft: state.draft.copyWith(confirmPin: confirm),
-            securityStep: SecurityStep.biometria,
-            pinMismatch: false,
-          ));
+          emit(
+            state.copyWith(
+              draft: state.draft.copyWith(confirmPin: confirm),
+              securityStep: SecurityStep.biometria,
+              pinMismatch: false,
+            ),
+          );
         } else {
           // Se limpia SOLO la confirmación; el PIN elegido se conserva.
-          emit(state.copyWith(
-            draft: state.draft.copyWith(confirmPin: ''),
-            pinMismatch: true,
-          ));
+          emit(
+            state.copyWith(
+              draft: state.draft.copyWith(confirmPin: ''),
+              pinMismatch: true,
+            ),
+          );
         }
       case SecurityStep.biometria:
         return;
@@ -134,16 +189,23 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       case SecurityStep.crear:
         final pin = state.draft.pin;
         if (pin.isEmpty) return;
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             draft: state.draft.copyWith(pin: pin.substring(0, pin.length - 1)),
-            pinMismatch: false));
+            pinMismatch: false,
+          ),
+        );
       case SecurityStep.confirmar:
         final confirm = state.draft.confirmPin;
         if (confirm.isEmpty) return;
-        emit(state.copyWith(
-            draft: state.draft
-                .copyWith(confirmPin: confirm.substring(0, confirm.length - 1)),
-            pinMismatch: false));
+        emit(
+          state.copyWith(
+            draft: state.draft.copyWith(
+              confirmPin: confirm.substring(0, confirm.length - 1),
+            ),
+            pinMismatch: false,
+          ),
+        );
       case SecurityStep.biometria:
         return;
     }
@@ -153,34 +215,41 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   /// paso anterior del wizard.
   void _onStepBack(RegisterStepBack event, Emitter<RegisterState> emit) {
     if (state.step == 3 && state.securityStep != SecurityStep.crear) {
-      emit(state.copyWith(
-        securityStep: switch (state.securityStep) {
-          SecurityStep.biometria => SecurityStep.confirmar,
-          _ => SecurityStep.crear,
-        },
-        // Volver deja las casillas del subpaso vacías: se reescriben.
-        draft: state.draft.copyWith(
-          confirmPin: '',
-          pin: state.securityStep == SecurityStep.confirmar
-              ? ''
-              : state.draft.pin,
+      emit(
+        state.copyWith(
+          securityStep: switch (state.securityStep) {
+            SecurityStep.biometria => SecurityStep.confirmar,
+            _ => SecurityStep.crear,
+          },
+          // Volver deja las casillas del subpaso vacías: se reescriben.
+          draft: state.draft.copyWith(
+            confirmPin: '',
+            pin: state.securityStep == SecurityStep.confirmar
+                ? ''
+                : state.draft.pin,
+          ),
+          pinMismatch: false,
         ),
-        pinMismatch: false,
-      ));
+      );
       return;
     }
     if (state.step > 0) emit(state.copyWith(step: state.step - 1));
   }
 
-  RegisterState _setSide(DocSide side, CaptureStatus status,
-          [Uint8List? image]) =>
-      state.copyWith(
-        draft: side == DocSide.front
-            ? state.draft.copyWith(dniFront: status, dniFrontImage: image)
-            : state.draft.copyWith(dniBack: status, dniBackImage: image),
-      );
+  RegisterState _setSide(
+    DocSide side,
+    CaptureStatus status, [
+    Uint8List? image,
+  ]) => state.copyWith(
+    draft: side == DocSide.front
+        ? state.draft.copyWith(dniFront: status, dniFrontImage: image)
+        : state.draft.copyWith(dniBack: status, dniBackImage: image),
+  );
 
-  void _onFieldChanged(RegisterFieldChanged event, Emitter<RegisterState> emit) {
+  void _onFieldChanged(
+    RegisterFieldChanged event,
+    Emitter<RegisterState> emit,
+  ) {
     final draft = switch (event.field) {
       RegisterField.dni => state.draft.copyWith(dni: event.value),
       RegisterField.nombres => state.draft.copyWith(nombres: event.value),
@@ -193,22 +262,31 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         ? _validateAll(draft)
         : state.errors.copyWith(
             dni: event.field == RegisterField.dni ? null : state.errors.dni,
-            nombres: event.field == RegisterField.nombres ? null : state.errors.nombres,
-            apellidos: event.field == RegisterField.apellidos ? null : state.errors.apellidos,
-            email: event.field == RegisterField.email ? null : state.errors.email,
+            nombres: event.field == RegisterField.nombres
+                ? null
+                : state.errors.nombres,
+            apellidos: event.field == RegisterField.apellidos
+                ? null
+                : state.errors.apellidos,
+            email: event.field == RegisterField.email
+                ? null
+                : state.errors.email,
           );
     emit(state.copyWith(draft: draft, errors: errors));
   }
 
   RegisterErrors _validateAll(RegisterDraft draft) => RegisterErrors(
-        dni: RegisterValidators.dniError(draft.dni),
-        nombres: RegisterValidators.requiredError(draft.nombres),
-        apellidos: RegisterValidators.requiredError(draft.apellidos),
-        email: RegisterValidators.emailError(draft.email),
-        showBanner: true,
-      );
+    dni: RegisterValidators.dniError(draft.dni),
+    nombres: RegisterValidators.requiredError(draft.nombres),
+    apellidos: RegisterValidators.requiredError(draft.apellidos),
+    email: RegisterValidators.emailError(draft.email),
+    showBanner: true,
+  );
 
-  void _onStepAdvanced(RegisterStepAdvanced event, Emitter<RegisterState> emit) {
+  void _onStepAdvanced(
+    RegisterStepAdvanced event,
+    Emitter<RegisterState> emit,
+  ) {
     if (state.step == 0 && !RegisterValidators.dataValid(state.draft)) {
       emit(state.copyWith(errors: _validateAll(state.draft)));
       return;
@@ -231,17 +309,21 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       pin: state.draft.pin,
     );
     result.match(
-      (failure) => emit(state.copyWith(
-          status: RegisterStatus.editing, submitError: _errorFor(failure))),
-      (session) => emit(state.copyWith(
+      (failure) => emit(
+        state.copyWith(
           status: RegisterStatus.editing,
-          createdSession: session)), // éxito → pantalla de éxito (aún sin login)
+          submitError: _errorFor(failure),
+        ),
+      ),
+      (session) => emit(
+        state.copyWith(status: RegisterStatus.editing, createdSession: session),
+      ), // éxito → pantalla de éxito (aún sin login)
     );
   }
 
   AuthError _errorFor(GlobalFailure<AuthFailure> failure) => switch (failure) {
-        ServerFailure(failure: IdentifierTaken()) => AuthError.identifierTaken,
-        ServerFailure(failure: WeakPin()) => AuthError.weakPin,
-        _ => AuthError.generic,
-      };
+    ServerFailure(failure: IdentifierTaken()) => AuthError.identifierTaken,
+    ServerFailure(failure: WeakPin()) => AuthError.weakPin,
+    _ => AuthError.generic,
+  };
 }

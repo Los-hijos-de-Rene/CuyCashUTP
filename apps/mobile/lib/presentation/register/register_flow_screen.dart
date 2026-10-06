@@ -52,13 +52,20 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
       // Un fallo del alta o de la activación tiene que verse. Sin esto, el
       // botón de la pantalla de éxito podía no hacer nada y nadie se enteraba.
       listenWhen: (antes, ahora) =>
-          antes.submitError != ahora.submitError && ahora.submitError != null,
+          (antes.submitError != ahora.submitError &&
+              ahora.submitError != null) ||
+          (!antes.biometricEnrollFailed && ahora.biometricEnrollFailed),
       listener: (context, state) {
         final error = state.submitError;
-        if (error == null) return;
+        final texto = state.biometricEnrollFailed
+            ? l10n.registerBiometricLater
+            : error == null
+            ? null
+            : authErrorText(l10n, error);
+        if (texto == null) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(authErrorText(l10n, error))));
+          ..showSnackBar(SnackBar(content: Text(texto)));
       },
       builder: (context, state) {
         final createdSession = state.createdSession;
@@ -66,7 +73,9 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
           return RegisterSuccessScreen(
             session: createdSession,
             onOpenAccount: () => context.read<RegisterBloc>().add(
-              const RegisterEvent.accountOpened(),
+              RegisterEvent.accountOpened(
+                biometricReason: l10n.registerBiometricReason,
+              ),
             ),
           );
         }

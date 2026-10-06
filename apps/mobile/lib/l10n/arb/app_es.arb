@@ -138,6 +138,8 @@
   "pinRule6": "6 dígitos",
   "pinRuleNoRepeats": "Sin repetir el mismo dígito seis veces",
   "pinRuleNoSequence": "Sin secuencias como 123456",
+  "registerBiometricLater": "No pudimos activar tu huella. Puedes hacerlo desde tu perfil, en Acceso biométrico.",
+  "registerBiometricReason": "Confirma tu huella o rostro para entrar más rápido a CuyCash",
   "biometricTitle": "Activar acceso biométrico",
   "biometricHeadline": "¿Quieres entrar con tu huella?",
   "biometricBody": "Podrás abrir la app y autorizar tus operaciones sin escribir el PIN.",
