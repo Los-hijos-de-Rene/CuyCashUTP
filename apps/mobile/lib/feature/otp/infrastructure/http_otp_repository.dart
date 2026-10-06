@@ -7,7 +7,7 @@ import '../domain/otp_failure.dart';
 import '../domain/otp_policy.dart';
 import '../domain/otp_repository.dart';
 
-/// Impl real del OTP contra `services/auth`.
+/// Impl real del OTP contra `services/api`.
 ///
 /// El código nunca llega al teléfono: se manda al correo y el servidor lo
 /// verifica. Aquí solo viajan el reto y el resultado.
@@ -19,7 +19,7 @@ class HttpOtpRepository implements OtpRepository {
     required String deviceId,
     Duration connectTimeout = const Duration(seconds: 20),
     // Más larga que la de conexión por el arranque en frío del hosting: ver
-    // la nota en `HttpAuthRepository.withConfig`.
+    // la nota en `buildAuthenticatedDio`.
     Duration receiveTimeout = const Duration(seconds: 70),
   }) =>
       HttpOtpRepository(

@@ -1,3 +1,4 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
@@ -6,17 +7,19 @@ import '../../../l10n/app_localizations.dart';
 
 /// Card de saldo sobre Eucalipto, con el ojo para ocultarlo.
 ///
-/// Ocultar el saldo es local y efímero a propósito: nada que persistir mientras
-/// no exista la feature de cuentas.
+/// Ocultar el saldo es local y efímero a propósito: es una comodidad de la
+/// sesión, no una preferencia que deba sobrevivir al reinicio.
 class BalanceCard extends StatefulWidget {
   const BalanceCard({
     required this.balance,
-    required this.walletLast4,
+    required this.walletMasked,
     super.key,
   });
 
-  final double balance;
-  final String walletLast4;
+  final Money balance;
+
+  /// Número de la cuenta ya enmascarado (`••••4521`).
+  final String walletMasked;
 
   @override
   State<BalanceCard> createState() => _BalanceCardState();
@@ -46,8 +49,9 @@ class _BalanceCardState extends State<BalanceCard> {
               Expanded(
                 child: Text(
                   l10n.homeBalanceLabel,
-                  style: CuyCashTypography.bodyMd
-                      .copyWith(color: CuyCashColors.onPrimaryContainer),
+                  style: CuyCashTypography.bodyMd.copyWith(
+                    color: CuyCashColors.onPrimaryContainer,
+                  ),
                 ),
               ),
               IconButton(
@@ -73,13 +77,17 @@ class _BalanceCardState extends State<BalanceCard> {
           const SizedBox(height: CuyCashSpacing.stackSm),
           Row(
             children: [
-              const Icon(Icons.account_balance_wallet_outlined,
-                  size: 16, color: CuyCashColors.onPrimaryContainer),
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 16,
+                color: CuyCashColors.onPrimaryContainer,
+              ),
               const SizedBox(width: CuyCashSpacing.stackSm),
               Text(
-                l10n.homeWalletMask(widget.walletLast4),
-                style: CuyCashTypography.bodyMd
-                    .copyWith(color: CuyCashColors.onPrimaryContainer),
+                l10n.homeWalletMask(widget.walletMasked),
+                style: CuyCashTypography.bodyMd.copyWith(
+                  color: CuyCashColors.onPrimaryContainer,
+                ),
               ),
             ],
           ),

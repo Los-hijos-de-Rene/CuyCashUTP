@@ -3,17 +3,25 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/injection/app_dependencies.dart';
+import '../../core/injection/modules/account_module.dart';
+import '../../core/injection/modules/beneficiary_module.dart';
 import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
 import '../../core/injection/modules/register_module.dart';
+import '../../core/injection/modules/transfer_module.dart';
 import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/auth/domain/auth_session.dart';
 import '../../feature/device/application/device_actions.dart';
+import '../../feature/account/domain/account.dart';
 import '../../feature/kyc/application/kyc_actions.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/bloc/auth_bloc.dart';
+import '../home/bloc/account_bloc.dart';
 import '../home/home_screen.dart';
+import '../home/refresh_after_send.dart';
+import '../movement/bloc/movement_detail_bloc.dart';
+import '../movement/movement_detail_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../otp/bloc/otp_bloc.dart';
 import '../otp/flujo_cancelado_screen.dart';
@@ -33,6 +41,14 @@ import '../register/bloc/register_bloc.dart';
 import '../register/register_flow_screen.dart';
 import '../shell/app_shell.dart';
 import '../splash/splash_screen.dart';
+import '../transfer/amount_screen.dart';
+import '../transfer/bloc/transfer_bloc.dart';
+import '../transfer/confirm_screen.dart';
+import '../topup/bloc/topup_bloc.dart';
+import '../topup/topup_screen.dart';
+import '../transfer/receipt_screen.dart';
+import '../transfer/recipient_screen.dart';
+import '../transfer/widgets/frequent_section.dart';
 import '../auth/login_screen.dart';
 import 'app_redirect.dart';
 import 'app_routes.dart';
@@ -211,6 +227,90 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           );
         },
       ),
+      // Las cuatro pantallas del envío comparten UN TransferBloc: la clave de
+      // idempotencia, el monto y el destinatario viven mientras dure el flujo
+      // y mueren al salir de él.
+      ShellRoute(
+        builder: (context, state, child) => BlocProvider(
+          create: (_) => TransferBloc(
+            TransferModule.create(deps),
+            pending: TransferModule.pending(deps),
+            beneficiaries: BeneficiaryModule.create(deps),
+            // Las claves pendientes son de ESTE usuario y de nadie más.
+            userId: switch (authBloc.state) {
+              AuthAuthenticated(:final session) => session.userId,
+              AuthUnauthenticated() => '',
+            },
+          ),
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: AppRoutes.enviar,
+            builder: (context, state) {
+              // La cuenta viaja como `extra` desde el inicio. Sin ella (deep
+              // link) no hay desde dónde enviar.
+              if (state.extra case final Account cuenta) {
+                return RecipientScreen(
+                  cuenta: cuenta,
+                  frecuentes: (onSelected) => FrequentSection(
+                    actions: BeneficiaryModule.create(deps),
+                    onSelected: onSelected,
+                  ),
+                );
+              }
+              return const SplashScreen();
+            },
+            redirect: (context, state) =>
+                state.extra is Account ? null : AppRoutes.home,
+          ),
+          GoRoute(
+            path: AppRoutes.enviarMonto,
+            builder: (context, state) => const AmountScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.enviarConfirmar,
+            builder: (context, state) => const ConfirmScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.enviarConstancia,
+            builder: (context, state) => const ReceiptScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.movimiento,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return BlocProvider(
+            create: (_) => MovementDetailBloc(AccountModule.create(deps))
+              ..add(MovementDetailEvent.opened(id)),
+            child: MovementDetailScreen(transactionId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.recargar,
+        // La cuenta viaja como `extra` desde el inicio; sin ella (deep link)
+        // no hay dónde recargar.
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) {
+          final cuenta = state.extra as Account;
+          return BlocProvider(
+            // La clave de idempotencia nace al abrir (TopUpOpened).
+            create: (_) => TopUpBloc(
+              TransferModule.create(deps),
+              pending: TransferModule.pending(deps),
+              userId: switch (authBloc.state) {
+                AuthAuthenticated(:final session) => session.userId,
+                AuthUnauthenticated() => '',
+              },
+            )..add(TopUpEvent.opened(cuentaId: cuenta.id)),
+            child: TopUpScreen(cuenta: cuenta),
+          );
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -218,7 +318,11 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           StatefulShellBranch(routes: [
             GoRoute(
                 path: AppRoutes.home,
-                builder: (context, state) => const HomeScreen()),
+                builder: (context, state) => BlocProvider(
+                      create: (_) => AccountBloc(AccountModule.create(deps))
+                        ..add(const AccountEvent.started()),
+                      child: const RefreshAfterSend(child: HomeScreen()),
+                    )),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(

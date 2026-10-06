@@ -9,6 +9,20 @@ abstract final class AppRoutes {
   static const quickAccess = '/acceso-rapido';
   static const blocked = '/bloqueado';
 
+  // Envío de dinero (pila de cuatro pantallas sobre el inicio).
+  static const enviar = '/enviar';
+  static const enviarMonto = '/enviar/monto';
+  static const enviarConfirmar = '/enviar/confirmar';
+  static const enviarConstancia = '/enviar/constancia';
+
+  // Detalle de un movimiento del historial.
+  static const movimiento = '/movimientos/:id';
+  static String movimientoDe(String transactionId) =>
+      '/movimientos/${Uri.encodeComponent(transactionId)}';
+
+  // Recarga de saldo (una sola pantalla: monto + PIN).
+  static const recargar = '/recargar';
+
   // Recuperación de PIN.
   static const recuperar = '/recuperar';
   static const recuperarCodigo = '/recuperar/codigo';

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/core/http/authenticated_dio.dart';
+import 'package:cuycash/core/http/session_token_holder.dart';
 import 'package:cuycash/feature/auth/domain/auth_failure.dart';
 import 'package:cuycash/feature/auth/infrastructure/http_auth_repository.dart';
 import 'package:dio/dio.dart';
@@ -46,19 +48,67 @@ AuthFailure failureOf(Either<GlobalFailure<AuthFailure>, Object?> result) {
 void main() {
   late FakeAdapter adapter;
   late HttpAuthRepository repo;
+  late SessionTokenHolder holder;
 
   setUp(() {
     adapter = FakeAdapter();
-    final dio = Dio(BaseOptions(
+    holder = SessionTokenHolder();
+    final dio = buildAuthenticatedDio(
       baseUrl: 'http://10.0.2.2:8001',
-      headers: {'X-Device-Id': 'telefono-1'},
-      validateStatus: (status) => status != null && status < 500,
-    ))..httpClientAdapter = adapter;
-    repo = HttpAuthRepository(dio: dio, deviceId: 'telefono-1');
+      deviceId: 'telefono-1',
+      readToken: () => holder.token,
+      onUnauthenticated: () {},
+    )..httpClientAdapter = adapter;
+    repo = HttpAuthRepository(
+      dio: dio,
+      deviceId: 'telefono-1',
+      tokenHolder: holder,
+    );
   });
 
   Future<Either<GlobalFailure<AuthFailure>, Object?>> autenticar() =>
       repo.authenticate(identifier: '12345678', pin: '024689');
+
+  test('el token de sesión llega al holder y se adjunta después; signOut lo '
+      'borra', () async {
+    adapter.body = {
+      'result': 'session',
+      'session_token': 'tok-1',
+      'user': {'id': 'u1'},
+    };
+    await repo.signIn(identifier: '12345678', pin: '024689');
+    expect(holder.token, 'tok-1');
+
+    adapter.body = const {};
+    await repo.signOut();
+
+    expect(adapter.lastRequest?.headers['Authorization'], 'Bearer tok-1');
+    expect(holder.token, isNull);
+  });
+
+  test('signOut con la red caída cierra la sesión local igualmente', () async {
+    adapter.body = {
+      'result': 'session',
+      'session_token': 'tok-1',
+      'user': {'id': 'u1'},
+    };
+    await repo.signIn(identifier: '12345678', pin: '024689');
+    final emitidos = <Object?>[];
+    final sub = repo.sessionChanges().listen(emitidos.add);
+
+    adapter.throwIt = DioException(
+      requestOptions: RequestOptions(path: '/v1/auth/sessions/current'),
+      type: DioExceptionType.connectionTimeout,
+    );
+    final result = await repo.signOut();
+    await Future<void>.delayed(Duration.zero);
+    await sub.cancel();
+
+    expect(result.isRight(), isTrue);
+    expect(repo.currentSession, isNull);
+    expect(holder.token, isNull);
+    expect(emitidos, [null]);
+  });
 
   test('el identificador del teléfono viaja en cada llamada', () async {
     adapter.body = {'result': 'device_verification_required'};

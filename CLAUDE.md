@@ -5,11 +5,35 @@ El producto completo son 22 historias de usuario en 6 épicas repartidas en 6
 sprints: identidad/KYC, cuentas y motor transaccional, transferencias y
 antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 
-**Lo implementado hoy es el Sprint 1 (identidad y accesos):** splash →
-onboarding → (login | registro con KYC) → home → perfil, más OTP, PIN y acceso
-rápido con bloqueo por intentos. Cuentas, transferencias, préstamos, QR,
-conciliación y antifraude **no existen todavía** — no asumas que hay código de
-esos módulos. El dashboard web está diferido.
+**Lo implementado hoy** es el Sprint 1 (identidad y accesos) más la épica 2
+(cuentas y libro mayor) y una parte de la 3 (transferencia entre cuentas CuyCash):
+
+- Identidad: splash → onboarding → (login | registro con KYC) → home → perfil,
+  más OTP, PIN y acceso rápido con bloqueo por intentos.
+- Cuentas: una cuenta de ahorro en soles por titular, con saldo y movimientos.
+- Libro mayor con partida doble: toda operación de dinero pasa por
+  `services/api/app/services/ledger.py`, con idempotencia y bloqueo de fila.
+- Envío de dinero entre titulares de CuyCash, identificando al destinatario por
+  DNI y confirmando con PIN. Resolver un DNI devuelve el nombre enmascarado.
+- Recarga de saldo: cash-in **simulado** contra una cuenta de sistema (la caja
+  de CuyCash), la única que puede quedar en negativo.
+- Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+
+**Sigue sin existir** (no asumas que hay código de esto): transferencia
+interbancaria y CCI, pagos y cobro por QR, préstamos, antifraude, conciliación
+y cumplimiento (PLDFT). Tampoco hay cuentas en USD ni más de una cuenta por
+titular. El dashboard web está diferido.
+
+**Lo que no se ha comprobado:** la app y el backend se probaron cada uno contra
+su propio doble (la app contra `Memory*`, el backend por HTTP con su suite). La
+verificación en un emulador del flavor `local` contra `services/api` **nunca se
+ha ejecutado**; el guion está en `docs/verificacion-manual.md`, con los pasos de
+pantalla marcados como inferidos del código.
+
+**Concurrencia sin probar.** Los dos tests marcados `postgres` (envíos cruzados
+y misma clave en paralelo) **nunca se han ejecutado contra un Postgres real**:
+el orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están
+razonados, no probados. Es la única garantía del sprint en ese estado.
 
 Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 `SLA_KPI_Banca_Online_Integral.xlsx`).
@@ -18,13 +42,15 @@ Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 - `apps/mobile` — app Flutter (Bloc).
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).
 - `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
-- `services/auth` — backend de identidad (FastAPI + Postgres). Fuera del
-  workspace de Flutter: `flutter analyze` y `flutter test` lo ignoran. Vive en
-  este repo para poder cambiar app y contrato en un mismo commit.
+- `services/api` — backend de identidad, cuentas y libro mayor (FastAPI +
+  Postgres; SQLite para desarrollo y tests). Fuera del workspace de Flutter:
+  `flutter analyze` y `flutter test` lo ignoran. Vive en este repo para poder
+  cambiar app y contrato en un mismo commit.
 
 Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
 Flutter); UI + Bloc en `presentation/<x>/`. Features actuales: `auth`, `kyc`,
-`otp`, `device`, `lockout`.
+`otp`, `device`, `lockout`, `account`, `transfer`, `beneficiary`. (La recarga
+vive en `transfer`; su UI en `presentation/topup/`.)
 
 Composición por flavor en `lib/core/injection/`: `modules/<x>.dart` arma cada
 feature, `envs/<flavor>.dart` decide qué implementación recibe. Cada
@@ -32,7 +58,7 @@ feature, `envs/<flavor>.dart` decide qué implementación recibe. Cada
 
 ## Flavors
 - `mock` — repos en memoria (PIN válido `000000`). Default de desarrollo + tests.
-- `local` — contra `services/auth` (`config.local.json`).
+- `local` — contra `services/api` (`config.local.json`).
 - `production` — contra el backend desplegado (`config.production.json`).
 
 `AUTH_BASE_URL` es opcional: sin él se asume el PC anfitrión (`10.0.2.2` en
@@ -50,6 +76,8 @@ teléfono físico: IP del PC) y `KYC_API_KEY`. Sin ellas se cae al
 
 Contrato, riesgos y acuerdos con el servicio: `docs/adr/0001-integracion-kyc-facial.md`.
 Diseño del backend propio de auth: `docs/adr/0002-backend-de-autenticacion.md`.
+Diseño de cuentas, envío y recarga: `docs/superpowers/specs/2026-10-05-cuentas-y-transferencias-design.md`.
+Modelo de datos (tablas reales y las diseñadas): `docs/modelo-datos.md`.
 
 **La `KYC_API_KEY` en la app es un atajo de demo.** Todo lo compilado en el
 binario es extraíble, así que esa clave debe tratarse como pública. El destino
@@ -67,8 +95,11 @@ completa en `docs/sla-kpi.md`.
 - Autenticación biométrica o por PIN: < 1.5 s, siempre con PIN de contingencia.
 - Bloqueo automático de cuenta al 5.º intento fallido.
 - Onboarding completo: < 5 min, con ≥ 85 % de finalización.
-- Futuro motor transaccional: < 200 ms por operación; libro mayor atómico.
-- Pagos QR: una sola autorización por pago (idempotencia).
+- Motor transaccional: < 200 ms por operación; libro mayor atómico (débito y
+  crédito en la misma transacción de base de datos). La atomicidad está
+  cubierta por tests; los 200 ms **no tienen medición automatizada** en el repo.
+- Una sola autorización por operación (idempotencia): hoy la implementan el
+  envío y la recarga con `idempotency_key` única; el pago QR aún no existe.
 
 ## Comandos
 ```sh
@@ -80,7 +111,33 @@ flutter gen-l10n                      # regenera ARB (en apps/mobile)
 
 # Ejecutar (en apps/mobile)
 flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.mock.json
+
+# Backend (en services/api)
+.venv/bin/python -m pytest -q         # suite sobre SQLite en memoria
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/python -m uvicorn app.main:app --port 8001
+
+# Recrear el esquema (DESTRUCTIVO: borra todas las tablas y las vuelve a crear)
+.venv/bin/python scripts/reset_schema.py
 ```
+
+**Por qué recrear el esquema:** el servicio crea tablas con `create_all`, que
+no altera las que ya existen; un `CHECK` cambiado no llega a una base ya
+creada. Mientras no haya datos reales se recrea en vez de migrar.
+`scripts/reset_schema.py` lleva un cerrojo: sin `ALLOW_DESTRUCTIVE_RESET=1` solo
+acepta SQLite y los hosts `localhost`/`127.0.0.1` (y rechaza `ENV=production`).
+Contra una base remota hay que pasar esa variable a propósito.
+
+**Tests que exigen Postgres** (el bloqueo de fila y la concurrencia no se
+pueden probar en SQLite; sin esta variable se omiten, y hasta hoy nadie los ha
+ejecutado contra un Postgres real):
+```sh
+cd services/api
+TEST_POSTGRES_URL="postgresql+asyncpg://user:pass@localhost/cuycash_test" \
+  .venv/bin/python -m pytest -m postgres -q
+```
+El fixture hace `drop_all` al entrar y al salir, así que el nombre de la base
+**debe terminar en `_test`** o se niega a correr. Nunca apuntarlo a una base con
+datos. `schema.sql` se regenera con `scripts/dump_schema.py`, no a mano.
 
 ## Reglas duras
 1. Errores como valores (`Either`+`GlobalFailure`); ningún `throw` cruza capas.
@@ -92,3 +149,9 @@ flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.m
 7. Copy es-PE en ARB; cero strings de UI hardcodeados.
 8. Un widget público por archivo; `.freezed.dart`/l10n generados se commitean.
 9. `auth` es la feature plantilla — cópiala para features nuevas.
+10. **El dinero es un `int` de céntimos envuelto en `Money`
+    (`core_kernel`); ningún `double` representa dinero.** Mismo criterio en el
+    backend: `BIGINT` de céntimos y `StrictInt` en los payloads. Formatear a
+    soles solo al mostrar (`formatSoles`).
+11. Toda escritura de dinero pasa por `app/services/ledger.py` y lleva
+    `idempotency_key`; ninguna ruta inserta asientos por su cuenta.

@@ -4,20 +4,30 @@ Diseño relacional de las 6 épicas de "Banca Online Integral". Motor:
 PostgreSQL 16 (Neon). El acceso a datos pasa por SQLAlchemy 2.0 en el backend y
 por el patrón Repository en la app.
 
-**Estado de implementación.** El diagrama cubre el alcance completo del MVP; el
-código implementa las épicas 1 y 2. Las tablas de las épicas 3 a 6 están
-diseñadas y documentadas aquí, y se crean en el sprint que les corresponde. Se
+**Estado de implementación.** El diagrama mezcla lo implementado y lo diseñado;
+el listado de la sección "Tablas implementadas" y `services/api/app/db/models.py`
+son la referencia de lo que existe de verdad (`services/api/schema.sql` se
+genera de esos modelos). El código implementa las épicas 1 y 2 y una parte de la
+3: la transferencia entre cuentas CuyCash. Las tablas del resto de las épicas
+están diseñadas y documentadas aquí, y se crean en el sprint que les
+corresponde. Se
 diseñan todas juntas porque el libro mayor de la épica 2 es el centro al que
 las demás escriben: definirlo sin saber quién lo va a usar obliga a rehacerlo.
 
 | Épica | Sprint | Tablas | Estado |
 |---|---|---|---|
 | 1 · Identidad y accesos | 1 | 8 | Implementada |
-| 2 · Cuentas y libro mayor | 2 | 4 | Implementada |
-| 3 · Transferencias y antifraude | 3 | 3 | Diseñada |
+| 2 · Cuentas y libro mayor | 2 | 3 | Implementada |
+| 3 · Transferencias y antifraude | 3 | 3 | Parcial |
 | 4 · Préstamos digitales | 4 | 4 | Diseñada |
 | 5 · Billetera y QR | 5 | 2 | Diseñada |
 | 6 · Conciliación y cumplimiento | 6 | 4 | Diseñada |
+
+Épica 3, parcial: están implementadas `transfers` (solo entre cuentas CuyCash,
+por DNI) y `beneficiaries` (frecuentes). **Pendientes:** la transferencia
+interbancaria y por CCI, y el antifraude (`fraud_alerts`). Las cuentas, el libro
+mayor y la recarga de la épica 2 no tienen tabla propia de recarga: una recarga
+es una `transaction` de tipo `recarga` contra la cuenta de sistema.
 
 ---
 
@@ -36,6 +46,7 @@ erDiagram
 
     accounts ||--o{ ledger_entries : "afectada por"
     accounts ||--o{ transfers : "origen de"
+    accounts ||--o{ transfers : "destino de"
     accounts ||--o{ qr_codes : "cobra en"
     accounts ||--o{ loans : "desembolsa en"
 
@@ -67,9 +78,9 @@ erDiagram
 
     accounts {
         uuid id PK
-        uuid user_id FK
+        uuid user_id FK "nulo solo en la cuenta de sistema"
         varchar numero UK "14 dígitos"
-        varchar tipo "ahorro | corriente"
+        varchar tipo "ahorro | corriente | sistema"
         varchar moneda "PEN | USD"
         varchar estado "activa | bloqueada | cerrada"
         bigint saldo_disponible "céntimos"
@@ -79,10 +90,11 @@ erDiagram
 
     transactions {
         uuid id PK
-        varchar tipo "transferencia | pago_qr | desembolso | cuota"
+        varchar tipo "transferencia | recarga | pago_qr | desembolso | cuota | ajuste"
         varchar estado "pendiente | confirmada | revertida"
         varchar idempotency_key UK
         varchar referencia
+        varchar request_fingerprint "huella de los parámetros"
         timestamptz created_at
     }
 
@@ -99,13 +111,20 @@ erDiagram
 
     transfers {
         uuid id PK
-        uuid transaction_id FK
+        uuid transaction_id FK,UK
         uuid cuenta_origen FK
-        uuid cuenta_destino FK "nulo si es externa"
-        varchar destino_externo "CCI o celular"
-        varchar canal "propia | terceros | interbancaria"
-        bigint monto
+        uuid cuenta_destino FK
+        bigint monto "céntimos"
+        varchar motivo "opcional, 40"
         varchar estado
+    }
+
+    beneficiaries {
+        uuid id PK
+        uuid user_id FK
+        varchar beneficiario_dni "8 dígitos; UK con user_id"
+        varchar apodo "40"
+        timestamptz created_at
     }
 
     fraud_alerts {
@@ -158,6 +177,13 @@ erDiagram
     }
 ```
 
+> Lo que el diagrama muestra de `transfers` es solo lo implementado. Las
+> columnas `destino_externo` (CCI o celular) y `canal` (propia | terceros |
+> interbancaria) y un `cuenta_destino` nulo para destinos externos están
+> **diseñadas pero no existen**: llegan con la transferencia interbancaria. Hoy
+> `cuenta_destino` es obligatoria. `fraud_alerts`, `qr_codes`, `qr_payments`,
+> `loans` y `loan_installments` del diagrama tampoco existen todavía.
+>
 > El diagrama omite las tablas de soporte de identidad (`lockouts`,
 > `login_attempts`, `otp_challenges`, `otp_tickets`) y las de cumplimiento
 > (`reconciliation_runs`, `watchlist_screenings`, `notifications`,
@@ -184,7 +210,10 @@ regla es invariable:
 
 Esto cumple el SLA de la HU18 — atómico: débito y crédito, o ninguno — porque
 los asientos de una transacción se insertan dentro de la misma transacción de
-base de datos.
+base de datos. La igualdad de débitos y créditos la **verifica el código**
+(`app/services/ledger.py`, único punto de escritura del libro), no una
+restricción de la base: el esquema solo impone que el monto sea positivo y que
+la dirección sea `debito` o `credito`.
 
 `accounts.saldo_disponible` es una columna, no una suma de los asientos.
 Calcular el saldo sumando el historial completo es correcto pero no sostiene el
@@ -201,7 +230,15 @@ a leer el saldo ya rebajado y es rechazado si no alcanza. Sin ese bloqueo, las
 dos lecturas ven el mismo saldo y las dos aprueban.
 
 Es bloqueo por fila: dos cuentas distintas no se estorban, así que el SLA de
-200 ms se mantiene bajo concurrencia.
+200 ms no debería degradarse bajo concurrencia (no hay medición automatizada de
+esa cifra). `FOR UPDATE` solo tiene efecto en Postgres; los tests de
+concurrencia llevan la marca `postgres` y se omiten en SQLite. **Nunca se han
+ejecutado contra un Postgres real**: el orden de bloqueo del `FOR UPDATE` y la
+ventana de idempotencia están razonados, no probados.
+
+Además, `accounts` lleva un `CHECK (tipo = 'sistema' OR saldo_disponible >= 0)`
+como última defensa contra el doble gasto. La cuenta de sistema —contraparte de
+cada recarga— queda en negativo por diseño: su saldo es el dinero inyectado.
 
 ### 4 · Idempotencia por restricción única, no por lógica
 
@@ -211,7 +248,12 @@ la restricción y se devuelve la transacción original en lugar de crear otra.
 
 Esto es lo que cumple el "una sola autorización por pago" de la HU16. Se delega
 en la base y no en código porque es la única capa que ve todos los intentos
-simultáneos.
+simultáneos. Hoy lo usan el envío y la recarga; el pago QR no existe aún.
+
+Repetir una clave con **otros** parámetros no es un reintento: la columna
+`request_fingerprint` guarda una huella de la petición, y una clave reutilizada
+con datos distintos se rechaza con 409 en lugar de devolver la operación
+original. El reintento legítimo devuelve 200 con la misma transacción.
 
 ### 5 · Los estados son columnas de texto acotado, no enumerados de Postgres
 
@@ -219,11 +261,18 @@ simultáneos.
 restricción `CHECK` se consigue la misma garantía y el cambio es barato, que es
 lo que necesita un producto que todavía está descubriendo sus estados.
 
+Matiz: hoy los `CHECK` existen en `accounts`, `transactions` y `ledger_entries`.
+Las columnas de estado de `users`, `transfers` y las tablas de identidad son
+`VARCHAR` sin `CHECK`; el código las acota, la base no.
+
 ### 6 · Nada se borra: los movimientos no tienen `DELETE`
 
 Una operación equivocada se corrige con una transacción inversa que deja su
 propio rastro, nunca borrando asientos. Es un requisito contable y, de paso, la
-base de la trazabilidad que exige la auditoría.
+base de la trazabilidad que exige la auditoría. Hoy esto se cumple porque
+ninguna ruta borra movimientos, no porque la base lo impida. Los únicos datos
+que sí se borran son los frecuentes (`DELETE /v1/beneficiaries/{id}`), que no
+son dinero.
 
 ---
 
@@ -240,6 +289,23 @@ base de la trazabilidad que exige la auditoría.
 | `otp_challenges` | Desafío OTP con su código hasheado, vigencia y contadores. |
 | `otp_tickets` | Prueba de que un OTP se verificó. Lo exige el restablecimiento de PIN. |
 | `kyc_verifications` | Veredicto y distancias faciales. **Nunca las imágenes.** |
+
+### Tablas implementadas de dinero (épicas 2 y 3)
+
+Columnas tal como están en `services/api/app/db/models.py`. Los importes son
+`BIGINT` de céntimos. Todos los ids son `VARCHAR(36)` con un UUID generado por
+la aplicación, y las fechas son `timestamptz`.
+
+| Tabla | Columnas | Restricciones |
+|---|---|---|
+| `accounts` | `id`, `user_id` (FK `users`, nulo solo en la cuenta de sistema), `numero` (14), `tipo`, `moneda`, `estado`, `saldo_disponible`, `saldo_contable`, `created_at` | `numero` único; `CHECK` de `tipo` (`ahorro`, `corriente`, `sistema`), `moneda` (`PEN`, `USD`) y `estado` (`activa`, `bloqueada`, `cerrada`); `(tipo = 'sistema') = (user_id IS NULL)`; saldo disponible no negativo salvo en `sistema` |
+| `transactions` | `id`, `tipo`, `estado`, `idempotency_key` (64), `referencia` (60, nulo), `request_fingerprint` (64), `created_at` | `idempotency_key` única; `CHECK` de `tipo` (`transferencia`, `recarga`, `pago_qr`, `desembolso`, `cuota`, `ajuste`) y `estado` (`pendiente`, `confirmada`, `revertida`) |
+| `ledger_entries` | `id`, `transaction_id` (FK), `account_id` (FK), `direccion`, `monto`, `moneda`, `saldo_posterior`, `created_at` | `monto > 0`; `direccion` en (`debito`, `credito`); índice `(account_id, created_at, id)` para paginar el historial |
+| `transfers` | `id`, `transaction_id` (FK), `cuenta_origen` (FK `accounts`), `cuenta_destino` (FK `accounts`), `monto`, `motivo` (40, nulo), `estado` (12, por defecto `confirmada`) | `transaction_id` único (una transferencia por transacción) |
+| `beneficiaries` | `id`, `user_id` (FK `users`), `beneficiario_dni` (8), `apodo` (40), `created_at` | única `(user_id, beneficiario_dni)`. Solo guarda DNI y apodo: nombre y cuenta se resuelven al usarlo |
+
+`transfers` no guarda el dinero —eso son los asientos—, guarda la intención: a
+quién, desde dónde y con qué motivo. Una recarga no tiene fila en `transfers`.
 
 ### Cumplimiento y operación (épica 6, diseñada)
 
