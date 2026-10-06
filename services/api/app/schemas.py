@@ -63,3 +63,17 @@ class AliasIn(BaseModel):
     # Holgado a propósito: la regla real (`@` + 3–20 de [a-z0-9_.]) la aplica
     # el router tras normalizar, para responder INVALID_ALIAS y no un 422 genérico.
     alias: str = Field(max_length=60)
+
+
+class ChangePinIn(BaseModel):
+    current_pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class EnrollBiometricIn(BaseModel):
+    pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class BiometricSessionIn(BaseModel):
+    dni: str = Field(min_length=8, max_length=8, pattern=r"^\d{8}$")
+    credential: str = Field(min_length=1, max_length=200)

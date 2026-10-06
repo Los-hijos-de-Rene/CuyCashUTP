@@ -6,13 +6,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.deps import bearer_token
+from app.core.deps import bearer_token, current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.core.security import ahash_pin, averify_pin, new_token, pin_is_valid, token_digest
 from app.db.base import get_session
 from app.db.models import Device, OtpTicket, User, utcnow
-from app.schemas import AuthenticateIn, CheckPinIn, RegisterIn, ResetPinIn, SessionIn
-from app.services import accounts, devices, lockout, otp, sessions
+from app.db.models import Session as SessionRow
+from app.schemas import (
+    AuthenticateIn,
+    BiometricSessionIn,
+    ChangePinIn,
+    CheckPinIn,
+    EnrollBiometricIn,
+    RegisterIn,
+    ResetPinIn,
+    SessionIn,
+)
+from app.services import accounts, biometric, devices, lockout, otp, pin_check, sessions
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
@@ -293,5 +303,31 @@ async def reset_pin(payload: ResetPinIn, session: AsyncSession = Depends(get_ses
     # Cambiar el PIN cierra TODAS las sesiones, incluida la de este teléfono:
     # restablecer no otorga acceso.
     revocadas = await sessions.revoke_all(session, user.id)
+    await session.commit()
+    return {"revoked_sessions": revocadas}
+
+
+@router.post("/pin/change")
+async def change_pin(
+    payload: ChangePinIn,
+    row: SessionRow = Depends(current_session_row),
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Cambiar el PIN con la sesión abierta. A diferencia de `/pin/reset`, este
+    teléfono sigue dentro: quien lo pide acaba de probar el PIN actual. Los
+    OTROS teléfonos pierden sus sesiones y sus huellas.
+    """
+    await pin_check.verify(session, user, payload.current_pin, row)
+    if not pin_is_valid(payload.new_pin):
+        raise ApiError(ErrorCode.WEAK_PIN, "Elige un PIN menos previsible.")
+    if await averify_pin(payload.new_pin, user.pin_hash):
+        raise ApiError(ErrorCode.PIN_UNCHANGED, "Tu nuevo PIN debe ser distinto al anterior.")
+
+    user.pin_hash = await ahash_pin(payload.new_pin)
+    user.pin_updated_at = utcnow()
+    revocadas = await sessions.revoke_all_except(session, user.id, row.device_id)
+    await biometric.revoke(session, user.id, except_device=row.device_id)
     await session.commit()
     return {"revoked_sessions": revocadas}
