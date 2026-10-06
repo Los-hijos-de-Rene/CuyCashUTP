@@ -113,6 +113,9 @@ class FakeTransferRepository implements TransferRepository {
   final claves = <String>[];
   final pines = <String>[];
   final cuentasDestino = <String>[];
+
+  /// Cada DNI que se consultó con `resolverDestinatario`.
+  final busquedas = <String>[];
   int get llamadas => claves.length;
 
   static Result<TransferFailure, T> falla<T>(TransferFailure f) =>
@@ -127,7 +130,10 @@ class FakeTransferRepository implements TransferRepository {
   @override
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
     String dni,
-  ) => alResolver?.call(dni) ?? Future.value(right(directorioDePrueba));
+  ) {
+    busquedas.add(dni);
+    return alResolver?.call(dni) ?? Future.value(right(directorioDePrueba));
+  }
 
   @override
   FutureResult<TransferFailure, TransferReceipt> enviar({

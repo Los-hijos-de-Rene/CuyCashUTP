@@ -4,23 +4,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../feature/account/domain/account.dart';
+import '../../feature/beneficiary/domain/beneficiary.dart';
 import '../../feature/transfer/domain/recipient.dart';
+import '../../feature/transfer/domain/recipient_account.dart';
+import '../../feature/transfer/domain/recipient_directory.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import 'bloc/transfer_bloc.dart';
 import 'transfer_error_text.dart';
+import 'widgets/recipient_account_card.dart';
 
-/// Paso 1 del envío: a quién. Al completar los 8 dígitos del DNI se resuelve
-/// contra el backend, que devuelve el nombre ENMASCARADO.
+/// Paso 1 del envío: a qué cuenta. Al completar el DNI se listan sus cuentas;
+/// tocar una pasa al monto. Un frecuente con cuenta pasa directo.
 class RecipientScreen extends StatefulWidget {
   const RecipientScreen({required this.cuenta, this.frecuentes, super.key});
 
   /// Cuenta de origen: la que el inicio ya muestra.
   final Account cuenta;
 
-  /// Fila de "Frecuentes". Recibe qué hacer al tocar uno: rellenar el DNI y
-  /// buscarlo. Sin ella (tests del flujo sin frecuentes) no hay fila.
-  final Widget Function(ValueChanged<String> onSelected)? frecuentes;
+  /// Fila de "Frecuentes". Recibe qué hacer al tocar uno: ir directo al monto
+  /// si trae cuenta, o rellenar el DNI y buscar. Sin ella no hay fila.
+  final Widget Function(ValueChanged<Beneficiary> onSelected)? frecuentes;
 
   @override
   State<RecipientScreen> createState() => _RecipientScreenState();
@@ -52,13 +57,102 @@ class _RecipientScreenState extends State<RecipientScreen> {
     }
   }
 
-  /// Tocar un frecuente es teclear su DNI: mismo camino, misma búsqueda.
-  void _onFrequentSelected(String dni) {
-    _controller.value = TextEditingValue(
-      text: dni,
-      selection: TextSelection.collapsed(offset: dni.length),
-    );
-    _onChanged(dni);
+  /// Un frecuente que ya trae su cuenta pasa directo al monto, sin consultar
+  /// (no gasta presupuesto). Sin cuenta (dejó de recibir), es teclear su DNI.
+  void _onFrequentSelected(Beneficiary b) {
+    final origen = context.read<TransferBloc>().state.cuenta;
+    switch (b.cuenta) {
+      case final RecipientAccount c when origen != null && c.moneda != origen.moneda:
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                ).transferFrequentOtherCurrency(c.moneda.symbol),
+              ),
+            ),
+          );
+      case final RecipientAccount c:
+        _elegir(
+          Recipient(
+            dni: b.dni,
+            nombreEnmascarado: b.nombreEnmascarado ?? b.apodo,
+            cuenta: c,
+          ),
+        );
+      case null:
+        _controller.value = TextEditingValue(
+          text: b.dni,
+          selection: TextSelection.collapsed(offset: b.dni.length),
+        );
+        _onChanged(b.dni);
+    }
+  }
+
+  void _elegir(Recipient r) {
+    context.read<TransferBloc>().add(TransferEvent.recipientSelected(r));
+    context.push(AppRoutes.enviarMonto);
+  }
+
+  List<Widget> _cuentas(
+    BuildContext context,
+    TransferState state,
+    RecipientDirectory d,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final origen = state.cuenta;
+    final propio = d.cuentas.any((c) => c.cuentaId == origen?.id);
+    final visibles = [
+      for (final c in d.cuentas)
+        if (c.cuentaId != origen?.id) c,
+    ];
+    final elegibles = visibles.where((c) => c.moneda == origen?.moneda);
+    final simbolo = origen?.moneda.symbol ?? '';
+    return [
+      Text(d.nombreEnmascarado, style: CuyCashTypography.titleMd),
+      const SizedBox(height: CuyCashSpacing.stackXs),
+      Text(
+        l10n.transferRecipientChooseAccount,
+        style: CuyCashTypography.bodyMd.copyWith(
+          color: CuyCashColors.secondaryText,
+        ),
+      ),
+      const SizedBox(height: CuyCashSpacing.stackSm),
+      if (elegibles.isEmpty)
+        InfoStrip(
+          icon: Icons.info_outline,
+          text: propio
+              ? l10n.transferRecipientNoOwnEligible(simbolo)
+              : l10n.transferRecipientNoEligible(simbolo),
+        ),
+      for (final c in visibles) ...[
+        RecipientAccountCard(
+          cuenta: c,
+          titulo:
+              c.nombre ??
+              l10n.transferRecipientAccountLine(
+                accountTypeShort(l10n, c.tipo),
+                c.moneda.symbol,
+                c.numeroMasked,
+              ),
+          onTap: c.moneda == origen?.moneda
+              ? () => _elegir(
+                  Recipient(
+                    dni: d.dni,
+                    nombreEnmascarado: d.nombreEnmascarado,
+                    cuenta: c,
+                  ),
+                )
+              : null,
+          motivoDeshabilitada: c.moneda == origen?.moneda
+              ? null
+              : l10n.transferRecipientOnlyReceives(c.moneda.symbol),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackSm),
+      ],
+    ];
   }
 
   @override
@@ -77,8 +171,8 @@ class _RecipientScreenState extends State<RecipientScreen> {
         child: BlocBuilder<TransferBloc, TransferState>(
           builder: (context, state) {
             final failure = state.failure;
-            final destinatario = state.destinatario;
-            return Padding(
+            final directorio = state.directorio;
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,65 +208,16 @@ class _RecipientScreenState extends State<RecipientScreen> {
                         semanticsLabel: l10n.transferSearching,
                       ),
                     ),
-                  if (destinatario != null)
-                    _RecipientCard(recipient: destinatario),
+                  if (directorio != null) ..._cuentas(context, state, directorio),
                   if (frecuentes != null) ...[
                     const SizedBox(height: CuyCashSpacing.stackMd),
                     frecuentes(_onFrequentSelected),
                   ],
-                  const Spacer(),
-                  PrimaryButton(
-                    label: l10n.transferContinue,
-                    onPressed: destinatario == null
-                        ? null
-                        : () => context.push(AppRoutes.enviarMonto),
-                  ),
                 ],
               ),
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _RecipientCard extends StatelessWidget {
-  const _RecipientCard({required this.recipient});
-
-  final Recipient recipient;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SurfaceCard(
-      child: Row(
-        children: [
-          InitialsAvatar(
-            initials: recipient.nombreEnmascarado.isEmpty
-                ? ''
-                : recipient.nombreEnmascarado.substring(0, 1),
-            size: 44,
-          ),
-          const SizedBox(width: CuyCashSpacing.stackMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipient.nombreEnmascarado,
-                  style: CuyCashTypography.titleMd,
-                ),
-                Text(
-                  l10n.transferRecipientAccount(recipient.cuentaDestinoMasked),
-                  style: CuyCashTypography.bodyMd.copyWith(
-                    color: CuyCashColors.secondaryText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

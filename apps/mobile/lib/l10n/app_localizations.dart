@@ -1792,6 +1792,52 @@ abstract class AppLocalizations {
   /// **'Cuenta {masked}'**
   String transferRecipientAccount(String masked);
 
+  /// No description provided for @transferRecipientAccountLine.
+  ///
+  /// In es, this message translates to:
+  /// **'{tipo} · {simbolo} · {masked}'**
+  String transferRecipientAccountLine(
+    String tipo,
+    String simbolo,
+    String masked,
+  );
+
+  /// No description provided for @transferRecipientChooseAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige la cuenta que recibe'**
+  String get transferRecipientChooseAccount;
+
+  /// No description provided for @transferRecipientOnlyReceives.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo recibe {simbolo}'**
+  String transferRecipientOnlyReceives(String simbolo);
+
+  /// No description provided for @transferRecipientNoEligible.
+  ///
+  /// In es, this message translates to:
+  /// **'No tiene cuentas en {simbolo} para recibir desde esta cuenta.'**
+  String transferRecipientNoEligible(String simbolo);
+
+  /// No description provided for @transferRecipientNoOwnEligible.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes otra cuenta en {simbolo}.'**
+  String transferRecipientNoOwnEligible(String simbolo);
+
+  /// No description provided for @transferFrequentOtherCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese frecuente recibe en {simbolo}. Envía desde una cuenta en {simbolo}.'**
+  String transferFrequentOtherCurrency(String simbolo);
+
+  /// No description provided for @transferRecipientAccountSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar a {linea}'**
+  String transferRecipientAccountSemantics(String linea);
+
   /// No description provided for @transferContinue.
   ///
   /// In es, this message translates to:

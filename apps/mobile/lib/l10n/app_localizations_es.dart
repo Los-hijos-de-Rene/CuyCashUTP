@@ -993,6 +993,43 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String transferRecipientAccountLine(
+    String tipo,
+    String simbolo,
+    String masked,
+  ) {
+    return '$tipo · $simbolo · $masked';
+  }
+
+  @override
+  String get transferRecipientChooseAccount => 'Elige la cuenta que recibe';
+
+  @override
+  String transferRecipientOnlyReceives(String simbolo) {
+    return 'Solo recibe $simbolo';
+  }
+
+  @override
+  String transferRecipientNoEligible(String simbolo) {
+    return 'No tiene cuentas en $simbolo para recibir desde esta cuenta.';
+  }
+
+  @override
+  String transferRecipientNoOwnEligible(String simbolo) {
+    return 'No tienes otra cuenta en $simbolo.';
+  }
+
+  @override
+  String transferFrequentOtherCurrency(String simbolo) {
+    return 'Ese frecuente recibe en $simbolo. Envía desde una cuenta en $simbolo.';
+  }
+
+  @override
+  String transferRecipientAccountSemantics(String linea) {
+    return 'Enviar a $linea';
+  }
+
+  @override
   String get transferContinue => 'Continuar';
 
   @override

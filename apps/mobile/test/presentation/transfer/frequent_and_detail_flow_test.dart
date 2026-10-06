@@ -66,7 +66,7 @@ void main() {
   }) async {
     await tester.enterText(find.byType(TextField), '87654321');
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.tap(find.text('Ahorros · S/ · ••••7732'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, '50');
@@ -99,7 +99,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '87654321');
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.tap(find.text('Ahorros · S/ · ••••7732'));
     await tester.pumpAndSettle();
 
     expect(find.text('Guardar como frecuente'), findsOneWidget);
@@ -107,7 +107,7 @@ void main() {
   });
 
   testWidgets('guardar como frecuente: aparece la próxima vez y un toque '
-      'rellena el DNI', (tester) async {
+      'lleva directo al monto', (tester) async {
     await pumpApp(tester);
     await tester.tap(find.text('Enviar'));
     await tester.pumpAndSettle();
@@ -138,8 +138,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(TextField, '87654321'), findsOneWidget);
-    expect(find.text('Cuenta ••••7732'), findsOneWidget);
+    // Un frecuente con cuenta pasa directo al monto. Que el monto muestre la
+    // cuenta destino ('Ahorros · ••••7732') se verifica en la Task 5.
+    expect(find.text('Monto del envío'), findsOneWidget);
   });
 
   testWidgets('sin encender el interruptor el destinatario no se guarda', (
