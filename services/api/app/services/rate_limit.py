@@ -14,6 +14,12 @@ sería la suma y bastaría con que una ruta quedara sin límite para anularlo.
 Todas las rutas cubiertas llaman a `consumir_consulta_de_destinatario`, que
 descuenta del mismo cubo.
 
+LA ÚNICA EXENCIÓN: el REINTENTO de un envío (misma clave de idempotencia, misma
+cuenta de origen) no descuenta, porque no consulta el padrón: su destino sale de
+la transacción original. Cobrárselo dejaría a quien tiene un envío con resultado
+desconocido sin poder preguntar nunca "¿se cobró?", que es justo la pregunta que
+la idempotencia existe para contestar.
+
 POR QUÉ POR USUARIO Y NO POR SESIÓN. Cerrar sesión y volver a entrar crea una
 sesión nueva; un tope por sesión se reiniciaría con cada login y sería
 decorativo. El `user_id` sobrevive a eso.

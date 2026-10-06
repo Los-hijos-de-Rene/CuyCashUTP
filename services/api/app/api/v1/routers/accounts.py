@@ -17,6 +17,7 @@ from sqlalchemy import case, or_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.routers.directory import enmascarar
 from app.core.deps import current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
@@ -173,15 +174,28 @@ def _consulta_movimientos():
 
 def _movimiento_json(fila) -> dict:
     entry, tx, transfer, nombres, apellidos, _numero_destino = fila
-    # Nombre COMPLETO: ya hubo una operación entre ambos, así que dejó de ser un
-    # dato privado entre ellos. El enmascarado es de `/directory/resolve`, donde
-    # aún no hay relación.
+    # El nombre COMPLETO solo para quien RECIBIÓ el dinero; quien envió ve el
+    # mismo enmascarado que le dio `/directory/resolve`.
+    #
+    # "Ya hubo una operación entre ambos" no alcanza como justificación: la
+    # operación la elige quien envía, y `MONTO_MINIMO` es 1 céntimo. Con la
+    # regla anterior, un céntimo al DNI de un desconocido convertía
+    # `L*** A*** Q***` en "Luis Alberto Quispe", y este historial no descuenta
+    # del presupuesto de consultas de destinatario. Recibir, en cambio, no es
+    # algo que el curioso pueda provocarse: nadie puede obligar a otro a
+    # pagarle, así que ahí el nombre sí lo trae una relación real.
     if tx.tipo == "recarga":
         contraparte, motivo = "Recarga de saldo", None
     elif transfer is None:
         contraparte, motivo = None, None
+    elif nombres is None:
+        contraparte, motivo = None, transfer.motivo
     else:
-        contraparte = f"{nombres} {apellidos}" if nombres is not None else None
+        contraparte = (
+            f"{nombres} {apellidos}"
+            if entry.direccion == "credito"
+            else enmascarar(nombres, apellidos)
+        )
         motivo = transfer.motivo
     return {
         "transaction_id": tx.id,

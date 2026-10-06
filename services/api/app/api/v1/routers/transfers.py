@@ -22,7 +22,7 @@ from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.core.security import averify_pin
 from app.db.base import get_session
-from app.db.models import Account, Transaction, Transfer, User
+from app.db.models import Account, LedgerEntry, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
 from app.services import accounts as accounts_service
 from app.services import lockout
@@ -61,12 +61,68 @@ def _validar_monto(centimos: int) -> None:
         )
 
 
-async def _clave_ya_usada(session: AsyncSession, idempotency_key: str) -> bool:
+async def _clave_ya_usada(
+    session: AsyncSession, idempotency_key: str, cuenta_id: str
+) -> bool:
+    """
+    Si esa clave ya registró una operación QUE TOCA ESTA CUENTA.
+
+    Acotarla a la cuenta es lo que impide que el atajo de reintento se use
+    sobre claves ajenas. `Transaction.idempotency_key` es único en todo el
+    sistema y la tabla no tiene titular, así que la pregunta "¿esta clave ya se
+    usó?" sin acotar la contesta igual para la clave de un desconocido: con eso
+    se compraban los relajos que el reintento concede (saltarse
+    `ACCOUNT_BLOCKED`, resolver destinatarios no activos) sobre una operación
+    que no es del solicitante. El vínculo se busca por los asientos, que son lo
+    único que ata una transacción a una cuenta.
+    """
     return (
         await session.execute(
-            select(Transaction.id).where(Transaction.idempotency_key == idempotency_key)
+            select(LedgerEntry.id)
+            .join(Transaction, Transaction.id == LedgerEntry.transaction_id)
+            .where(
+                Transaction.idempotency_key == idempotency_key,
+                LedgerEntry.account_id == cuenta_id,
+            )
+            .limit(1)
         )
-    ).scalar_one_or_none() is not None
+    ).scalars().first() is not None
+
+
+async def _destino_original(
+    session: AsyncSession, cuenta_origen_id: str, idempotency_key: str
+) -> Optional[Tuple[Account, User]]:
+    """
+    El destino del envío que esa clave YA registró desde esta cuenta, con su
+    titular; `None` si no hay tal envío.
+
+    Un reintento no vuelve a preguntar por el DNI del payload: su destino es el
+    de la operación original. Así el reintento no consulta el padrón (ni gasta
+    presupuesto, ni puede distinguir "no existe" de "existe bloqueado") y, de
+    paso, con multicuenta seguirá apuntando a la cuenta que recibió y no a "la
+    primera de ahorro".
+    """
+    return (
+        await session.execute(
+            select(Account, User)
+            .join(User, User.id == Account.user_id)
+            .join(Transfer, Transfer.cuenta_destino == Account.id)
+            .join(Transaction, Transaction.id == Transfer.transaction_id)
+            .where(
+                Transaction.idempotency_key == idempotency_key,
+                Transfer.cuenta_origen == cuenta_origen_id,
+            )
+            .limit(1)
+        )
+    ).first()
+
+
+def _clave_reusada() -> ApiError:
+    return ApiError(
+        ErrorCode.IDEMPOTENCY_KEY_REUSED,
+        "Esa operación ya se envió con otros datos. Vuelve a empezar.",
+        status_code=status.HTTP_409_CONFLICT,
+    )
 
 
 async def _cuenta_propia(
@@ -74,7 +130,7 @@ async def _cuenta_propia(
 ) -> Tuple[Account, bool]:
     """
     La cuenta del titular y si la petición es el reintento de una operación ya
-    registrada.
+    registrada SOBRE ESA CUENTA.
 
     Orden deliberado: 404 por cuenta ajena PRIMERO, luego la clave, luego el
     estado. Si el antifraude bloquea la cuenta por un envío cuya respuesta se
@@ -83,7 +139,7 @@ async def _cuenta_propia(
     con datos distintos sigue acabando en 409 dentro del motor.
     """
     cuenta = await _buscar_cuenta_propia(session, user, cuenta_id)
-    reintento = await _clave_ya_usada(session, idempotency_key)
+    reintento = await _clave_ya_usada(session, idempotency_key, cuenta.id)
     if cuenta.estado != "activa" and not reintento:
         raise ApiError(
             ErrorCode.ACCOUNT_BLOCKED,
@@ -185,40 +241,62 @@ async def transferir(
     sesion: SessionRow = Depends(current_session_row),
     session: AsyncSession = Depends(get_session),
 ):
-    origen, reintento = await _cuenta_propia(
-        session, user, payload.cuenta_origen_id, payload.idempotency_key
-    )
+    origen = await _buscar_cuenta_propia(session, user, payload.cuenta_origen_id)
 
     if payload.destinatario_dni == user.dni:
         raise ApiError(ErrorCode.SELF_TRANSFER, "No puedes enviarte dinero a ti mismo.")
 
-    # Esta búsqueda es un oráculo del padrón: responde 404 antes de verificar
-    # el PIN, así que no gasta intentos de bloqueo. Comparte presupuesto con
-    # `/directory/resolve`; si no, se esquivaría usando la ruta sin tope. Se
-    # cobra también en los reintentos: su búsqueda no filtra por estado y el
-    # destinatario del payload es el que quiera el cliente.
-    consumir_consulta_de_destinatario(user.id)
-
-    consulta = (
-        select(Account)
-        .join(User, User.id == Account.user_id)
-        .where(User.dni == payload.destinatario_dni, Account.tipo == "ahorro")
-        .order_by(Account.created_at, Account.id)
+    original = await _destino_original(
+        session, origen.id, payload.idempotency_key
     )
-    if not reintento:
-        # (Hoy `abrir_cuenta` crea UNA cuenta de ahorro por persona; con
-        # multicuenta, el destino de un reintento debería resolverse desde la
-        # transacción original y no por "la primera cuenta".)
-        # En un reintento el destino pudo bloquearse después del envío; el
-        # motor devuelve la original sin mirar estados.
-        consulta = consulta.where(Account.estado == "activa")
-    destino = (await session.execute(consulta)).scalars().first()
-    if destino is None:
-        raise ApiError(
-            ErrorCode.RECIPIENT_NOT_FOUND,
-            "No encontramos a nadie con ese DNI en CuyCash.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    if original is not None:
+        # REINTENTO del MISMO envío desde la MISMA cuenta. No se vuelve a tocar
+        # el padrón: el destino es el de la operación original, así que esta
+        # rama no distingue "ese DNI no existe" de "existe pero está
+        # bloqueado" (lo que `directory._destinatario` se cuida de no revelar)
+        # y no descuenta presupuesto. Esto último es lo que hace posible la
+        # pregunta "¿se cobró?": quien tiene un envío con resultado desconocido
+        # debe poder repetirlo hasta saberlo, y un 429 lo dejaría sin respuesta
+        # para siempre.
+        destino, titular_destino = original
+        if titular_destino.dni != payload.destinatario_dni:
+            # La clave es de un envío a OTRA persona: devolver la original
+            # haría creer al usuario que envió lo que acaba de escribir. La
+            # respuesta no depende del DNI del payload, así que no es oráculo.
+            raise _clave_reusada()
+    else:
+        if origen.estado != "activa":
+            raise ApiError(
+                ErrorCode.ACCOUNT_BLOCKED,
+                "Esa cuenta no está activa.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        # Esta búsqueda es un oráculo del padrón: responde 404 antes de
+        # verificar el PIN, así que no gasta intentos de bloqueo. Comparte
+        # presupuesto con `/directory/resolve`; si no, se esquivaría usando la
+        # ruta sin tope.
+        consumir_consulta_de_destinatario(user.id)
+        destino = (
+            await session.execute(
+                select(Account)
+                .join(User, User.id == Account.user_id)
+                .where(
+                    User.dni == payload.destinatario_dni,
+                    Account.tipo == "ahorro",
+                    # Mismo filtro que `/directory/resolve`: una cuenta
+                    # bloqueada no es un destinatario, y la respuesta es la
+                    # misma que para un DNI inexistente.
+                    Account.estado == "activa",
+                )
+                .order_by(Account.created_at, Account.id)
+            )
+        ).scalars().first()
+        if destino is None:
+            raise ApiError(
+                ErrorCode.RECIPIENT_NOT_FOUND,
+                "No encontramos a nadie con ese DNI en CuyCash.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
     _validar_monto(payload.monto_centimos)
     await _exigir_pin(session, user, sesion.device_id, payload.pin)

@@ -242,7 +242,7 @@ async def test_el_limite_fuera_de_rango_se_rechaza(client, otp_codes, registrado
         assert r.status_code == 422
 
 
-async def test_el_historial_trae_el_nombre_completo_de_la_contraparte(
+async def test_quien_recibio_ve_el_nombre_completo_de_la_contraparte(
     client, otp_codes, registrado, otro_registrado, db_de_client
 ):
     mia = await _cuenta_id(client, registrado)
@@ -252,7 +252,8 @@ async def test_el_historial_trae_el_nombre_completo_de_la_contraparte(
     r = await client.get(f"/v1/accounts/{mia}/movements", headers=registrado.auth)
     mov = r.json()["movimientos"][0]
 
-    # Completo, sin enmascarar: el enmascarado es del directorio (tarea 8).
+    # Completo porque este asiento es un CRÉDITO: el dinero lo mandaron, no se
+    # lo pidió nadie. En el débito (quien envía) va enmascarado.
     assert mov["contraparte"] == "Luis Alberto Quispe"
     assert mov["motivo"] == "Almuerzo"
     assert mov["tipo"] == "transferencia"
@@ -352,7 +353,9 @@ async def test_el_emisor_tambien_ve_la_ficha_de_su_transferencia(
     emisor = await client.get(f"/v1/movements/{tx_id}", headers=otro_registrado.auth)
     assert emisor.status_code == 200
     assert emisor.json()["direccion"] == "debito"
-    assert emisor.json()["contraparte"] == "Jenny Marisol Ruiz"
+    # Enmascarado: el emisor eligió a quién enviar, así que su historial no
+    # puede darle más de lo que le dio `/directory/resolve`.
+    assert emisor.json()["contraparte"] == "J*** M*** R***"
 
 
 # --- Consultas por petición ---------------------------------------------------

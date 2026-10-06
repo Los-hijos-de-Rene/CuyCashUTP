@@ -10,7 +10,8 @@ from app.core.config import settings
 from app.db.models import Account, LedgerEntry, LoginAttempt, Transfer
 from app.services import accounts as accounts_service
 from app.services.ledger import Asiento, post
-from tests.conftest import PIN_DE_PRUEBA
+from app.services.rate_limit import CONSULTAS_MAXIMAS
+from tests.conftest import PIN_DE_PRUEBA, registrar
 
 PIN = PIN_DE_PRUEBA
 PIN_MALO = "000000"
@@ -614,3 +615,135 @@ async def test_si_se_dispara_el_bloqueo_del_dispositivo_el_codigo_es_device_lock
         headers=registrado.auth,
     )
     assert tercera.json()["code"] == "DEVICE_LOCKED"
+
+
+# --- El atajo de reintento no puede ser un oráculo del padrón -----------------
+#
+# Con `reintento` cierto el router concedía dos relajos: saltarse
+# `ACCOUNT_BLOCKED` sobre la cuenta propia y buscar al destinatario SIN el
+# filtro `estado == "activa"`. Como la detección miraba
+# `Transaction.idempotency_key` sin acotar por titular, cualquier clave ya
+# existente —incluida la que el propio curioso acababa de gastar en una
+# recarga— los compraba. Y entonces 409 (existe, bloqueado) frente a 404 (no
+# existe) distinguía lo que `directory._destinatario` se cuida de no revelar,
+# sin mover dinero ni gastar intentos de bloqueo.
+
+
+@pytest.mark.asyncio
+async def test_la_clave_de_la_propia_recarga_no_revela_al_destinatario_bloqueado(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    origen = await _con_saldo(client, registrado, 100_000)  # gasta `recarga-<dni>`
+    suya = await db_de_client.get(Account, await _cuenta_id(client, otro_registrado))
+    suya.estado = "bloqueada"
+    await db_de_client.commit()
+
+    gastada = f"recarga-{registrado.dni}"
+    bloqueado = await client.post(
+        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1, gastada),
+        headers=registrado.auth,
+    )
+    inexistente = await client.post(
+        "/v1/transfers", json=_envio(origen, "99999999", 1, gastada),
+        headers=registrado.auth,
+    )
+
+    assert bloqueado.status_code == inexistente.status_code == 404
+    assert bloqueado.json()["code"] == "RECIPIENT_NOT_FOUND"
+    assert bloqueado.json() == inexistente.json()
+
+
+@pytest.mark.asyncio
+async def test_la_clave_de_un_envio_a_otra_persona_tampoco_lo_revela(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    """La clave de un envío REAL desde la cuenta propia tampoco sirve de sonda:
+    el reintento resuelve su destino desde la operación original, así que la
+    respuesta no depende del DNI que traiga el payload."""
+    tercero = await registrar(
+        client, otp_codes, dni="33445566", nombres="Rosa Elena", apellidos="Paredes"
+    )
+    origen = await _con_saldo(client, registrado, 100_000)
+    primera = await client.post(
+        "/v1/transfers", json=_envio(origen, tercero.dni, 1_000, "envio-oraculo"),
+        headers=registrado.auth,
+    )
+    assert primera.status_code == 201
+
+    suya = await db_de_client.get(Account, await _cuenta_id(client, otro_registrado))
+    suya.estado = "bloqueada"
+    await db_de_client.commit()
+
+    bloqueado = await client.post(
+        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-oraculo"),
+        headers=registrado.auth,
+    )
+    inexistente = await client.post(
+        "/v1/transfers", json=_envio(origen, "99999999", 1_000, "envio-oraculo"),
+        headers=registrado.auth,
+    )
+
+    assert bloqueado.status_code == inexistente.status_code == 409
+    assert bloqueado.json()["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert bloqueado.json() == inexistente.json()
+    # Y el dinero no se movió otra vez.
+    assert await _saldo(client, registrado) == 99_000
+
+
+@pytest.mark.asyncio
+async def test_un_reintento_no_gasta_presupuesto_de_consultas(
+    client, otp_codes, registrado, otro_registrado
+):
+    """Quien tiene un envío con resultado desconocido debe poder preguntar "¿se
+    cobró?" hasta saberlo. Si el reintento descontara presupuesto, un 429 lo
+    dejaría sin respuesta para siempre y la app sellaría la clave."""
+    origen = await _con_saldo(client, registrado, 100_000)
+    cuerpo = _envio(origen, otro_registrado.dni, 25_000, "envio-presupuesto")
+    primera = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
+    assert primera.status_code == 201
+
+    for _ in range(CONSULTAS_MAXIMAS):
+        await client.get(
+            f"/v1/directory/resolve?dni={otro_registrado.dni}", headers=registrado.auth
+        )
+
+    nuevo = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, otro_registrado.dni, 1_000, "envio-presupuesto-2"),
+        headers=registrado.auth,
+    )
+    assert nuevo.status_code == 429, nuevo.text
+
+    segunda = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
+    assert segunda.status_code == 200, segunda.text
+    assert segunda.json()["transaction_id"] == primera.json()["transaction_id"]
+    assert await _saldo(client, registrado) == 75_000
+
+
+@pytest.mark.asyncio
+async def test_un_envio_de_un_centimo_no_destapa_el_nombre_completo(
+    client, otp_codes, registrado, otro_registrado
+):
+    """`MONTO_MINIMO` es 1: si el historial del emisor diera el nombre completo,
+    un céntimo al DNI de un desconocido valdría lo que `/directory/resolve`
+    nunca da, y `/movements` no descuenta presupuesto."""
+    origen = await _con_saldo(client, registrado, 100_000)
+    r = await client.post(
+        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1, "envio-centimo"),
+        headers=registrado.auth,
+    )
+    assert r.status_code == 201, r.text
+
+    mio = await client.get(f"/v1/accounts/{origen}/movements", headers=registrado.auth)
+    assert mio.json()["movimientos"][0]["contraparte"] == "L*** A*** Q***"
+    ficha = await client.get(
+        f"/v1/movements/{r.json()['transaction_id']}", headers=registrado.auth
+    )
+    assert ficha.json()["contraparte"] == "L*** A*** Q***"
+
+    # Quien RECIBIÓ sí ve el nombre completo: no eligió la operación.
+    suya = await _cuenta_id(client, otro_registrado)
+    recibido = await client.get(
+        f"/v1/accounts/{suya}/movements", headers=otro_registrado.auth
+    )
+    assert recibido.json()["movimientos"][0]["contraparte"] == "Jenny Marisol Ruiz"
