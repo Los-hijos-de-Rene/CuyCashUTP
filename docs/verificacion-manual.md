@@ -13,6 +13,13 @@ el guion aunque la app esté bien.
 
 Requisitos: emulador Android o simulador iOS arrancado, `flutter pub get` en la raíz.
 
+**Nota sobre el virtualenv.** Los comandos usan `.venv/bin/python -m uvicorn` y
+`.venv/bin/python -m pytest`, no `.venv/bin/uvicorn` ni `.venv/bin/pytest`: en el
+venv de esta máquina esos scripts tienen un shebang que apunta a
+`services/auth/.venv`, ruta que dejó de existir al renombrar el servicio, y dan
+`bad interpreter`. Si recreas el virtualenv desde cero, los scripts vuelven a
+funcionar; el problema es de ese venv concreto, no del proyecto.
+
 ### Paso 0. Configuración de la app.
  En `apps/mobile/config.local.json` de ESTA máquina hay restos de Supabase (`SUPABASE_URL`, `SUPABASE_ANON_KEY`) que la app ya no usa; no está versionado. Reemplázalo:
 ```sh
@@ -37,7 +44,7 @@ Esperado: `Esquema recreado en ...cuycash.db`. Si responde "Rechazado: el destin
 ### Paso 2. Arrancar el servicio
  (deja esa terminal abierta: ahí aparecen los códigos OTP).
 ```sh
-DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/uvicorn app.main:app --port 8001
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/python -m uvicorn app.main:app --port 8001
 # teléfono físico: añade --host 0.0.0.0
 ```
 Comprobar: `curl -s http://127.0.0.1:8001/health` responde OK y `http://127.0.0.1:8001/docs` abre. Opcional: no pongas `UNIFORM_RESPONSE_SECONDS=0` aquí; el retardo uniforme (0.35 s) es el comportamiento real. Fallo: puerto ocupado (`lsof -i :8001`) o falta el venv.
@@ -48,7 +55,7 @@ Comprobar: `curl -s http://127.0.0.1:8001/health` responde OK y `http://127.0.0.
 cd /Users/jairconislla/Projects/cuycash/apps/mobile
 flutter run --flavor local -t lib/main_local.dart --dart-define-from-file=config.local.json
 ```
-Esperado: splash -> onboarding. Fallo de compilación del flavor `local` = problema de Gradle/Xcode, no del backend.
+Esperado: splash -> onboarding. Fallo de compilación del flavor `local` = problema de Gradle/Xcode, no del backend. Si compila pero la app se queda en una pantalla de carga o muestra error de red desde el primer paso con red, `AUTH_BASE_URL` no apunta al backend (paso 0) o el servicio no está escuchando en 8001 (paso 2). Si `flutter run` pide un flavor o config que no existe, falta `config.local.json`.
 
 ### Paso 4. Registrar la cuenta A [inferido]
  (p. ej. DNI `71234567`, nombre Jenny Ruiz, correo `71234567@correo.pe`, PIN `839201` — el backend rechaza PIN repetidos o secuenciales como `000000` o `123456`). Mirar: el wizard de registro y el KYC simulado terminan sin error. En la terminal del backend debe aparecer `POST /v1/auth/register ... 201`. Si el registro devuelve error de DNI duplicado, la base no está limpia (repetir paso 1). Si el PIN es rechazado, usa otro.
@@ -60,7 +67,7 @@ Esperado: splash -> onboarding. Fallo de compilación del flavor `local` = probl
  Home -> Recargar, S/ 500.00, confirmar con PIN. Esperado: saldo S/ 500.00 y un movimiento "Recarga de saldo". Backend: `POST /v1/topups ... 201`. Fallo "PIN incorrecto" con el PIN bueno: revisa que el `X-Device-Id` de la sesión sea el mismo (reinstalar la app lo cambia). Fallo de saldo que no se refresca: la app no está releyendo `/v1/accounts` tras recargar.
 
 ### Paso 7. Cerrar sesión de A y registrar la cuenta B [inferido]
- (DNI `45678912`, Luis Quispe, PIN `839201`). Mismo procedimiento (pasos 4-5); B termina con saldo S/ 0.00. Hacen falta dos titulares para demostrar un envío. (Alternativa: segundo emulador, pero un solo dispositivo basta.)
+ (DNI `45678912`, nombres **Luis Alberto**, apellidos **Quispe**, correo `45678912@correo.pe`, PIN `839201`; el nombre completo importa porque los pasos 8 y 9 esperan `L*** A*** Q***` y `Luis Alberto Quispe`). Mismo procedimiento (pasos 4-5); B termina con saldo S/ 0.00. Hacen falta dos titulares para demostrar un envío. Un solo dispositivo basta, y como el teléfono ya está vinculado a A, B pedirá su propio OTP de dispositivo (leerlo en el log del backend). Qué significaría que fallara: "DNI ya registrado" = base sin limpiar (paso 1); si al volver a entrar como A la app exige OTP de nuevo, el vínculo de dispositivo no se está guardando; si B ve la cuenta o el saldo de A, hay una fuga entre sesiones (grave: avisar). Si la app muestra un nombre distinto del escrito, el registro no está enviando `nombres`/`apellidos` bien.
 
 ### Paso 8. Enviar de A a B. [inferido]
  Entra de nuevo como A (código OTP solo si el teléfono ya no está vinculado). Enviar -> DNI `45678912`. Esperado: la app muestra el nombre ENMASCARADO `L*** A*** Q***` y la cuenta `••••NNNN` (backend: `GET /v1/directory/resolve ... 200`). Monto S/ 125.50, motivo opcional, confirmar con PIN. Esperado: constancia de envío; saldo de A = S/ 374.50. Backend: `POST /v1/transfers ... 201`. Fallos: "no encontramos a nadie con ese DNI" (404) = B no está registrado o su cuenta no está activa; "no puedes enviarte dinero a ti mismo" = DNI propio; error de monto = fuera de S/ 0.01–2,000.00.

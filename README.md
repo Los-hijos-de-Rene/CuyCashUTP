@@ -68,7 +68,7 @@ Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 cd services/api
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
-  .venv/bin/uvicorn app.main:app --reload --port 8001
+  .venv/bin/python -m uvicorn app.main:app --reload --port 8001
 ```
 
 Si cambiaste los modelos y ya tenías una base, el servicio no altera tablas
@@ -98,9 +98,9 @@ cd apps/mobile && flutter gen-l10n   # regenera l10n desde los ARB
 cd services/api && .venv/bin/python -m pytest             # tests del backend
 ```
 
-Los tests de concurrencia del libro exigen Postgres real y se omiten sin él (y hasta hoy nadie los ha ejecutado)
-(`pytest -m postgres` con `TEST_POSTGRES_URL`; la base debe terminar en
-`_test`). Detalle en [`CLAUDE.md`](CLAUDE.md).
+Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
+con `TEST_POSTGRES_URL`; la base debe terminar en `_test`) y se omiten sin él.
+Nunca se han ejecutado contra un Postgres real. Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 `services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato

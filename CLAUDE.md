@@ -44,7 +44,8 @@ Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 - `packages/design_system` — tokens "Eucalipto y Ocre", theme, componentes.
 - `services/api` — backend de identidad, cuentas y libro mayor (FastAPI +
   Postgres; SQLite para desarrollo y tests). Fuera del workspace de Flutter:
-  `flutter analyze` y `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato en un mismo commit.
+  `flutter analyze` y `flutter test` lo ignoran. Vive en este repo para poder
+  cambiar app y contrato en un mismo commit.
 
 Features-first vertical: `feature/<x>/{domain,application,infrastructure}` (sin
 Flutter); UI + Bloc en `presentation/<x>/`. Features actuales: `auth`, `kyc`,
@@ -113,7 +114,7 @@ flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.m
 
 # Backend (en services/api)
 .venv/bin/python -m pytest -q         # suite sobre SQLite en memoria
-DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/uvicorn app.main:app --port 8001
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/python -m uvicorn app.main:app --port 8001
 
 # Recrear el esquema (DESTRUCTIVO: borra todas las tablas y las vuelve a crear)
 .venv/bin/python scripts/reset_schema.py

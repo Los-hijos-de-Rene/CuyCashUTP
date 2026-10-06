@@ -23,7 +23,7 @@ Es lo más rápido y alcanza para la demo y para que la app hable con el backend
 ```sh
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
-  .venv/bin/uvicorn app.main:app --reload --port 8001
+  .venv/bin/python -m uvicorn app.main:app --reload --port 8001
 ```
 
 El esquema es el mismo que en Postgres; SQLAlchemy se encarga de la diferencia.
