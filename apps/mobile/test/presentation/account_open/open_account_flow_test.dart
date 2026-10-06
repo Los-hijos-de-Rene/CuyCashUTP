@@ -34,7 +34,7 @@ void main() {
   tearDown(() => auth.close());
 
   Future<GoRouter> pumpApp(WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(480, 1000));
+    await tester.binding.setSurfaceSize(const Size(400, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final deps = await buildMockDependencies();
     final router = createAppRouter(deps, auth);

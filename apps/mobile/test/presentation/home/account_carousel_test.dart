@@ -153,4 +153,23 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Abrir otra cuenta'), findsOneWidget);
   });
+
+  testWidgets('la tarjeta de abrir cuenta no desborda en 360x800', (t) async {
+    await t.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(
+      _app(
+        AccountCarousel(
+          cuentas: tres,
+          seleccionada: 3,
+          onSelected: (_) {},
+          onRename: (_) {},
+          onOpenAccount: () {},
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 }

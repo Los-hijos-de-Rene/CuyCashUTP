@@ -19,13 +19,16 @@ class AddAccountCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(CuyCashRadii.card + 2),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: CuyCashSpacing.containerPadding,
+            vertical: CuyCashSpacing.stackMd,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
                 Icons.add_circle_outline,
-                size: 32,
+                size: 28,
                 color: CuyCashColors.primary,
               ),
               const SizedBox(height: CuyCashSpacing.stackSm),
@@ -34,6 +37,8 @@ class AddAccountCard extends StatelessWidget {
               Text(
                 l10n.homeOpenAccountHint,
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: CuyCashTypography.bodyMd.copyWith(
                   color: CuyCashColors.secondaryText,
                 ),
