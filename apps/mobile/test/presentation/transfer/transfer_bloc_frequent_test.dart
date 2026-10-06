@@ -184,4 +184,20 @@ void main() {
     expect(b.state.guardarFrecuente, isFalse);
     await b.close();
   });
+
+  test('el apodo no se puede cambiar con la intención sellada', () async {
+    final repo = FakeTransferRepository(
+      alEnviar: (_) async =>
+          FakeTransferRepository.falla(const TransferFailure.network()),
+    );
+    final b = await _hastaConfirmar(repo, frecuentes);
+    b.add(const TransferEvent.submitted(pin: '000000'));
+    await b.stream.firstWhere((s) => s.outcomeUnknown);
+
+    b.add(const TransferEvent.frequentNicknameChanged('X'));
+    await pumpEventQueue();
+
+    expect(b.state.apodoFrecuente, '');
+    await b.close();
+  });
 }
