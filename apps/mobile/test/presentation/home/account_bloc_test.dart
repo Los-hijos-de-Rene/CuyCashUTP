@@ -7,9 +7,22 @@ import 'package:cuycash/feature/account/domain/account_repository.dart';
 import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_account_repository.dart';
+import 'package:cuycash/feature/account/infrastructure/memory_ledger.dart';
 import 'package:cuycash/presentation/home/bloc/account_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+
+DateTime _reloj() => DateTime.utc(2026, 10, 6, 12);
+
+const _cuentaNueva = Account(
+  id: 'acc-nueva',
+  numero: '19100000009999',
+  tipo: AccountType.corriente,
+  moneda: Currency.usd,
+  estado: 'activa',
+  saldoDisponible: Money.dolares(0),
+  saldoContable: Money.dolares(0),
+);
 
 /// Repo que cuenta las llamadas y puede fallar o quedarse esperando.
 class _CountingRepo implements AccountRepository {
@@ -56,6 +69,23 @@ class _CountingRepo implements AccountRepository {
     String cuentaId,
     String? nombre,
   ) => _inner.renombrar(cuentaId, nombre);
+}
+
+/// Repo cuyos movimientos tardan distinto según la cuenta (la red no respeta
+/// el orden de las peticiones).
+class _RepoLentoPorCuenta extends _GuionRepo {
+  _RepoLentoPorCuenta(super.inner, this.retardos);
+
+  final Map<String, Duration> retardos;
+
+  @override
+  FutureResult<AccountFailure, MovementPage> movimientos(
+    String cuentaId, {
+    String? cursor,
+  }) async {
+    await Future<void>.delayed(retardos[cuentaId] ?? Duration.zero);
+    return super.movimientos(cuentaId, cursor: cursor);
+  }
 }
 
 /// Repo con interruptor de fallo y latencia solo para las páginas con cursor.
@@ -296,4 +326,140 @@ void main() {
       expect(bloc.state.loadingMore, isFalse);
     },
   );
+
+  group('varias cuentas', () {
+    blocTest<AccountBloc, AccountState>(
+      'arranca en la primera y trae sus movimientos',
+      build: () =>
+          AccountBloc(AccountActions(MemoryAccountRepository(clock: _reloj))),
+      act: (b) => b.add(const AccountEvent.started()),
+      verify: (b) {
+        expect(b.state.cuentas, hasLength(3));
+        expect(b.state.cuenta?.id, MemoryLedger.cuentaId);
+        expect(b.state.movimientos, hasLength(3));
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'deslizar a otra cuenta trae los movimientos de esa',
+      build: () =>
+          AccountBloc(AccountActions(MemoryAccountRepository(clock: _reloj))),
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.selected(1));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (b) {
+        expect(b.state.cuenta?.id, MemoryLedger.cuentaSueldoId);
+        expect(b.state.movimientos, isEmpty);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'una respuesta tardía de la cuenta anterior no se pinta en la nueva',
+      build: () {
+        final repo = _CountingRepo(MemoryAccountRepository(clock: _reloj));
+        return AccountBloc(AccountActions(repo));
+      },
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.selected(2)); // dólares
+        b.add(const AccountEvent.selected(0)); // vuelve antes de que llegue
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (b) {
+        expect(b.state.cuenta?.id, MemoryLedger.cuentaId);
+        expect(b.state.movimientos.map((m) => m.transactionId), [
+          MemoryLedger.tx1,
+          MemoryLedger.tx2,
+          MemoryLedger.tx3,
+        ]);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'la respuesta lenta de una cuenta que ya no se ve no pisa a la visible',
+      build: () => AccountBloc(
+        AccountActions(
+          _RepoLentoPorCuenta(MemoryAccountRepository(clock: _reloj), {
+            MemoryLedger.cuentaId: const Duration(milliseconds: 5),
+            MemoryLedger.cuentaSueldoId: const Duration(milliseconds: 60),
+          }),
+        ),
+      ),
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.selected(1)); // lenta
+        b.add(const AccountEvent.selected(0)); // rápida, llega primero
+      },
+      wait: const Duration(milliseconds: 150),
+      verify: (b) {
+        expect(b.state.cuenta?.id, MemoryLedger.cuentaId);
+        expect(b.state.movimientos, hasLength(3));
+        expect(b.state.loadingMore, isFalse);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'deslizar mientras refresca: la cuenta visible y sus movimientos coinciden',
+      build: () => AccountBloc(
+        AccountActions(_CountingRepo(MemoryAccountRepository(clock: _reloj))),
+      ),
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.refreshed());
+        b.add(const AccountEvent.selected(1));
+      },
+      wait: const Duration(milliseconds: 150),
+      verify: (b) {
+        expect(b.state.cuenta?.id, MemoryLedger.cuentaSueldoId);
+        expect(b.state.movimientos, isEmpty);
+        expect(b.state.refreshing, isFalse);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'una cuenta recién abierta se agrega y queda seleccionada',
+      build: () =>
+          AccountBloc(AccountActions(MemoryAccountRepository(clock: _reloj))),
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.opened(_cuentaNueva));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (b) {
+        expect(b.state.cuentas.last.id, _cuentaNueva.id);
+        expect(b.state.cuenta?.id, _cuentaNueva.id);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'renombrar actualiza la tarjeta sin perder la selección',
+      build: () =>
+          AccountBloc(AccountActions(MemoryAccountRepository(clock: _reloj))),
+      act: (b) async {
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+        b.add(const AccountEvent.selected(1));
+        b.add(
+          const AccountEvent.renameRequested(
+            cuentaId: MemoryLedger.cuentaSueldoId,
+            nombre: 'Planilla',
+          ),
+        );
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (b) {
+        expect(b.state.cuenta?.nombre, 'Planilla');
+        expect(b.state.seleccionada, 1);
+        expect(b.state.renaming, isFalse);
+        expect(b.state.renameFailure, isNull);
+      },
+    );
+  });
 }

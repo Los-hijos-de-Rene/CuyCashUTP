@@ -250,15 +250,17 @@ void main() {
       final conCuenta = _BlocConEstado(
         const AccountState(
           status: AccountStatus.ready,
-          cuenta: Account(
-            id: 'a',
-            numero: '19100000004521',
-            tipo: AccountType.ahorro,
-            moneda: Currency.pen,
-            estado: 'activa',
-            saldoDisponible: Money.soles(125040),
-            saldoContable: Money.soles(125040),
-          ),
+          cuentas: [
+            Account(
+              id: 'a',
+              numero: '19100000004521',
+              tipo: AccountType.ahorro,
+              moneda: Currency.pen,
+              estado: 'activa',
+              saldoDisponible: Money.soles(125040),
+              saldoContable: Money.soles(125040),
+            ),
+          ],
         ),
       );
       addTearDown(conCuenta.close);
@@ -348,15 +350,17 @@ void main() {
       AccountState(
         status: AccountStatus.ready,
         refreshFailed: true,
-        cuenta: const Account(
-          id: 'a',
-          numero: '19100000004521',
-          tipo: AccountType.ahorro,
-          moneda: Currency.pen,
-          estado: 'activa',
-          saldoDisponible: Money.soles(125040),
-          saldoContable: Money.soles(125040),
-        ),
+        cuentas: const [
+          Account(
+            id: 'a',
+            numero: '19100000004521',
+            tipo: AccountType.ahorro,
+            moneda: Currency.pen,
+            estado: 'activa',
+            saldoDisponible: Money.soles(125040),
+            saldoContable: Money.soles(125040),
+          ),
+        ],
       ),
     );
     addTearDown(b.close);

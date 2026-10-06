@@ -6,21 +6,23 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../feature/account/application/account_actions.dart';
 import '../../../feature/account/domain/account.dart';
 import '../../../feature/account/domain/account_failure.dart';
+import '../../../feature/account/domain/account_limits.dart';
 import '../../../feature/account/domain/movement.dart';
 
 part 'account_bloc.freezed.dart';
 part 'account_event.dart';
 part 'account_state.dart';
 
-/// Saldo y movimientos del inicio. Consume `AccountActions` por constructor.
-///
-/// Hoy el usuario tiene una sola cuenta: se muestra la primera que devuelve el
-/// servidor.
+/// Las cuentas del titular, la que se ve en el carrusel y sus movimientos.
+/// Consume `AccountActions` por constructor.
 class AccountBloc extends Bloc<AccountEvent, AccountState> {
   AccountBloc(this._actions) : super(const AccountState()) {
     on<AccountStarted>(_onStarted);
     on<AccountRefreshed>(_onRefreshed);
     on<AccountMoreRequested>(_onMoreRequested);
+    on<AccountSelected>(_onSelected);
+    on<AccountOpened>(_onOpened);
+    on<AccountRenameRequested>(_onRenameRequested);
   }
 
   final AccountActions _actions;
@@ -43,7 +45,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
             AccountState(status: AccountStatus.error, failure: failure),
         (data) => AccountState(
           status: AccountStatus.ready,
-          cuenta: data.cuenta,
+          cuentas: data.cuentas,
+          seleccionada: data.indice,
           movimientos: data.page.items,
           nextCursor: data.page.nextCursor,
         ),
@@ -57,8 +60,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   ) async {
     if (state.refreshing || state.status == AccountStatus.loading) return;
     emit(state.copyWith(refreshing: true, refreshFailed: false));
-    final loaded = await _loadFirstPage();
-    if (loaded.isRight()) _generation++;
+    final antes = state.cuenta?.id;
+    final loaded = await _loadFirstPage(preferirId: antes);
     emit(
       loaded.match(
         // Con datos ya en pantalla un fallo de refresco no los borra, pero
@@ -67,12 +70,29 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
         (failure) => state.cuenta == null
             ? AccountState(status: AccountStatus.error, failure: failure)
             : state.copyWith(refreshing: false, refreshFailed: true),
-        (data) => AccountState(
-          status: AccountStatus.ready,
-          cuenta: data.cuenta,
-          movimientos: data.page.items,
-          nextCursor: data.page.nextCursor,
-        ),
+        (data) {
+          final ahora = state.cuenta?.id;
+          if (ahora != antes) {
+            // Deslizó mientras tanto: los movimientos que llegaron son de la
+            // cuenta anterior. Se toman los saldos nuevos y se conserva lo que
+            // `selected` ya trajo para la cuenta visible.
+            final i = data.cuentas.indexWhere((c) => c.id == ahora);
+            return state.copyWith(
+              refreshing: false,
+              refreshFailed: false,
+              cuentas: data.cuentas,
+              seleccionada: i < 0 ? 0 : i,
+            );
+          }
+          _generation++;
+          return AccountState(
+            status: AccountStatus.ready,
+            cuentas: data.cuentas,
+            seleccionada: data.indice,
+            movimientos: data.page.items,
+            nextCursor: data.page.nextCursor,
+          );
+        },
       ),
     );
   }
@@ -91,10 +111,11 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     }
 
     final generation = _generation;
+    final cuentaId = cuenta.id;
     emit(state.copyWith(loadingMore: true));
     final result = await _actions.movimientos(cuenta.id, cursor: cursor);
     // Un refresco terminó mientras tanto: esta página es de la lista vieja.
-    if (generation != _generation) return;
+    if (generation != _generation || state.cuenta?.id != cuentaId) return;
     emit(
       result.match(
         // Se conserva el cursor: el siguiente scroll reintenta la misma página.
@@ -108,23 +129,98 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     );
   }
 
-  Future<Either<AccountFailure, ({Account cuenta, MovementPage page})>>
-  _loadFirstPage() async {
+  Future<
+    Either<
+      AccountFailure,
+      ({List<Account> cuentas, int indice, MovementPage page})
+    >
+  >
+  _loadFirstPage({String? preferirId}) async {
     final cuentas = await _actions.cuentas();
-    final first = cuentas.match<Either<AccountFailure, Account>>(
-      (failure) => left(_toAccountFailure(failure)),
-      (list) => list.isEmpty
-          ? left(const AccountFailure.accountNotFound())
-          : right(list.first),
-    );
-    return switch (first) {
-      Left(:final value) => left(value),
-      Right(value: final cuenta) =>
-        (await _actions.movimientos(cuenta.id)).match(
+    final elegida = cuentas
+        .match<Either<AccountFailure, ({List<Account> lista, int i})>>(
           (failure) => left(_toAccountFailure(failure)),
-          (page) => right((cuenta: cuenta, page: page)),
+          (lista) {
+            if (lista.isEmpty) {
+              return left(const AccountFailure.accountNotFound());
+            }
+            final i = lista.indexWhere((c) => c.id == preferirId);
+            return right((lista: lista, i: i < 0 ? 0 : i));
+          },
+        );
+    return switch (elegida) {
+      Left(:final value) => left(value),
+      Right(value: (:final lista, :final i)) =>
+        (await _actions.movimientos(lista[i].id)).match(
+          (failure) => left(_toAccountFailure(failure)),
+          (page) => right((cuentas: lista, indice: i, page: page)),
         ),
     };
+  }
+
+  Future<void> _onSelected(
+    AccountSelected event,
+    Emitter<AccountState> emit,
+  ) async {
+    if (event.indice == state.seleccionada ||
+        event.indice < 0 ||
+        event.indice >= state.cuentas.length) {
+      return;
+    }
+    // Otra cuenta, otra lista: cualquier página en vuelo es de la anterior.
+    final generation = ++_generation;
+    emit(
+      state.copyWith(
+        seleccionada: event.indice,
+        movimientos: const [],
+        nextCursor: null,
+        loadingMore: true,
+      ),
+    );
+    final result = await _actions.movimientos(state.cuentas[event.indice].id);
+    if (generation != _generation) return;
+    emit(
+      result.match(
+        (failure) => state.copyWith(loadingMore: false, refreshFailed: true),
+        (page) => state.copyWith(
+          loadingMore: false,
+          movimientos: page.items,
+          nextCursor: page.nextCursor,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onOpened(
+    AccountOpened event,
+    Emitter<AccountState> emit,
+  ) async {
+    final cuentas = [...state.cuentas, event.cuenta];
+    emit(state.copyWith(cuentas: cuentas));
+    add(AccountEvent.selected(cuentas.length - 1));
+  }
+
+  Future<void> _onRenameRequested(
+    AccountRenameRequested event,
+    Emitter<AccountState> emit,
+  ) async {
+    if (state.renaming) return;
+    emit(state.copyWith(renaming: true, renameFailure: null));
+    final result = await _actions.renombrar(event.cuentaId, event.nombre);
+    emit(
+      result.match(
+        (failure) => state.copyWith(
+          renaming: false,
+          renameFailure: _toAccountFailure(failure),
+        ),
+        (cuenta) => state.copyWith(
+          renaming: false,
+          cuentas: [
+            for (final c in state.cuentas) c.id == cuenta.id ? cuenta : c,
+          ],
+        ),
+      ),
+    );
   }
 
   /// Aplana el `GlobalFailure` a lo que la pantalla sabe decir: sin conexión o
