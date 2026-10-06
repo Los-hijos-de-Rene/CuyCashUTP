@@ -104,6 +104,38 @@ void main() {
     },
   );
 
+  testWidgets('recarga en dólares: chip, PIN, constancia y saldo en US\$', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('US\$ 120.00'), findsOneWidget);
+
+    await tester.tap(find.text('Recargar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('US\$ 20.00'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.pumpAndSettle();
+    for (final d in '000000'.split('')) {
+      await tester.tap(find.text(d));
+      await tester.pump();
+    }
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirmar recarga'));
+    await tester.pumpAndSettle();
+    expect(find.text('¡Recarga realizada!'), findsOneWidget);
+    expect(find.text('US\$ 20.00'), findsWidgets);
+
+    await tester.tap(find.text('Volver al inicio'));
+    await tester.pumpAndSettle();
+    expect(find.text('US\$ 140.00'), findsOneWidget);
+
+    await tester.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('S/ 1,250.40'), findsOneWidget);
+  });
+
   testWidgets('abrir /recargar sin cuenta (deep link) lleva al inicio', (
     tester,
   ) async {
