@@ -74,6 +74,8 @@ class OpenAccountBloc extends Bloc<OpenAccountEvent, OpenAccountState> {
 
   void _onTipo(OpenAccountTipoChanged e, Emitter<OpenAccountState> emit) {
     if (_sealed) return;
+    // La demo (o el servidor) ya tiene una sueldo: no se puede elegir otra.
+    if (e.tipo == AccountType.sueldo && !state.sueldoDisponible) return;
     _cambiar(
       emit,
       state.copyWith(
@@ -127,6 +129,11 @@ class OpenAccountBloc extends Bloc<OpenAccountEvent, OpenAccountState> {
     );
     final definitivo = result.match((f) {
       final plano = _plano(f);
+      // El 401 NO olvida la clave: un 401 sin `code` legible de un gateway
+      // puede llegar DESPUÉS de que la petición tocara la app, y olvidarla
+      // haría que el reintento con la misma intención abriera OTRA cuenta.
+      // Conservarla no cuesta nada: solo la recupera la misma intención.
+      if (plano is Unauthenticated) return false;
       return plano is AccountKeyReused ||
           (!plano.outcomeUnknown && !state.outcomeUnknown);
     }, (_) => true);

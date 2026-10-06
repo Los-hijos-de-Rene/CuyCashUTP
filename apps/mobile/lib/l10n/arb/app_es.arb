@@ -486,5 +486,7 @@
   "openAccountErrorName": "El nombre puede tener hasta 30 caracteres.",
   "openAccountErrorKeyReused": "Esa apertura ya se pidió con otros datos. Vuelve a empezar.",
   "openAccountErrorNetwork": "No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.",
-  "openAccountErrorUnexpected": "No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces."
+  "openAccountErrorUnexpected": "No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.",
+  "openAccountLeaveTitle": "¿Salir sin confirmar?",
+  "openAccountLeaveBody": "Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez."
 }

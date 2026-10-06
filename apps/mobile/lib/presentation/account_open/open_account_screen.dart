@@ -79,8 +79,8 @@ class _OpenAccountScreenState extends State<OpenAccountScreen> {
     final salir = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.openAccountTitle),
-        content: Text(l10n.openAccountErrorUnexpected),
+        title: Text(l10n.openAccountLeaveTitle),
+        content: Text(l10n.openAccountLeaveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),

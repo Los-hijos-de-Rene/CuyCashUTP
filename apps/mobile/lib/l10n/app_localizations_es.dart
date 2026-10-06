@@ -1575,4 +1575,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get openAccountErrorUnexpected =>
       'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.';
+
+  @override
+  String get openAccountLeaveTitle => '¿Salir sin confirmar?';
+
+  @override
+  String get openAccountLeaveBody =>
+      'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.';
 }

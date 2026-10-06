@@ -2745,6 +2745,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.'**
   String get openAccountErrorUnexpected;
+
+  /// No description provided for @openAccountLeaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir sin confirmar?'**
+  String get openAccountLeaveTitle;
+
+  /// No description provided for @openAccountLeaveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.'**
+  String get openAccountLeaveBody;
 }
 
 class _AppLocalizationsDelegate
