@@ -151,12 +151,31 @@ CREATE INDEX ix_beneficiaries_beneficiario_dni ON beneficiaries (beneficiario_dn
 CREATE INDEX ix_beneficiaries_user_id ON beneficiaries (user_id);
 
 
+CREATE TABLE biometric_credentials (
+	id VARCHAR(36) NOT NULL, 
+	user_id VARCHAR(36) NOT NULL, 
+	device_id VARCHAR(128) NOT NULL, 
+	secret_hash VARCHAR(64) NOT NULL, 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	revoked_at TIMESTAMP WITH TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id)
+)
+
+;
+CREATE INDEX ix_biometric_credentials_device_id ON biometric_credentials (device_id);
+CREATE UNIQUE INDEX ix_biometric_credentials_secret_hash ON biometric_credentials (secret_hash);
+CREATE INDEX ix_biometric_credentials_user_id ON biometric_credentials (user_id);
+
+
 CREATE TABLE devices (
 	id VARCHAR(36) NOT NULL, 
 	user_id VARCHAR(36) NOT NULL, 
 	device_id VARCHAR(128) NOT NULL, 
 	trusted_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	nombre VARCHAR(80), 
+	plataforma VARCHAR(20), 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id, device_id), 
 	FOREIGN KEY(user_id) REFERENCES users (id)

@@ -12,7 +12,7 @@ from app.core.security import ahash_pin, averify_pin, new_token, pin_is_valid, t
 from app.db.base import get_session
 from app.db.models import Device, OtpTicket, User, utcnow
 from app.schemas import AuthenticateIn, CheckPinIn, RegisterIn, ResetPinIn, SessionIn
-from app.services import accounts, lockout, otp, sessions
+from app.services import accounts, devices, lockout, otp, sessions
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
@@ -44,6 +44,7 @@ def _alias(nombres: str, dni: str) -> str:
 async def register(
     payload: RegisterIn,
     x_device_id: str = Header(..., alias="X-Device-Id"),
+    x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
     if not pin_is_valid(payload.pin):
@@ -76,7 +77,9 @@ async def register(
     #
     # El vínculo es de ESTE teléfono, no de la cuenta: entrar desde otro
     # seguirá pidiendo el código.
-    session.add(Device(user_id=user.id, device_id=x_device_id))
+    vinculado = Device(user_id=user.id, device_id=x_device_id)
+    devices.touch(vinculado, x_device_name)
+    session.add(vinculado)
     token, _ = await sessions.open_session(session, user.id, x_device_id)
     await session.commit()
     return {
@@ -92,6 +95,7 @@ async def register(
 async def authenticate(
     payload: AuthenticateIn,
     x_device_id: str = Header(...),
+    x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
     started = asyncio.get_event_loop().time()
@@ -148,10 +152,11 @@ async def authenticate(
     trusted = known.scalars().first()
 
     pending = new_token()
-    _pending[token_digest(pending)] = (user.id, x_device_id)
+    _pending[token_digest(pending)] = (user.id, x_device_id, x_device_name)
 
     if trusted is not None:
         trusted.last_seen_at = utcnow()
+        devices.touch(trusted, x_device_name)
         token, _ = await sessions.open_session(session, user.id, x_device_id)
         await session.commit()
         await _uniform_delay(started)
@@ -181,6 +186,7 @@ async def _burn_cycles(pin: str) -> bool:
 async def open_session(
     payload: SessionIn,
     x_device_id: str = Header(...),
+    x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
     entry = _pending.pop(token_digest(payload.pending_token), None)
@@ -190,7 +196,7 @@ async def open_session(
             "Vuelve a ingresar tu PIN.",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-    user_id, device_id = entry
+    user_id, device_id, nombre_pendiente = entry
     if device_id != x_device_id:
         raise ApiError(
             ErrorCode.INVALID_TICKET,
@@ -212,7 +218,9 @@ async def open_session(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
     ticket.used_at = utcnow()
-    session.add(Device(user_id=user_id, device_id=x_device_id))
+    vinculado = Device(user_id=user_id, device_id=x_device_id)
+    devices.touch(vinculado, x_device_name or nombre_pendiente)
+    session.add(vinculado)
 
     token, _ = await sessions.open_session(session, user_id, x_device_id)
     await session.commit()
