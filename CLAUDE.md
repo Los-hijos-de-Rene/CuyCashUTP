@@ -75,6 +75,12 @@ razonados, no probados. Es la única garantía del sprint en ese estado.
 Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 `SLA_KPI_Banca_Online_Integral.xlsx`).
 
+APF2 (criterios 1–3): matriz en `docs/apf2-cumplimiento.md`, que enlaza
+`administracion-bd.md`, `seguridad.md`, `catalogo-controles.md`,
+`plan-de-pruebas.md` y `despliegue.md`. Si cambias seguridad, despliegue o el
+esquema, actualiza el documento que corresponda. Humo contra producción:
+`services/api/scripts/smoke_prod.sh` (solo lectura).
+
 ## Estructura
 - `apps/mobile` — app Flutter (Bloc).
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).

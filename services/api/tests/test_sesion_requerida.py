@@ -125,3 +125,47 @@ async def test_cada_token_resuelve_a_su_propio_titular(sonda, registrado, otro_r
     assert a.json()["id"] == registrado.user_id
     assert b.json()["id"] == otro_registrado.user_id
     assert registrado.user_id != otro_registrado.user_id
+
+
+# Las únicas rutas a las que se llega SIN sesión: las que la abren o la
+# recuperan. Una ruta nueva que no esté aquí y no pida sesión hace fallar el
+# test de abajo, que es justo el olvido que este archivo existe para atrapar.
+RUTAS_PUBLICAS = {
+    ("POST", "/v1/auth/register"),
+    ("POST", "/v1/auth/authenticate"),
+    ("POST", "/v1/auth/sessions"),
+    ("POST", "/v1/auth/sessions/biometric"),
+    ("POST", "/v1/auth/pin/reset"),
+    ("POST", "/v1/auth/pin/check-current"),
+    # Cerrar sesión es idempotente: 204 aunque el token ya no sirva. No
+    # devuelve datos ni concede nada.
+    ("DELETE", "/v1/auth/sessions/current"),
+    ("POST", "/v1/otp/challenges"),
+    ("POST", "/v1/otp/challenges/{challenge_id}/resend"),
+    ("POST", "/v1/otp/challenges/{challenge_id}/verify"),
+}
+
+
+def _rutas_v1():
+    for ruta in app.routes:
+        for metodo in sorted(getattr(ruta, "methods", None) or ()):
+            if metodo != "HEAD" and ruta.path.startswith("/v1/"):
+                yield metodo, ruta.path
+
+
+async def test_toda_ruta_privada_exige_sesion(client):
+    """Recorre TODAS las rutas del API real, sin token: las privadas dan 401."""
+    abiertas = set()
+    for metodo, plantilla in _rutas_v1():
+        ruta = (
+            plantilla.replace("{path:path}", "x")
+            .replace("{", "")
+            .replace("}", "")
+        )
+        r = await client.request(metodo, ruta, json={}, headers={"X-Device-Id": "d"})
+        if r.status_code != 401:
+            abiertas.add((metodo, plantilla))
+    # Lo que responde sin sesión debe ser EXACTAMENTE lo declarado público
+    # (más el proxy del KYC, que responde 503 si no está configurado).
+    sin_kyc = {a for a in abiertas if not a[1].startswith("/v1/kyc/")}
+    assert sin_kyc == RUTAS_PUBLICAS
