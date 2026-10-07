@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/format/money_format.dart';
 import '../../../l10n/app_localizations.dart';
+import 'receipt_paper.dart';
 
 /// La constancia de una operación: la MISMA para un envío recién hecho y para
 /// el detalle de un movimiento viejo. Lo que cada pantalla no sabe, lo omite
@@ -85,7 +86,7 @@ class ReceiptCard extends StatelessWidget {
     final otro => otro,
   };
 
-  (IconData, Color) get _icono => switch (estado) {
+  (IconData, Color) get statusStyle => switch (estado) {
     'confirmada' => (Icons.check_circle, CuyCashColors.success),
     'pendiente' => (Icons.schedule, CuyCashColors.secondaryText),
     'revertida' => (Icons.replay, CuyCashColors.secondaryText),
@@ -93,59 +94,5 @@ class ReceiptCard extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final (icon, color) = _icono;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 56, color: color),
-        const SizedBox(height: CuyCashSpacing.stackMd),
-        Text(headline, style: CuyCashTypography.headlineSm),
-        const SizedBox(height: CuyCashSpacing.stackXs),
-        Text(formatMoney(monto), style: CuyCashTypography.headlineMd),
-        const SizedBox(height: CuyCashSpacing.stackLg),
-        SurfaceCard(
-          child: Column(
-            children: [
-              for (final (label, value) in lines(l10n))
-                _Line(label: label, value: value),
-            ],
-          ),
-        ),
-        if (reutilizada) ...[
-          const SizedBox(height: CuyCashSpacing.stackMd),
-          InfoStrip(icon: Icons.info_outline, text: l10n.transferReceiptReused),
-        ],
-      ],
-    );
-  }
-}
-
-class _Line extends StatelessWidget {
-  const _Line({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: CuyCashSpacing.stackXs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: CuyCashTypography.bodyMd),
-          const SizedBox(width: CuyCashSpacing.stackMd),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: CuyCashTypography.labelMd,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ReceiptPaper(card: this);
 }

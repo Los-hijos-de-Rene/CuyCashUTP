@@ -417,6 +417,7 @@
   "movementHeadlineOther": "Movimiento",
   "movementShare": "Compartir constancia",
   "movementShareHeader": "Constancia de CuyCash",
+  "movementShareFailed": "No pudimos compartir la constancia. Inténtalo de nuevo.",
   "topUpTitle": "Recargar saldo",
   "topUpHeadline": "¿Cuánto quieres recargar?",
   "topUpSubtitle": "Elige el monto. En el siguiente paso lo confirmas con tu PIN.",

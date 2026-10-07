@@ -1329,6 +1329,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get movementShareHeader => 'Constancia de CuyCash';
 
   @override
+  String get movementShareFailed =>
+      'No pudimos compartir la constancia. Inténtalo de nuevo.';
+
+  @override
   String get topUpTitle => 'Recargar saldo';
 
   @override

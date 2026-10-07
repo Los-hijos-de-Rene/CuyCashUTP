@@ -73,7 +73,7 @@ class ReceiptScreen extends StatelessWidget {
                 ],
                 if (card != null) ...[
                   const SizedBox(height: CuyCashSpacing.stackMd),
-                  ShareReceiptButton(text: card.shareText(l10n)),
+                  ShareReceiptButton(card: card),
                 ],
                 const SizedBox(height: CuyCashSpacing.stackSm),
                 PrimaryButton(
