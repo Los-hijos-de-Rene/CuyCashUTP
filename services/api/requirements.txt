@@ -1,4 +1,7 @@
-fastapi==0.115.0
+fastapi==0.142.4
+# FastAPI no fija starlette por arriba: este piso deja fuera las versiones con
+# avisos de seguridad (pip-audit, Host/URL envenenada y DoS de formularios).
+starlette>=1.3.1
 uvicorn[standard]==0.30.6
 pydantic[email]==2.9.2
 pydantic-settings==2.5.2

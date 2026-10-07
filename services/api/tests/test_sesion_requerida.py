@@ -147,10 +147,14 @@ RUTAS_PUBLICAS = {
 
 
 def _rutas_v1():
-    for ruta in app.routes:
-        for metodo in sorted(getattr(ruta, "methods", None) or ()):
-            if metodo != "HEAD" and ruta.path.startswith("/v1/"):
-                yield metodo, ruta.path
+    # Desde el esquema OpenAPI y no desde `app.routes`: FastAPI ≥ 0.140 deja
+    # cada router incluido como un nodo propio (sin `path` ni `methods`) y
+    # recorrer `app.routes` daba cero rutas. Ninguna ruta del API usa
+    # `include_in_schema=False`, así que el esquema las tiene todas.
+    for plantilla, operaciones in app.openapi()["paths"].items():
+        if plantilla.startswith("/v1/"):
+            for metodo in sorted(operaciones):
+                yield metodo.upper(), plantilla
 
 
 async def test_toda_ruta_privada_exige_sesion(client):
