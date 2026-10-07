@@ -93,7 +93,7 @@ class _Ready extends StatelessWidget {
         children: [
           card,
           const SizedBox(height: CuyCashSpacing.stackLg),
-          ShareReceiptButton(text: card.shareText(l10n)),
+          ShareReceiptButton(card: card),
         ],
       ),
     );

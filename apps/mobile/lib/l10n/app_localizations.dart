@@ -2324,6 +2324,12 @@ abstract class AppLocalizations {
   /// **'Constancia de CuyCash'**
   String get movementShareHeader;
 
+  /// No description provided for @movementShareFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos compartir la constancia. Inténtalo de nuevo.'**
+  String get movementShareFailed;
+
   /// No description provided for @topUpTitle.
   ///
   /// In es, this message translates to:

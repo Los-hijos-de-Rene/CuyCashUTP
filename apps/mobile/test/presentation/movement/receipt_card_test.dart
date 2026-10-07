@@ -95,17 +95,24 @@ void main() {
     expect(texto, contains('N.º de operación: tx-demo-1'));
   });
 
-  testWidgets('el botón entrega el texto a quien comparte', (tester) async {
-    String? compartido;
+  testWidgets('el botón entrega la constancia como imagen PNG', (tester) async {
+    List<int>? png;
     await _pump(
       tester,
-      ShareReceiptButton(text: 'hola', onShare: (t) async => compartido = t),
+      ShareReceiptButton(card: _card(), onShare: (b, _) async => png = b),
     );
 
-    await tester.tap(find.text('Compartir constancia'));
-    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Compartir constancia'));
+      await tester.pump();
+      for (var i = 0; i < 50 && png == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
 
-    expect(compartido, 'hola');
+    // Firma de un PNG.
+    expect(png?.take(4), [0x89, 0x50, 0x4E, 0x47]);
   });
 }
 
