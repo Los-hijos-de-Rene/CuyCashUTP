@@ -1,0 +1,31 @@
+# Pasos del CI de Flutter: analyze y tests de la app y los dos paquetes.
+name: Pruebas de la app
+description: flutter analyze + flutter test del workspace
+
+runs:
+  using: composite
+  steps:
+    - uses: subosito/flutter-action@v2
+      with:
+        # La misma versión con la que se desarrolla (ver `flutter --version`).
+        flutter-version: "3.41.7"
+        channel: stable
+        cache: true
+    - name: Dependencias del workspace
+      shell: bash
+      run: flutter pub get
+    - name: flutter analyze (cero issues)
+      shell: bash
+      run: flutter analyze
+    - name: Tests de la app (flavor mock)
+      shell: bash
+      working-directory: apps/mobile
+      run: flutter test
+    - name: Tests de core_kernel
+      shell: bash
+      working-directory: packages/core_kernel
+      run: flutter test
+    - name: Tests de design_system
+      shell: bash
+      working-directory: packages/design_system
+      run: flutter test

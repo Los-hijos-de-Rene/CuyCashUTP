@@ -19,6 +19,11 @@ services:
     plan: free
     region: oregon
     healthCheckPath: /health
+    # Render NO despliega solo al recibir un push: lo hace el workflow
+    # `.github/workflows/cd-backend.yml`, y solo si pasaron las pruebas. Así un
+    # commit en rojo nunca llega a producción, y un rollback no se deshace con
+    # el siguiente push.
+    autoDeployTrigger: "off"
     envVars:
       # sync:false ⇒ Render la pide al crear el servicio y la guarda cifrada.
       - key: DATABASE_URL

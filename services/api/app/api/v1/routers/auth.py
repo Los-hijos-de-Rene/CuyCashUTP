@@ -74,7 +74,7 @@ _INTENTOS_DE_ALIAS = 3
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     payload: RegisterIn,
-    x_device_id: str = Header(..., alias="X-Device-Id"),
+    x_device_id: str = Header(..., alias="X-Device-Id", max_length=128),
     x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
@@ -151,7 +151,7 @@ async def register(
 @router.post("/authenticate")
 async def authenticate(
     payload: AuthenticateIn,
-    x_device_id: str = Header(...),
+    x_device_id: str = Header(..., max_length=128),
     x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
@@ -242,7 +242,7 @@ async def _burn_cycles(pin: str) -> bool:
 @router.post("/sessions")
 async def open_session(
     payload: SessionIn,
-    x_device_id: str = Header(...),
+    x_device_id: str = Header(..., max_length=128),
     x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):
@@ -430,7 +430,7 @@ def _biometria_rechazada() -> ApiError:
 @router.post("/sessions/biometric")
 async def biometric_session(
     payload: BiometricSessionIn,
-    x_device_id: str = Header(...),
+    x_device_id: str = Header(..., max_length=128),
     x_device_name: Optional[str] = Header(None),
     session: AsyncSession = Depends(get_session),
 ):

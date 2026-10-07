@@ -235,9 +235,7 @@ dos lecturas ven el mismo saldo y las dos aprueban.
 Es bloqueo por fila: dos cuentas distintas no se estorban, así que el SLA de
 200 ms no debería degradarse bajo concurrencia (no hay medición automatizada de
 esa cifra). `FOR UPDATE` solo tiene efecto en Postgres; los tests de
-concurrencia llevan la marca `postgres` y se omiten en SQLite. **Nunca se han
-ejecutado contra un Postgres real**: el orden de bloqueo del `FOR UPDATE` y la
-ventana de idempotencia están razonados, no probados.
+concurrencia llevan la marca `postgres` y se omiten en SQLite; se ejecutan con toda la suite en el job *Backend (PostgreSQL 16)* del workflow *CI* (GitHub Actions) desde el 2026-10-07, en verde.
 
 Además, `accounts` lleva un `CHECK (tipo = 'sistema' OR saldo_disponible >= 0)`
 como última defensa contra el doble gasto. La cuenta de sistema —contraparte de
@@ -317,7 +315,7 @@ titular (cuentan todas, también las cerradas): es regla del servicio, serializa
 con `SELECT ... FOR UPDATE` sobre la fila de `users` en `POST /v1/accounts`. La
 carrera de dos `sueldo` simultáneas la resuelve el índice parcial; la ruta
 captura el `IntegrityError` y responde `SALARY_ACCOUNT_EXISTS` (test `postgres`
-sin ejecutar: `tests/test_concurrencia_multicuenta.py`). Hay dos cajas de
+`tests/test_concurrencia_multicuenta.py`, que corre en el CI contra Postgres real). Hay dos cajas de
 sistema, una por moneda: `PEN` = `19100000000000` y `USD` = `19100000000001`;
 ningún titular recibe esos números, y la recarga sale de la caja de la moneda
 de la cuenta.

@@ -13,7 +13,11 @@ class RegisterIn(BaseModel):
 
 
 class AuthenticateIn(BaseModel):
-    identifier: str
+    # El ingreso es solo por DNI. Validarlo aquí no es estética: el intento se
+    # registra en `login_attempts.dni` (VARCHAR 8) y Postgres rechaza un valor
+    # más largo; sin esto, un identificador largo daba 500 en producción. El
+    # formato es público, así que un 422 no revela qué DNI existen.
+    identifier: str = Field(min_length=8, max_length=8, pattern=r"^\d{8}$")
     pin: str
 
 
@@ -36,7 +40,9 @@ class CheckPinIn(BaseModel):
 
 class ChallengeIn(BaseModel):
     purpose: str = Field(pattern=r"^(recovery|device)$")
-    identifier: str
+    # DNI o correo. El tope es el de `lockouts.subject_value` (VARCHAR 128),
+    # donde termina si se agotan los intentos.
+    identifier: str = Field(min_length=1, max_length=128)
 
 
 class VerifyIn(BaseModel):

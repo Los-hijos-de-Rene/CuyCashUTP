@@ -1,0 +1,72 @@
+# Compila el APK de producción y lo publica.
+#
+# Al crear un tag `v*` (p. ej. `git tag v0.3.0 && git push origin v0.3.0`) el
+# APK queda adjunto a un Release de GitHub; lanzado a mano, queda como
+# artefacto del workflow.
+#
+# La app no tiene rollback remoto: un APK instalado no se puede retroceder. El
+# rollback de producción es el del backend (rollback-backend.yml), y por eso
+# el backend debe seguir aceptando lo que mandan las versiones anteriores.
+name: Build APK
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: APK flavor production
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.7"
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Configuración de producción
+        working-directory: apps/mobile
+        # Solo la URL pública del backend. La clave del KYC NO va en el
+        # binario (todo lo compilado es extraíble): el registro usa la
+        # verificación simulada hasta conectar el proxy del backend.
+        run: |
+          cat > config.production.json <<'JSON'
+          {
+            "AUTH_BASE_URL": "https://cuycashutp.onrender.com",
+            "KYC_BASE_URL": "",
+            "KYC_API_KEY": ""
+          }
+          JSON
+      - name: flutter build apk
+        working-directory: apps/mobile
+        run: >-
+          flutter build apk --release --flavor production
+          -t lib/main_production.dart
+          --dart-define-from-file=config.production.json
+      - name: Nombrar el APK con la versión
+        id: apk
+        working-directory: apps/mobile
+        run: |
+          nombre="cuycash-${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::7}.apk"
+          cp build/app/outputs/flutter-apk/app-production-release.apk "$nombre"
+          echo "ruta=apps/mobile/$nombre" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-production
+          path: ${{ steps.apk.outputs.ruta }}
+      - name: Adjuntar al Release del tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "${{ steps.apk.outputs.ruta }}" \
+            --title "CuyCash $GITHUB_REF_NAME" --generate-notes

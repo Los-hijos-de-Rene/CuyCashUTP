@@ -1,0 +1,108 @@
+# Puerta de entrada de todo PR (y de cada push a main).
+#
+# Corre SIEMPRE, sin filtro de rutas en el disparador, y decide por dentro qué
+# pruebas hacen falta. Los pasos viven en `.github/actions/pruebas-*`, y el CD
+# usa los mismos. Termina con el job `CI listo`, el único check que exige la
+# regla de `main`: si se exigiera el check de cada parte, un PR que no toca esa
+# carpeta lo dejaría "esperando" para siempre y no se podría fusionar.
+#
+# Los jobs van en línea y no como workflows reutilizables: con `needs` sobre un
+# workflow reutilizable y `if: always()`, GitHub no llegaba a crear `CI listo`.
+name: CI
+
+on:
+  pull_request:
+  # En main también: la app no tiene CD, y así `main` siempre muestra si sigue
+  # en verde.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  cambios:
+    name: Qué cambió
+    runs-on: ubuntu-24.04
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend }}
+      app: ${{ steps.filtro.outputs.app }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          filters: |
+            backend:
+              - "services/api/**"
+              - ".github/actions/pruebas-backend/**"
+              - ".github/workflows/ci.yml"
+            app:
+              - "apps/**"
+              - "packages/**"
+              - "pubspec.yaml"
+              - "pubspec.lock"
+              - "analysis_options.yaml"
+              - ".github/actions/pruebas-app/**"
+              - ".github/workflows/ci.yml"
+
+  backend:
+    name: Backend (PostgreSQL 16)
+    needs: cambios
+    if: needs.cambios.outputs.backend == 'true'
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cuycash
+          POSTGRES_PASSWORD: cuycash
+          # El fixture se niega a correr si la base no termina en `_test`.
+          POSTGRES_DB: cuycash_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cuycash"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_POSTGRES_URL: postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/pruebas-backend
+
+  app:
+    name: App (Flutter)
+    needs: cambios
+    if: needs.cambios.outputs.app == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/pruebas-app
+
+  listo:
+    name: CI listo
+    needs: [cambios, backend, app]
+    # Corre siempre: "omitido" (no cambió esa carpeta) cuenta como bien;
+    # "fallido" o "cancelado", no.
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Resultado
+        env:
+          CAMBIOS: ${{ needs.cambios.result }}
+          BACKEND: ${{ needs.backend.result }}
+          APP: ${{ needs.app.result }}
+        run: |
+          echo "Qué cambió: $CAMBIOS · Backend: $BACKEND · App: $APP"
+          for r in "$CAMBIOS" "$BACKEND" "$APP"; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::Algún CI no pasó ($r)."; exit 1 ;;
+            esac
+          done
