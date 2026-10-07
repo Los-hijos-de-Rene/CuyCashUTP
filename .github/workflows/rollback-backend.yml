@@ -34,7 +34,7 @@ env:
 jobs:
   rollback:
     name: Volver a ${{ inputs.commit }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: production
       url: ${{ env.API_URL }}/docs

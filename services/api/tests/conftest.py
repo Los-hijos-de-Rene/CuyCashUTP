@@ -30,15 +30,61 @@ def _presupuesto_de_consultas_limpio():
     yield
 
 
+def _url_postgres_de_pruebas():
+    """
+    `TEST_POSTGRES_URL` si está definida, validada; si no, `None` (SQLite).
+
+    Cerrojo, no aviso: los fixtures hacen `drop_all` AL ENTRAR. Si la URL
+    apuntara a una base con datos, se perderían antes de que nadie lea un
+    docstring. Se exige el sufijo `_test` en el nombre de la base.
+    """
+    url = os.environ.get("TEST_POSTGRES_URL")
+    if not url:
+        return None
+    nombre = make_url(url).database or ""
+    if not nombre.endswith("_test"):
+        raise RuntimeError(
+            f"TEST_POSTGRES_URL apunta a la base '{nombre}': el fixture borra "
+            "TODO el esquema, así que el nombre debe terminar en '_test'."
+        )
+    return url
+
+
+async def _motor_limpio():
+    """
+    Motor con el esquema recién creado: Postgres real si hay
+    `TEST_POSTGRES_URL` (el CI, mismo motor que producción), SQLite en memoria
+    si no (desarrollo local, sin Docker). Devuelve `(motor, es_postgres)`.
+    """
+    url = _url_postgres_de_pruebas()
+    if url:
+        # NullPool: una conexión por tarea. Con el pool por defecto (5+10) la
+        # cola serializaría parte de la contención que los tests de
+        # concurrencia quieren provocar, y un atasco saltaría como `QueuePool
+        # timeout` y no como abrazo mortal.
+        engine = create_async_engine(url, poolclass=NullPool)
+    else:
+        engine = create_async_engine(
+            "sqlite+aiosqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    return engine, url is not None
+
+
+async def _desechar(engine, es_postgres: bool) -> None:
+    if es_postgres:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
+
+
 @pytest_asyncio.fixture
 async def client():
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    engine, es_postgres = await _motor_limpio()
     maker = async_sessionmaker(engine, expire_on_commit=False)
 
     async def override():
@@ -51,7 +97,7 @@ async def client():
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
-    await engine.dispose()
+    await _desechar(engine, es_postgres)
 
 
 @pytest_asyncio.fixture
@@ -90,42 +136,13 @@ def otp_codes(monkeypatch):
 @pytest_asyncio.fixture
 async def db_engine():
     """
-    Motor de la base de las pruebas del libro.
-
-    Por defecto SQLite en memoria. Con `TEST_POSTGRES_URL` (p. ej.
-    `postgresql+asyncpg://user:pass@localhost/cuycash_test`) apunta a un
-    Postgres real y desechable: se crea el esquema al empezar y se BORRA TODO
-    al terminar (`drop_all`), así que nunca debe apuntar a una base con datos.
+    Motor de la base de las pruebas del libro. Mismo criterio que `client`:
+    Postgres real con `TEST_POSTGRES_URL` (desechable, debe terminar en
+    `_test`: se BORRA TODO al entrar y al salir), SQLite en memoria si no.
     """
-    url = os.environ.get("TEST_POSTGRES_URL")
-    if url:
-        # Cerrojo, no aviso: este fixture hace `drop_all` AL ENTRAR. Si la URL
-        # apuntara a una base con datos, se perderían antes de que nadie lea el
-        # docstring. Se exige el sufijo `_test` en el nombre de la base.
-        nombre = make_url(url).database or ""
-        if not nombre.endswith("_test"):
-            raise RuntimeError(
-                f"TEST_POSTGRES_URL apunta a la base '{nombre}': el fixture borra "
-                "TODO el esquema, así que el nombre debe terminar en '_test'."
-            )
-        # NullPool: una conexión por tarea. Con el pool por defecto (5+10) la
-        # cola serializaría parte de la contención que el test quiere provocar,
-        # y un atasco saltaría como `QueuePool timeout` y no como abrazo mortal.
-        engine = create_async_engine(url, poolclass=NullPool)
-    else:
-        engine = create_async_engine(
-            "sqlite+aiosqlite:///:memory:",
-            connect_args={"check_same_thread": False},
-            poolclass=StaticPool,
-        )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+    engine, es_postgres = await _motor_limpio()
     yield engine
-    if url:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    await _desechar(engine, es_postgres)
 
 
 @pytest_asyncio.fixture
