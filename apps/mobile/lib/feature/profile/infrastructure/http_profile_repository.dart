@@ -58,6 +58,7 @@ class HttpProfileRepository implements ProfileRepository {
     final body = data is Map ? data : const <Object?, Object?>{};
     return switch (body['code']) {
       'INVALID_ALIAS' => const ProfileFailure.invalidAlias(),
+      'ALIAS_TAKEN' => const ProfileFailure.aliasTaken(),
       _ => const ProfileFailure.unexpected(),
     };
   }

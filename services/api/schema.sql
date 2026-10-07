@@ -107,6 +107,7 @@ CREATE TABLE users (
 )
 
 ;
+CREATE UNIQUE INDEX ix_users_alias ON users (alias);
 CREATE UNIQUE INDEX ix_users_dni ON users (dni);
 CREATE INDEX ix_users_email ON users (email);
 

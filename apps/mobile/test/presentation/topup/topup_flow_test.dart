@@ -69,12 +69,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TopUpScreen), findsOneWidget);
-    expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
+    expect(find.text('¿Cuánto quieres depositar?'), findsOneWidget);
     expect(find.text('Disponible en una próxima versión.'), findsNothing);
   });
 
   testWidgets(
-    'recorrido completo: monto, PIN, constancia y de vuelta al inicio',
+    'recorrido completo: monto, Depositar, constancia y de vuelta al inicio',
     (tester) async {
       await pumpApp(tester);
       await tester.tap(find.text('Depósito simulado'));
@@ -82,17 +82,9 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '100');
       await tester.pump();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Depositar'));
       await tester.pumpAndSettle();
-      for (final d in '000000'.split('')) {
-        await tester.tap(find.text(d));
-        await tester.pump();
-      }
-      await tester.tap(
-        find.widgetWithText(ElevatedButton, 'Confirmar recarga'),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('¡Recarga realizada!'), findsOneWidget);
+      expect(find.text('¡Depósito realizado!'), findsOneWidget);
 
       await tester.tap(find.text('Volver al inicio'));
       await tester.pumpAndSettle();
@@ -104,7 +96,7 @@ void main() {
     },
   );
 
-  testWidgets('recarga en dólares: chip, PIN, constancia y saldo en US\$', (
+  testWidgets('depósito en dólares: chip, constancia y saldo en US\$', (
     tester,
   ) async {
     await pumpApp(tester);
@@ -116,15 +108,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('US\$ 20.00'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Depositar'));
     await tester.pumpAndSettle();
-    for (final d in '000000'.split('')) {
-      await tester.tap(find.text(d));
-      await tester.pump();
-    }
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirmar recarga'));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Recarga realizada!'), findsOneWidget);
+    expect(find.text('¡Depósito realizado!'), findsOneWidget);
     expect(find.text('US\$ 20.00'), findsWidgets);
 
     await tester.tap(find.text('Volver al inicio'));

@@ -69,7 +69,7 @@ erDiagram
         varchar nombres
         varchar apellidos
         varchar email
-        varchar alias
+        varchar alias UK "con al menos una letra"
         varchar pin_hash "argon2id"
         timestamptz pin_updated_at
         varchar kyc_status

@@ -26,10 +26,11 @@ titular.
 
 ## Decisiones
 
-1. **El destinatario se identifica por DNI.** Es el único dato que hoy identifica sin ambigüedad:
-   no existe el número de celular en el modelo, y el `alias` se deriva del primer nombre
-   (`_alias()` en `routers/auth.py`) sin índice único, así que dos homónimos colisionan. Añadir
-   celular y alias único es una mejora de búsqueda posterior que no toca el motor.
+1. **El destinatario se identifica por DNI o por alias.** Al principio solo por DNI, porque el
+   alias no era único. Desde 2026-10-06 el alias es único (UNIQUE en `users.alias`) y lleva al
+   menos una letra, así que `GET /v1/directory/resolve` acepta `?dni=` o `?alias=`. Por alias no
+   se devuelve el DNI: el alias es público y no debe servir para averiguar el documento. El
+   celular sigue sin existir en el modelo.
 2. **Resolver un DNI devuelve el nombre enmascarado** (`J*** M*** R***`) y está limitado por
    sesión. Devolver el nombre completo sin tope convierte la app en un directorio de la población
    peruana.

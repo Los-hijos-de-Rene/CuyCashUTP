@@ -35,7 +35,6 @@ const _cuentaDolares = Account(
   saldoContable: Money.dolares(50000),
 );
 const _destinatarioDolares = Recipient(
-  dni: '87654321',
   nombreEnmascarado: 'J*** M*** R***',
   cuenta: RecipientAccount(
     cuentaId: 'acc-ext-3',

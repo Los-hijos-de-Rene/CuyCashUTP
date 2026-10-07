@@ -22,6 +22,7 @@ class CuyCashTextField extends StatelessWidget {
     this.helperText,
     this.autofocus = false,
     this.onSubmitted,
+    this.textInputAction,
     this.inputFormatters,
     this.enabled = true,
     super.key,
@@ -45,6 +46,9 @@ class CuyCashTextField extends StatelessWidget {
   /// Acción de confirmación del teclado del sistema.
   final ValueChanged<String>? onSubmitted;
 
+  /// Tecla de confirmación del teclado (p. ej. `search`).
+  final TextInputAction? textInputAction;
+
   /// Filtros propios del campo, además del `digitsOnly` que ya aplica el
   /// teclado numérico entero.
   final List<TextInputFormatter>? inputFormatters;
@@ -66,6 +70,7 @@ class CuyCashTextField extends StatelessWidget {
           keyboardType: keyboardType,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
+          textInputAction: textInputAction,
           autofocus: autofocus,
           maxLength: maxLength,
           inputFormatters: [

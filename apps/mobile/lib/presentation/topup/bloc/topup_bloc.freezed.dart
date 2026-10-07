@@ -122,12 +122,12 @@ return submitted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String cuentaId)?  opened,TResult Function( Money? monto)?  amountChanged,TResult Function( String pin)?  submitted,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String cuentaId)?  opened,TResult Function( Money? monto)?  amountChanged,TResult Function()?  submitted,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case TopUpOpened() when opened != null:
 return opened(_that.cuentaId);case TopUpAmountChanged() when amountChanged != null:
 return amountChanged(_that.monto);case TopUpSubmitted() when submitted != null:
-return submitted(_that.pin);case _:
+return submitted();case _:
   return orElse();
 
 }
@@ -145,12 +145,12 @@ return submitted(_that.pin);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String cuentaId)  opened,required TResult Function( Money? monto)  amountChanged,required TResult Function( String pin)  submitted,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String cuentaId)  opened,required TResult Function( Money? monto)  amountChanged,required TResult Function()  submitted,}) {final _that = this;
 switch (_that) {
 case TopUpOpened():
 return opened(_that.cuentaId);case TopUpAmountChanged():
 return amountChanged(_that.monto);case TopUpSubmitted():
-return submitted(_that.pin);}
+return submitted();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -164,12 +164,12 @@ return submitted(_that.pin);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String cuentaId)?  opened,TResult? Function( Money? monto)?  amountChanged,TResult? Function( String pin)?  submitted,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String cuentaId)?  opened,TResult? Function( Money? monto)?  amountChanged,TResult? Function()?  submitted,}) {final _that = this;
 switch (_that) {
 case TopUpOpened() when opened != null:
 return opened(_that.cuentaId);case TopUpAmountChanged() when amountChanged != null:
 return amountChanged(_that.monto);case TopUpSubmitted() when submitted != null:
-return submitted(_that.pin);case _:
+return submitted();case _:
   return null;
 
 }
@@ -313,67 +313,33 @@ as Money?,
 
 
 class TopUpSubmitted implements TopUpEvent {
-  const TopUpSubmitted({required this.pin});
+  const TopUpSubmitted();
   
 
- final  String pin;
 
-/// Create a copy of TopUpEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$TopUpSubmittedCopyWith<TopUpSubmitted> get copyWith => _$TopUpSubmittedCopyWithImpl<TopUpSubmitted>(this, _$identity);
+
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TopUpSubmitted&&(identical(other.pin, pin) || other.pin == pin));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TopUpSubmitted);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,pin);
+int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'TopUpEvent.submitted(pin: $pin)';
+  return 'TopUpEvent.submitted()';
 }
 
 
 }
 
-/// @nodoc
-abstract mixin class $TopUpSubmittedCopyWith<$Res> implements $TopUpEventCopyWith<$Res> {
-  factory $TopUpSubmittedCopyWith(TopUpSubmitted value, $Res Function(TopUpSubmitted) _then) = _$TopUpSubmittedCopyWithImpl;
-@useResult
-$Res call({
- String pin
-});
 
 
-
-
-}
-/// @nodoc
-class _$TopUpSubmittedCopyWithImpl<$Res>
-    implements $TopUpSubmittedCopyWith<$Res> {
-  _$TopUpSubmittedCopyWithImpl(this._self, this._then);
-
-  final TopUpSubmitted _self;
-  final $Res Function(TopUpSubmitted) _then;
-
-/// Create a copy of TopUpEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? pin = null,}) {
-  return _then(TopUpSubmitted(
-pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
 
 /// @nodoc
 mixin _$TopUpState {

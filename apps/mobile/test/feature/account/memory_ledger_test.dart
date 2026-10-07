@@ -34,7 +34,6 @@ void main() {
       await transferencias.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
         monto: const Money.soles(10000),
-        pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0001',
       );
 
@@ -82,7 +81,6 @@ void main() {
       await transferencias.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
         monto: const Money.soles(10000),
-        pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0001',
       );
     }
@@ -90,11 +88,12 @@ void main() {
   });
 
   test('un fallo (PIN errado, fondos) no toca el saldo', () async {
-    await transferencias.recargar(
-      cuentaId: MemoryTransferRepository.cuentaId,
+    await transferencias.enviar(
+      cuentaOrigenId: MemoryTransferRepository.cuentaId,
+      cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
       monto: const Money.soles(10000),
       pin: '111111',
-      idempotencyKey: 'recarga-0002',
+      idempotencyKey: 'envio-0001',
     );
     await transferencias.enviar(
       cuentaOrigenId: MemoryTransferRepository.cuentaId,
@@ -119,7 +118,6 @@ void main() {
     await transferencias.recargar(
       cuentaId: MemoryLedger.cuentaDolaresId,
       monto: const Money.dolares(500),
-      pin: MemoryTransferRepository.pinValido,
       idempotencyKey: 'recarga-usd-0001',
     );
     final lista = (await cuentas.cuentas()).getRight().toNullable()!;
@@ -142,7 +140,6 @@ void main() {
       await deps.transferRepository.recargar(
         cuentaId: MemoryTransferRepository.cuentaId,
         monto: const Money.soles(10000),
-        pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-0003',
       );
       final cuentasMock = (await deps.accountRepository.cuentas())

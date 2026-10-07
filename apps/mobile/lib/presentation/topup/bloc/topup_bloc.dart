@@ -13,7 +13,7 @@ part 'topup_bloc.freezed.dart';
 part 'topup_event.dart';
 part 'topup_state.dart';
 
-/// Recarga de saldo contra la caja del sistema: monto + PIN en una pantalla.
+/// Depósito simulado contra la caja del sistema: solo el monto, sin PIN.
 /// Comparte con el envío el riesgo de doble cobro, y las mismas defensas:
 ///
 /// 1. La clave de idempotencia nace al ABRIR ([TopUpOpened]); [TopUpSubmitted]
@@ -120,7 +120,6 @@ class TopUpBloc extends Bloc<TopUpEvent, TopUpState> {
     final result = await _actions.recargar(
       cuentaId: cuentaId,
       monto: monto,
-      pin: event.pin,
       idempotencyKey: key,
     );
 

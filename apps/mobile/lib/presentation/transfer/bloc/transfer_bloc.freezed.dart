@@ -140,11 +140,11 @@ return saveFrequentToggled(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( Account cuenta)?  started,TResult Function( String dni)?  recipientRequested,TResult Function()?  recipientCleared,TResult Function( Recipient destinatario)?  recipientSelected,TResult Function( Money monto,  String? motivo)?  amountEntered,TResult Function()?  confirmationOpened,TResult Function( String pin)?  submitted,TResult Function( String value)?  frequentNicknameChanged,TResult Function( bool value)?  saveFrequentToggled,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( Account cuenta)?  started,TResult Function( String consulta)?  recipientRequested,TResult Function()?  recipientCleared,TResult Function( Recipient destinatario)?  recipientSelected,TResult Function( Money monto,  String? motivo)?  amountEntered,TResult Function()?  confirmationOpened,TResult Function( String pin)?  submitted,TResult Function( String value)?  frequentNicknameChanged,TResult Function( bool value)?  saveFrequentToggled,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
 return started(_that.cuenta);case TransferRecipientRequested() when recipientRequested != null:
-return recipientRequested(_that.dni);case TransferRecipientCleared() when recipientCleared != null:
+return recipientRequested(_that.consulta);case TransferRecipientCleared() when recipientCleared != null:
 return recipientCleared();case TransferRecipientSelected() when recipientSelected != null:
 return recipientSelected(_that.destinatario);case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened() when confirmationOpened != null:
@@ -169,11 +169,11 @@ return saveFrequentToggled(_that.value);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( Account cuenta)  started,required TResult Function( String dni)  recipientRequested,required TResult Function()  recipientCleared,required TResult Function( Recipient destinatario)  recipientSelected,required TResult Function( Money monto,  String? motivo)  amountEntered,required TResult Function()  confirmationOpened,required TResult Function( String pin)  submitted,required TResult Function( String value)  frequentNicknameChanged,required TResult Function( bool value)  saveFrequentToggled,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( Account cuenta)  started,required TResult Function( String consulta)  recipientRequested,required TResult Function()  recipientCleared,required TResult Function( Recipient destinatario)  recipientSelected,required TResult Function( Money monto,  String? motivo)  amountEntered,required TResult Function()  confirmationOpened,required TResult Function( String pin)  submitted,required TResult Function( String value)  frequentNicknameChanged,required TResult Function( bool value)  saveFrequentToggled,}) {final _that = this;
 switch (_that) {
 case TransferStarted():
 return started(_that.cuenta);case TransferRecipientRequested():
-return recipientRequested(_that.dni);case TransferRecipientCleared():
+return recipientRequested(_that.consulta);case TransferRecipientCleared():
 return recipientCleared();case TransferRecipientSelected():
 return recipientSelected(_that.destinatario);case TransferAmountEntered():
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened():
@@ -194,11 +194,11 @@ return saveFrequentToggled(_that.value);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( Account cuenta)?  started,TResult? Function( String dni)?  recipientRequested,TResult? Function()?  recipientCleared,TResult? Function( Recipient destinatario)?  recipientSelected,TResult? Function( Money monto,  String? motivo)?  amountEntered,TResult? Function()?  confirmationOpened,TResult? Function( String pin)?  submitted,TResult? Function( String value)?  frequentNicknameChanged,TResult? Function( bool value)?  saveFrequentToggled,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( Account cuenta)?  started,TResult? Function( String consulta)?  recipientRequested,TResult? Function()?  recipientCleared,TResult? Function( Recipient destinatario)?  recipientSelected,TResult? Function( Money monto,  String? motivo)?  amountEntered,TResult? Function()?  confirmationOpened,TResult? Function( String pin)?  submitted,TResult? Function( String value)?  frequentNicknameChanged,TResult? Function( bool value)?  saveFrequentToggled,}) {final _that = this;
 switch (_that) {
 case TransferStarted() when started != null:
 return started(_that.cuenta);case TransferRecipientRequested() when recipientRequested != null:
-return recipientRequested(_that.dni);case TransferRecipientCleared() when recipientCleared != null:
+return recipientRequested(_that.consulta);case TransferRecipientCleared() when recipientCleared != null:
 return recipientCleared();case TransferRecipientSelected() when recipientSelected != null:
 return recipientSelected(_that.destinatario);case TransferAmountEntered() when amountEntered != null:
 return amountEntered(_that.monto,_that.motivo);case TransferConfirmationOpened() when confirmationOpened != null:
@@ -283,10 +283,10 @@ as Account,
 
 
 class TransferRecipientRequested implements TransferEvent {
-  const TransferRecipientRequested(this.dni);
+  const TransferRecipientRequested(this.consulta);
   
 
- final  String dni;
+ final  String consulta;
 
 /// Create a copy of TransferEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -298,16 +298,16 @@ $TransferRecipientRequestedCopyWith<TransferRecipientRequested> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferRecipientRequested&&(identical(other.dni, dni) || other.dni == dni));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransferRecipientRequested&&(identical(other.consulta, consulta) || other.consulta == consulta));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dni);
+int get hashCode => Object.hash(runtimeType,consulta);
 
 @override
 String toString() {
-  return 'TransferEvent.recipientRequested(dni: $dni)';
+  return 'TransferEvent.recipientRequested(consulta: $consulta)';
 }
 
 
@@ -318,7 +318,7 @@ abstract mixin class $TransferRecipientRequestedCopyWith<$Res> implements $Trans
   factory $TransferRecipientRequestedCopyWith(TransferRecipientRequested value, $Res Function(TransferRecipientRequested) _then) = _$TransferRecipientRequestedCopyWithImpl;
 @useResult
 $Res call({
- String dni
+ String consulta
 });
 
 
@@ -335,9 +335,9 @@ class _$TransferRecipientRequestedCopyWithImpl<$Res>
 
 /// Create a copy of TransferEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? dni = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? consulta = null,}) {
   return _then(TransferRecipientRequested(
-null == dni ? _self.dni : dni // ignore: cast_nullable_to_non_nullable
+null == consulta ? _self.consulta : consulta // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

@@ -106,7 +106,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get identifierLabel => 'DNI o Alias';
+  String get identifierLabel => 'DNI';
 
   @override
   String get pinLabel => 'PIN de seguridad';
@@ -157,7 +157,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navProfile => 'Perfil';
 
   @override
-  String get errorInvalidCredentials => 'DNI/Alias o PIN incorrectos.';
+  String get errorInvalidCredentials => 'DNI o PIN incorrectos.';
 
   @override
   String get errorIdentifierTaken => 'Este DNI ya está registrado.';
@@ -814,7 +814,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
 
   @override
-  String get homeAccountsTitle => 'Mis cuentas';
+  String homeAccountsTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mis cuentas',
+      one: 'Mi cuenta',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get homeOpenAccountCta => 'Abrir cuenta';
@@ -939,11 +947,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aliasHelp =>
-      'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.';
+      'De 3 a 20 letras, números, punto o guion bajo, con al menos una letra. Es único: compártelo para que te envíen dinero sin dar tu DNI.';
 
   @override
   String get aliasInvalid =>
-      'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.';
+      'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo, con al menos una letra.';
+
+  @override
+  String get aliasTaken => 'Ese alias ya lo usa otra persona. Prueba con otro.';
 
   @override
   String get aliasSave => 'Guardar';
@@ -978,10 +989,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get transferRecipientSubtitle =>
-      'Escribe el DNI de la persona. Debe ser cliente de CuyCash.';
+      'Escribe el DNI o el alias de la persona. Debe ser cliente de CuyCash.';
 
   @override
-  String get transferDniLabel => 'DNI del destinatario';
+  String get transferDniLabel => 'DNI o alias del destinatario';
+
+  @override
+  String get transferRecipientHint => '12345678 o @alias';
+
+  @override
+  String get transferSearchAction => 'Buscar';
 
   @override
   String get transferSearching => 'Buscando…';
@@ -1169,7 +1186,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get transferErrorRecipientNotFound =>
-      'No encontramos a nadie con ese DNI en CuyCash.';
+      'No encontramos a nadie con ese DNI o alias en CuyCash.';
 
   @override
   String get transferErrorCurrencyMismatch =>
@@ -1316,7 +1333,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get movementHeadlineReceived => 'Recibiste';
 
   @override
-  String get movementHeadlineTopUp => 'Recarga de saldo';
+  String get movementHeadlineTopUp => 'Depósito simulado';
 
   @override
   String get movementHeadlineOther => 'Movimiento';
@@ -1339,74 +1356,63 @@ class AppLocalizationsEs extends AppLocalizations {
       'Por ahora puedes sumar saldo de prueba desde aquí. Pronto podrás depositar como en cualquier banco: en un agente o ventanilla, o transfiriendo desde otra cuenta.';
 
   @override
-  String get topUpHeadline => '¿Cuánto quieres recargar?';
-
-  @override
-  String get topUpSubtitle =>
-      'Elige el monto. En el siguiente paso lo confirmas con tu PIN.';
-
-  @override
-  String get topUpConfirmHeadline => 'Confirma tu recarga';
-
-  @override
-  String get topUpConfirmSubtitle =>
-      'Ingresa tu PIN de 6 dígitos para autorizarla.';
+  String get topUpHeadline => '¿Cuánto quieres depositar?';
 
   @override
   String topUpAmountOverMax(String max) {
-    return 'El máximo por recarga es $max.';
+    return 'El máximo por depósito es $max.';
   }
 
   @override
-  String get topUpCta => 'Confirmar recarga';
+  String get topUpCta => 'Depositar';
 
   @override
-  String get topUpRetryCta => 'Reintentar recarga';
+  String get topUpRetryCta => 'Reintentar depósito';
 
   @override
   String get topUpSummaryTo => 'Se acredita en';
 
   @override
   String get topUpPendingElsewhereNotice =>
-      'Tienes una operación sin resolver. Revisa tus movimientos antes de recargar.';
+      'Tienes una operación sin resolver. Revisa tus movimientos antes de depositar.';
 
   @override
   String get topUpRecoveredNotice =>
-      'Ya habías intentado recargar este monto y no llegamos a saber si se acreditó. Si reintentas, no se cobrará dos veces.';
+      'Ya habías intentado depositar este monto y no llegamos a saber si se acreditó. Si reintentas, no se sumará dos veces.';
 
   @override
   String get topUpLeaveTitle => '¿Salir sin confirmar?';
 
   @override
   String get topUpLeaveBody =>
-      'Tu recarga pudo haberse realizado. Revísala en tus movimientos antes de intentarlo otra vez.';
+      'Tu depósito pudo haberse realizado. Revísalo en tus movimientos antes de intentarlo otra vez.';
 
   @override
   String get topUpErrorRateLimited =>
-      'No pudimos confirmar tu recarga. Espera un momento y reintenta: si ya se acreditó, no se cobrará dos veces.';
+      'No pudimos confirmar tu depósito. Espera un momento y reintenta: si ya se acreditó, no se sumará dos veces.';
 
   @override
   String get topUpErrorAccountBlocked =>
-      'Tu cuenta no está activa, así que no puedes recargar por ahora.';
+      'Tu cuenta no está activa, así que no puedes depositar por ahora.';
 
   @override
   String get topUpErrorKeyReused =>
-      'Esta recarga ya se había iniciado con otro monto. Vuelve al inicio y empieza una nueva.';
+      'Este depósito ya se había iniciado con otro monto. Vuelve al inicio y empieza uno nuevo.';
 
   @override
   String get topUpErrorNetwork =>
-      'No pudimos confirmar tu recarga. Pudo haberse realizado: reintenta y, si ya se acreditó, no se cobrará dos veces.';
+      'No pudimos confirmar tu depósito. Pudo haberse realizado: reintenta y, si ya se acreditó, no se sumará dos veces.';
 
   @override
   String get topUpErrorUnexpected =>
-      'Algo salió mal y no pudimos confirmar tu recarga. Reintenta y, si ya se acreditó, no se cobrará dos veces.';
+      'Algo salió mal y no pudimos confirmar tu depósito. Reintenta y, si ya se acreditó, no se sumará dos veces.';
 
   @override
-  String get topUpDoneHeadline => '¡Recarga realizada!';
+  String get topUpDoneHeadline => '¡Depósito realizado!';
 
   @override
   String get topUpDoneReused =>
-      'Esta recarga ya estaba registrada. No se cobró otra vez.';
+      'Este depósito ya estaba registrado. No se sumó otra vez.';
 
   @override
   String get personalDataTitle => 'Datos personales';

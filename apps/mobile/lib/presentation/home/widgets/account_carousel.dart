@@ -99,32 +99,35 @@ class _AccountCarouselState extends State<AccountCarousel> {
             ),
           ),
         ),
-        const SizedBox(height: CuyCashSpacing.stackSm),
-        Semantics(
-          label: l10n.homeAccountPage(
-            _pagina.clamp(0, widget.cuentas.length - 1) + 1,
-            widget.cuentas.length,
-          ),
-          child: ExcludeSemantics(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < paginas; i++)
-                  Container(
-                    width: i == _pagina ? 16 : 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: i == _pagina
-                          ? CuyCashColors.primary
-                          : CuyCashColors.outlineVariant,
-                      borderRadius: BorderRadius.circular(3),
+        // Con una sola cuenta no hay a dónde deslizar: los puntos sobran.
+        if (paginas > 1) ...[
+          const SizedBox(height: CuyCashSpacing.stackSm),
+          Semantics(
+            label: l10n.homeAccountPage(
+              _pagina.clamp(0, widget.cuentas.length - 1) + 1,
+              widget.cuentas.length,
+            ),
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < paginas; i++)
+                    Container(
+                      width: i == _pagina ? 16 : 6,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: i == _pagina
+                            ? CuyCashColors.primary
+                            : CuyCashColors.outlineVariant,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

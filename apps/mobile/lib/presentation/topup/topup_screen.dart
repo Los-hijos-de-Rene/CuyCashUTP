@@ -11,29 +11,23 @@ import '../../feature/account/domain/account.dart';
 import '../../feature/transfer/domain/transfer_failure.dart';
 import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
-import '../pin/pin_entry_view.dart';
 import '../transfer/money_input_formatter.dart';
 import 'bloc/topup_bloc.dart';
 import 'topup_error_text.dart';
 
-/// Los dos pasos de la recarga, dentro de la misma ruta.
-enum _Step { amount, pin }
-
-/// Recarga de saldo en dos pasos: primero el monto, después el resumen y el
-/// PIN que la autoriza.
+/// Depósito simulado en un solo paso: el monto y "Depositar". No pide PIN:
+/// meter dinero a la cuenta propia no necesita la autorización del titular.
 ///
-/// Los dos pasos viven en la MISMA ruta y comparten el [TopUpBloc] que la
-/// ruta provee: la clave de idempotencia nace al abrir y no cambia por ir y
-/// volver entre pasos (solo si cambia el monto). Volver del PIN al monto borra
-/// el PIN.
+/// La clave de idempotencia nace al abrir (en el [TopUpBloc] que la ruta
+/// provee) y solo cambia si cambia el monto.
 ///
-/// Cierra con `pop(true)` cuando hubo algún intento de recarga (acreditada o
+/// Cierra con `pop(true)` cuando hubo algún intento de depósito (acreditado o
 /// con resultado desconocido): quien la abrió refresca la cuenta.
 ///
-/// **Con el resultado desconocido la intención queda sellada**: no se vuelve
-/// al paso del monto ni se sale con atrás; solo quedan "Reintentar" (misma
-/// clave) o salir con aviso. El botón se deshabilita al primer toque y el bloc
-/// descarta un segundo evento aunque llegue antes del siguiente fotograma.
+/// **Con el resultado desconocido la intención queda sellada**: el monto ya no
+/// se edita ni se sale con atrás; solo quedan "Reintentar" (misma clave) o
+/// salir con aviso. El botón se deshabilita al primer toque y el bloc descarta
+/// un segundo evento aunque llegue antes del siguiente fotograma.
 class TopUpScreen extends StatefulWidget {
   const TopUpScreen({required this.cuenta, super.key});
 
@@ -44,12 +38,9 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  static const _pinLength = 6;
   static const _quickAmounts = [20, 50, 100, 500];
 
   final _amount = TextEditingController();
-  String _pin = '';
-  _Step _step = _Step.amount;
 
   /// Aviso del último rechazo del formateador; `null` si no hay.
   String? _rejectedMessage;
@@ -97,27 +88,9 @@ class _TopUpScreenState extends State<TopUpScreen> {
     );
   }
 
-  void _goToPin() {
-    // El PIN y el teclado del sistema no conviven.
+  void _submit() {
     FocusScope.of(context).unfocus();
-    setState(() => _step = _Step.pin);
-  }
-
-  void _backToAmount() => setState(() {
-    _step = _Step.amount;
-    _pin = '';
-  });
-
-  void _onDigit(TopUpState state, int digit) {
-    if (state.status == TopUpStatus.submitting || _pin.length >= _pinLength) {
-      return;
-    }
-    setState(() => _pin += '$digit');
-  }
-
-  void _onBackspace(TopUpState state) {
-    if (state.status == TopUpStatus.submitting || _pin.isEmpty) return;
-    setState(() => _pin = _pin.substring(0, _pin.length - 1));
+    context.read<TopUpBloc>().add(const TopUpEvent.submitted());
   }
 
   Future<void> _leave(BuildContext context) async {
@@ -142,46 +115,28 @@ class _TopUpScreenState extends State<TopUpScreen> {
     if (salir == true && context.mounted) context.pop(true);
   }
 
-  void _onResult(BuildContext context, TopUpState state) {
-    final failure = state.failure;
-    if (failure != null && !failure.outcomeUnknown) setState(() => _pin = '');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return BlocConsumer<TopUpBloc, TopUpState>(
-      listenWhen: (previous, current) =>
-          previous.status == TopUpStatus.submitting &&
-          current.status != TopUpStatus.submitting,
-      listener: _onResult,
+    return BlocBuilder<TopUpBloc, TopUpState>(
       builder: (context, state) {
         if (state.status == TopUpStatus.done) {
           return _DoneView(state: state, cuenta: widget.cuenta);
         }
         final bloqueado =
             state.status == TopUpStatus.submitting || state.outcomeUnknown;
-        final enPin = _step == _Step.pin;
         return PopScope(
-          // Atrás en el PIN vuelve al monto; con la intención sellada o la
-          // recarga en vuelo no se va a ninguna parte.
-          canPop: !enPin && !bloqueado,
-          onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && enPin && !bloqueado) _backToAmount();
-          },
+          // Con la intención sellada o el depósito en vuelo no se va a
+          // ninguna parte.
+          canPop: !bloqueado,
           child: Scaffold(
             appBar: AppBar(
-              leading: enPin && !bloqueado
-                  ? BackButton(onPressed: _backToAmount)
-                  : null,
               automaticallyImplyLeading: !bloqueado,
               title: Text(l10n.topUpTitle),
             ),
             body: SecureScreenScope(
               child: SafeArea(
-                child: enPin
-                    ? _buildPinStep(context, state, l10n)
-                    : _buildAmountStep(context, state, l10n, bloqueado),
+                child: _buildBody(context, state, l10n, bloqueado),
               ),
             ),
           ),
@@ -190,14 +145,25 @@ class _TopUpScreenState extends State<TopUpScreen> {
     );
   }
 
-  /// Paso 1: cuánto. "Continuar" espera un monto que el bloc ya aceptó.
-  Widget _buildAmountStep(
+  Widget _buildBody(
     BuildContext context,
     TopUpState state,
     AppLocalizations l10n,
     bool bloqueado,
   ) {
+    final submitting = state.status == TopUpStatus.submitting;
+    final failure = state.failure;
+    final failed = failure != null && !submitting;
+    final sealed = state.outcomeUnknown;
+    final dead = failed && failure is IdempotencyKeyReused;
     final error = _rejectedMessage ?? _amountError(l10n);
+    // Sin la clave guardada, "no se cobrará dos veces" no se puede prometer:
+    // el aviso es el fuerte.
+    final failureText = failed
+        ? (state.keyUnsaved && failure.outcomeUnknown
+              ? l10n.transferKeyUnsavedWarning
+              : topUpErrorText(l10n, failure, widget.cuenta.moneda))
+        : null;
     return Column(
       children: [
         Expanded(
@@ -215,14 +181,21 @@ class _TopUpScreenState extends State<TopUpScreen> {
                 ),
                 const SizedBox(height: CuyCashSpacing.stackMd),
                 Text(l10n.topUpHeadline, style: CuyCashTypography.headlineSm),
-                const SizedBox(height: CuyCashSpacing.stackXs),
-                Text(
-                  l10n.topUpSubtitle,
-                  style: CuyCashTypography.bodyLg.copyWith(
-                    color: CuyCashColors.secondaryText,
-                  ),
-                ),
                 const SizedBox(height: CuyCashSpacing.stackLg),
+                if (sealed && failure == null) ...[
+                  InfoStrip(
+                    icon: Icons.info_outline,
+                    text: l10n.topUpRecoveredNotice,
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                ],
+                if (state.pendingElsewhere && !sealed) ...[
+                  InfoStrip(
+                    icon: Icons.info_outline,
+                    text: l10n.topUpPendingElsewhereNotice,
+                  ),
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                ],
                 CuyCashTextField(
                   label: l10n.transferAmountLabel,
                   hint: l10n.transferAmountHint,
@@ -276,91 +249,16 @@ class _TopUpScreenState extends State<TopUpScreen> {
                   label: l10n.topUpSummaryTo,
                   value: widget.cuenta.numeroMasked,
                 ),
+                if (failureText != null) ...[
+                  const SizedBox(height: CuyCashSpacing.stackSm),
+                  Text(
+                    failureText,
+                    style: CuyCashTypography.bodyMd.copyWith(
+                      color: CuyCashColors.error,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: CuyCashSpacing.stackLg),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            CuyCashSpacing.marginMobile,
-            CuyCashSpacing.stackSm,
-            CuyCashSpacing.marginMobile,
-            CuyCashSpacing.stackMd,
-          ),
-          child: PrimaryButton(
-            label: l10n.transferContinue,
-            onPressed: state.monto != null && error == null && !bloqueado
-                ? _goToPin
-                : null,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Paso 2: resumen y PIN. Aquí nace (y se reintenta) la recarga.
-  Widget _buildPinStep(
-    BuildContext context,
-    TopUpState state,
-    AppLocalizations l10n,
-  ) {
-    final submitting = state.status == TopUpStatus.submitting;
-    final failure = state.failure;
-    final failed = failure != null && !submitting;
-    final sealed = state.outcomeUnknown;
-    final dead = failed && failure is IdempotencyKeyReused;
-    final monto = state.monto;
-    return Column(
-      children: [
-        Expanded(
-          child: PinEntryView(
-            headline: l10n.topUpConfirmHeadline,
-            subtitle: l10n.topUpConfirmSubtitle,
-            pin: _pin,
-            onDigit: (d) => _onDigit(state, d),
-            onBackspace: () => _onBackspace(state),
-            // Sin la clave guardada, "no se cobrará dos veces" no se puede
-            // prometer: el aviso es el fuerte.
-            errorText: failed
-                ? (state.keyUnsaved && failure.outcomeUnknown
-                      ? l10n.transferKeyUnsavedWarning
-                      : topUpErrorText(l10n, failure, widget.cuenta.moneda))
-                : null,
-            hasError: failed && failure is WrongPin,
-            extra: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (sealed && failure == null) ...[
-                  InfoStrip(
-                    icon: Icons.info_outline,
-                    text: l10n.topUpRecoveredNotice,
-                  ),
-                  const SizedBox(height: CuyCashSpacing.stackSm),
-                ],
-                if (state.pendingElsewhere && !sealed) ...[
-                  InfoStrip(
-                    icon: Icons.info_outline,
-                    text: l10n.topUpPendingElsewhereNotice,
-                  ),
-                  const SizedBox(height: CuyCashSpacing.stackSm),
-                ],
-                SurfaceCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (monto != null)
-                        Text(
-                          formatMoney(monto),
-                          style: CuyCashTypography.headlineMd,
-                        ),
-                      _Line(
-                        label: l10n.topUpSummaryTo,
-                        value: widget.cuenta.numeroMasked,
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -384,10 +282,11 @@ class _TopUpScreenState extends State<TopUpScreen> {
                 PrimaryButton(
                   label: sealed ? l10n.topUpRetryCta : l10n.topUpCta,
                   loading: submitting,
-                  onPressed: _pin.length == _pinLength && monto != null
-                      ? () => context.read<TopUpBloc>().add(
-                          TopUpEvent.submitted(pin: _pin),
-                        )
+                  onPressed:
+                      state.monto != null &&
+                          (sealed || error == null) &&
+                          !submitting
+                      ? _submit
                       : null,
                 ),
                 if (sealed && !submitting) ...[

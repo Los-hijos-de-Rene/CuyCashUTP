@@ -83,7 +83,7 @@ void main() {
     act: (bloc) {
       bloc.add(const TopUpEvent.opened(cuentaId: _cuentaId));
       bloc.add(TopUpEvent.amountChanged(_monto));
-      bloc.add(const TopUpEvent.submitted(pin: '000000'));
+      bloc.add(const TopUpEvent.submitted());
     },
     expect: () => [
       isA<TopUpState>(),
@@ -106,7 +106,7 @@ void main() {
     act: (bloc) {
       bloc.add(const TopUpEvent.opened(cuentaId: _cuentaId));
       bloc.add(TopUpEvent.amountChanged(const Money.soles(200000)));
-      bloc.add(const TopUpEvent.submitted(pin: '000000'));
+      bloc.add(const TopUpEvent.submitted());
     },
     verify: (bloc) {
       expect(bloc.state.failure, isNot(isA<InsufficientFunds>()));
@@ -120,7 +120,7 @@ void main() {
       final b = await _preparado(repo, monto: Money.soles(centimos));
       addTearDown(b.close);
 
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
 
       expect(b.state.failure, isA<AmountOutOfRange>());
@@ -135,7 +135,7 @@ void main() {
       ..add(const TopUpEvent.opened(cuentaId: _cuentaId));
     addTearDown(b.close);
     await _pump();
-    b.add(const TopUpEvent.submitted(pin: '000000'));
+    b.add(const TopUpEvent.submitted());
     await _pump();
     expect(repo.recargas, 0);
   });
@@ -161,15 +161,15 @@ void main() {
         b.close();
       });
 
-      b.add(const TopUpEvent.submitted(pin: '000000'));
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(repo.recargas, 1);
 
       lento.complete(right(FakeTransferRepository.constanciaDe(_monto)));
       await _pump();
       expect(b.state.status, TopUpStatus.done);
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(repo.recargas, 1);
     });
@@ -186,8 +186,8 @@ void main() {
         });
         // Abrir también consulta el almacén (hasPending): se libera una vez y
         // se deja pasar; las lecturas siguientes también avanzan.
-        b.add(const TopUpEvent.submitted(pin: '000000'));
-        b.add(const TopUpEvent.submitted(pin: '000000'));
+        b.add(const TopUpEvent.submitted());
+        b.add(const TopUpEvent.submitted());
         await _pump();
 
         // Con el almacén aún detenido el estado YA es `submitting`: el segundo
@@ -202,24 +202,28 @@ void main() {
       },
     );
 
-    test('un PIN errado conserva monto y clave, y no se sella', () async {
-      final repo = FakeTransferRepository(
-        alRecargar: (_) async =>
-            FakeTransferRepository.falla(const TransferFailure.wrongPin(2)),
-      );
-      final b = await _preparado(repo, newKey: _claves());
-      addTearDown(b.close);
+    test(
+      'un rechazo definitivo conserva monto y clave, y no se sella',
+      () async {
+        final repo = FakeTransferRepository(
+          alRecargar: (_) async => FakeTransferRepository.falla(
+            const TransferFailure.accountBlocked(),
+          ),
+        );
+        final b = await _preparado(repo, newKey: _claves());
+        addTearDown(b.close);
 
-      b.add(const TopUpEvent.submitted(pin: '111111'));
-      await _pump();
-      b.add(const TopUpEvent.submitted(pin: '000000'));
-      await _pump();
+        b.add(const TopUpEvent.submitted());
+        await _pump();
+        b.add(const TopUpEvent.submitted());
+        await _pump();
 
-      expect(repo.clavesRecarga, ['clave-generada-2', 'clave-generada-2']);
-      expect(b.state.outcomeUnknown, isFalse);
-      expect(b.state.status, TopUpStatus.editing);
-      expect(b.state.monto, _monto);
-    });
+        expect(repo.clavesRecarga, ['clave-generada-2', 'clave-generada-2']);
+        expect(b.state.outcomeUnknown, isFalse);
+        expect(b.state.status, TopUpStatus.editing);
+        expect(b.state.monto, _monto);
+      },
+    );
 
     test('un amountChanged con el MISMO monto conserva la clave', () async {
       final b = await _preparado(FakeTransferRepository(), newKey: _claves());
@@ -258,7 +262,7 @@ void main() {
           final b = await _preparado(repo, newKey: _claves());
           addTearDown(b.close);
 
-          b.add(const TopUpEvent.submitted(pin: '000000'));
+          b.add(const TopUpEvent.submitted());
           await _pump();
           expect(b.state.outcomeUnknown, isTrue);
 
@@ -267,7 +271,7 @@ void main() {
           await _pump();
           expect(b.state.monto, _monto);
 
-          b.add(const TopUpEvent.submitted(pin: '000000'));
+          b.add(const TopUpEvent.submitted());
           await _pump();
           expect(repo.clavesRecarga, ['clave-generada-2', 'clave-generada-2']);
         },
@@ -285,11 +289,11 @@ void main() {
       final b = await _preparado(repo, pending: pending);
       addTearDown(b.close);
 
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(await pending.hasPending('u1'), isTrue);
 
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(b.state.status, TopUpStatus.done);
       expect(await pending.hasPending('u1'), isFalse);
@@ -308,7 +312,7 @@ void main() {
       );
       final b = await _preparado(repo, pending: pending);
       addTearDown(b.close);
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(await pending.hasPending('u1'), isTrue);
     });
@@ -322,7 +326,7 @@ void main() {
       );
       final b = await _preparado(repo, pending: pending);
       addTearDown(b.close);
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(await pending.hasPending('u1'), isFalse);
     });
@@ -343,7 +347,7 @@ void main() {
           pending: pendientesDePrueba(store: store),
           newKey: _claves(),
         );
-        primero.add(const TopUpEvent.submitted(pin: '000000'));
+        primero.add(const TopUpEvent.submitted());
         await _pump();
         await primero.close(); // el usuario sale / mata la app
 
@@ -356,7 +360,7 @@ void main() {
         // Al abrir ya avisa de la operación sin resolver.
         expect(segundo.state.pendingElsewhere, isTrue);
 
-        segundo.add(const TopUpEvent.submitted(pin: '000000'));
+        segundo.add(const TopUpEvent.submitted());
         await _pump();
 
         expect(repo.clavesRecarga, ['clave-generada-2', 'clave-generada-2']);
@@ -375,7 +379,7 @@ void main() {
         repo,
         pending: pendientesDePrueba(store: store),
       );
-      primero.add(const TopUpEvent.submitted(pin: '000000'));
+      primero.add(const TopUpEvent.submitted());
       await _pump();
       await primero.close();
 
@@ -388,7 +392,7 @@ void main() {
       addTearDown(segundo.close);
       expect(segundo.state.pendingElsewhere, isTrue);
       expect(segundo.state.outcomeUnknown, isFalse);
-      segundo.add(const TopUpEvent.submitted(pin: '000000'));
+      segundo.add(const TopUpEvent.submitted());
       await _pump();
       expect(repo.clavesRecarga.last, 'clave-NUEVA');
     });
@@ -407,7 +411,7 @@ void main() {
           pending: pendientesDePrueba(store: store),
           userId: 'ana',
         );
-        a.add(const TopUpEvent.submitted(pin: '000000'));
+        a.add(const TopUpEvent.submitted());
         await _pump();
         await a.close();
 
@@ -419,7 +423,7 @@ void main() {
         );
         addTearDown(b.close);
         expect(b.state.pendingElsewhere, isFalse);
-        b.add(const TopUpEvent.submitted(pin: '000000'));
+        b.add(const TopUpEvent.submitted());
         await _pump();
         expect(repo.clavesRecarga.last, 'clave-de-beto');
       },
@@ -443,7 +447,7 @@ void main() {
         newKey: () => 'clave-NUEVA',
       );
       addTearDown(b.close);
-      b.add(const TopUpEvent.submitted(pin: '000000'));
+      b.add(const TopUpEvent.submitted());
       await _pump();
       expect(repo.clavesRecarga, ['clave-NUEVA']);
       expect(b.state.outcomeUnknown, isFalse);
@@ -461,7 +465,7 @@ void main() {
           pending: pendientesDePrueba(store: StoreQueNoEscribe()),
         );
         addTearDown(b.close);
-        b.add(const TopUpEvent.submitted(pin: '000000'));
+        b.add(const TopUpEvent.submitted());
         await _pump();
         // El envío NO se tumba por un fallo de disco.
         expect(repo.recargas, 1);

@@ -4,6 +4,7 @@ import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/feature/security/infrastructure/memory_security_repository.dart';
 import 'package:cuycash/feature/security/infrastructure/memory_security_state.dart';
+import 'package:cuycash/feature/profile/domain/alias_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -126,6 +127,27 @@ void main() {
     },
   );
 
+  test(
+    'el alias del registro sigue la regla: sin tildes, nunca el DNI',
+    () async {
+      for (final (nombres, alias) in [
+        ('José', '@jose'),
+        ('Li', '@cuyli'),
+        ('', '@cuy'),
+      ]) {
+        final s = (await MemoryAuthRepository().register(
+          dni: '87654321',
+          nombres: nombres,
+          apellidos: 'Pérez',
+          email: 'x@correo.com',
+          pin: '024689',
+        )).getRight().toNullable();
+        expect(s?.alias, alias, reason: nombres);
+        expect(AliasRules.isValid(s?.alias ?? ''), isTrue, reason: nombres);
+      }
+    },
+  );
+
   test('activate inicia la sesión creada y la emite', () async {
     final repo = MemoryAuthRepository();
     final emissions = <AuthSession?>[];
@@ -203,4 +225,35 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(emissions.single, isNull);
   });
+
+  test(
+    'tras registrarse, el login devuelve nombre y alias (como el backend)',
+    () async {
+      final estado = MemorySecurityState.demo(clock: DateTime.now);
+      estado.credentials['ok'] = estado.thisDeviceId;
+      final repo = MemoryAuthRepository(security: estado);
+      await repo.register(
+        dni: '87654321',
+        nombres: 'Juan Carlos',
+        apellidos: 'Pérez García',
+        email: 'juan@correo.com',
+        pin: '000000',
+      );
+      await repo.signOut();
+
+      final porPin = (await repo.signIn(
+        identifier: '87654321',
+        pin: '000000',
+      )).getRight().toNullable();
+      final porHuella = (await repo.signInWithBiometric(
+        dni: '87654321',
+        credential: 'ok',
+      )).getRight().toNullable();
+
+      for (final s in [porPin, porHuella]) {
+        expect(s?.fullName, 'Juan Carlos Pérez García');
+        expect(s?.alias, '@juan');
+      }
+    },
+  );
 }

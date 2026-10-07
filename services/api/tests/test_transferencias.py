@@ -497,17 +497,20 @@ async def test_una_recarga_fuera_de_rango_es_rechazada(client, otp_codes, regist
 
 
 @pytest.mark.asyncio
-async def test_una_recarga_con_pin_errado_no_acredita(client, otp_codes, registrado):
+async def test_una_recarga_no_pide_pin_ni_gasta_intentos(client, otp_codes, registrado):
+    """El depósito simulado mete dinero a la cuenta propia: no necesita la
+    autorización del titular. Un `pin` que llegue se ignora y no cuenta como
+    intento fallido."""
     cuenta = await _cuenta_id(client, registrado)
 
     r = await client.post(
         "/v1/topups",
         json={"cuenta_id": cuenta, "monto_centimos": 10_000, "pin": PIN_MALO,
-              "idempotency_key": "recarga-pinmalo"},
+              "idempotency_key": "recarga-sinpin"},
         headers=registrado.auth,
     )
-    assert r.json()["code"] == "INVALID_CREDENTIALS"
-    assert await _saldo(client, registrado) == 0
+    assert r.status_code == 201, r.text
+    assert await _saldo(client, registrado) == 10_000
 
 
 # ------------------------------------------------- correcciones de la ronda 1

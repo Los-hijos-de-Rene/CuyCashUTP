@@ -9,6 +9,6 @@ sealed class TopUpEvent with _$TopUpEvent {
   /// con la intención sellada.
   const factory TopUpEvent.amountChanged(Money? monto) = TopUpAmountChanged;
 
-  /// El usuario confirmó con su PIN. Se ignora si ya hay una recarga en curso.
-  const factory TopUpEvent.submitted({required String pin}) = TopUpSubmitted;
+  /// El usuario confirmó el depósito. Se ignora si ya hay uno en curso.
+  const factory TopUpEvent.submitted() = TopUpSubmitted;
 }

@@ -179,6 +179,7 @@ class _ReadyView extends StatelessWidget {
         ],
         if (state.cuentas.isNotEmpty) ...[
           AccountsHeader(
+            cuentas: state.cuentas.length,
             onOpenAccount: state.puedeAbrirOtra
                 ? () => _openAccount(context)
                 : null,

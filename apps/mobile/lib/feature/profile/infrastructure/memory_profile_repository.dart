@@ -7,9 +7,15 @@ import '../domain/profile_failure.dart';
 import '../domain/profile_repository.dart';
 
 /// Impl en memoria (flavor `mock`). Aplica la misma regla de alias que el
-/// backend.
+/// backend, y [tomados] hace de los alias de otros titulares (únicos).
 class MemoryProfileRepository implements ProfileRepository {
-  MemoryProfileRepository({PersonalData? initial}) : _datos = initial ?? demo;
+  MemoryProfileRepository({PersonalData? initial, this.tomados = aliasDeOtros})
+    : _datos = initial ?? demo;
+
+  /// Los de los terceros de la demo de envíos (`MemoryTransferRepository`).
+  static const aliasDeOtros = {'@jmrosa', '@carlos'};
+
+  final Set<String> tomados;
 
   static final demo = PersonalData(
     dni: '70123456',
@@ -32,6 +38,9 @@ class MemoryProfileRepository implements ProfileRepository {
     final nuevo = AliasRules.normalize(alias);
     if (!AliasRules.isValid(nuevo)) {
       return left(const GlobalFailure.server(ProfileFailure.invalidAlias()));
+    }
+    if (nuevo != _datos.alias && tomados.contains(nuevo)) {
+      return left(const GlobalFailure.server(ProfileFailure.aliasTaken()));
     }
     _datos = _datos.copyWith(alias: nuevo);
     return right(nuevo);

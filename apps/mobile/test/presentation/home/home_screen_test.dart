@@ -419,7 +419,7 @@ void main() {
 
     expect(find.text('Últimos movimientos'), findsOneWidget);
     expect(find.text('Ahorros · ••••4521'), findsOneWidget);
-    expect(find.text('Mis cuentas'), findsOneWidget);
+    expect(find.text('Mi cuenta'), findsOneWidget);
     expect(find.text('Abrir cuenta'), findsOneWidget);
   });
 

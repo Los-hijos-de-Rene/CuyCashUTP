@@ -60,7 +60,7 @@ class ChallengeOut(BaseModel):
 
 
 class AliasIn(BaseModel):
-    # Holgado a propósito: la regla real (`@` + 3–20 de [a-z0-9_.]) la aplica
+    # Holgado a propósito: la regla real (`app.services.alias.REGLA`) la aplica
     # el router tras normalizar, para responder INVALID_ALIAS y no un 422 genérico.
     alias: str = Field(max_length=60)
 

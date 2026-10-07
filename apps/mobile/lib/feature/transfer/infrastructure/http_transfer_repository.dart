@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 
 import '../domain/recipient_account.dart';
 import '../domain/recipient_directory.dart';
+import '../domain/recipient_query.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
 import '../domain/transfer_repository.dart';
@@ -24,11 +25,22 @@ class HttpTransferRepository implements TransferRepository {
 
   @override
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
-    String dni,
+    String consulta,
   ) => _guard(() async {
+    final parametros = switch (RecipientQuery.parse(consulta)) {
+      DniQuery(:final dni) => {'dni': dni},
+      AliasQuery(:final alias) => {'alias': alias},
+      // Ni DNI ni alias: no puede existir. No se consulta ni se gasta cupo.
+      null => null,
+    };
+    if (parametros == null) {
+      return left(
+        const GlobalFailure.server(TransferFailure.recipientNotFound()),
+      );
+    }
     final response = await _dio.get<dynamic>(
       '/v1/directory/resolve',
-      queryParameters: {'dni': dni},
+      queryParameters: parametros,
     );
     if (_failureFor(response) case final f?) {
       return left(GlobalFailure.server(f));
@@ -36,7 +48,7 @@ class HttpTransferRepository implements TransferRepository {
     final j = _cuerpo(response);
     return right(
       RecipientDirectory(
-        dni: j['dni'] as String,
+        alias: j['alias'] as String,
         nombreEnmascarado: j['nombre_enmascarado'] as String,
         cuentas: [
           for (final c in j['cuentas'] as List)
@@ -70,12 +82,10 @@ class HttpTransferRepository implements TransferRepository {
   FutureResult<TransferFailure, TransferReceipt> recargar({
     required String cuentaId,
     required Money monto,
-    required String pin,
     required String idempotencyKey,
   }) => _mover('/v1/topups', {
     'cuenta_id': cuentaId,
     'monto_centimos': monto.centimos,
-    'pin': pin,
     'idempotency_key': idempotencyKey,
   }, monto.currency);
 
@@ -138,7 +148,8 @@ class HttpTransferRepository implements TransferRepository {
     final body = data is Map ? data : const <Object?, Object?>{};
     return switch (body['code']) {
       'INSUFFICIENT_FUNDS' => const TransferFailure.insufficientFunds(),
-      'RECIPIENT_NOT_FOUND' => const TransferFailure.recipientNotFound(),
+      'RECIPIENT_NOT_FOUND' ||
+      'INVALID_RECIPIENT_QUERY' => const TransferFailure.recipientNotFound(),
       'CURRENCY_MISMATCH' => const TransferFailure.currencyMismatch(),
       'SAME_ACCOUNT' => const TransferFailure.sameAccount(),
       'ACCOUNT_NOT_FOUND' => const TransferFailure.accountNotFound(),
