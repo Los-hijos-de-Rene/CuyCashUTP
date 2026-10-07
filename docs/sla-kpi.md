@@ -26,7 +26,7 @@ el docente.
 | Operación | SLA objetivo | Fuente |
 |---|---|---|
 | Validación de nitidez del documento (OCR/blur) | ≤ 2 s por imagen | HU01 |
-| Evaluación de un paso de liveness (`/liveness/evaluate`) | < 1 s por paso (solo MediaPipe) | SERVICE.md §11.3 |
+| Evaluación de un paso de liveness | < 1 s por paso: la detección corre en el teléfono (ML Kit) y avanza sola; `/liveness/evaluate` ya no se usa | SERVICE.md §11.3 |
 | Vigencia del token de desafío de liveness | 180 s (configurable) | `CHALLENGE_TOKEN_TTL_SECONDS` |
 | Verificación completa de identidad (`verify-full`) | ≤ 5 s | DeepFace/RetinaFace, una sola vez al final |
 | Autenticación biométrica (facial / huella / PIN) | < 1.5 s, con PIN de contingencia | HU02 |

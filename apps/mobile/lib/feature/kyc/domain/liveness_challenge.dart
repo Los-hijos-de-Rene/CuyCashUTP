@@ -39,24 +39,6 @@ class LivenessChallenge {
   int get hashCode => Object.hash(token, expiresAt, Object.hashAll(steps));
 }
 
-/// Resultado de evaluar UNA tarea.
-///
-/// `passed:false` no es un fallo del sistema sino el usuario reintentando, así
-/// que viaja como valor de éxito y no como `KycFailure`.
-class StepEvaluation {
-  const StepEvaluation({
-    required this.step,
-    required this.passed,
-    required this.reason,
-    this.framesAnalyzed = 0,
-  });
-
-  final LivenessStep step;
-  final bool passed;
-  final String reason;
-  final int framesAnalyzed;
-}
-
 /// Veredicto del flujo completo. [approved] es lo único que decide; el resto
 /// existe para poder explicarle al usuario qué falló.
 class KycVerification {

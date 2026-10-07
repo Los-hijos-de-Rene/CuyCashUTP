@@ -14,14 +14,15 @@ enum CameraStatus { initializing, ready, denied, unavailable }
 /// distinguir "el usuario negó el permiso" de "no hay cámara", y no mostrar el
 /// preview hasta que esté inicializado.
 ///
-/// La resolución se mantiene baja a propósito: cada tarea del liveness sube
-/// entre 8 y 10 fotogramas, y la verificación final los manda todos juntos.
+/// La resolución se mantiene media a propósito: el liveness analiza el stream
+/// fotograma a fotograma en el teléfono y envía unos 15 de ellos al servidor.
 class CameraScope extends StatefulWidget {
   const CameraScope({
     required this.lens,
     required this.builder,
     this.unavailableBuilder,
     this.resolution = ResolutionPreset.medium,
+    this.imageFormatGroup,
     super.key,
   });
 
@@ -37,6 +38,9 @@ class CameraScope extends StatefulWidget {
       unavailableBuilder;
 
   final ResolutionPreset resolution;
+
+  /// Formato del stream de fotogramas (solo si se va a usar `startImageStream`).
+  final ImageFormatGroup? imageFormatGroup;
 
   @override
   State<CameraScope> createState() => _CameraScopeState();
@@ -63,9 +67,10 @@ class _CameraScopeState extends State<CameraScope> {
         camera,
         widget.resolution,
         enableAudio: false,
+        imageFormatGroup: widget.imageFormatGroup,
       );
       await controller.initialize();
-      // El flash dispararía a la cara en cada uno de los ~40 fotogramas.
+      // El flash no tiene sentido para el rostro ni para un documento plano.
       await controller.setFlashMode(FlashMode.off);
       if (!mounted) {
         await controller.dispose();

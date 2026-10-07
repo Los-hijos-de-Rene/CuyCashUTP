@@ -339,11 +339,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get livenessPreparing => 'Preparando la verificación…';
 
   @override
-  String livenessProgress(int done, int total) {
-    return 'Paso $done de $total';
-  }
-
-  @override
   String get livenessStepArriba => 'Levanta la cabeza, despacio';
 
   @override
@@ -356,22 +351,45 @@ class AppLocalizationsEs extends AppLocalizations {
   String get livenessStepDerecha => 'Gira la cabeza a tu derecha';
 
   @override
-  String get livenessStepParpadeo => 'Parpadea dos veces mirando a la cámara';
+  String get livenessStepParpadeo => 'Parpadea despacio, mirando a la cámara';
 
   @override
-  String get livenessCapture => 'Estoy listo';
+  String get livenessGuideNoFace => 'Ubica tu rostro dentro del óvalo';
 
   @override
-  String get livenessCapturing => 'No te muevas del gesto…';
+  String get livenessGuideMultipleFaces => 'Solo debe verse tu rostro';
 
   @override
-  String get livenessEvaluating => 'Verificando…';
+  String get livenessGuideTooFar => 'Acércate un poco';
+
+  @override
+  String get livenessGuideTooClose => 'Aléjate un poco';
+
+  @override
+  String get livenessGuideOffCenter => 'Centra tu rostro en el óvalo';
+
+  @override
+  String get livenessGuideNotFrontal => 'Mira de frente a la cámara';
+
+  @override
+  String get livenessGuideEyesClosed => 'Mantén los ojos abiertos';
+
+  @override
+  String get livenessHoldStill => 'Quédate así, sin moverte…';
+
+  @override
+  String get livenessBackToCenter => 'Bien. Vuelve a mirar al frente';
+
+  @override
+  String get livenessStepSlow => 'Haz el gesto un poco más marcado';
+
+  @override
+  String livenessStepOf(int done, int total) {
+    return 'Gesto $done de $total';
+  }
 
   @override
   String get livenessVerifying => 'Confirmando tu identidad…';
-
-  @override
-  String get livenessRetry => 'Repetir este paso';
 
   @override
   String get livenessApproved => 'Identidad verificada';

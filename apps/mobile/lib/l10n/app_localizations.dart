@@ -682,12 +682,6 @@ abstract class AppLocalizations {
   /// **'Preparando la verificación…'**
   String get livenessPreparing;
 
-  /// No description provided for @livenessProgress.
-  ///
-  /// In es, this message translates to:
-  /// **'Paso {done} de {total}'**
-  String livenessProgress(int done, int total);
-
   /// No description provided for @livenessStepArriba.
   ///
   /// In es, this message translates to:
@@ -715,38 +709,80 @@ abstract class AppLocalizations {
   /// No description provided for @livenessStepParpadeo.
   ///
   /// In es, this message translates to:
-  /// **'Parpadea dos veces mirando a la cámara'**
+  /// **'Parpadea despacio, mirando a la cámara'**
   String get livenessStepParpadeo;
 
-  /// No description provided for @livenessCapture.
+  /// No description provided for @livenessGuideNoFace.
   ///
   /// In es, this message translates to:
-  /// **'Estoy listo'**
-  String get livenessCapture;
+  /// **'Ubica tu rostro dentro del óvalo'**
+  String get livenessGuideNoFace;
 
-  /// No description provided for @livenessCapturing.
+  /// No description provided for @livenessGuideMultipleFaces.
   ///
   /// In es, this message translates to:
-  /// **'No te muevas del gesto…'**
-  String get livenessCapturing;
+  /// **'Solo debe verse tu rostro'**
+  String get livenessGuideMultipleFaces;
 
-  /// No description provided for @livenessEvaluating.
+  /// No description provided for @livenessGuideTooFar.
   ///
   /// In es, this message translates to:
-  /// **'Verificando…'**
-  String get livenessEvaluating;
+  /// **'Acércate un poco'**
+  String get livenessGuideTooFar;
+
+  /// No description provided for @livenessGuideTooClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Aléjate un poco'**
+  String get livenessGuideTooClose;
+
+  /// No description provided for @livenessGuideOffCenter.
+  ///
+  /// In es, this message translates to:
+  /// **'Centra tu rostro en el óvalo'**
+  String get livenessGuideOffCenter;
+
+  /// No description provided for @livenessGuideNotFrontal.
+  ///
+  /// In es, this message translates to:
+  /// **'Mira de frente a la cámara'**
+  String get livenessGuideNotFrontal;
+
+  /// No description provided for @livenessGuideEyesClosed.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantén los ojos abiertos'**
+  String get livenessGuideEyesClosed;
+
+  /// No description provided for @livenessHoldStill.
+  ///
+  /// In es, this message translates to:
+  /// **'Quédate así, sin moverte…'**
+  String get livenessHoldStill;
+
+  /// No description provided for @livenessBackToCenter.
+  ///
+  /// In es, this message translates to:
+  /// **'Bien. Vuelve a mirar al frente'**
+  String get livenessBackToCenter;
+
+  /// No description provided for @livenessStepSlow.
+  ///
+  /// In es, this message translates to:
+  /// **'Haz el gesto un poco más marcado'**
+  String get livenessStepSlow;
+
+  /// No description provided for @livenessStepOf.
+  ///
+  /// In es, this message translates to:
+  /// **'Gesto {done} de {total}'**
+  String livenessStepOf(int done, int total);
 
   /// No description provided for @livenessVerifying.
   ///
   /// In es, this message translates to:
   /// **'Confirmando tu identidad…'**
   String get livenessVerifying;
-
-  /// No description provided for @livenessRetry.
-  ///
-  /// In es, this message translates to:
-  /// **'Repetir este paso'**
-  String get livenessRetry;
 
   /// No description provided for @livenessApproved.
   ///

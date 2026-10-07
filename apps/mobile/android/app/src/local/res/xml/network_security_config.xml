@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Flavor `local`: permite HTTP plano para hablar con el backend del PC en la
+  red local. La IP del PC cambia según el Wi-Fi, por eso se permite en general
+  y no para una IP fija. Nunca se incluye en `production`.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

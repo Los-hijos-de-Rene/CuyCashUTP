@@ -17,14 +17,6 @@ class KycActions {
   FutureResult<KycFailure, LivenessChallenge> requestChallenge() =>
       _repo.requestChallenge();
 
-  FutureResult<KycFailure, StepEvaluation> evaluateStep({
-    required String token,
-    required LivenessStep step,
-    required List<String> framesBase64,
-  }) =>
-      _repo.evaluateStep(
-          token: token, step: step, framesBase64: framesBase64);
-
   FutureResult<KycFailure, KycVerification> verifyFull({
     required String token,
     required Uint8List documentImage,

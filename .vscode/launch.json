@@ -23,6 +23,7 @@
       "type": "dart",
       "cwd": "apps/mobile",
       "program": "lib/main_production.dart",
+      "flutterMode": "release",
       "args": [
         "--flavor",
         "production",

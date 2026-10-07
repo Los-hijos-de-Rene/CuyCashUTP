@@ -6,7 +6,6 @@ import '../../../../feature/beneficiary/infrastructure/http_beneficiary_reposito
 import '../../../../feature/biometric/infrastructure/local_auth_biometric_gate.dart';
 import '../../../../feature/device/domain/device_store.dart';
 import '../../../../feature/device/infrastructure/secure_device_store.dart';
-import '../../../../feature/kyc/domain/kyc_repository.dart';
 import '../../../../feature/kyc/infrastructure/http_kyc_repository.dart';
 import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
 import '../../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
@@ -66,7 +65,9 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     // El bloqueo real lo lleva el servidor y llega en la respuesta. Este store
     // queda para el acceso rápido, que sí es local a este teléfono.
     identifierLockoutStore: MemoryIdentifierLockoutStore(),
-    kycRepository: _kycRepository(),
+    kycRepository: usesRealKyc(flavor, enabled: AppEnv.kycEnabled)
+        ? HttpKycRepository(dio: dio)
+        : MemoryKycRepository(clock: DateTime.now),
     accountRepository: HttpAccountRepository(dio: dio),
     transferRepository: HttpTransferRepository(dio: dio),
     pendingTransferStore: const SharedPrefsPendingTransferStore(),
@@ -77,12 +78,16 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
   );
 }
 
-/// Sin `KYC_BASE_URL`/`KYC_API_KEY` se cae al Memory* en vez de romper el
-/// arranque: el resto de la app no depende del KYC para funcionar, y quedarse
-/// sin abrir por una variable de entorno ausente sería peor que simularlo.
-KycRepository _kycRepository() => AppEnv.hasKycConfig
-    ? HttpKycRepository.withConfig(
-        baseUrl: AppEnv.kycBaseUrl,
-        apiKey: AppEnv.kycApiKey,
-      )
-    : MemoryKycRepository(clock: DateTime.now);
+
+/// Si el registro llama al KYC facial real (proxy `/v1/kyc` del backend).
+///
+/// Solo en `local`, y solo con `KYC_ENABLED`. En `production` SIEMPRE se
+/// simula, diga lo que diga la config: el microservicio aún no está desplegado
+/// en Render, y un `config.production.json` con la bandera encendida dejaría
+/// el registro en producción sin poder terminar. Cuando se despliegue, este
+/// es el único sitio que hay que cambiar.
+///
+/// Sin la bandera, `local` también simula en vez de romper el arranque: el
+/// resto de la app no depende del KYC.
+bool usesRealKyc(AppFlavor flavor, {required bool enabled}) =>
+    flavor == AppFlavor.local && enabled;

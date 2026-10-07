@@ -55,12 +55,12 @@ extension LivenessEventPatterns on LivenessEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LivenessStarted value)?  started,TResult Function( LivenessStepCaptureRequested value)?  stepCaptureRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LivenessStarted value)?  started,TResult Function( LivenessObserved value)?  observed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case LivenessStarted() when started != null:
-return started(_that);case LivenessStepCaptureRequested() when stepCaptureRequested != null:
-return stepCaptureRequested(_that);case _:
+return started(_that);case LivenessObserved() when observed != null:
+return observed(_that);case _:
   return orElse();
 
 }
@@ -78,12 +78,12 @@ return stepCaptureRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LivenessStarted value)  started,required TResult Function( LivenessStepCaptureRequested value)  stepCaptureRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LivenessStarted value)  started,required TResult Function( LivenessObserved value)  observed,}){
 final _that = this;
 switch (_that) {
 case LivenessStarted():
-return started(_that);case LivenessStepCaptureRequested():
-return stepCaptureRequested(_that);}
+return started(_that);case LivenessObserved():
+return observed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -97,12 +97,12 @@ return stepCaptureRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LivenessStarted value)?  started,TResult? Function( LivenessStepCaptureRequested value)?  stepCaptureRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LivenessStarted value)?  started,TResult? Function( LivenessObserved value)?  observed,}){
 final _that = this;
 switch (_that) {
 case LivenessStarted() when started != null:
-return started(_that);case LivenessStepCaptureRequested() when stepCaptureRequested != null:
-return stepCaptureRequested(_that);case _:
+return started(_that);case LivenessObserved() when observed != null:
+return observed(_that);case _:
   return null;
 
 }
@@ -119,11 +119,11 @@ return stepCaptureRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  stepCaptureRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( FaceObservation observation)?  observed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case LivenessStarted() when started != null:
-return started();case LivenessStepCaptureRequested() when stepCaptureRequested != null:
-return stepCaptureRequested();case _:
+return started();case LivenessObserved() when observed != null:
+return observed(_that.observation);case _:
   return orElse();
 
 }
@@ -141,11 +141,11 @@ return stepCaptureRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  stepCaptureRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( FaceObservation observation)  observed,}) {final _that = this;
 switch (_that) {
 case LivenessStarted():
-return started();case LivenessStepCaptureRequested():
-return stepCaptureRequested();}
+return started();case LivenessObserved():
+return observed(_that.observation);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -159,11 +159,11 @@ return stepCaptureRequested();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  stepCaptureRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( FaceObservation observation)?  observed,}) {final _that = this;
 switch (_that) {
 case LivenessStarted() when started != null:
-return started();case LivenessStepCaptureRequested() when stepCaptureRequested != null:
-return stepCaptureRequested();case _:
+return started();case LivenessObserved() when observed != null:
+return observed(_that.observation);case _:
   return null;
 
 }
@@ -206,42 +206,77 @@ String toString() {
 /// @nodoc
 
 
-class LivenessStepCaptureRequested implements LivenessEvent {
-  const LivenessStepCaptureRequested();
+class LivenessObserved implements LivenessEvent {
+  const LivenessObserved(this.observation);
   
 
+ final  FaceObservation observation;
 
-
+/// Create a copy of LivenessEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$LivenessObservedCopyWith<LivenessObserved> get copyWith => _$LivenessObservedCopyWithImpl<LivenessObserved>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivenessStepCaptureRequested);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivenessObserved&&(identical(other.observation, observation) || other.observation == observation));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,observation);
 
 @override
 String toString() {
-  return 'LivenessEvent.stepCaptureRequested()';
+  return 'LivenessEvent.observed(observation: $observation)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $LivenessObservedCopyWith<$Res> implements $LivenessEventCopyWith<$Res> {
+  factory $LivenessObservedCopyWith(LivenessObserved value, $Res Function(LivenessObserved) _then) = _$LivenessObservedCopyWithImpl;
+@useResult
+$Res call({
+ FaceObservation observation
+});
 
 
+
+
+}
+/// @nodoc
+class _$LivenessObservedCopyWithImpl<$Res>
+    implements $LivenessObservedCopyWith<$Res> {
+  _$LivenessObservedCopyWithImpl(this._self, this._then);
+
+  final LivenessObserved _self;
+  final $Res Function(LivenessObserved) _then;
+
+/// Create a copy of LivenessEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? observation = null,}) {
+  return _then(LivenessObserved(
+null == observation ? _self.observation : observation // ignore: cast_nullable_to_non_nullable
+as FaceObservation,
+  ));
+}
+
+
+}
 
 /// @nodoc
 mixin _$LivenessState {
 
- LivenessPhase get phase; String? get token;/// Tareas en el orden que impuso el servidor.
+ LivenessPhase get phase;/// Tareas en el orden que impuso el servidor.
  List<LivenessStep> get steps;/// Índice de la tarea pendiente.
- int get currentIndex;/// Motivo del último intento fallido, tal como lo explicó el servidor.
- String? get lastReason; LivenessError? get error; KycVerification? get verification;
+ int get currentIndex;/// Qué corregir del encuadre ahora mismo (null = está bien).
+ FramingIssue? get framing;/// El gesto lleva rato sin completarse: sugerir hacerlo más marcado.
+ bool get slow; LivenessError? get error; KycVerification? get verification;
 /// Create a copy of LivenessState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -252,16 +287,16 @@ $LivenessStateCopyWith<LivenessState> get copyWith => _$LivenessStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivenessState&&(identical(other.phase, phase) || other.phase == phase)&&(identical(other.token, token) || other.token == token)&&const DeepCollectionEquality().equals(other.steps, steps)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.lastReason, lastReason) || other.lastReason == lastReason)&&(identical(other.error, error) || other.error == error)&&(identical(other.verification, verification) || other.verification == verification));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivenessState&&(identical(other.phase, phase) || other.phase == phase)&&const DeepCollectionEquality().equals(other.steps, steps)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.framing, framing) || other.framing == framing)&&(identical(other.slow, slow) || other.slow == slow)&&(identical(other.error, error) || other.error == error)&&(identical(other.verification, verification) || other.verification == verification));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,phase,token,const DeepCollectionEquality().hash(steps),currentIndex,lastReason,error,verification);
+int get hashCode => Object.hash(runtimeType,phase,const DeepCollectionEquality().hash(steps),currentIndex,framing,slow,error,verification);
 
 @override
 String toString() {
-  return 'LivenessState(phase: $phase, token: $token, steps: $steps, currentIndex: $currentIndex, lastReason: $lastReason, error: $error, verification: $verification)';
+  return 'LivenessState(phase: $phase, steps: $steps, currentIndex: $currentIndex, framing: $framing, slow: $slow, error: $error, verification: $verification)';
 }
 
 
@@ -272,7 +307,7 @@ abstract mixin class $LivenessStateCopyWith<$Res>  {
   factory $LivenessStateCopyWith(LivenessState value, $Res Function(LivenessState) _then) = _$LivenessStateCopyWithImpl;
 @useResult
 $Res call({
- LivenessPhase phase, String? token, List<LivenessStep> steps, int currentIndex, String? lastReason, LivenessError? error, KycVerification? verification
+ LivenessPhase phase, List<LivenessStep> steps, int currentIndex, FramingIssue? framing, bool slow, LivenessError? error, KycVerification? verification
 });
 
 
@@ -289,14 +324,14 @@ class _$LivenessStateCopyWithImpl<$Res>
 
 /// Create a copy of LivenessState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? phase = null,Object? token = freezed,Object? steps = null,Object? currentIndex = null,Object? lastReason = freezed,Object? error = freezed,Object? verification = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? phase = null,Object? steps = null,Object? currentIndex = null,Object? framing = freezed,Object? slow = null,Object? error = freezed,Object? verification = freezed,}) {
   return _then(_self.copyWith(
 phase: null == phase ? _self.phase : phase // ignore: cast_nullable_to_non_nullable
-as LivenessPhase,token: freezed == token ? _self.token : token // ignore: cast_nullable_to_non_nullable
-as String?,steps: null == steps ? _self.steps : steps // ignore: cast_nullable_to_non_nullable
+as LivenessPhase,steps: null == steps ? _self.steps : steps // ignore: cast_nullable_to_non_nullable
 as List<LivenessStep>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
-as int,lastReason: freezed == lastReason ? _self.lastReason : lastReason // ignore: cast_nullable_to_non_nullable
-as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as int,framing: freezed == framing ? _self.framing : framing // ignore: cast_nullable_to_non_nullable
+as FramingIssue?,slow: null == slow ? _self.slow : slow // ignore: cast_nullable_to_non_nullable
+as bool,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
 as LivenessError?,verification: freezed == verification ? _self.verification : verification // ignore: cast_nullable_to_non_nullable
 as KycVerification?,
   ));
@@ -383,10 +418,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LivenessPhase phase,  String? token,  List<LivenessStep> steps,  int currentIndex,  String? lastReason,  LivenessError? error,  KycVerification? verification)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LivenessPhase phase,  List<LivenessStep> steps,  int currentIndex,  FramingIssue? framing,  bool slow,  LivenessError? error,  KycVerification? verification)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LivenessState() when $default != null:
-return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.lastReason,_that.error,_that.verification);case _:
+return $default(_that.phase,_that.steps,_that.currentIndex,_that.framing,_that.slow,_that.error,_that.verification);case _:
   return orElse();
 
 }
@@ -404,10 +439,10 @@ return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.las
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LivenessPhase phase,  String? token,  List<LivenessStep> steps,  int currentIndex,  String? lastReason,  LivenessError? error,  KycVerification? verification)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LivenessPhase phase,  List<LivenessStep> steps,  int currentIndex,  FramingIssue? framing,  bool slow,  LivenessError? error,  KycVerification? verification)  $default,) {final _that = this;
 switch (_that) {
 case _LivenessState():
-return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.lastReason,_that.error,_that.verification);case _:
+return $default(_that.phase,_that.steps,_that.currentIndex,_that.framing,_that.slow,_that.error,_that.verification);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -424,10 +459,10 @@ return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.las
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LivenessPhase phase,  String? token,  List<LivenessStep> steps,  int currentIndex,  String? lastReason,  LivenessError? error,  KycVerification? verification)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LivenessPhase phase,  List<LivenessStep> steps,  int currentIndex,  FramingIssue? framing,  bool slow,  LivenessError? error,  KycVerification? verification)?  $default,) {final _that = this;
 switch (_that) {
 case _LivenessState() when $default != null:
-return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.lastReason,_that.error,_that.verification);case _:
+return $default(_that.phase,_that.steps,_that.currentIndex,_that.framing,_that.slow,_that.error,_that.verification);case _:
   return null;
 
 }
@@ -439,11 +474,10 @@ return $default(_that.phase,_that.token,_that.steps,_that.currentIndex,_that.las
 
 
 class _LivenessState extends LivenessState {
-  const _LivenessState({this.phase = LivenessPhase.preparing, this.token, final  List<LivenessStep> steps = const <LivenessStep>[], this.currentIndex = 0, this.lastReason, this.error, this.verification}): _steps = steps,super._();
+  const _LivenessState({this.phase = LivenessPhase.preparing, final  List<LivenessStep> steps = const <LivenessStep>[], this.currentIndex = 0, this.framing, this.slow = false, this.error, this.verification}): _steps = steps,super._();
   
 
 @override@JsonKey() final  LivenessPhase phase;
-@override final  String? token;
 /// Tareas en el orden que impuso el servidor.
  final  List<LivenessStep> _steps;
 /// Tareas en el orden que impuso el servidor.
@@ -455,8 +489,10 @@ class _LivenessState extends LivenessState {
 
 /// Índice de la tarea pendiente.
 @override@JsonKey() final  int currentIndex;
-/// Motivo del último intento fallido, tal como lo explicó el servidor.
-@override final  String? lastReason;
+/// Qué corregir del encuadre ahora mismo (null = está bien).
+@override final  FramingIssue? framing;
+/// El gesto lleva rato sin completarse: sugerir hacerlo más marcado.
+@override@JsonKey() final  bool slow;
 @override final  LivenessError? error;
 @override final  KycVerification? verification;
 
@@ -470,16 +506,16 @@ _$LivenessStateCopyWith<_LivenessState> get copyWith => __$LivenessStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivenessState&&(identical(other.phase, phase) || other.phase == phase)&&(identical(other.token, token) || other.token == token)&&const DeepCollectionEquality().equals(other._steps, _steps)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.lastReason, lastReason) || other.lastReason == lastReason)&&(identical(other.error, error) || other.error == error)&&(identical(other.verification, verification) || other.verification == verification));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivenessState&&(identical(other.phase, phase) || other.phase == phase)&&const DeepCollectionEquality().equals(other._steps, _steps)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.framing, framing) || other.framing == framing)&&(identical(other.slow, slow) || other.slow == slow)&&(identical(other.error, error) || other.error == error)&&(identical(other.verification, verification) || other.verification == verification));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,phase,token,const DeepCollectionEquality().hash(_steps),currentIndex,lastReason,error,verification);
+int get hashCode => Object.hash(runtimeType,phase,const DeepCollectionEquality().hash(_steps),currentIndex,framing,slow,error,verification);
 
 @override
 String toString() {
-  return 'LivenessState(phase: $phase, token: $token, steps: $steps, currentIndex: $currentIndex, lastReason: $lastReason, error: $error, verification: $verification)';
+  return 'LivenessState(phase: $phase, steps: $steps, currentIndex: $currentIndex, framing: $framing, slow: $slow, error: $error, verification: $verification)';
 }
 
 
@@ -490,7 +526,7 @@ abstract mixin class _$LivenessStateCopyWith<$Res> implements $LivenessStateCopy
   factory _$LivenessStateCopyWith(_LivenessState value, $Res Function(_LivenessState) _then) = __$LivenessStateCopyWithImpl;
 @override @useResult
 $Res call({
- LivenessPhase phase, String? token, List<LivenessStep> steps, int currentIndex, String? lastReason, LivenessError? error, KycVerification? verification
+ LivenessPhase phase, List<LivenessStep> steps, int currentIndex, FramingIssue? framing, bool slow, LivenessError? error, KycVerification? verification
 });
 
 
@@ -507,14 +543,14 @@ class __$LivenessStateCopyWithImpl<$Res>
 
 /// Create a copy of LivenessState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? phase = null,Object? token = freezed,Object? steps = null,Object? currentIndex = null,Object? lastReason = freezed,Object? error = freezed,Object? verification = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? phase = null,Object? steps = null,Object? currentIndex = null,Object? framing = freezed,Object? slow = null,Object? error = freezed,Object? verification = freezed,}) {
   return _then(_LivenessState(
 phase: null == phase ? _self.phase : phase // ignore: cast_nullable_to_non_nullable
-as LivenessPhase,token: freezed == token ? _self.token : token // ignore: cast_nullable_to_non_nullable
-as String?,steps: null == steps ? _self._steps : steps // ignore: cast_nullable_to_non_nullable
+as LivenessPhase,steps: null == steps ? _self._steps : steps // ignore: cast_nullable_to_non_nullable
 as List<LivenessStep>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
-as int,lastReason: freezed == lastReason ? _self.lastReason : lastReason // ignore: cast_nullable_to_non_nullable
-as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as int,framing: freezed == framing ? _self.framing : framing // ignore: cast_nullable_to_non_nullable
+as FramingIssue?,slow: null == slow ? _self.slow : slow // ignore: cast_nullable_to_non_nullable
+as bool,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
 as LivenessError?,verification: freezed == verification ? _self.verification : verification // ignore: cast_nullable_to_non_nullable
 as KycVerification?,
   ));
