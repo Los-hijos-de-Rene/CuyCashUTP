@@ -62,7 +62,7 @@ class ReceiptPaper extends StatelessWidget {
                       children: [
                         ClipOval(
                           child: ColoredBox(
-                            color: Colors.white,
+                            color: CuyCashColors.surfaceContainerLowest,
                             child: Image.asset(
                               logoAsset,
                               width: 44,
@@ -105,7 +105,9 @@ class ReceiptPaper extends StatelessWidget {
                     const SizedBox(height: CuyCashSpacing.stackLg),
                     DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: CuyCashColors.surfaceContainerLowest.withValues(
+                          alpha: 0.85,
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: CuyCashColors.outlineVariant),
                       ),

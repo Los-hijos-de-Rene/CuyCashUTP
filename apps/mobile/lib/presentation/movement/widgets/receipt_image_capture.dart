@@ -33,12 +33,19 @@ Future<Uint8List> captureReceiptPng(
     // Dos cuadros: uno para montar y otro para pintar.
     await WidgetsBinding.instance.endOfFrame;
     await WidgetsBinding.instance.endOfFrame;
-    final boundary =
-        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    // Si no se pudo montar o codificar, se lanza: quien comparte cae al
+    // resumen en texto.
+    final boundary = switch (key.currentContext?.findRenderObject()) {
+      final RenderRepaintBoundary b => b,
+      _ => throw StateError('La constancia no se montó fuera de pantalla'),
+    };
     final image = await boundary.toImage(pixelRatio: 3);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
-    return bytes!.buffer.asUint8List();
+    return switch (bytes) {
+      final ByteData b => b.buffer.asUint8List(),
+      null => throw StateError('No se pudo codificar la constancia en PNG'),
+    };
   } finally {
     entry.remove();
   }
