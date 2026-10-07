@@ -118,9 +118,9 @@ vincula ese teléfono.
 ## 4. Pipeline CI/CD (GitHub Actions)
 
 ```
-PR ──▶ CI backend ─┐   (solo si cambia services/api)
-   └─▶ CI app ─────┤   (solo si cambia apps/ o packages/)
-                   ▼
+PR ──▶ CI: qué cambió ─▶ Backend (Postgres) ─┐
+                     └─▶ App (Flutter) ──────┴─▶ CI listo (check requerido)
+
 merge a main ──▶ CD backend: CI ─▶ aprobación ─▶ deploy hook ?ref=<sha> ─▶ esperar /health = <sha> ─▶ smoke
                                    (environment production)
 tag v* ─────────▶ Build APK ─▶ Release con el APK
@@ -129,9 +129,8 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 
 | Workflow | Archivo | Se dispara | Qué hace |
 |---|---|---|---|
-| **CI** (puerta) | `.github/workflows/ci.yml` | **Todo** PR | Detecta qué cambió, llama a *CI backend* y/o *CI app* y termina con **`CI listo`**: el único check que exige la regla de `main` |
-| CI backend | `.github/workflows/ci-backend.yml` | Lo llaman *CI* (si cambió el backend) y *CD backend* | **Toda** la suite `pytest` contra PostgreSQL 16 (servicio de Actions), el motor de producción, incluida la concurrencia; en local la misma suite corre sobre SQLite |
-| CI app | `.github/workflows/ci-app.yml` | Lo llama *CI* si cambió Flutter; push a `main` que toca `apps/**`, `packages/**` | `flutter analyze` y los tests de la app y los dos paquetes |
+| **CI** (puerta) | `.github/workflows/ci.yml` | **Todo** PR y cada push a `main` | Detecta qué cambió y corre lo necesario: **Backend** (toda la suite `pytest` contra PostgreSQL 16, el motor de producción, concurrencia incluida) y/o **App** (`flutter analyze` + tests de la app y los paquetes). Termina con **`CI listo`**, el único check que exige la regla de `main` |
+| Pasos compartidos | `.github/actions/pruebas-backend`, `pruebas-app` | — | Acciones compuestas: el CI y el CD prueban exactamente igual. En local la misma suite del backend corre sobre SQLite |
 | CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
 | Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` (firmado con la clave de depuración) adjunto a un Release |
@@ -189,7 +188,7 @@ instalada con una cuenta y saldo.
 
 1. **El CI protege.** Rama con el depósito simulado al doble en
    `services/api/app/api/v1/routers/transfers.py` (`recargar`: acreditar
-   `monto * 2`). PR → *CI backend* en rojo
+   `monto * 2`). PR → *CI* en rojo (job *Backend*)
    (`test_una_recarga_acredita_y_deja_el_libro_cuadrado` y otras) → no se puede
    desplegar.
 2. **Un error que las pruebas no ven.** El desarrollador cree que el doble es

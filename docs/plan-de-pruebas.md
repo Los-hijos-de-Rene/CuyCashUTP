@@ -32,7 +32,7 @@ antifraude, conciliación) y el dashboard web.
 | **API (integración)** | Cada endpoint por HTTP contra una base real: **PostgreSQL 16 en el CI** (el motor de producción), SQLite en memoria en local | `pytest` + `httpx` | `services/api/tests` | 305 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
 | **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
-| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en *CI backend*; primera corrida 2026-10-07: 3 de 3) |
+| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en el job *Backend (PostgreSQL 16)* del workflow *CI*) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
 

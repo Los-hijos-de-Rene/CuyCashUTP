@@ -69,7 +69,8 @@ verificada" solo si el servidor dice `verified`, así que hoy nunca aparece.
 **Concurrencia: probada en CI.** Los tests marcados `postgres` (envíos
 cruzados, misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`,
 aperturas simultáneas de sueldo) corren contra Postgres 16 real en el job
-*Pruebas (PostgreSQL 16)* de `ci-backend.yml`, que corre TODA la suite contra
+*Backend (PostgreSQL 16)* de `ci.yml` (pasos en `.github/actions/pruebas-backend`),
+que corre TODA la suite contra
 Postgres (en local, sin `TEST_POSTGRES_URL`, la misma suite usa SQLite). Ojo:
 SQLite no hace cumplir el largo de `VARCHAR`; valida en la entrada todo texto
 que se escriba en una columna de largo fijo. Siguen sin medir los 200 ms bajo carga.

@@ -14,6 +14,7 @@ on:
       - "services/api/**"
       - "render.yaml"
       - ".github/workflows/cd-backend.yml"
+      - ".github/actions/pruebas-backend/**"
       - ".github/scripts/esperar_version.sh"
   workflow_dispatch:
 
@@ -30,8 +31,27 @@ env:
 
 jobs:
   ci:
-    name: CI
-    uses: ./.github/workflows/ci-backend.yml
+    name: Pruebas (PostgreSQL 16)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cuycash
+          POSTGRES_PASSWORD: cuycash
+          POSTGRES_DB: cuycash_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cuycash"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_POSTGRES_URL: postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash_test
+    steps:
+      - uses: actions/checkout@v5
+      # Los mismos pasos que el CI de los PR.
+      - uses: ./.github/actions/pruebas-backend
 
   desplegar:
     name: Desplegar en Render
