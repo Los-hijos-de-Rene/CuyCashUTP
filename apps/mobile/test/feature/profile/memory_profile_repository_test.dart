@@ -8,5 +8,6 @@ void main() {
     MemoryProfileRepository.new,
     dni: MemoryProfileRepository.demo.dni,
     aliasInicial: MemoryProfileRepository.demo.alias,
+    aliasDeOtro: '@carlos',
   );
 }

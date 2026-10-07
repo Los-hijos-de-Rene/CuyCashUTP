@@ -22,7 +22,7 @@ async def _cuenta(db, dni: str, numero: str, saldo: int) -> Account:
         nombres="Ada",
         apellidos="Lovelace",
         email=f"{dni}@correo.pe",
-        alias="@ada",
+        alias=f"@ada{dni}",
         pin_hash="x",
     )
     db.add(user)

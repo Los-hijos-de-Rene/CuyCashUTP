@@ -1,7 +1,7 @@
 part of 'transfer_bloc.dart';
 
 /// `idle`: sin destinatario (nada buscado, o la búsqueda falló).
-/// `resolving`: buscando el DNI.
+/// `resolving`: buscando el DNI o alias.
 /// `ready`: hay directorio hallado o destino elegido; también vuelve aquí un envío fallido, con
 /// todo lo que el usuario ya eligió intacto.
 /// `submitting`: el envío va en vuelo; no admite otro.

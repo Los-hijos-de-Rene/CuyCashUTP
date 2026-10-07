@@ -89,6 +89,24 @@ void main() {
     expect(find.bySemanticsLabel('Cuenta 3 de 3'), findsOneWidget);
   });
 
+  testWidgets('con una sola cuenta no hay puntos: no hay a dónde deslizar', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      _app(
+        AccountCarousel(
+          cuentas: [tres.first],
+          seleccionada: 0,
+          onSelected: (_) {},
+          onRename: (_) {},
+        ),
+      ),
+    );
+
+    expect(find.text('S/ 1,250.40'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cuenta 1 de 1'), findsNothing);
+  });
+
   testWidgets('el saldo en dólares se pinta en dólares', (t) async {
     await t.pumpWidget(
       _app(

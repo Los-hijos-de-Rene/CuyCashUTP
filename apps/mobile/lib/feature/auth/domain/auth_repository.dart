@@ -13,7 +13,7 @@ abstract interface class AuthRepository {
   /// Emite la sesión vigente ante cambios (login/register/logout).
   Stream<AuthSession?> sessionChanges();
 
-  /// Valida DNI/Alias + PIN y devuelve la sesión SIN iniciarla. Es el paso que
+  /// Valida DNI + PIN y devuelve la sesión SIN iniciarla. Es el paso que
   /// permite intercalar la verificación de un teléfono nuevo antes de dar
   /// acceso: quien la llama decide si `activate` o si manda al OTP.
   FutureResult<AuthFailure, AuthSession> authenticate({
@@ -21,7 +21,7 @@ abstract interface class AuthRepository {
     required String pin,
   });
 
-  /// Inicia sesión con DNI/Alias + PIN (valida y activa en un solo paso).
+  /// Inicia sesión con DNI + PIN (valida y activa en un solo paso).
   FutureResult<AuthFailure, AuthSession> signIn({
     required String identifier,
     required String pin,

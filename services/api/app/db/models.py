@@ -36,7 +36,8 @@ class User(Base):
     nombres: Mapped[str] = mapped_column(String(120))
     apellidos: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(255), index=True)
-    alias: Mapped[str] = mapped_column(String(60))
+    # Único: es como se busca a alguien para enviarle dinero (`app.services.alias`).
+    alias: Mapped[str] = mapped_column(String(60), unique=True, index=True)
     # El PIN nunca se guarda en claro ni aparece en logs.
     pin_hash: Mapped[str] = mapped_column(String(255))
     pin_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

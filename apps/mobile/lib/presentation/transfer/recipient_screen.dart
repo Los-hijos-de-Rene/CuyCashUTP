@@ -8,6 +8,7 @@ import '../../feature/beneficiary/domain/beneficiary.dart';
 import '../../feature/transfer/domain/recipient.dart';
 import '../../feature/transfer/domain/recipient_account.dart';
 import '../../feature/transfer/domain/recipient_directory.dart';
+import '../../feature/transfer/domain/recipient_query.dart';
 import '../../l10n/app_localizations.dart';
 import '../account/account_label.dart';
 import '../app/app_routes.dart';
@@ -15,7 +16,9 @@ import 'bloc/transfer_bloc.dart';
 import 'transfer_error_text.dart';
 import 'widgets/recipient_account_card.dart';
 
-/// Paso 1 del envío: a qué cuenta. Al completar el DNI se listan sus cuentas;
+/// Paso 1 del envío: a qué cuenta. Se busca por DNI (al completar los 8
+/// dígitos) o por alias (con "Buscar" o la tecla del teclado: no se busca
+/// letra a letra porque cada consulta gasta del cupo). Se listan sus cuentas;
 /// tocar una pasa al monto. Un frecuente con cuenta pasa directo.
 class RecipientScreen extends StatefulWidget {
   const RecipientScreen({required this.cuenta, this.frecuentes, super.key});
@@ -33,6 +36,9 @@ class RecipientScreen extends StatefulWidget {
 
 class _RecipientScreenState extends State<RecipientScreen> {
   static const _dniLength = 8;
+
+  /// `@` + 20 del alias más largo.
+  static const _maxLength = 21;
   final _controller = TextEditingController();
 
   @override
@@ -47,13 +53,24 @@ class _RecipientScreenState extends State<RecipientScreen> {
     super.dispose();
   }
 
-  void _onChanged(String dni) {
+  void _onChanged(String texto) {
+    // Redibuja "Buscar", que depende de si lo escrito ya es un alias válido.
+    setState(() {});
     final bloc = context.read<TransferBloc>();
-    if (dni.length == _dniLength) {
-      bloc.add(TransferEvent.recipientRequested(dni));
+    if (RecipientQuery.looksLikeDni(texto) &&
+        texto.trim().length == _dniLength) {
+      bloc.add(TransferEvent.recipientRequested(texto));
     } else if (bloc.state.status != TransferStatus.idle ||
         bloc.state.failure != null) {
       bloc.add(const TransferEvent.recipientCleared());
+    }
+  }
+
+  /// "Buscar" o la tecla del teclado. Un DNI completo ya se buscó solo.
+  void _onSearch() {
+    final texto = _controller.text;
+    if (RecipientQuery.parse(texto) is AliasQuery) {
+      context.read<TransferBloc>().add(TransferEvent.recipientRequested(texto));
     }
   }
 
@@ -99,7 +116,6 @@ class _RecipientScreenState extends State<RecipientScreen> {
         );
         _elegir(
           Recipient(
-            dni: b.dni,
             nombreEnmascarado: b.nombreEnmascarado ?? b.apodo,
             cuenta: c,
           ),
@@ -145,6 +161,12 @@ class _RecipientScreenState extends State<RecipientScreen> {
     final simbolo = origen?.moneda.symbol ?? '';
     return [
       Text(d.nombreEnmascarado, style: CuyCashTypography.titleMd),
+      Text(
+        d.alias,
+        style: CuyCashTypography.bodyMd.copyWith(
+          color: CuyCashColors.secondaryText,
+        ),
+      ),
       const SizedBox(height: CuyCashSpacing.stackXs),
       Text(
         l10n.transferRecipientChooseAccount,
@@ -172,11 +194,7 @@ class _RecipientScreenState extends State<RecipientScreen> {
               ),
           onTap: c.moneda == origen?.moneda
               ? () => _elegir(
-                  Recipient(
-                    dni: d.dni,
-                    nombreEnmascarado: d.nombreEnmascarado,
-                    cuenta: c,
-                  ),
+                  Recipient(nombreEnmascarado: d.nombreEnmascarado, cuenta: c),
                 )
               : null,
           motivoDeshabilitada: c.moneda == origen?.moneda
@@ -224,17 +242,29 @@ class _RecipientScreenState extends State<RecipientScreen> {
                   const SizedBox(height: CuyCashSpacing.stackLg),
                   CuyCashTextField(
                     label: l10n.transferDniLabel,
+                    hint: l10n.transferRecipientHint,
                     controller: _controller,
-                    keyboardType: TextInputType.number,
-                    maxLength: _dniLength,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.search,
+                    maxLength: _maxLength,
                     autofocus: true,
-                    prefixIcon: Icons.badge_outlined,
+                    prefixIcon: Icons.person_search_outlined,
                     onChanged: _onChanged,
+                    onSubmitted: (_) => _onSearch(),
                     errorText: failure == null
                         ? null
                         : transferResolveErrorText(l10n, failure),
                   ),
                   const SizedBox(height: CuyCashSpacing.stackMd),
+                  if (RecipientQuery.parse(_controller.text) is AliasQuery &&
+                      directorio == null &&
+                      state.status != TransferStatus.resolving) ...[
+                    SecondaryButton(
+                      label: l10n.transferSearchAction,
+                      onPressed: _onSearch,
+                    ),
+                    const SizedBox(height: CuyCashSpacing.stackMd),
+                  ],
                   if (state.status == TransferStatus.resolving)
                     Center(
                       child: CircularProgressIndicator(

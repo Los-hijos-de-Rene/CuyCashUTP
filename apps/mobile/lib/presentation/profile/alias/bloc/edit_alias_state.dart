@@ -2,7 +2,7 @@ part of 'edit_alias_bloc.dart';
 
 enum EditAliasStatus { editing, saving, saved }
 
-enum AliasError { invalid, network, generic }
+enum AliasError { invalid, taken, network, generic }
 
 @freezed
 abstract class EditAliasState with _$EditAliasState {

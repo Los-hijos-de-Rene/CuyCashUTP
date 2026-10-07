@@ -14,8 +14,8 @@ class TransferActions {
   final TransferRepository _repo;
 
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
-    String dni,
-  ) => _repo.resolverDestinatario(dni);
+    String consulta,
+  ) => _repo.resolverDestinatario(consulta);
 
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
@@ -36,12 +36,10 @@ class TransferActions {
   FutureResult<TransferFailure, TransferReceipt> recargar({
     required String cuentaId,
     required Money monto,
-    required String pin,
     required String idempotencyKey,
   }) => _repo.recargar(
     cuentaId: cuentaId,
     monto: monto,
-    pin: pin,
     idempotencyKey: idempotencyKey,
   );
 }

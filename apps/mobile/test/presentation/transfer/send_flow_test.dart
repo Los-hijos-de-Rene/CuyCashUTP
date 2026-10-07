@@ -141,7 +141,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('No encontramos a nadie con ese DNI en CuyCash.'),
+      find.text('No encontramos a nadie con ese DNI o alias en CuyCash.'),
       findsOneWidget,
     );
     expect(find.widgetWithText(ElevatedButton, 'Continuar'), findsNothing);

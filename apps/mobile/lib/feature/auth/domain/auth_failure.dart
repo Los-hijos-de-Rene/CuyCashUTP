@@ -15,7 +15,7 @@ sealed class AuthFailure {
       DeviceVerificationRequired;
 }
 
-/// DNI/Alias o PIN incorrectos.
+/// DNI o PIN incorrectos.
 final class InvalidCredentials extends AuthFailure {
   const InvalidCredentials();
 }

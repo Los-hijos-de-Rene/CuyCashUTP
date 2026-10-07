@@ -50,9 +50,36 @@ async def test_alias_fuera_de_formato_se_rechaza(client, registrado):
         assert r.json()["code"] == "INVALID_ALIAS", malo
 
 
-async def test_alias_no_es_unico(client, registrado, otro_registrado):
+async def test_un_alias_sin_letras_se_rechaza(client, registrado):
+    # Puros dígitos se confundirían con un DNI en la búsqueda del destinatario.
+    for malo in ["12345678", "@123", "1_2.3", "___"]:
+        r = await client.patch("/v1/me/alias", json={"alias": malo}, headers=registrado.auth)
+        assert r.status_code == 422, malo
+        assert r.json()["code"] == "INVALID_ALIAS", malo
+    r = await client.patch("/v1/me/alias", json={"alias": "a1234567"}, headers=registrado.auth)
+    assert r.status_code == 200
+
+
+async def test_el_alias_es_unico(client, registrado, otro_registrado):
     a = await client.patch("/v1/me/alias", json={"alias": "@igual"}, headers=registrado.auth)
     b = await client.patch(
-        "/v1/me/alias", json={"alias": "@igual"}, headers=otro_registrado.auth
+        "/v1/me/alias", json={"alias": "IGUAL"}, headers=otro_registrado.auth
     )
-    assert a.status_code == b.status_code == 200
+
+    assert a.status_code == 200
+    assert b.status_code == 409
+    assert b.json()["code"] == "ALIAS_TAKEN"
+    me = (await client.get("/v1/me", headers=otro_registrado.auth)).json()
+    assert me["alias"] == "@luis"
+
+
+async def test_guardar_el_alias_que_ya_tengo_no_es_conflicto(client, registrado):
+    r = await client.patch("/v1/me/alias", json={"alias": "@jenny"}, headers=registrado.auth)
+    assert r.status_code == 200
+    assert r.json() == {"alias": "@jenny"}
+
+
+async def test_un_alias_liberado_se_puede_tomar(client, registrado, otro_registrado):
+    await client.patch("/v1/me/alias", json={"alias": "@nueva"}, headers=registrado.auth)
+    r = await client.patch("/v1/me/alias", json={"alias": "@jenny"}, headers=otro_registrado.auth)
+    assert r.status_code == 200

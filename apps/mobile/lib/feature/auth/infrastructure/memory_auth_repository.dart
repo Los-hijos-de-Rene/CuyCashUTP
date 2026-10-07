@@ -45,6 +45,11 @@ class MemoryAuthRepository implements AuthRepository {
 
   AuthSession? _session;
   final Set<String> _registered = {};
+
+  /// Nombre y alias de quien se registró aquí, por DNI. El backend los
+  /// devuelve en toda respuesta que abre sesión: tras cerrar sesión el
+  /// teléfono olvida al usuario y el login es la única fuente del nombre.
+  final Map<String, AuthSession> _titulares = {};
   final _controller = StreamController<AuthSession?>.broadcast();
 
   static final _pinFormat = RegExp(r'^\d{6}$');
@@ -63,9 +68,7 @@ class MemoryAuthRepository implements AuthRepository {
     if (pin != _security.pin) {
       return left(const GlobalFailure.server(AuthFailure.invalidCredentials()));
     }
-    return right(
-      AuthSession(userId: 'mem-${identifier.hashCode}', identifier: identifier),
-    );
+    return right(_sesionDe(identifier));
   }
 
   @override
@@ -127,16 +130,16 @@ class MemoryAuthRepository implements AuthRepository {
       return left(const GlobalFailure.server(AuthFailure.identifierTaken()));
     }
     _registered.add(dni);
+    final titular = AuthSession(
+      userId: 'mem-${dni.hashCode}',
+      identifier: dni,
+      alias: _aliasFor(nombres, dni),
+      fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
+    );
+    _titulares[dni] = titular;
     // Crea la cuenta pero NO inicia sesión: la sesión se activa cuando el
     // usuario toca "Ir a mi cuenta" en la pantalla de éxito.
-    return right(
-      AuthSession(
-        userId: 'mem-${dni.hashCode}',
-        identifier: dni,
-        alias: _aliasFor(nombres, dni),
-        fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
-      ),
-    );
+    return right(titular);
   }
 
   @override
@@ -157,7 +160,7 @@ class MemoryAuthRepository implements AuthRepository {
     if (device != _security.thisDeviceId || dni != _security.dni) {
       return left(const GlobalFailure.server(AuthFailure.biometricRevoked()));
     }
-    final session = AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni);
+    final session = _sesionDe(dni);
     _emit(session);
     return right(session);
   }
@@ -169,12 +172,33 @@ class MemoryAuthRepository implements AuthRepository {
     return right(unit);
   }
 
+  /// La sesión de [dni] con su nombre y alias si se registró aquí; si no,
+  /// solo el identificador.
+  AuthSession _sesionDe(String dni) =>
+      _titulares[dni] ??
+      AuthSession(userId: 'mem-${dni.hashCode}', identifier: dni);
+
   /// Alias mock derivado del primer nombre (ascii, minúsculas); si no queda
   /// nada usable, cae al DNI.
+  /// Como `base_desde_nombre` del backend: el primer nombre sin tildes, con
+  /// al menos 3 caracteres y una letra (si no, se completa con `cuy`). Nunca
+  /// el DNI: el alias es público y lleva siempre una letra.
   static String _aliasFor(String nombres, String dni) {
+    const tildes = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ñ': 'n',
+    };
     final first = nombres.trim().split(RegExp(r'\s+')).first.toLowerCase();
-    final slug = first.replaceAll(RegExp(r'[^a-z0-9]'), '');
-    return slug.isEmpty ? '@$dni' : '@$slug';
+    final plano = first.split('').map((c) => tildes[c] ?? c).join();
+    var slug = plano.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (slug.length > 16) slug = slug.substring(0, 16);
+    if (slug.length < 3 || !slug.contains(RegExp('[a-z]'))) slug = 'cuy$slug';
+    return '@$slug';
   }
 
   void _emit(AuthSession session) {

@@ -7,6 +7,7 @@ import '../../account/infrastructure/memory_ledger.dart';
 import '../../lockout/domain/lockout_policy.dart';
 import '../domain/recipient_account.dart';
 import '../domain/recipient_directory.dart';
+import '../domain/recipient_query.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
 import '../domain/transfer_repository.dart';
@@ -40,7 +41,9 @@ import '../domain/transfer_repository.dart';
 /// entre cuentas propias el dinero también se acredita en la de destino. PIN
 /// válido `000000`. Terceros: [dniDestino] con [cuentaDestinoId] (ahorros
 /// S/), [cuentaDestinoCorrienteId] (corriente S/) y [cuentaDestinoDolaresId]
-/// (ahorros US$); [dniDestino2] con [cuentaDestino2Id] (ahorros S/).
+/// (ahorros US$); [dniDestino2] con [cuentaDestino2Id] (ahorros S/). Cada
+/// persona se encuentra también por su alias ([aliasPropio], [aliasDestino],
+/// [aliasDestino2]).
 class MemoryTransferRepository implements TransferRepository {
   MemoryTransferRepository({
     required DateTime Function() clock,
@@ -58,10 +61,13 @@ class MemoryTransferRepository implements TransferRepository {
 
   static const pinValido = '000000';
   static const dniPropio = '70123456';
+  static const aliasPropio = '@jheampierre';
   static const nombrePropioEnmascarado = 'T*** C***';
   static const cuentaId = MemoryLedger.cuentaId;
   static const dniDestino = '87654321';
   static const dniDestino2 = '43219876';
+  static const aliasDestino = '@jmrosa';
+  static const aliasDestino2 = '@carlos';
   static const cuentaDestinoId = 'acc-ext-1';
   static const cuentaDestinoCorrienteId = 'acc-ext-2';
   static const cuentaDestinoDolaresId = 'acc-ext-3';
@@ -69,10 +75,11 @@ class MemoryTransferRepository implements TransferRepository {
   static const montoMinimo = 1;
   static const montoMaximo = 200000;
 
-  /// Padrón de terceros de la demo: por DNI, su nombre y sus cuentas.
+  /// Padrón de terceros de la demo: por DNI, su alias, su nombre y sus
+  /// cuentas.
   static const _directorio = <String, RecipientDirectory>{
     dniDestino: RecipientDirectory(
-      dni: dniDestino,
+      alias: aliasDestino,
       nombreEnmascarado: 'J*** M*** R***',
       cuentas: [
         RecipientAccount(
@@ -96,7 +103,7 @@ class MemoryTransferRepository implements TransferRepository {
       ],
     ),
     dniDestino2: RecipientDirectory(
-      dni: dniDestino2,
+      alias: aliasDestino2,
       nombreEnmascarado: 'C*** A*** N***',
       cuentas: [
         RecipientAccount(
@@ -113,14 +120,10 @@ class MemoryTransferRepository implements TransferRepository {
   /// no existe. La usan los frecuentes en memoria.
   static ({String dni, String nombreEnmascarado, RecipientAccount cuenta})?
   cuentaConocida(String cuentaId) {
-    for (final d in _directorio.values) {
+    for (final MapEntry(key: dni, value: d) in _directorio.entries) {
       for (final c in d.cuentas) {
         if (c.cuentaId == cuentaId) {
-          return (
-            dni: d.dni,
-            nombreEnmascarado: d.nombreEnmascarado,
-            cuenta: c,
-          );
+          return (dni: dni, nombreEnmascarado: d.nombreEnmascarado, cuenta: c);
         }
       }
     }
@@ -166,7 +169,7 @@ class MemoryTransferRepository implements TransferRepository {
 
   /// El directorio del propio titular sale del libro: sus cuentas, con nombre.
   RecipientDirectory get _propio => RecipientDirectory(
-    dni: dniPropio,
+    alias: aliasPropio,
     nombreEnmascarado: nombrePropioEnmascarado,
     cuentas: [
       for (final c in _ledger.cuentas)
@@ -190,13 +193,22 @@ class MemoryTransferRepository implements TransferRepository {
 
   @override
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
-    String dni,
+    String consulta,
   ) async {
+    final query = RecipientQuery.parse(consulta);
+    // Como el backend: lo malformado no gasta cupo.
+    if (query == null) return _falla(const TransferFailure.recipientNotFound());
     if (_consumirConsulta() case final f?) return _falla(f);
-    if (dni == dniPropio) return right(_propio);
-    return switch (_directorio[dni]) {
+    final encontrado = switch (query) {
+      DniQuery(:final dni) => dni == dniPropio ? _propio : _directorio[dni],
+      AliasQuery(:final alias) =>
+        alias == aliasPropio
+            ? _propio
+            : _directorio.values.where((d) => d.alias == alias).firstOrNull,
+    };
+    return switch (encontrado) {
       final RecipientDirectory d => right(d),
-      _ => _falla(const TransferFailure.recipientNotFound()),
+      null => _falla(const TransferFailure.recipientNotFound()),
     };
   }
 
@@ -363,7 +375,6 @@ class MemoryTransferRepository implements TransferRepository {
   FutureResult<TransferFailure, TransferReceipt> recargar({
     required String cuentaId,
     required Money monto,
-    required String pin,
     required String idempotencyKey,
   }) async {
     final cuenta = _ledger.cuenta(cuentaId);
@@ -372,7 +383,6 @@ class MemoryTransferRepository implements TransferRepository {
       return _falla(const TransferFailure.currencyMismatch());
     }
     if (_validarMonto(monto) case final f?) return _falla(f);
-    if (_exigirPin(pin) case final f?) return _falla(f);
 
     return _postear(
       cuentaId: cuentaId,
@@ -380,7 +390,7 @@ class MemoryTransferRepository implements TransferRepository {
       idempotencyKey: idempotencyKey,
       monto: monto,
       direccion: MovementDirection.credito,
-      contraparte: 'Recarga de saldo',
+      contraparte: 'Depósito simulado',
     );
   }
 }

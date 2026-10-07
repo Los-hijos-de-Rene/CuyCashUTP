@@ -66,7 +66,7 @@ const cuentaDeDestinoDePrueba = RecipientAccount(
 );
 
 const directorioDePrueba = RecipientDirectory(
-  dni: '87654321',
+  alias: '@jmrosa',
   nombreEnmascarado: 'J*** M*** R***',
   cuentas: [
     cuentaDeDestinoDePrueba,
@@ -86,7 +86,6 @@ const directorioDePrueba = RecipientDirectory(
 );
 
 const destinatarioDePrueba = Recipient(
-  dni: '87654321',
   nombreEnmascarado: 'J*** M*** R***',
   cuenta: cuentaDeDestinoDePrueba,
 );
@@ -114,7 +113,7 @@ class FakeTransferRepository implements TransferRepository {
   final pines = <String>[];
   final cuentasDestino = <String>[];
 
-  /// Cada DNI que se consultó con `resolverDestinatario`.
+  /// Cada DNI o alias que se consultó con `resolverDestinatario`.
   final busquedas = <String>[];
   int get llamadas => claves.length;
 
@@ -129,10 +128,11 @@ class FakeTransferRepository implements TransferRepository {
 
   @override
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
-    String dni,
+    String consulta,
   ) {
-    busquedas.add(dni);
-    return alResolver?.call(dni) ?? Future.value(right(directorioDePrueba));
+    busquedas.add(consulta);
+    return alResolver?.call(consulta) ??
+        Future.value(right(directorioDePrueba));
   }
 
   @override
@@ -155,7 +155,6 @@ class FakeTransferRepository implements TransferRepository {
   FutureResult<TransferFailure, TransferReceipt> recargar({
     required String cuentaId,
     required Money monto,
-    required String pin,
     required String idempotencyKey,
   }) {
     clavesRecarga.add(idempotencyKey);

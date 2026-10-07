@@ -80,7 +80,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
       state.status == TransferStatus.done ||
       state.outcomeUnknown;
 
-  /// Cada búsqueda lleva un número: si el DNI se editó mientras volaba, su
+  /// Cada búsqueda lleva un número: si el DNI o alias se editó mientras volaba, su
   /// respuesta ya no es de este destinatario y se descarta.
   int _search = 0;
 
@@ -99,7 +99,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
         idempotencyKey: '',
       ),
     );
-    final result = await _actions.resolverDestinatario(event.dni);
+    final result = await _actions.resolverDestinatario(event.consulta);
     if (search != _search) return;
     emit(
       result.match(

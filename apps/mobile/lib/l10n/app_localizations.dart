@@ -259,7 +259,7 @@ abstract class AppLocalizations {
   /// No description provided for @identifierLabel.
   ///
   /// In es, this message translates to:
-  /// **'DNI o Alias'**
+  /// **'DNI'**
   String get identifierLabel;
 
   /// No description provided for @pinLabel.
@@ -361,7 +361,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorInvalidCredentials.
   ///
   /// In es, this message translates to:
-  /// **'DNI/Alias o PIN incorrectos.'**
+  /// **'DNI o PIN incorrectos.'**
   String get errorInvalidCredentials;
 
   /// No description provided for @errorIdentifierTaken.
@@ -1465,8 +1465,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeAccountsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Mis cuentas'**
-  String get homeAccountsTitle;
+  /// **'{count, plural, =1{Mi cuenta} other{Mis cuentas}}'**
+  String homeAccountsTitle(int count);
 
   /// No description provided for @homeOpenAccountCta.
   ///
@@ -1699,14 +1699,20 @@ abstract class AppLocalizations {
   /// No description provided for @aliasHelp.
   ///
   /// In es, this message translates to:
-  /// **'De 3 a 20 letras, números, punto o guion bajo. Es como te saludamos; para enviarte dinero se usa tu DNI.'**
+  /// **'De 3 a 20 letras, números, punto o guion bajo, con al menos una letra. Es único: compártelo para que te envíen dinero sin dar tu DNI.'**
   String get aliasHelp;
 
   /// No description provided for @aliasInvalid.
   ///
   /// In es, this message translates to:
-  /// **'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.'**
+  /// **'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo, con al menos una letra.'**
   String get aliasInvalid;
+
+  /// No description provided for @aliasTaken.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese alias ya lo usa otra persona. Prueba con otro.'**
+  String get aliasTaken;
 
   /// No description provided for @aliasSave.
   ///
@@ -1771,14 +1777,26 @@ abstract class AppLocalizations {
   /// No description provided for @transferRecipientSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Escribe el DNI de la persona. Debe ser cliente de CuyCash.'**
+  /// **'Escribe el DNI o el alias de la persona. Debe ser cliente de CuyCash.'**
   String get transferRecipientSubtitle;
 
   /// No description provided for @transferDniLabel.
   ///
   /// In es, this message translates to:
-  /// **'DNI del destinatario'**
+  /// **'DNI o alias del destinatario'**
   String get transferDniLabel;
+
+  /// No description provided for @transferRecipientHint.
+  ///
+  /// In es, this message translates to:
+  /// **'12345678 o @alias'**
+  String get transferRecipientHint;
+
+  /// No description provided for @transferSearchAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar'**
+  String get transferSearchAction;
 
   /// No description provided for @transferSearching.
   ///
@@ -2051,7 +2069,7 @@ abstract class AppLocalizations {
   /// No description provided for @transferErrorRecipientNotFound.
   ///
   /// In es, this message translates to:
-  /// **'No encontramos a nadie con ese DNI en CuyCash.'**
+  /// **'No encontramos a nadie con ese DNI o alias en CuyCash.'**
   String get transferErrorRecipientNotFound;
 
   /// No description provided for @transferErrorCurrencyMismatch.
@@ -2303,7 +2321,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementHeadlineTopUp.
   ///
   /// In es, this message translates to:
-  /// **'Recarga de saldo'**
+  /// **'Depósito simulado'**
   String get movementHeadlineTopUp;
 
   /// No description provided for @movementHeadlineOther.
@@ -2345,43 +2363,25 @@ abstract class AppLocalizations {
   /// No description provided for @topUpHeadline.
   ///
   /// In es, this message translates to:
-  /// **'¿Cuánto quieres recargar?'**
+  /// **'¿Cuánto quieres depositar?'**
   String get topUpHeadline;
-
-  /// No description provided for @topUpSubtitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Elige el monto. En el siguiente paso lo confirmas con tu PIN.'**
-  String get topUpSubtitle;
-
-  /// No description provided for @topUpConfirmHeadline.
-  ///
-  /// In es, this message translates to:
-  /// **'Confirma tu recarga'**
-  String get topUpConfirmHeadline;
-
-  /// No description provided for @topUpConfirmSubtitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Ingresa tu PIN de 6 dígitos para autorizarla.'**
-  String get topUpConfirmSubtitle;
 
   /// No description provided for @topUpAmountOverMax.
   ///
   /// In es, this message translates to:
-  /// **'El máximo por recarga es {max}.'**
+  /// **'El máximo por depósito es {max}.'**
   String topUpAmountOverMax(String max);
 
   /// No description provided for @topUpCta.
   ///
   /// In es, this message translates to:
-  /// **'Confirmar recarga'**
+  /// **'Depositar'**
   String get topUpCta;
 
   /// No description provided for @topUpRetryCta.
   ///
   /// In es, this message translates to:
-  /// **'Reintentar recarga'**
+  /// **'Reintentar depósito'**
   String get topUpRetryCta;
 
   /// No description provided for @topUpSummaryTo.
@@ -2393,13 +2393,13 @@ abstract class AppLocalizations {
   /// No description provided for @topUpPendingElsewhereNotice.
   ///
   /// In es, this message translates to:
-  /// **'Tienes una operación sin resolver. Revisa tus movimientos antes de recargar.'**
+  /// **'Tienes una operación sin resolver. Revisa tus movimientos antes de depositar.'**
   String get topUpPendingElsewhereNotice;
 
   /// No description provided for @topUpRecoveredNotice.
   ///
   /// In es, this message translates to:
-  /// **'Ya habías intentado recargar este monto y no llegamos a saber si se acreditó. Si reintentas, no se cobrará dos veces.'**
+  /// **'Ya habías intentado depositar este monto y no llegamos a saber si se acreditó. Si reintentas, no se sumará dos veces.'**
   String get topUpRecoveredNotice;
 
   /// No description provided for @topUpLeaveTitle.
@@ -2411,49 +2411,49 @@ abstract class AppLocalizations {
   /// No description provided for @topUpLeaveBody.
   ///
   /// In es, this message translates to:
-  /// **'Tu recarga pudo haberse realizado. Revísala en tus movimientos antes de intentarlo otra vez.'**
+  /// **'Tu depósito pudo haberse realizado. Revísalo en tus movimientos antes de intentarlo otra vez.'**
   String get topUpLeaveBody;
 
   /// No description provided for @topUpErrorRateLimited.
   ///
   /// In es, this message translates to:
-  /// **'No pudimos confirmar tu recarga. Espera un momento y reintenta: si ya se acreditó, no se cobrará dos veces.'**
+  /// **'No pudimos confirmar tu depósito. Espera un momento y reintenta: si ya se acreditó, no se sumará dos veces.'**
   String get topUpErrorRateLimited;
 
   /// No description provided for @topUpErrorAccountBlocked.
   ///
   /// In es, this message translates to:
-  /// **'Tu cuenta no está activa, así que no puedes recargar por ahora.'**
+  /// **'Tu cuenta no está activa, así que no puedes depositar por ahora.'**
   String get topUpErrorAccountBlocked;
 
   /// No description provided for @topUpErrorKeyReused.
   ///
   /// In es, this message translates to:
-  /// **'Esta recarga ya se había iniciado con otro monto. Vuelve al inicio y empieza una nueva.'**
+  /// **'Este depósito ya se había iniciado con otro monto. Vuelve al inicio y empieza uno nuevo.'**
   String get topUpErrorKeyReused;
 
   /// No description provided for @topUpErrorNetwork.
   ///
   /// In es, this message translates to:
-  /// **'No pudimos confirmar tu recarga. Pudo haberse realizado: reintenta y, si ya se acreditó, no se cobrará dos veces.'**
+  /// **'No pudimos confirmar tu depósito. Pudo haberse realizado: reintenta y, si ya se acreditó, no se sumará dos veces.'**
   String get topUpErrorNetwork;
 
   /// No description provided for @topUpErrorUnexpected.
   ///
   /// In es, this message translates to:
-  /// **'Algo salió mal y no pudimos confirmar tu recarga. Reintenta y, si ya se acreditó, no se cobrará dos veces.'**
+  /// **'Algo salió mal y no pudimos confirmar tu depósito. Reintenta y, si ya se acreditó, no se sumará dos veces.'**
   String get topUpErrorUnexpected;
 
   /// No description provided for @topUpDoneHeadline.
   ///
   /// In es, this message translates to:
-  /// **'¡Recarga realizada!'**
+  /// **'¡Depósito realizado!'**
   String get topUpDoneHeadline;
 
   /// No description provided for @topUpDoneReused.
   ///
   /// In es, this message translates to:
-  /// **'Esta recarga ya estaba registrada. No se cobró otra vez.'**
+  /// **'Este depósito ya estaba registrado. No se sumó otra vez.'**
   String get topUpDoneReused;
 
   /// No description provided for @personalDataTitle.

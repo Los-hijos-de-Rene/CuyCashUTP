@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -22,6 +23,7 @@ from app.schemas import (
     ResetPinIn,
     SessionIn,
 )
+from app.services import alias as alias_svc
 from app.services import accounts, biometric, devices, lockout, otp, pin_check, sessions
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
@@ -65,10 +67,8 @@ def _usuario_json(user: User) -> dict:
     }
 
 
-def _alias(nombres: str, dni: str) -> str:
-    primero = nombres.strip().split()[0].lower() if nombres.strip() else ""
-    slug = "".join(c for c in primero if c.isalnum())
-    return f"@{slug}" if slug else f"@{dni}"
+# Veces que se pide otro alias si un registro simultáneo se llevó el sugerido.
+_INTENTOS_DE_ALIAS = 3
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -87,16 +87,40 @@ async def register(
 
     nombres = _nombre_normalizado(payload.nombres)
     apellidos = _nombre_normalizado(payload.apellidos)
-    user = User(
-        dni=payload.dni,
-        nombres=nombres,
-        apellidos=apellidos,
-        email=str(payload.email),
-        alias=_alias(nombres, payload.dni),
-        pin_hash=await ahash_pin(payload.pin),
-    )
-    session.add(user)
-    await session.flush()
+    pin_hash = await ahash_pin(payload.pin)
+    # El alias es único: `libre` sugiere uno que hoy no existe, pero otro
+    # registro simultáneo puede llevárselo antes del INSERT. La UNIQUE lo
+    # detecta y se pide otro.
+    #
+    # Se deshace la transacción ENTERA, no un SAVEPOINT: este INSERT es la
+    # primera escritura del alta, así que no se pierde nada. Y en SQLite el
+    # SAVEPOINT sin BEGIN previo confirma al liberarse, lo que dejaría un
+    # usuario sin cuenta si la apertura de abajo falla.
+    for _ in range(_INTENTOS_DE_ALIAS):
+        user = User(
+            dni=payload.dni,
+            nombres=nombres,
+            apellidos=apellidos,
+            email=str(payload.email),
+            alias=await alias_svc.libre(session, nombres),
+            pin_hash=pin_hash,
+        )
+        session.add(user)
+        try:
+            await session.flush()
+        except IntegrityError:
+            await session.rollback()
+            ganador = await session.execute(select(User.id).where(User.dni == payload.dni))
+            if ganador.first() is not None:
+                raise ApiError(ErrorCode.IDENTIFIER_TAKEN, "Este DNI ya está registrado.")
+            continue
+        break
+    else:
+        raise ApiError(
+            ErrorCode.SERVICE_UNAVAILABLE,
+            "No pudimos completar el registro. Inténtalo de nuevo.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     # Antes del commit a propósito: si la apertura falla, el alta entera
     # revierte. Una identidad sin cuenta no tendría quién la repare.
     await accounts.abrir_cuenta(session, user.id)

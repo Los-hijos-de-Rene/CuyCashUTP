@@ -340,7 +340,6 @@ void main() {
         b.add(
           TransferEvent.recipientSelected(
             Recipient(
-              dni: '87654321',
               nombreEnmascarado: 'J*** M*** R***',
               cuenta: directorioDePrueba.cuentas[1],
             ),
@@ -378,7 +377,6 @@ void main() {
         b.add(
           TransferEvent.recipientSelected(
             Recipient(
-              dni: '87654321',
               nombreEnmascarado: 'J*** M*** R***',
               cuenta: directorioDePrueba.cuentas[2], // dólares
             ),
@@ -399,7 +397,6 @@ void main() {
         b.add(
           const TransferEvent.recipientSelected(
             Recipient(
-              dni: '70123456',
               nombreEnmascarado: 'T*** P***',
               cuenta: RecipientAccount(
                 cuentaId: MemoryTransferRepository.cuentaId,
@@ -425,7 +422,6 @@ void main() {
         b.add(
           TransferEvent.recipientSelected(
             Recipient(
-              dni: '87654321',
               nombreEnmascarado: 'J*** M*** R***',
               cuenta: directorioDePrueba.cuentas[1],
             ),
@@ -481,7 +477,6 @@ void main() {
     b.add(
       TransferEvent.recipientSelected(
         Recipient(
-          dni: directorioDePrueba.dni,
           nombreEnmascarado: directorioDePrueba.nombreEnmascarado,
           cuenta: directorioDePrueba.cuentas[1],
         ),
@@ -591,7 +586,6 @@ void main() {
           b.add(
             TransferEvent.recipientSelected(
               Recipient(
-                dni: directorioDePrueba.dni,
                 nombreEnmascarado: directorioDePrueba.nombreEnmascarado,
                 cuenta: directorioDePrueba.cuentas[1],
               ),

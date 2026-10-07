@@ -45,6 +45,7 @@ class EditAliasBloc extends Bloc<EditAliasEvent, EditAliasState> {
         status: EditAliasStatus.editing,
         error: switch (failure) {
           ServerFailure(failure: ProfileInvalidAlias()) => AliasError.invalid,
+          ServerFailure(failure: ProfileAliasTaken()) => AliasError.taken,
           ServerFailure(failure: ProfileNetworkFailure()) => AliasError.network,
           _ => AliasError.generic,
         },

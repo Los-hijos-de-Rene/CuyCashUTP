@@ -48,7 +48,6 @@ class TransferIn(BaseModel):
 class TopUpIn(BaseModel):
     cuenta_id: str
     monto_centimos: StrictInt
-    pin: str
     idempotency_key: str = Field(min_length=8, max_length=64)
 
 
@@ -283,11 +282,15 @@ async def recargar(
     payload: TopUpIn,
     response: Response,
     user: User = Depends(current_user),
-    sesion: SessionRow = Depends(current_session_row),
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Cash-in simulado.
+    Cash-in simulado (el "depósito simulado" de la app).
+
+    No pide PIN: meter dinero a la cuenta propia no necesita la autorización
+    del titular, igual que un depósito en ventanilla. El PIN protege lo que
+    SALE de la cuenta. La idempotencia sí se queda: un doble toque o un
+    reintento no acreditan dos veces.
 
     El dinero sale de la caja de CuyCash, que es la única cuenta a la que el
     esquema le permite quedar en negativo. Sin esa contraparte el asiento no
@@ -297,7 +300,6 @@ async def recargar(
         session, user, payload.cuenta_id, payload.idempotency_key
     )
     _validar_monto(payload.monto_centimos, cuenta.moneda)
-    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
     caja = await accounts_service.cuenta_de_sistema(session, cuenta.moneda)
     tx, reutilizada = await post(

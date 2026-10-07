@@ -15,4 +15,11 @@ void main() {
       expect(AliasRules.isValid(AliasRules.normalize(malo)), isFalse, reason: malo);
     }
   });
+
+  test('exige al menos una letra: puros dígitos se confundirían con un DNI', () {
+    for (final malo in ['12345678', '@123', '1_2.3', '___']) {
+      expect(AliasRules.isValid(AliasRules.normalize(malo)), isFalse, reason: malo);
+    }
+    expect(AliasRules.isValid('@a1234567'), isTrue);
+  });
 }

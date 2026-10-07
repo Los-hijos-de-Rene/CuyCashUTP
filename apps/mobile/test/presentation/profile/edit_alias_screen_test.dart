@@ -81,10 +81,30 @@ void main() {
     await tester.enterText(find.byType(TextField), 'ñandú');
     await tester.pump();
     expect(
-        find.text(
-            'Usa de 3 a 20 letras sin tildes, números, punto o guion bajo.'),
+        find.text('Usa de 3 a 20 letras sin tildes, números, punto o guion '
+            'bajo, con al menos una letra.'),
         findsOneWidget);
     expect(tester.widget<ElevatedButton>(guardar()).onPressed, isNull);
+
+    // Puros dígitos: se confundiría con un DNI al buscar a quién enviar.
+    await tester.enterText(find.byType(TextField), '12345678');
+    await tester.pump();
+    expect(tester.widget<ElevatedButton>(guardar()).onPressed, isNull);
+  });
+
+  testWidgets('un alias que ya usa otra persona avisa y se queda',
+      (tester) async {
+    await abrir(tester, MemoryProfileRepository());
+
+    await tester.enterText(find.byType(TextField), 'carlos');
+    await tester.pump();
+    await tester.tap(guardar());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ese alias ya lo usa otra persona. Prueba con otro.'),
+        findsOneWidget);
+    expect(resultado, isNull);
+    expect((await device.readUser())?.alias, '@jheampierre');
   });
 
   testWidgets('guardar actualiza el usuario recordado y vuelve con true',

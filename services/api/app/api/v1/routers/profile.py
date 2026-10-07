@@ -6,11 +6,11 @@ así que aquí solo se leen. El correo nunca sale completo: es el canal del OTP 
 recuperación y no tiene por qué viajar entero a cada apertura del perfil.
 """
 
-import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import current_session_row, current_user
@@ -20,23 +20,15 @@ from app.db.models import Device
 from app.db.models import Session as SessionRow
 from app.db.models import User
 from app.schemas import AliasIn
+from app.services import alias as alias_svc
 from app.services import biometric, otp, sessions
 
 router = APIRouter(prefix="/v1", tags=["Perfil"])
-
-_ALIAS = re.compile(r"^@[a-z0-9_.]{3,20}$")
-
 
 def _iso(momento: datetime) -> str:
     """UTC con sufijo `Z`, el formato del resto del contrato."""
     utc = momento.replace(tzinfo=timezone.utc) if momento.tzinfo is None else momento
     return utc.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-
-def normalizar_alias(texto: str) -> str:
-    """Minúsculas, sin espacios en los bordes y con `@` delante."""
-    limpio = texto.strip().lower()
-    return limpio if limpio.startswith("@") else f"@{limpio}"
 
 
 @router.get("/me")
@@ -58,15 +50,30 @@ async def cambiar_alias(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    alias = normalizar_alias(payload.alias)
-    if not _ALIAS.match(alias):
+    alias = alias_svc.normalizar(payload.alias)
+    if not alias_svc.es_valido(alias):
         raise ApiError(
             ErrorCode.INVALID_ALIAS,
-            "Usa de 3 a 20 letras, números, punto o guion bajo.",
+            "Usa de 3 a 20 letras, números, punto o guion bajo, con al menos una letra.",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+    if alias == user.alias:
+        return {"alias": alias}
+    tomado = ApiError(
+        ErrorCode.ALIAS_TAKEN,
+        "Ese alias ya lo usa otra persona.",
+        status_code=status.HTTP_409_CONFLICT,
+    )
+    # Mirar antes da el 409 en el caso normal; la UNIQUE cubre a dos titulares
+    # que piden el mismo alias a la vez y ambos lo vieron libre.
+    if await alias_svc.esta_tomado(session, alias):
+        raise tomado
     user.alias = alias
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise tomado
     return {"alias": alias}
 
 

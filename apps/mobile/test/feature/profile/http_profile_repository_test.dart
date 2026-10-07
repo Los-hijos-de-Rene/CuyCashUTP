@@ -12,10 +12,13 @@ import 'profile_repository_contract.dart';
 /// Reproduce `services/api/app/api/v1/routers/profile.py` (`/v1/me*`).
 class FakeProfileBackend implements HttpClientAdapter {
   String alias = '@jenny';
+
+  /// Alias de otros titulares: el alias es único.
+  static const tomados = {'@luis'};
   ({int status, Object? body})? forced;
   DioException? throwIt;
 
-  static final _alias = RegExp(r'^@[a-z0-9_.]{3,20}$');
+  static final _alias = RegExp(r'^@(?=[a-z0-9_.]*[a-z])[a-z0-9_.]{3,20}$');
 
   @override
   Future<ResponseBody> fetch(
@@ -51,6 +54,9 @@ class FakeProfileBackend implements HttpClientAdapter {
       if (!_alias.hasMatch(nuevo)) {
         return (422, {'code': 'INVALID_ALIAS', 'detail': 'x'});
       }
+      if (nuevo != alias && tomados.contains(nuevo)) {
+        return (409, {'code': 'ALIAS_TAKEN', 'detail': 'x'});
+      }
       alias = nuevo;
       return (200, {'alias': nuevo});
     }
@@ -75,6 +81,7 @@ void main() {
     construir,
     dni: '71234567',
     aliasInicial: '@jenny',
+    aliasDeOtro: '@luis',
   );
 
   ProfileFailure? falloDe(Result<ProfileFailure, Object?> r) =>

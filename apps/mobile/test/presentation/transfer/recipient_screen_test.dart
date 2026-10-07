@@ -31,7 +31,7 @@ const _origen = Account(
 );
 
 const _miDirectorio = RecipientDirectory(
-  dni: '70123456',
+  alias: '@jheampierre',
   nombreEnmascarado: 'J*** C*** L***',
   cuentas: [
     RecipientAccount(
@@ -57,7 +57,7 @@ const _miDirectorio = RecipientDirectory(
 );
 
 const _soloDolares = RecipientDirectory(
-  dni: '87654321',
+  alias: '@jmrosa',
   nombreEnmascarado: 'J*** M*** R***',
   cuentas: [
     RecipientAccount(
@@ -142,6 +142,50 @@ void main() {
     expect(find.text('Corriente · S/ · ••••5510'), findsOneWidget);
     expect(find.text('Ahorros · US\$ · ••••0419'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Continuar'), findsNothing);
+  });
+
+  testWidgets('un alias no se busca letra a letra: se busca con Buscar', (
+    t,
+  ) async {
+    final repo = FakeTransferRepository();
+    await pump(t, repo: repo);
+    expect(find.widgetWithText(OutlinedButton, 'Buscar'), findsNothing);
+
+    await t.enterText(find.byType(TextField), 'JMRosa');
+    await t.pumpAndSettle();
+    expect(repo.busquedas, isEmpty);
+
+    await t.tap(find.widgetWithText(OutlinedButton, 'Buscar'));
+    await t.pumpAndSettle();
+    expect(repo.busquedas, ['JMRosa']);
+    expect(find.text('J*** M*** R***'), findsOneWidget);
+    expect(find.text('@jmrosa'), findsOneWidget);
+    expect(find.text('Corriente · S/ · ••••5510'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Buscar'), findsNothing);
+  });
+
+  testWidgets('la tecla de buscar del teclado también busca el alias', (
+    t,
+  ) async {
+    final repo = FakeTransferRepository();
+    await pump(t, repo: repo);
+    await t.enterText(find.byType(TextField), '@jmrosa');
+    await t.testTextInput.receiveAction(TextInputAction.search);
+    await t.pumpAndSettle();
+    expect(repo.busquedas, ['@jmrosa']);
+  });
+
+  testWidgets('un DNI incompleto o un alias inválido no ofrecen Buscar', (
+    t,
+  ) async {
+    final repo = FakeTransferRepository();
+    await pump(t, repo: repo);
+    for (final texto in ['8765432', 'ab', 'con espacio']) {
+      await t.enterText(find.byType(TextField), texto);
+      await t.pumpAndSettle();
+      expect(find.widgetWithText(OutlinedButton, 'Buscar'), findsNothing);
+    }
+    expect(repo.busquedas, isEmpty);
   });
 
   testWidgets('tocar una tarjeta lleva al monto con esa cuenta', (t) async {

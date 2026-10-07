@@ -93,6 +93,65 @@ async def test_resolver_el_propio_dni_lista_mis_cuentas_con_su_nombre(client, re
     assert [c["nombre"] for c in r.json()["cuentas"]] == [None, "Viaje"]
 
 
+async def _resolver_alias(client, titular, alias):
+    return await client.get(
+        "/v1/directory/resolve", params={"alias": alias}, headers=titular.auth
+    )
+
+
+@pytest.mark.asyncio
+async def test_resolver_por_alias_encuentra_a_la_persona_sin_revelar_su_dni(
+    client, registrado, otro_registrado
+):
+    por_dni = (await _resolver(client, registrado, otro_registrado.dni)).json()
+    r = await _resolver_alias(client, registrado, "  @LUIS ")
+    cuerpo = r.json()
+
+    assert r.status_code == 200
+    assert cuerpo["dni"] is None
+    assert otro_registrado.dni not in str(cuerpo)
+    assert cuerpo["alias"] == "@luis"
+    assert cuerpo["nombre_enmascarado"] == "L*** A*** Q***"
+    assert cuerpo["cuentas"] == por_dni["cuentas"]
+    # Por DNI sí se repite: quien pregunta ya lo había escrito.
+    assert por_dni["dni"] == otro_registrado.dni
+    assert por_dni["alias"] == "@luis"
+
+
+@pytest.mark.asyncio
+async def test_resolver_el_propio_alias_lista_mis_cuentas(client, registrado):
+    r = await _resolver_alias(client, registrado, "jenny")
+    assert r.status_code == 200
+    assert r.json()["dni"] == registrado.dni
+
+
+@pytest.mark.asyncio
+async def test_un_alias_inexistente_responde_igual_que_un_dni_inexistente(
+    client, registrado
+):
+    por_alias = await _resolver_alias(client, registrado, "@nadie")
+    por_dni = await _resolver(client, registrado)
+    assert por_alias.status_code == por_dni.status_code == 404
+    assert por_alias.json() == por_dni.json()
+
+
+@pytest.mark.asyncio
+async def test_buscar_por_alias_gasta_el_mismo_cupo(client, registrado):
+    for _ in range(CONSULTAS_MAXIMAS):
+        assert (await _resolver_alias(client, registrado, "@nadie")).status_code == 404
+    assert (await _resolver(client, registrado)).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_una_consulta_malformada_se_rechaza_sin_gastar_cupo(client, registrado):
+    for params in ({}, {"dni": INEXISTENTE, "alias": "@luis"}, {"alias": "12345678"},
+                   {"alias": "ab"}, {"alias": "con espacio"}):
+        r = await client.get("/v1/directory/resolve", params=params, headers=registrado.auth)
+        assert r.status_code == 422, params
+        assert r.json()["code"] == "INVALID_RECIPIENT_QUERY", params
+    await _agotar_por_directorio(client, registrado)
+
+
 @pytest.mark.asyncio
 async def test_resolver_exige_sesion(client):
     r = await client.get(f"/v1/directory/resolve?dni={INEXISTENTE}")

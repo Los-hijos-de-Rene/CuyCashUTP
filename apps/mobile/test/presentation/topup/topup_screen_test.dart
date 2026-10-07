@@ -94,92 +94,26 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> escribirPin(WidgetTester tester, [String pin = '000000']) async {
-    for (final d in pin.split('')) {
-      await tester.tap(find.text(d));
-      await tester.pump();
-    }
-  }
-
-  Finder boton([String label = 'Confirmar recarga']) =>
+  Finder boton([String label = 'Depositar']) =>
       find.widgetWithText(ElevatedButton, label);
 
-  /// Paso 1 → paso 2.
-  Future<void> continuar(WidgetTester tester) async {
-    await tester.tap(boton('Continuar'));
-    await tester.pumpAndSettle();
-  }
+  /// Escribe el monto: deja el depósito listo para confirmar.
+  Future<void> listo(WidgetTester tester, {String monto = '100'}) =>
+      escribirMonto(tester, monto);
 
-  /// Monto, "Continuar" y PIN: deja la recarga lista para confirmar.
-  Future<void> hastaElPin(
-    WidgetTester tester, {
-    String monto = '100',
-    String pin = '000000',
-  }) async {
-    await escribirMonto(tester, monto);
-    await continuar(tester);
-    await escribirPin(tester, pin);
-  }
-
-  testWidgets('paso 1 espera un monto válido; paso 2, los 6 dígitos del PIN', (
-    tester,
-  ) async {
+  testWidgets('un solo paso: el monto y "Depositar", sin PIN', (tester) async {
     await preparar(null);
     await pump(tester);
 
-    // Paso 1: solo el monto, sin teclado de PIN.
-    expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
+    expect(find.text('¿Cuánto quieres depositar?'), findsOneWidget);
     expect(find.byType(PinKeypad), findsNothing);
-    expect(tester.widget<ElevatedButton>(boton('Continuar')).onPressed, isNull);
+    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
 
     await escribirMonto(tester, '100');
-    expect(
-      tester.widget<ElevatedButton>(boton('Continuar')).onPressed,
-      isNotNull,
-    );
-    await continuar(tester);
-
-    // Paso 2: resumen y PIN.
-    expect(find.text('Confirma tu recarga'), findsOneWidget);
-    expect(find.text('S/ 100.00'), findsOneWidget);
-    expect(find.byType(TextField), findsNothing);
-    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
-
-    await escribirPin(tester, '00000');
-    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
-    await escribirPin(tester, '0');
     expect(tester.widget<ElevatedButton>(boton()).onPressed, isNotNull);
   });
 
-  testWidgets(
-    'atrás en el PIN vuelve al monto: lo conserva, borra el PIN y no cambia '
-    'la clave',
-    (tester) async {
-      await preparar(null);
-      await pump(tester);
-      await hastaElPin(tester, pin: '123');
-      final clave = bloc.state.idempotencyKey;
-
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
-
-      expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
-      expect(find.text('100'), findsOneWidget);
-      expect(bloc.state.idempotencyKey, clave);
-
-      // El gesto del sistema hace lo mismo que la flecha.
-      await continuar(tester);
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(find.text('¿Cuánto quieres recargar?'), findsOneWidget);
-
-      await continuar(tester);
-      expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
-      expect(resultado, isNull);
-    },
-  );
-
-  testWidgets('un monto sobre el máximo se explica y no deja confirmar', (
+  testWidgets('un monto sobre el máximo se explica y no deja depositar', (
     tester,
   ) async {
     await preparar(null);
@@ -187,8 +121,8 @@ void main() {
 
     await escribirMonto(tester, '2000.01');
 
-    expect(find.text('El máximo por recarga es S/ 2,000.00.'), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(boton('Continuar')).onPressed, isNull);
+    expect(find.text('El máximo por depósito es S/ 2,000.00.'), findsOneWidget);
+    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
   });
 
   testWidgets('el separador de miles se rechaza diciendo por qué', (
@@ -206,7 +140,7 @@ void main() {
   });
 
   testWidgets(
-    'DOS toques seguidos en "Confirmar recarga" con repo lento = UNA llamada',
+    'DOS toques seguidos en "Depositar" con repo lento = UNA llamada',
     (tester) async {
       final enVuelo = Completer<Result<TransferFailure, TransferReceipt>>();
       addTearDown(() {
@@ -218,7 +152,7 @@ void main() {
       });
       await preparar((_) => enVuelo.future);
       await pump(tester);
-      await hastaElPin(tester);
+      await listo(tester);
 
       await tester.tap(boton());
       await tester.tap(boton());
@@ -238,17 +172,17 @@ void main() {
     },
   );
 
-  testWidgets('una recarga exitosa muestra la constancia y vuelve con true', (
+  testWidgets('un depósito exitoso muestra la constancia y vuelve con true', (
     tester,
   ) async {
     await preparar(null);
     await pump(tester);
-    await hastaElPin(tester);
+    await listo(tester);
 
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
-    expect(find.text('¡Recarga realizada!'), findsOneWidget);
+    expect(find.text('¡Depósito realizado!'), findsOneWidget);
     expect(find.text('S/ 100.00'), findsOneWidget);
 
     await tester.tap(find.text('Volver al inicio'));
@@ -262,7 +196,7 @@ void main() {
   ) async {
     await preparar(null);
     await pump(tester);
-    await hastaElPin(tester);
+    await listo(tester);
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
@@ -282,20 +216,20 @@ void main() {
             : right(FakeTransferRepository.constanciaDe(_monto)),
       );
       await pump(tester);
-      await hastaElPin(tester);
+      await listo(tester);
       await tester.tap(boton());
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('No pudimos confirmar tu recarga'),
+        find.textContaining('No pudimos confirmar tu depósito'),
         findsOneWidget,
       );
-      // No hay flecha, y atrás no vuelve al monto ni sale.
+      // No hay flecha, atrás no sale y el monto ya no se edita.
       expect(find.byType(BackButton), findsNothing);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(find.text('Confirma tu recarga'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
+      expect(find.text('¿Cuánto quieres depositar?'), findsOneWidget);
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
 
       // Salir avisa, y cancelar se queda.
       await tester.tap(find.text('Volver al inicio'));
@@ -303,14 +237,14 @@ void main() {
       expect(find.text('¿Salir sin confirmar?'), findsOneWidget);
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
-      expect(find.text('Depósito simulado'), findsOneWidget);
+      expect(find.text('¿Cuánto quieres depositar?'), findsOneWidget);
 
-      await tester.tap(boton('Reintentar recarga'));
+      await tester.tap(boton('Reintentar depósito'));
       await tester.pumpAndSettle();
 
       expect(repo.clavesRecarga, hasLength(2));
       expect(repo.clavesRecarga[1], repo.clavesRecarga[0]);
-      expect(find.text('¡Recarga realizada!'), findsOneWidget);
+      expect(find.text('¡Depósito realizado!'), findsOneWidget);
     },
   );
 
@@ -322,7 +256,7 @@ void main() {
           FakeTransferRepository.falla(const TransferFailure.network()),
     );
     await pump(tester);
-    await hastaElPin(tester);
+    await listo(tester);
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
@@ -344,7 +278,7 @@ void main() {
         discoSano: false,
       );
       await pump(tester);
-      await hastaElPin(tester);
+      await listo(tester);
       await tester.tap(boton());
       await tester.pumpAndSettle();
 
@@ -352,28 +286,30 @@ void main() {
         find.textContaining('No pudimos recordar este intento'),
         findsOneWidget,
       );
-      expect(find.textContaining('no se cobrará dos veces'), findsNothing);
+      expect(find.textContaining('no se sumará dos veces'), findsNothing);
     },
   );
 
-  testWidgets('un PIN errado borra el PIN y conserva el monto', (tester) async {
+  testWidgets('un rechazo definitivo conserva el monto y no sella', (
+    tester,
+  ) async {
     await preparar(
       (_) async =>
-          FakeTransferRepository.falla(const TransferFailure.wrongPin(2)),
+          FakeTransferRepository.falla(const TransferFailure.accountBlocked()),
     );
     await pump(tester);
-    await hastaElPin(tester, pin: '111111');
+    await listo(tester);
     await tester.tap(boton());
     await tester.pumpAndSettle();
 
-    expect(find.text('PIN incorrecto. Te quedan 2 intentos.'), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(boton()).onPressed, isNull);
+    expect(
+      find.text(
+        'Tu cuenta no está activa, así que no puedes depositar por ahora.',
+      ),
+      findsOneWidget,
+    );
     expect(bloc.state.monto, _monto);
-
-    // No queda sellada: se puede volver a cambiar el monto.
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
-    expect(find.text('100'), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
   });
 }

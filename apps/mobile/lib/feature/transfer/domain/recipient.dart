@@ -7,12 +7,10 @@ import 'recipient_account.dart';
 /// reconstruirlo.
 class Recipient {
   const Recipient({
-    required this.dni,
     required this.nombreEnmascarado,
     required this.cuenta,
   });
 
-  final String dni;
   final String nombreEnmascarado;
   final RecipientAccount cuenta;
 }

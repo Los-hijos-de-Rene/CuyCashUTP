@@ -21,6 +21,8 @@ class FakeTransfersBackend implements HttpClientAdapter {
   static const pin = '000000';
   static const dniPropio = '70123456';
   static const dniDestino = '87654321';
+  static const aliasPropio = '@jheampierre';
+  static const aliasDestino = '@jmrosa';
   static const cuenta = 'acc-demo-1';
 
   /// Cuentas que pueden recibir, por id, con su moneda (`acc-ext-*` son de
@@ -84,7 +86,10 @@ class FakeTransfersBackend implements HttpClientAdapter {
   }
 
   (int, Object?) _route(RequestOptions o) => switch (o.uri.path) {
-    '/v1/directory/resolve' => _resolver(o.queryParameters['dni'] as String),
+    '/v1/directory/resolve' => _resolver(
+      o.queryParameters['dni'] as String?,
+      o.queryParameters['alias'] as String?,
+    ),
     '/v1/transfers' => _mover(o.data as Map<String, dynamic>, envio: true),
     '/v1/topups' => _mover(o.data as Map<String, dynamic>, envio: false),
     _ => _error(404, 'NOPE'),
@@ -98,14 +103,20 @@ class FakeTransfersBackend implements HttpClientAdapter {
     return null;
   }
 
-  (int, Object?) _resolver(String dni) {
+  /// Como el backend: exactamente uno de [dni] o [alias], y por alias no
+  /// se devuelve el DNI de un tercero.
+  (int, Object?) _resolver(String? dni, String? alias) {
+    if ((dni == null) == (alias == null)) {
+      return _error(422, 'INVALID_RECIPIENT_QUERY');
+    }
     if (_consultar() case final e?) return e;
-    if (dni == dniPropio) {
-      // El propio DNI lista mis cuentas, CON su nombre.
+    if (dni == dniPropio || alias == aliasPropio) {
+      // El propio DNI o alias lista mis cuentas, CON su nombre.
       return (
         200,
         {
           'dni': dniPropio,
+          'alias': aliasPropio,
           'nombre_enmascarado': 'T*** C***',
           'cuentas': [
             {
@@ -126,11 +137,14 @@ class FakeTransfersBackend implements HttpClientAdapter {
         },
       );
     }
-    if (dni != dniDestino) return _error(404, 'RECIPIENT_NOT_FOUND');
+    if (dni != dniDestino && alias != aliasDestino) {
+      return _error(404, 'RECIPIENT_NOT_FOUND');
+    }
     return (
       200,
       {
-        'dni': dniDestino,
+        'dni': dni,
+        'alias': aliasDestino,
         'nombre_enmascarado': 'J*** M*** R***',
         'cuentas': [
           {
@@ -205,7 +219,10 @@ class FakeTransfersBackend implements HttpClientAdapter {
       }
     }
     if (monto < 1 || monto > 200000) return _error(400, 'AMOUNT_OUT_OF_RANGE');
-    if (_exigirPin(b['pin'] as String) case final e?) return e;
+    // Como el backend: el depósito simulado (topup) no pide PIN.
+    if (envio) {
+      if (_exigirPin(b['pin'] as String) case final e?) return e;
+    }
 
     final huella =
         '$envio|$cuentaId|$destino|$monto|'
@@ -259,6 +276,7 @@ void main() {
     cuentaOrigenId: FakeTransfersBackend.cuenta,
     dniPropio: FakeTransfersBackend.dniPropio,
     dniDestino: FakeTransfersBackend.dniDestino,
+    aliasDestino: FakeTransfersBackend.aliasDestino,
     cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
     cuentaOtraMonedaId: MemoryTransferRepository.cuentaDestinoDolaresId,
     consultasMaximas: FakeTransfersBackend.consultasMaximas,
@@ -422,6 +440,7 @@ void main() {
             status: 200,
             body: {
               'dni': '87654321',
+              'alias': '@jmrosa',
               'nombre_enmascarado': 'J***',
               'cuentas': [
                 {
@@ -538,7 +557,6 @@ void main() {
       await repo.recargar(
         cuentaId: 'acc-demo-1',
         monto: const Money.soles(5000),
-        pin: '000000',
         idempotencyKey: 'recarga-0001',
       );
 
@@ -547,7 +565,6 @@ void main() {
       expect(req.data, {
         'cuenta_id': 'acc-demo-1',
         'monto_centimos': 5000,
-        'pin': '000000',
         'idempotency_key': 'recarga-0001',
       });
     });
@@ -556,7 +573,6 @@ void main() {
       final r = await repo.recargar(
         cuentaId: 'acc-demo-1',
         monto: const Money.dolares(2000),
-        pin: '000000',
         idempotencyKey: 'recarga-usd-1',
       );
 
@@ -589,14 +605,27 @@ void main() {
     test('resolver manda el DNI como query', () async {
       await repo.resolverDestinatario('87654321');
 
-      expect(backend.requests.last.queryParameters['dni'], '87654321');
+      expect(backend.requests.last.queryParameters, {'dni': '87654321'});
+    });
+
+    test('resolver manda el alias normalizado como query', () async {
+      await repo.resolverDestinatario('  JMRosa ');
+
+      expect(backend.requests.last.queryParameters, {'alias': '@jmrosa'});
+    });
+
+    test('ni DNI ni alias válido no llega al servidor', () async {
+      for (final malo in ['1234', '123456789', 'ab', 'con espacio']) {
+        final r = await repo.resolverDestinatario(malo);
+        expect(r.getLeft().toNullable(), isA<ServerFailure<TransferFailure>>());
+      }
+      expect(backend.requests, isEmpty);
     });
 
     test('la fecha de la constancia con Z se lee como UTC', () async {
       final r = await repo.recargar(
         cuentaId: 'acc-demo-1',
         monto: const Money.soles(5000),
-        pin: '000000',
         idempotencyKey: 'recarga-0001',
       );
 

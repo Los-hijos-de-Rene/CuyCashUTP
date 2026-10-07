@@ -15,7 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// nuevo en cada llamada (cada test gasta saldo, intentos y presupuesto):
 ///
 /// - Titular [dniPropio] con la cuenta [cuentaOrigenId] y S/ 1,250.40.
-/// - El cliente destinatario [dniDestino] (nombre enmascarado) tiene la
+/// - El cliente destinatario [dniDestino], con alias [aliasDestino] (nombre
+///   enmascarado), tiene la
 ///   cuenta [cuentaDestinoId] en soles, al menos otra cuenta en soles y la
 ///   cuenta [cuentaOtraMonedaId] en otra moneda que la de origen.
 /// - PIN válido [pinValido]; [maxIntentos] PIN errados seguidos bloquean por
@@ -31,6 +32,7 @@ void probarContratoDeTransferencias(
   required String cuentaOrigenId,
   required String dniPropio,
   required String dniDestino,
+  required String aliasDestino,
   required String cuentaDestinoId,
   required String cuentaOtraMonedaId,
   required int consultasMaximas,
@@ -66,13 +68,11 @@ void probarContratoDeTransferencias(
   FutureResult<TransferFailure, TransferReceipt> recargar(
     TransferRepository repo, {
     int centimos = 5000,
-    String? pin,
     String clave = 'recarga-0001',
     String? cuenta,
   }) => repo.recargar(
     cuentaId: cuenta ?? cuentaOrigenId,
     monto: Money.soles(centimos),
-    pin: pin ?? pinValido,
     idempotencyKey: clave,
   );
 
@@ -85,7 +85,7 @@ void probarContratoDeTransferencias(
             await construir().resolverDestinatario(dniDestino),
           );
 
-          expect(d.dni, dniDestino);
+          expect(d.alias, aliasDestino);
           expect(d.nombreEnmascarado, contains('***'));
           expect(d.cuentas, isNotEmpty);
           expect(d.cuentas.map((c) => c.cuentaId), contains(cuentaDestinoId));
@@ -103,6 +103,33 @@ void probarContratoDeTransferencias(
           expect(d.cuentas.map((c) => c.cuentaId), contains(cuentaOrigenId));
         },
       );
+
+      test(
+        'su alias encuentra a la misma persona y las mismas cuentas',
+        () async {
+          final porDni = valorDe(
+            await construir().resolverDestinatario(dniDestino),
+          );
+          // Sin `@` y en mayúsculas: se normaliza como al guardarlo.
+          final consulta = aliasDestino.substring(1).toUpperCase();
+          final porAlias = valorDe(
+            await construir().resolverDestinatario(consulta),
+          );
+
+          expect(porAlias.alias, aliasDestino);
+          expect(porAlias.nombreEnmascarado, porDni.nombreEnmascarado);
+          expect(
+            porAlias.cuentas.map((c) => c.cuentaId),
+            porDni.cuentas.map((c) => c.cuentaId),
+          );
+        },
+      );
+
+      test('un alias desconocido devuelve recipientNotFound', () async {
+        final r = await construir().resolverDestinatario('@nadie');
+
+        expect(falloDe(r), isA<RecipientNotFound>());
+      });
 
       test('un DNI desconocido devuelve recipientNotFound', () async {
         final r = await construir().resolverDestinatario('99999999');
@@ -406,23 +433,19 @@ void probarContratoDeTransferencias(
         },
       );
 
-      test('un PIN errado devuelve wrongPin', () async {
-        final r = await recargar(construir(), pin: '111111');
-
-        expect(falloDe(r), isA<WrongPin>());
-      });
-
       test(
-        'el PIN errado de recargar y de enviar suman el mismo bloqueo',
+        'no pide PIN: acredita aunque el titular esté bloqueado por PIN',
         () async {
           final repo = construir();
-          for (var i = 1; i < maxIntentos; i++) {
-            await recargar(repo, pin: '111111', clave: 'mala-000$i');
+          for (var i = 0; i < maxIntentos; i++) {
+            await enviar(repo, pin: '111111', clave: 'mala-000$i');
           }
+          expect(
+            falloDe(await enviar(repo, clave: 'bloqueado')),
+            isA<IdentifierLocked>(),
+          );
 
-          final r = await enviar(repo, pin: '111111', clave: 'mala-ultima');
-
-          expect(falloDe(r), isA<IdentifierLocked>());
+          expect((await recargar(repo)).isRight(), isTrue);
         },
       );
 

@@ -1,9 +1,12 @@
 """
 Resolver un destinatario y guardar frecuentes.
 
-El DNI es el identificador porque es lo único que hoy distingue a una persona
-sin ambigüedad: no hay celular en el modelo y el alias se deriva del nombre,
-así que dos homónimos colisionan.
+Se busca por DNI o por alias; los dos son únicos. El alias lleva siempre una
+letra, así que un valor de 8 dígitos solo puede ser un DNI.
+
+Buscar por alias NO devuelve el DNI: el alias es público (se comparte para
+cobrar) y no debe servir para averiguar el documento de nadie. Buscar por DNI
+sí lo devuelve, porque quien pregunta ya lo tenía.
 
 Resolver un DNI devuelve el nombre de una persona, así que es la superficie de
 raspado de identidades: el nombre va enmascarado y TODA consulta (aquí, en el
@@ -11,7 +14,7 @@ alta de frecuentes y en `POST /v1/transfers`) descuenta del mismo presupuesto,
 ver `app.services.rate_limit`.
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
@@ -24,6 +27,7 @@ from app.core.deps import current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
 from app.db.models import Account, Beneficiary, User, _uuid, utcnow
+from app.services import alias as alias_svc
 from app.services.rate_limit import consumir_consulta_de_destinatario
 
 router = APIRouter(prefix="/v1", tags=["Directorio"])
@@ -61,13 +65,13 @@ def cuenta_publica_json(c: Account, *, propia: bool) -> dict:
     }
 
 
-async def _destinatario(session: AsyncSession, dni: str) -> Tuple[User, List[Account]]:
+async def _destinatario(session: AsyncSession, criterio) -> Tuple[User, List[Account]]:
     filas = (
         await session.execute(
             select(User, Account)
             .join(Account, Account.user_id == User.id)
             .where(
-                User.dni == dni,
+                criterio,
                 Account.estado == "activa",
                 Account.tipo != "sistema",
             )
@@ -77,10 +81,11 @@ async def _destinatario(session: AsyncSession, dni: str) -> Tuple[User, List[Acc
     if not filas:
         # Una persona con todas sus cuentas bloqueadas o cerradas cae aquí, y
         # es lo correcto: existe pero no puede recibir, así que no es un
-        # destinatario. La respuesta es idéntica a la de un DNI inexistente.
+        # destinatario. La respuesta es idéntica a la de un DNI o alias
+        # inexistente.
         raise ApiError(
             ErrorCode.RECIPIENT_NOT_FOUND,
-            "No encontramos a nadie con ese DNI en CuyCash.",
+            "No encontramos a nadie con ese DNI o alias en CuyCash.",
             status_code=status.HTTP_404_NOT_FOUND,
         )
     return filas[0][0], [cuenta for _, cuenta in filas]
@@ -88,18 +93,39 @@ async def _destinatario(session: AsyncSession, dni: str) -> Tuple[User, List[Acc
 
 @router.get("/directory/resolve")
 async def resolver(
-    dni: str = Query(min_length=8, max_length=8, pattern=r"^\d{8}$"),
+    dni: Optional[str] = Query(None, min_length=8, max_length=8, pattern=r"^\d{8}$"),
+    alias: Optional[str] = Query(None, max_length=60),
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    # El propio DNI ya no es un error: lista las otras cuentas del titular para
-    # pasar dinero entre ellas. Igual descuenta del presupuesto, para que el
-    # tope no dependa de qué DNI se teclea.
+    """Exactamente uno de `dni` o `alias`. El alias se normaliza como al guardarlo."""
+    if (dni is None) == (alias is None):
+        raise ApiError(
+            ErrorCode.INVALID_RECIPIENT_QUERY,
+            "Busca por DNI o por alias.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+    if alias is not None:
+        alias = alias_svc.normalizar(alias)
+        # Un alias malformado no puede existir: se rechaza sin gastar cupo,
+        # igual que un DNI malformado.
+        if not alias_svc.es_valido(alias):
+            raise ApiError(
+                ErrorCode.INVALID_RECIPIENT_QUERY,
+                "Ese alias no tiene un formato válido.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+    # El propio DNI o alias no es un error: lista las otras cuentas del titular
+    # para pasar dinero entre ellas. Igual descuenta del presupuesto, para que
+    # el tope no dependa de qué se teclea.
     consumir_consulta_de_destinatario(user.id)
-    destinatario, cuentas = await _destinatario(session, dni)
+    criterio = User.dni == dni if dni is not None else User.alias == alias
+    destinatario, cuentas = await _destinatario(session, criterio)
     propia = destinatario.id == user.id
     return {
-        "dni": destinatario.dni,
+        # Solo se repite el DNI que el que pregunta ya escribió (o el suyo).
+        "dni": destinatario.dni if dni is not None or propia else None,
+        "alias": destinatario.alias,
         "nombre_enmascarado": enmascarar(destinatario.nombres, destinatario.apellidos),
         "cuentas": [cuenta_publica_json(c, propia=propia) for c in cuentas],
     }

@@ -28,6 +28,7 @@ class _EditAliasScreenState extends State<EditAliasScreen> {
   String? _errorText(AppLocalizations l10n, EditAliasState state) =>
       switch (state.error) {
         AliasError.invalid => l10n.aliasInvalid,
+        AliasError.taken => l10n.aliasTaken,
         AliasError.network => l10n.aliasNetwork,
         AliasError.generic => l10n.errorGeneric,
         null => state.showsFormatError ? l10n.aliasInvalid : null,

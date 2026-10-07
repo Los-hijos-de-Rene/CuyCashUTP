@@ -9,7 +9,14 @@ import '../../../l10n/app_localizations.dart';
 /// solo tiene cuentas, y lo que va debajo (enviar, recargar, movimientos)
 /// siempre es de la tarjeta que se ve.
 class AccountsHeader extends StatelessWidget {
-  const AccountsHeader({required this.onOpenAccount, super.key});
+  const AccountsHeader({
+    required this.cuentas,
+    required this.onOpenAccount,
+    super.key,
+  });
+
+  /// Cuántas tiene: con una sola, el título va en singular.
+  final int cuentas;
 
   /// `null` = ya tiene el máximo de cuentas: no se ofrece abrir otra.
   final VoidCallback? onOpenAccount;
@@ -21,7 +28,10 @@ class AccountsHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(l10n.homeAccountsTitle, style: CuyCashTypography.titleMd),
+          child: Text(
+            l10n.homeAccountsTitle(cuentas),
+            style: CuyCashTypography.titleMd,
+          ),
         ),
         if (abrir != null)
           GhostButton(

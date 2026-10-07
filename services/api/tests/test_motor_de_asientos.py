@@ -21,7 +21,7 @@ from app.services.ledger import Asiento, post
 async def _cuenta(db, dni: str, numero: str, saldo: int) -> Account:
     user = User(
         dni=dni, nombres="Ada", apellidos="Lovelace",
-        email=f"{dni}@correo.pe", alias="@ada", pin_hash="x",
+        email=f"{dni}@correo.pe", alias=f"@ada{dni}", pin_hash="x",
     )
     db.add(user)
     await db.flush()

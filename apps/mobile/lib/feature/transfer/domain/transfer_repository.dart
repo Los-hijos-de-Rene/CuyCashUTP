@@ -14,10 +14,12 @@ import 'transfer_receipt.dart';
 /// caracteres generada UNA vez por intención del usuario y reutilizada en los
 /// reintentos.
 abstract interface class TransferRepository {
-  /// Busca a la persona por DNI y lista sus cuentas que pueden recibir (el
-  /// propio DNI lista las mías). Consume el presupuesto de consultas.
+  /// Busca a la persona por DNI o por alias ([consulta] tal como se
+  /// tecleó, ver `RecipientQuery`) y lista sus cuentas que pueden recibir (el
+  /// propio DNI o alias lista las mías). Consume el presupuesto de consultas.
+  /// Un texto que no es ni DNI ni alias válido es `RecipientNotFound`.
   FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
-    String dni,
+    String consulta,
   );
 
   /// Envía [monto] desde [cuentaOrigenId] a [cuentaDestinoId]. Ambas deben
@@ -31,11 +33,11 @@ abstract interface class TransferRepository {
     required String idempotencyKey,
   });
 
-  /// Acredita [monto] en [cuentaId] (cash-in simulado).
+  /// Acredita [monto] en [cuentaId] (cash-in simulado). No pide PIN: meter
+  /// dinero a la cuenta propia no necesita la autorización del titular.
   FutureResult<TransferFailure, TransferReceipt> recargar({
     required String cuentaId,
     required Money monto,
-    required String pin,
     required String idempotencyKey,
   });
 }

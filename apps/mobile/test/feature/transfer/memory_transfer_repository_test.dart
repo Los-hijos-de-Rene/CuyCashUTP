@@ -15,6 +15,7 @@ void main() {
     cuentaOrigenId: MemoryTransferRepository.cuentaId,
     dniPropio: MemoryTransferRepository.dniPropio,
     dniDestino: MemoryTransferRepository.dniDestino,
+    aliasDestino: MemoryTransferRepository.aliasDestino,
     cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
     cuentaOtraMonedaId: MemoryTransferRepository.cuentaDestinoDolaresId,
     consultasMaximas: 20,
@@ -25,8 +26,9 @@ void main() {
     test('el bloqueo termina cuando pasa el tiempo', () async {
       var ahora = DateTime.utc(2026, 10, 5, 18);
       final repo = MemoryTransferRepository(clock: () => ahora);
-      Future<Result<TransferFailure, Object?>> mal(int i) => repo.recargar(
-        cuentaId: MemoryTransferRepository.cuentaId,
+      Future<Result<TransferFailure, Object?>> mal(int i) => repo.enviar(
+        cuentaOrigenId: MemoryTransferRepository.cuentaId,
+        cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
         monto: const Money.soles(100),
         pin: '111111',
         idempotencyKey: 'mala-000$i',
@@ -36,8 +38,9 @@ void main() {
       }
 
       ahora = ahora.add(const Duration(minutes: 16));
-      final r = await repo.recargar(
-        cuentaId: MemoryTransferRepository.cuentaId,
+      final r = await repo.enviar(
+        cuentaOrigenId: MemoryTransferRepository.cuentaId,
+        cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
         monto: const Money.soles(100),
         pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'buena-001',
@@ -53,8 +56,9 @@ void main() {
         bloqueo: const Duration(minutes: 15),
       );
 
-      final r = await repo.recargar(
-        cuentaId: MemoryTransferRepository.cuentaId,
+      final r = await repo.enviar(
+        cuentaOrigenId: MemoryTransferRepository.cuentaId,
+        cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
         monto: const Money.soles(100),
         pin: '111111',
         idempotencyKey: 'mala-0001',
@@ -144,7 +148,6 @@ void main() {
       final r = await repo.recargar(
         cuentaId: MemoryLedger.cuentaDolaresId,
         monto: const Money.soles(100),
-        pin: MemoryTransferRepository.pinValido,
         idempotencyKey: 'recarga-usd-01',
       );
 
