@@ -1,5 +1,7 @@
 import 'package:core_kernel/core_kernel.dart';
 
+import 'account_type.dart';
+
 /// Sentido del movimiento respecto a la cuenta consultada.
 enum MovementDirection { debito, credito }
 
@@ -7,7 +9,25 @@ enum MovementDirection { debito, credito }
 /// cuota…) caen en [otro] en lugar de romper el parseo.
 enum MovementKind { transferencia, recarga, otro }
 
-/// Una fila del historial de una cuenta.
+/// La cuenta propia a la que pertenece una fila del historial combinado: lo
+/// justo para nombrarla ("Ahorros · ••••4521"). El número llega enmascarado.
+class MovementAccountRef {
+  const MovementAccountRef({
+    required this.id,
+    required this.tipo,
+    required this.moneda,
+    required this.numeroMasked,
+    this.nombre,
+  });
+
+  final String id;
+  final AccountType tipo;
+  final Currency moneda;
+  final String numeroMasked;
+  final String? nombre;
+}
+
+/// Una fila del historial de una cuenta o del historial combinado.
 class Movement {
   const Movement({
     required this.transactionId,
@@ -18,6 +38,8 @@ class Movement {
     required this.fecha,
     this.contraparte,
     this.motivo,
+    this.cuenta,
+    this.cuentaDestino,
   });
 
   final String transactionId;
@@ -35,6 +57,18 @@ class Movement {
   /// Instante en UTC (`isUtc == true`). Para mostrarlo, convertir con
   /// `toLocal()` en la capa de presentación.
   final DateTime fecha;
+
+  /// De qué cuenta propia es. Solo en el historial combinado; en el de una
+  /// cuenta es `null` porque ya se sabe.
+  final MovementAccountRef? cuenta;
+
+  /// La cuenta propia que RECIBIÓ, si es una transferencia entre cuentas del
+  /// titular. Solo en el historial combinado, donde esa operación sale una
+  /// vez (por su débito) en vez de dos.
+  final MovementAccountRef? cuentaDestino;
+
+  /// Transferencia entre cuentas propias (solo se sabe en el combinado).
+  bool get entrePropias => cuentaDestino != null;
 }
 
 /// La ficha de un movimiento (constancia).

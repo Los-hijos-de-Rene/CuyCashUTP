@@ -271,7 +271,7 @@ async def test_una_recarga_se_muestra_como_recarga_de_saldo(
     r = await client.get(f"/v1/accounts/{cuenta_id}/movements", headers=registrado.auth)
     mov = r.json()["movimientos"][0]
     assert mov["tipo"] == "recarga"
-    assert mov["contraparte"] == "Recarga de saldo"
+    assert mov["contraparte"] == "Depósito simulado"
     assert mov["motivo"] is None
 
 

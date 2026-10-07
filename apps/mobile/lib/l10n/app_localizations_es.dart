@@ -814,17 +814,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
 
   @override
-  String homeAccountsTitle(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Mis cuentas',
-      one: 'Mi cuenta',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get homeOpenAccountCta => 'Abrir cuenta';
 
   @override
@@ -847,7 +836,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get renameAccountTooLong => 'Usa hasta 30 caracteres.';
 
   @override
-  String get homeActionSend => 'Enviar';
+  String get homeActionSend => 'Transferir';
 
   @override
   String get homeActionCharge => 'Cobrar';
@@ -870,6 +859,41 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeSeeAll => 'Ver todo';
+
+  @override
+  String get homeSeeMore => 'Ver más';
+
+  @override
+  String get homeMovementsAllAccounts => 'De todas tus cuentas';
+
+  @override
+  String get homeMenuTooltip => 'Más opciones';
+
+  @override
+  String get homeOpenAccountCard => 'Abrir otra cuenta';
+
+  @override
+  String get homeOpenAccountCardHint => 'Ahorros, corriente o sueldo';
+
+  @override
+  String homeAccountOpenSemantics(String cuenta) {
+    return 'Ver los movimientos de $cuenta';
+  }
+
+  @override
+  String get movementsTitle => 'Movimientos';
+
+  @override
+  String get movementsLoadMoreFailed =>
+      'No pudimos cargar más movimientos. Desliza para reintentar.';
+
+  @override
+  String get movementBetweenOwn => 'Entre tus cuentas';
+
+  @override
+  String movementOwnRoute(String origen, String destino) {
+    return '$origen → $destino';
+  }
 
   @override
   String get homeMovementCompleted => 'Completada';

@@ -60,12 +60,12 @@ void main() {
     return router;
   }
 
-  testWidgets('"Enviar" del inicio abre el flujo real, ya no el aviso', (
+  testWidgets('"Transferir" del inicio abre el flujo real, ya no el aviso', (
     tester,
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
 
     expect(find.byType(RecipientScreen), findsOneWidget);
@@ -77,7 +77,7 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
 
     // Es la primera página del navegador del ShellRoute: sin la flecha
@@ -95,7 +95,7 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), '87654321');
@@ -134,7 +134,7 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), '11111111');

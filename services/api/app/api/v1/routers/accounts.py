@@ -152,6 +152,9 @@ def _consulta_movimientos():
     destino = aliased(Account)
     otra = aliased(Account)
     otro = aliased(User)
+    # Las dos últimas columnas (la cuenta del asiento y la del otro extremo)
+    # solo las usa el historial combinado; van al final para no mover los
+    # índices que leen las demás rutas.
     consulta = (
         select(
             LedgerEntry,
@@ -160,6 +163,8 @@ def _consulta_movimientos():
             otro.nombres,
             otro.apellidos,
             destino.numero,
+            propia,
+            otra,
         )
         .join(Transaction, Transaction.id == LedgerEntry.transaction_id)
         .join(propia, propia.id == LedgerEntry.account_id)
@@ -175,11 +180,11 @@ def _consulta_movimientos():
         )
         .outerjoin(otro, otro.id == otra.user_id)
     )
-    return consulta, propia
+    return consulta, propia, otra
 
 
 def _movimiento_json(fila) -> dict:
-    entry, tx, transfer, nombres, apellidos, _numero_destino = fila
+    entry, tx, transfer, nombres, apellidos, _numero_destino = fila[:6]
     # El nombre COMPLETO solo para quien RECIBIÓ el dinero; quien envió ve el
     # mismo enmascarado que le dio `/directory/resolve`.
     #
@@ -191,7 +196,7 @@ def _movimiento_json(fila) -> dict:
     # algo que el curioso pueda provocarse: nadie puede obligar a otro a
     # pagarle, así que ahí el nombre sí lo trae una relación real.
     if tx.tipo == "recarga":
-        contraparte, motivo = "Recarga de saldo", None
+        contraparte, motivo = "Depósito simulado", None
     elif transfer is None:
         contraparte, motivo = None, None
     elif nombres is None:
@@ -230,12 +235,27 @@ async def listar_movimientos(
     # Orden total (fecha, id): dos asientos con la misma fecha no se pueden
     # desempatar solo por fecha, y sin desempate el cursor repetiría o saltaría
     # filas en el borde de la página. Se pide uno de más para saber si hay otra.
-    consulta, _ = _consulta_movimientos()
-    consulta = (
-        consulta.where(LedgerEntry.account_id == cuenta.id)
-        .order_by(LedgerEntry.created_at.desc(), LedgerEntry.id.desc())
-        .limit(limit + 1)
+    consulta, _, _ = _consulta_movimientos()
+    filas, next_cursor = await _pagina(
+        session, consulta.where(LedgerEntry.account_id == cuenta.id), cursor, limit
     )
+    return {
+        "movimientos": [_movimiento_json(f) for f in filas],
+        "next_cursor": next_cursor,
+    }
+
+
+async def _pagina(session: AsyncSession, consulta, cursor: Optional[str], limit: int):
+    """
+    Una página de asientos, más reciente primero, y el cursor de la siguiente.
+
+    Orden total (fecha, id): dos asientos con la misma fecha no se pueden
+    desempatar solo por fecha, y sin desempate el cursor repetiría o saltaría
+    filas en el borde de la página. Se pide uno de más para saber si hay otra.
+    """
+    consulta = consulta.order_by(
+        LedgerEntry.created_at.desc(), LedgerEntry.id.desc()
+    ).limit(limit + 1)
     marca = _decodificar_cursor(cursor)
     if marca is not None:
         fecha, entry_id = marca
@@ -245,14 +265,65 @@ async def listar_movimientos(
                 (LedgerEntry.created_at == fecha) & (LedgerEntry.id < entry_id),
             )
         )
-
     filas = (await session.execute(consulta)).all()
     hay_mas = len(filas) > limit
     pagina = filas[:limit]
+    return pagina, (_codificar_cursor(pagina[-1][0]) if hay_mas and pagina else None)
+
+
+def _cuenta_ref_json(c: Account) -> dict:
+    """La cuenta de una fila del historial combinado: lo justo para nombrarla."""
+    return {
+        "id": c.id,
+        "tipo": c.tipo,
+        "moneda": c.moneda,
+        "numero_masked": "••••{}".format(c.numero[-4:]),
+        "nombre": c.nombre,
+    }
+
+
+@router.get("/movements")
+async def listar_todos_los_movimientos(
+    cursor: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=LIMITE_MAXIMO),
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    El historial de TODAS las cuentas del titular, más reciente primero. Cada
+    fila dice de qué cuenta es (`cuenta`).
+
+    Una transferencia entre dos cuentas propias tiene dos asientos del mismo
+    titular: aquí sale UNA vez, por su débito, con `entre_propias` y la cuenta
+    que recibió en `cuenta_destino`. El crédito se omite. En el historial de
+    cada cuenta (`/accounts/{id}/movements`) cada lado sigue apareciendo.
+    """
+    consulta, propia, otra = _consulta_movimientos()
+    # `isnot(None)` primero: con una comparación contra NULL la negación de
+    # abajo daría NULL y la fila se perdería.
+    otra_es_propia = otra.user_id.isnot(None) & (otra.user_id == user.id)
+    consulta = consulta.where(
+        propia.user_id == user.id,
+        # El lado que recibe de una transferencia entre propias se omite.
+        ~((LedgerEntry.direccion == "credito") & (Transfer.id.isnot(None)) & otra_es_propia),
+    )
+    filas, next_cursor = await _pagina(session, consulta, cursor, limit)
+
+    def fila_json(f) -> dict:
+        cuenta, contraria = f[6], f[7]
+        entre_propias = (
+            f[2] is not None and contraria is not None and contraria.user_id == user.id
+        )
+        return {
+            **_movimiento_json(f),
+            "cuenta": _cuenta_ref_json(cuenta),
+            "entre_propias": entre_propias,
+            "cuenta_destino": _cuenta_ref_json(contraria) if entre_propias else None,
+        }
 
     return {
-        "movimientos": [_movimiento_json(f) for f in pagina],
-        "next_cursor": _codificar_cursor(pagina[-1][0]) if hay_mas and pagina else None,
+        "movimientos": [fila_json(f) for f in filas],
+        "next_cursor": next_cursor,
     }
 
 
@@ -269,7 +340,7 @@ async def detalle_movimiento(
     solicitante: sin eso, cualquiera con un id leería operaciones ajenas. Si no
     la toca es 404 y no 403, por la misma razón que en las cuentas.
     """
-    consulta, propia = _consulta_movimientos()
+    consulta, propia, _ = _consulta_movimientos()
     fila = (
         await session.execute(
             consulta.where(

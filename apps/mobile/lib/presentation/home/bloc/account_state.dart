@@ -1,8 +1,7 @@
 part of 'account_bloc.dart';
 
-/// Progreso de la carga inicial. `ready` también cubre "recargando" y "pidiendo
-/// más": esos casos se distinguen por [AccountState.refreshing] y
-/// [AccountState.loadingMore], para no tirar a la basura lo que ya se ve.
+/// Progreso de la carga inicial. `ready` también cubre "recargando": se
+/// distingue por [AccountState.refreshing], para no tirar lo que ya se ve.
 enum AccountStatus { loading, ready, error }
 
 @freezed
@@ -17,17 +16,14 @@ abstract class AccountState with _$AccountState {
 
     /// Índice en [cuentas] de la que se ve en el carrusel.
     @Default(0) int seleccionada,
-    @Default(<Movement>[]) List<Movement> movimientos,
 
-    /// Cursor opaco de la siguiente página; `null` = no hay más.
-    String? nextCursor,
+    /// Los últimos movimientos de TODAS las cuentas (como mucho
+    /// [AccountBloc.recientesEnInicio]). El historial completo vive en la
+    /// pantalla de movimientos.
+    @Default(<Movement>[]) List<Movement> recientes,
 
-    /// Llega la primera página de la cuenta recién elegida en el carrusel: la
-    /// lista está vacía porque aún no llegó, no porque no haya movimientos.
-    @Default(false) bool cargandoMovimientos,
-
-    /// Pidiendo la página siguiente (scroll). Solo paginación.
-    @Default(false) bool loadingMore,
+    /// Hay más movimientos que los [recientes]: el inicio ofrece "Ver más".
+    @Default(false) bool hayMasMovimientos,
     @Default(false) bool refreshing,
 
     /// El último refresco falló y lo que se ve son datos anteriores.

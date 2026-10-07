@@ -236,6 +236,12 @@ class _RepoSinRed implements AccountRepository {
   }) => _r.movimientos(cuentaId, cursor: cursor);
 
   @override
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  }) => _r.todosLosMovimientos(cursor: cursor, limit: limit);
+
+  @override
   FutureResult<AccountFailure, MovementDetail> movimiento(String id) =>
       _r.movimiento(id);
 

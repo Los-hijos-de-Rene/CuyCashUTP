@@ -101,7 +101,7 @@ void main() {
     skip: !ocultos,
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.text('Enviar'));
+      await tester.tap(find.text('Transferir'));
       await tester.pumpAndSettle();
       expect(find.text('Frecuentes'), findsNothing);
       expect(find.byType(FrequentRow), findsNothing);
@@ -122,7 +122,7 @@ void main() {
     skip: ocultos,
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.text('Enviar'));
+      await tester.tap(find.text('Transferir'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '87654321');
       await tester.pumpAndSettle();
@@ -140,7 +140,7 @@ void main() {
     skip: ocultos,
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.text('Enviar'));
+      await tester.tap(find.text('Transferir'));
       await tester.pumpAndSettle();
       // Sin frecuentes todavía no hay fila.
       expect(find.text('Frecuentes'), findsNothing);
@@ -157,7 +157,7 @@ void main() {
 
       await tester.tap(find.text('Volver al inicio'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Enviar'));
+      await tester.tap(find.text('Transferir'));
       await tester.pumpAndSettle();
 
       expect(find.text('Frecuentes'), findsOneWidget);
@@ -179,12 +179,12 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
     await enviarCincuenta(tester);
     await tester.tap(find.text('Volver al inicio'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Enviar'));
+    await tester.tap(find.text('Transferir'));
     await tester.pumpAndSettle();
 
     expect(find.text('Frecuentes'), findsNothing);

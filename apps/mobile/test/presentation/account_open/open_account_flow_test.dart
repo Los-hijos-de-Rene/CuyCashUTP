@@ -16,7 +16,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-/// Abrir otra cuenta desde "Mis cuentas" del inicio, con el grafo `mock`
+/// Abrir otra cuenta desde el menú ⋮ del inicio, con el grafo `mock`
 /// real.
 void main() {
   late AuthBloc auth;
@@ -59,8 +59,10 @@ void main() {
     return router;
   }
 
-  testWidgets('abrir una cuenta en dólares desde "Mis cuentas"', (tester) async {
+  testWidgets('abrir una cuenta en dólares desde el menú ⋮', (tester) async {
     await pumpApp(tester);
+    await tester.tap(find.byTooltip('Más opciones'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Abrir cuenta'));
     await tester.pumpAndSettle();
 

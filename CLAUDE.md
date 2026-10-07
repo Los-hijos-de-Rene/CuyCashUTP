@@ -11,9 +11,15 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 - Identidad: splash → onboarding → (login | registro con KYC) → home → perfil,
   más OTP, PIN y acceso rápido con bloqueo por intentos.
 - Cuentas: hasta 5 cuentas por titular (ahorros, corriente o sueldo; soles o
-  dólares; sueldo única y en soles), con nombre opcional; se abren desde el
-  carrusel del inicio con PIN. Cada una con saldo y movimientos. Rutas:
-  `POST /v1/accounts`, `PATCH /v1/accounts/{id}/nombre`.
+  dólares; sueldo única y en soles), con nombre opcional; se abren con PIN
+  desde el menú ⋮ del inicio o la última tarjeta del carrusel. Cada una con
+  saldo y movimientos. Rutas: `POST /v1/accounts`,
+  `PATCH /v1/accounts/{id}/nombre`.
+- Inicio: tocar una tarjeta abre los movimientos de esa cuenta
+  (`MovementsScreen`); "Últimos movimientos" son los 5 más recientes de TODAS
+  las cuentas (`GET /v1/movements?limit=5`), cada uno con su cuenta, y
+  "Ver más" abre el historial combinado paginado. En ese historial una
+  transferencia entre cuentas propias sale una sola vez (`entre_propias`).
 - Libro mayor con partida doble: toda operación de dinero pasa por
   `services/api/app/services/ledger.py`, con idempotencia y bloqueo de fila.
 - Envío de dinero a una cuenta de CuyCash: se busca por DNI o por alias, se

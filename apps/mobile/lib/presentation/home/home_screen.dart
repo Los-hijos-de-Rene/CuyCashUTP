@@ -10,10 +10,10 @@ import '../app/app_routes.dart';
 import '../session/remembered_user_builder.dart';
 import 'bloc/account_bloc.dart';
 import 'home_action.dart';
-import '../account/account_label.dart';
+import 'home_menu_option.dart';
 import 'widgets/account_carousel.dart';
-import 'widgets/accounts_header.dart';
 import 'widgets/home_header.dart';
+import 'widgets/home_menu_button.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/insight_card.dart';
 import 'widgets/movements_card.dart';
@@ -39,29 +39,38 @@ Future<void> _openAccount(BuildContext context) async {
   if (nueva != null) bloc.add(AccountEvent.opened(nueva));
 }
 
-/// Muestra los ganchos que aún no tienen feature detrás (campana, WasiBot,
-/// "Ver todo"). Apagado: se ocultan en vez de avisar "próximamente". Las
-/// acciones rápidas se rigen por [HomeAction.ready].
+void _openMovements(BuildContext context, [Account? cuenta]) =>
+    context.push(AppRoutes.movimientos, extra: cuenta);
+
+/// Muestra los ganchos que aún no tienen feature detrás (campana, WasiBot).
+/// Apagado: se ocultan en vez de avisar "próximamente". Las acciones rápidas
+/// se rigen por [HomeAction.ready].
 const _showUnfinished = false;
 
-/// Inicio: saldo y movimientos del libro mayor (los trae [AccountBloc]).
+/// Inicio: un resumen. Las cuentas en el carrusel (tocar una abre sus
+/// movimientos), las acciones rápidas sobre la visible y los últimos
+/// movimientos de TODAS las cuentas, con "Ver más" al historial completo.
+/// Abrir cuenta está en el menú ⋮ y en la última tarjeta del carrusel.
 ///
-/// El resto de la pantalla (WasiBot, notificaciones, "Ver todo") sigue siendo
-/// un gancho sin feature detrás y está oculto ([_showUnfinished]). Enviar y
-/// recargar abren su flujo; cobrar y retirar están ocultos hasta que existan
-/// sus pantallas, y si se muestran avisan "próximamente".
+/// WasiBot y notificaciones siguen siendo ganchos sin feature detrás y están
+/// ocultos ([_showUnfinished]). Cobrar y retirar están ocultos hasta que
+/// existan sus pantallas, y si se muestran avisan "próximamente".
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  /// Distancia al final a la que se pide la siguiente página.
-  static const _prefetchExtent = 240.0;
+  void _onMenu(BuildContext context, HomeMenuOption option) {
+    switch (option) {
+      case HomeMenuOption.openAccount:
+        _openAccount(context);
+    }
+  }
 
   void _onAction(BuildContext context, HomeAction action) {
     switch (action) {
       case HomeAction.send:
         final cuenta = context.read<AccountBloc>().state.cuenta;
         if (cuenta == null) {
-          // Sin cuenta cargada no hay desde dónde enviar: se dice, no se calla.
+          // Sin cuenta cargada no hay desde dónde transferir: se dice.
           _showMessage(context, AppLocalizations.of(context).homeErrorGeneric);
         } else {
           // El flujo de envío se cierra con `go(home)` y no puede devolver un
@@ -103,39 +112,42 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _refresh(context),
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (n) {
-              if (n.metrics.extentAfter < _prefetchExtent) {
-                context.read<AccountBloc>().add(
-                  const AccountEvent.moreRequested(),
-                );
-              }
-              return false;
-            },
-            child: RememberedUserBuilder(
-              builder: (context, user) => ListView(
-                // Con poco contenido el pull-to-refresh igual debe poder usarse.
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  CuyCashSpacing.marginMobile,
-                  CuyCashSpacing.stackSm,
-                  CuyCashSpacing.marginMobile,
-                  CuyCashSpacing.stackLg,
-                ),
-                children: [
-                  HomeHeader(
-                    user: user,
-                    onNotifications: _showUnfinished
-                        ? () => _showComingSoon(context)
-                        : null,
-                  ),
-                  const SizedBox(height: CuyCashSpacing.stackMd),
-                  BlocBuilder<AccountBloc, AccountState>(
-                    builder: (context, state) =>
-                        _AccountBody(state: state, onAction: _onAction),
-                  ),
-                ],
+          child: RememberedUserBuilder(
+            builder: (context, user) => ListView(
+              // Con poco contenido el pull-to-refresh igual debe poder usarse.
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                CuyCashSpacing.marginMobile,
+                CuyCashSpacing.stackSm,
+                CuyCashSpacing.marginMobile,
+                CuyCashSpacing.stackLg,
               ),
+              children: [
+                HomeHeader(
+                  user: user,
+                  onNotifications: _showUnfinished
+                      ? () => _showComingSoon(context)
+                      : null,
+                  // Sin cuentas cargadas no hay a qué agregar otra.
+                  menu: BlocBuilder<AccountBloc, AccountState>(
+                    buildWhen: (a, b) =>
+                        a.status != b.status ||
+                        a.puedeAbrirOtra != b.puedeAbrirOtra,
+                    builder: (context, state) =>
+                        state.status == AccountStatus.ready
+                        ? HomeMenuButton(
+                            puedeAbrirCuenta: state.puedeAbrirOtra,
+                            onSelected: (o) => _onMenu(context, o),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(height: CuyCashSpacing.stackMd),
+                BlocBuilder<AccountBloc, AccountState>(
+                  builder: (context, state) =>
+                      _AccountBody(state: state, onAction: _onAction),
+                ),
+              ],
             ),
           ),
         ),
@@ -178,19 +190,16 @@ class _ReadyView extends StatelessWidget {
           const SizedBox(height: CuyCashSpacing.stackSm),
         ],
         if (state.cuentas.isNotEmpty) ...[
-          AccountsHeader(
-            cuentas: state.cuentas.length,
-            onOpenAccount: state.puedeAbrirOtra
-                ? () => _openAccount(context)
-                : null,
-          ),
-          const SizedBox(height: CuyCashSpacing.stackSm),
           AccountCarousel(
             cuentas: state.cuentas,
             seleccionada: state.seleccionada,
             onSelected: (i) =>
                 context.read<AccountBloc>().add(AccountEvent.selected(i)),
             onRename: (c) => RenameAccountSheet.show(context, c),
+            onOpen: (c) => _openMovements(context, c),
+            onOpenNew: state.puedeAbrirOtra
+                ? () => _openAccount(context)
+                : null,
           ),
           const SizedBox(height: CuyCashSpacing.stackMd),
         ],
@@ -210,40 +219,36 @@ class _ReadyView extends StatelessWidget {
                     l10n.homeMovementsTitle,
                     style: CuyCashTypography.titleMd,
                   ),
-                  // De qué cuenta son: la que se ve en el carrusel.
-                  if (state.cuenta case final c?)
-                    Text(
-                      accountShort(l10n, c),
-                      style: CuyCashTypography.bodyMd.copyWith(
-                        color: CuyCashColors.secondaryText,
-                      ),
+                  // Son de todas: cada fila dice de cuál.
+                  Text(
+                    l10n.homeMovementsAllAccounts,
+                    style: CuyCashTypography.bodyMd.copyWith(
+                      color: CuyCashColors.secondaryText,
                     ),
+                  ),
                 ],
               ),
             ),
-            if (_showUnfinished)
+            if (state.hayMasMovimientos)
               GhostButton(
-                label: l10n.homeSeeAll,
-                onPressed: () => _showComingSoon(context),
+                label: l10n.homeSeeMore,
+                onPressed: () => _openMovements(context),
               ),
           ],
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
-        // Al cambiar de cuenta la lista está vacía porque aún no llegó: se
-        // muestra la silueta, no "aún no tienes movimientos".
-        if (state.cargandoMovimientos)
+        // Mientras refresca se ve la silueta, no la lista vieja ni "aún no
+        // tienes movimientos".
+        if (state.refreshing && state.recientes.isEmpty)
           Semantics(
             label: l10n.homeLoading,
             liveRegion: true,
-            child: const ExcludeSemantics(child: MovementsSkeleton()),
+            child: const ExcludeSemantics(
+              child: MovementsSkeleton(rows: AccountBloc.recientesEnInicio),
+            ),
           )
         else
-          MovementsCard(movements: state.movimientos),
-        if (state.loadingMore)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: CuyCashSpacing.stackMd),
-            child: Center(child: CircularProgressIndicator()),
-          ),
+          MovementsCard(movements: state.recientes),
       ],
     );
   }

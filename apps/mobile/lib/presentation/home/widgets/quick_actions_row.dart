@@ -15,7 +15,7 @@ class QuickActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final actions = <(HomeAction, IconData, String)>[
-      (HomeAction.send, Icons.north_east, l10n.homeActionSend),
+      (HomeAction.send, Icons.swap_horiz, l10n.homeActionSend),
       (HomeAction.charge, Icons.qr_code_scanner, l10n.homeActionCharge),
       (HomeAction.topUp, Icons.add_circle_outline, l10n.homeActionTopUp),
       (HomeAction.withdraw, Icons.south_east, l10n.homeActionWithdraw),
