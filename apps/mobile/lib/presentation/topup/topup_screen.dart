@@ -208,6 +208,12 @@ class _TopUpScreenState extends State<TopUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // El depósito simulado es temporal: se dice sin rodeos.
+                InfoStrip(
+                  icon: Icons.science_outlined,
+                  text: l10n.topUpDemoNotice,
+                ),
+                const SizedBox(height: CuyCashSpacing.stackMd),
                 Text(l10n.topUpHeadline, style: CuyCashTypography.headlineSm),
                 const SizedBox(height: CuyCashSpacing.stackXs),
                 Text(

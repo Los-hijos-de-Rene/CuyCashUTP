@@ -16,7 +16,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-/// Abrir otra cuenta desde el carrusel, con el grafo `mock` real.
+/// Abrir otra cuenta desde "Mis cuentas" del inicio, con el grafo `mock`
+/// real.
 void main() {
   late AuthBloc auth;
 
@@ -58,14 +59,9 @@ void main() {
     return router;
   }
 
-  testWidgets('abrir una cuenta en dólares desde el carrusel', (tester) async {
+  testWidgets('abrir una cuenta en dólares desde "Mis cuentas"', (tester) async {
     await pumpApp(tester);
-    // Deslizar hasta la última página (3 cuentas + abrir).
-    for (var i = 0; i < 3; i++) {
-      await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
-      await tester.pumpAndSettle();
-    }
-    await tester.tap(find.text('Abrir otra cuenta'));
+    await tester.tap(find.text('Abrir cuenta'));
     await tester.pumpAndSettle();
 
     expect(find.text('¿Qué cuenta quieres abrir?'), findsOneWidget);

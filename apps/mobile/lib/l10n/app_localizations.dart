@@ -1462,17 +1462,17 @@ abstract class AppLocalizations {
   /// **'Cambiar el nombre de la cuenta'**
   String get homeRenameTooltip;
 
-  /// No description provided for @homeOpenAccountTitle.
+  /// No description provided for @homeAccountsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Abrir otra cuenta'**
-  String get homeOpenAccountTitle;
+  /// **'Mis cuentas'**
+  String get homeAccountsTitle;
 
-  /// No description provided for @homeOpenAccountHint.
+  /// No description provided for @homeOpenAccountCta.
   ///
   /// In es, this message translates to:
-  /// **'Ahorros, corriente o sueldo, en soles o dólares'**
-  String get homeOpenAccountHint;
+  /// **'Abrir cuenta'**
+  String get homeOpenAccountCta;
 
   /// No description provided for @renameAccountTitle.
   ///
@@ -1525,7 +1525,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeActionTopUp.
   ///
   /// In es, this message translates to:
-  /// **'Recargar'**
+  /// **'Depósito simulado'**
   String get homeActionTopUp;
 
   /// No description provided for @homeActionWithdraw.
@@ -2333,8 +2333,14 @@ abstract class AppLocalizations {
   /// No description provided for @topUpTitle.
   ///
   /// In es, this message translates to:
-  /// **'Recargar saldo'**
+  /// **'Depósito simulado'**
   String get topUpTitle;
+
+  /// No description provided for @topUpDemoNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ahora puedes sumar saldo de prueba desde aquí. Pronto podrás depositar como en cualquier banco: en un agente o ventanilla, o transfiriendo desde otra cuenta.'**
+  String get topUpDemoNotice;
 
   /// No description provided for @topUpHeadline.
   ///

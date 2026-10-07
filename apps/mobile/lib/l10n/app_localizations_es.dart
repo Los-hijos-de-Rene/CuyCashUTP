@@ -814,11 +814,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
 
   @override
-  String get homeOpenAccountTitle => 'Abrir otra cuenta';
+  String get homeAccountsTitle => 'Mis cuentas';
 
   @override
-  String get homeOpenAccountHint =>
-      'Ahorros, corriente o sueldo, en soles o dólares';
+  String get homeOpenAccountCta => 'Abrir cuenta';
 
   @override
   String get renameAccountTitle => 'Nombre de la cuenta';
@@ -846,7 +845,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeActionCharge => 'Cobrar';
 
   @override
-  String get homeActionTopUp => 'Recargar';
+  String get homeActionTopUp => 'Depósito simulado';
 
   @override
   String get homeActionWithdraw => 'Retirar';
@@ -1333,7 +1332,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos compartir la constancia. Inténtalo de nuevo.';
 
   @override
-  String get topUpTitle => 'Recargar saldo';
+  String get topUpTitle => 'Depósito simulado';
+
+  @override
+  String get topUpDemoNotice =>
+      'Por ahora puedes sumar saldo de prueba desde aquí. Pronto podrás depositar como en cualquier banco: en un agente o ventanilla, o transfiriendo desde otra cuenta.';
 
   @override
   String get topUpHeadline => '¿Cuánto quieres recargar?';
