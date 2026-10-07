@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../home_action.dart';
+import 'movements_skeleton.dart';
 
 /// Silueta del inicio mientras llega la cuenta: saldo, acciones y movimientos
 /// en el mismo sitio que ocuparán, para que la pantalla no salte al cargar.
 class HomeSkeleton extends StatelessWidget {
   const HomeSkeleton({super.key});
-
-  static const _movementRows = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -62,49 +61,9 @@ class HomeSkeleton extends StatelessWidget {
             const SizedBox(height: CuyCashSpacing.stackLg),
             const SkeletonBox(width: 160, height: 18),
             const SizedBox(height: CuyCashSpacing.stackSm + 4),
-            SurfaceCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (var i = 0; i < _movementRows; i++) ...[
-                    if (i > 0)
-                      const Divider(height: 1, color: CuyCashColors.divider),
-                    const _MovementRowSkeleton(),
-                  ],
-                ],
-              ),
-            ),
+            const MovementsSkeleton(),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _MovementRowSkeleton extends StatelessWidget {
-  const _MovementRowSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(CuyCashSpacing.marginMobile),
-      child: Row(
-        children: [
-          SkeletonBox(width: 40, height: 40, shape: BoxShape.circle),
-          SizedBox(width: CuyCashSpacing.stackSm + 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SkeletonBox(width: 140),
-                SizedBox(height: CuyCashSpacing.stackXs + 2),
-                SkeletonBox(width: 90, height: 10),
-              ],
-            ),
-          ),
-          SizedBox(width: CuyCashSpacing.stackSm),
-          SkeletonBox(width: 64),
-        ],
       ),
     );
   }

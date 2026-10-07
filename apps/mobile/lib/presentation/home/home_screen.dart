@@ -15,6 +15,7 @@ import 'widgets/home_header.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/insight_card.dart';
 import 'widgets/movements_card.dart';
+import 'widgets/movements_skeleton.dart';
 import 'widgets/quick_actions_row.dart';
 import 'widgets/rename_account_sheet.dart';
 
@@ -209,7 +210,16 @@ class _ReadyView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
-        MovementsCard(movements: state.movimientos),
+        // Al cambiar de cuenta la lista está vacía porque aún no llegó: se
+        // muestra la silueta, no "aún no tienes movimientos".
+        if (state.cargandoMovimientos)
+          Semantics(
+            label: l10n.homeLoading,
+            liveRegion: true,
+            child: const ExcludeSemantics(child: MovementsSkeleton()),
+          )
+        else
+          MovementsCard(movements: state.movimientos),
         if (state.loadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: CuyCashSpacing.stackMd),
