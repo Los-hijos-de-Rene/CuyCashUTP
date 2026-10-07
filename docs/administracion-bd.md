@@ -114,7 +114,7 @@ código) y las excepciones. No se registran PIN, OTP ni tokens.
 - Migraciones con Alembic antes de tener datos que no se puedan recrear.
 - Alertas automáticas (hoy el monitoreo es a demanda). Neon envía alertas de
   consumo en planes de pago.
-- Los tests de concurrencia (`pytest -m postgres`) se ejecutan en el job *Concurrencia (Postgres real)* de *CI backend* (GitHub Actions, Postgres 16) desde el 2026-10-07; la primera corrida pasó (3 de 3). Lo que sigue
+- Los tests de concurrencia (`pytest -m postgres`) se ejecutan con toda la suite en el job *Pruebas (PostgreSQL 16)* de *CI backend* (GitHub Actions) desde el 2026-10-07, en verde. Lo que sigue
   sin medir es el rendimiento bajo carga (SLA de 200 ms).
 
 ## Evidencias a capturar para el PDF

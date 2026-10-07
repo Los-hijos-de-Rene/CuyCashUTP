@@ -129,7 +129,7 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 
 | Workflow | Archivo | Se dispara | Qué hace |
 |---|---|---|---|
-| CI backend | `.github/workflows/ci-backend.yml` | PR que toca `services/api/**` (y el CD lo llama en `main`) | `pytest` sobre SQLite **y** las pruebas de concurrencia contra un Postgres 16 real (servicio de Actions) |
+| CI backend | `.github/workflows/ci-backend.yml` | PR que toca `services/api/**` (y el CD lo llama en `main`) | **Toda** la suite `pytest` contra PostgreSQL 16 (servicio de Actions), el motor de producción, incluida la concurrencia; en local la misma suite corre sobre SQLite |
 | CI app | `.github/workflows/ci-app.yml` | PR o push que toca `apps/**`, `packages/**` | `flutter analyze` y los tests de la app y los dos paquetes |
 | CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
@@ -247,10 +247,34 @@ Otras comprobaciones del mismo día: `GET /openapi.json` lista 29 rutas, entre
 ellas `/v1/movements` y `/v1/me/alias` (lo último fusionado está en
 producción); `GET /health` respondió en 0,68 s en frío y 0,30 s en caliente.
 
-### Ejecución después de desplegar este avance
+### Ejecución del 2026-10-07 16:45 UTC (con #16 desplegado, commit `7afe54a`)
 
-> Pegar aquí la salida de `scripts/smoke_prod.sh` tras el despliegue; se
-> espera `== 0 fallo(s)` y `"database":"postgresql"` en `/health/db`.
+```
+== https://cuycashutp.onrender.com  2026-10-07T16:45:43Z
+OK    API viva (/health) (200)
+      versión desplegada: 7afe54a4fd03fc16413571ebe2b8938595bf5f7c
+OK    Base de datos responde (/health/db) (ok)
+      {"status":"ok","database":"postgresql","latency_ms":1573.6}
+OK    HTTP redirige a HTTPS (301)
+OK    Ruta protegida sin token (401)
+OK    Token inventado (401)
+OK    cabecera strict-transport-security
+OK    cabecera x-content-type-options
+OK    cabecera x-frame-options
+OK    sin CORS abierto
+INFO  latencia de /health en caliente: 0.300833s
+== 0 fallo(s)
+```
+
+Los 1 573 ms de `/health/db` son Neon despertando del reposo (scale to zero):
+la consulta llegó a una base dormida y **respondió bien**, sin el 500 de la
+corrida anterior. Es la confirmación práctica de `pool_pre_ping`.
+
+### Ejecución por el pipeline
+
+> Al fusionar el PR del pipeline, el job *Desplegar en Render* de *CD
+> backend* corre este mismo script tras desplegar; su salida queda en el log
+> de la ejecución en *Actions* (capturarla para el PDF).
 
 ### Capturas para el PDF
 

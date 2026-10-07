@@ -235,7 +235,7 @@ dos lecturas ven el mismo saldo y las dos aprueban.
 Es bloqueo por fila: dos cuentas distintas no se estorban, así que el SLA de
 200 ms no debería degradarse bajo concurrencia (no hay medición automatizada de
 esa cifra). `FOR UPDATE` solo tiene efecto en Postgres; los tests de
-concurrencia llevan la marca `postgres` y se omiten en SQLite; se ejecutan en el job *Concurrencia (Postgres real)* de *CI backend* (GitHub Actions, Postgres 16) desde el 2026-10-07; la primera corrida pasó (3 de 3).
+concurrencia llevan la marca `postgres` y se omiten en SQLite; se ejecutan con toda la suite en el job *Pruebas (PostgreSQL 16)* de *CI backend* (GitHub Actions) desde el 2026-10-07, en verde.
 
 Además, `accounts` lleva un `CHECK (tipo = 'sistema' OR saldo_disponible >= 0)`
 como última defensa contra el doble gasto. La cuenta de sistema —contraparte de

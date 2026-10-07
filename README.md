@@ -41,8 +41,8 @@ Ver [`docs/despliegue.md`](docs/despliegue.md).
 antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el
 dashboard web.
 
-**Estado de la verificación.** 1 172 pruebas automatizadas en verde (299 del
-backend por HTTP, 838 de la app, 35 de los paquetes), incluidas pruebas de
+**Estado de la verificación.** 1 178 pruebas automatizadas en verde (305 del
+backend por HTTP, todas contra PostgreSQL en el CI, 838 de la app, 35 de los paquetes), incluidas pruebas de
 seguridad web (SQLi, XSS, CORS) y de consistencia del DDL. Plan completo en
 [`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). Las 3 pruebas de
 concurrencia corren contra Postgres real en el CI. **Sin ejecutar**: el

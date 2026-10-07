@@ -4,9 +4,9 @@
 criterio se da por bueno. Incluye las pruebas de seguridad web (criterio 2.3)
 y las de despliegue (criterio 3.3).
 
-Estado al 2026-10-07: **1 172 pruebas automatizadas en verde** (299 del
-backend, 838 de la app, 23 de `core_kernel`, 12 de `design_system`) y 5
-omitidas a propósito (ver §7).
+Estado al 2026-10-07: **1 178 pruebas automatizadas en verde** (305 del
+backend, 838 de la app, 23 de `core_kernel`, 12 de `design_system`) y 2
+omitidas a propósito (los frecuentes ocultos, §7).
 
 ---
 
@@ -29,9 +29,9 @@ antifraude, conciliación) y el dashboard web.
 | **Bloc / estado** | Flujos de pantalla sin UI: carga, errores, paginación, carreras | `bloc_test` | `apps/mobile/test/presentation/**/bloc*` | Incluido en 838 |
 | **Widgets** | Pantallas: qué se ve, qué se habilita, a dónde navega | `flutter_test` | `apps/mobile/test/presentation` | 54 archivos |
 | **Flujo por el router real** | Recorridos completos con el grafo `mock` (ingresar, enviar, depositar, abrir cuenta) | `flutter_test` + `createAppRouter` | `…/send_flow_test.dart`, `topup_flow_test.dart`, `open_account_flow_test.dart` | 4 archivos |
-| **API (integración)** | Cada endpoint por HTTP contra una base real (SQLite en memoria): contrato, reglas, errores | `pytest` + `httpx` | `services/api/tests` | 299 |
+| **API (integración)** | Cada endpoint por HTTP contra una base real: **PostgreSQL 16 en el CI** (el motor de producción), SQLite en memoria en local | `pytest` + `httpx` | `services/api/tests` | 305 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
-| **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 40 |
+| **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
 | **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en *CI backend*; primera corrida 2026-10-07: 3 de 3) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
@@ -49,7 +49,7 @@ antifraude, conciliación) y el dashboard web.
 | Movimientos (por cuenta y combinados) | `test_cuentas_y_movimientos.py`, `test_movimientos_combinados.py` | 30 |
 | Envíos y depósito | `test_transferencias.py`, `test_envio_por_cuenta.py` | 44 |
 | Directorio y frecuentes | `test_directorio_y_frecuentes.py` | 44 |
-| Seguridad transversal | `test_seguridad_web.py`, `test_sesion_requerida.py` | 40 |
+| Seguridad transversal | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
 | Base de datos y operación | `test_consistencia_ddl.py`, `test_reset_schema.py` | 7 |
 
 ## 4. Pruebas de seguridad web
@@ -72,6 +72,7 @@ error controlado, nunca un 500.
 | **Caché** de datos privados | 1 | `Cache-Control: no-store` en `/v1` |
 | **Fuga de detalles** en errores | 1 | Sin `traceback`, `sqlalchemy`, SQL ni motor |
 | **Rutas sin sesión** (`test_sesion_requerida.py`) | todas las `/v1` | 401 salvo las 10 públicas declaradas |
+| **Entradas más largas que su columna** (DNI de 50 dígitos, `X-Device-Id` de 500, identificador de OTP de 1000) | 3 | 422 en la entrada. Antes daban **500 en Postgres** (SQLite no hace cumplir el largo de `VARCHAR`): lo encontró el CI |
 
 Ejecutar solo estas: `cd services/api && .venv/bin/python -m pytest -q tests/test_seguridad_web.py tests/test_sesion_requerida.py`.
 
@@ -97,7 +98,8 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#8-evidencia-de-prueba
 | Entorno | App | API | Base | Uso |
 |---|---|---|---|---|
 | Local / CI | flavor `mock` (repos en memoria) | — | — | Suite de la app |
-| Local | — | `pytest` | SQLite en memoria, una base nueva por prueba | Suite del backend |
+| Local | — | `pytest` | SQLite en memoria, una base nueva por prueba | Suite del backend (rápida, sin Docker) |
+| CI | — | `pytest` | PostgreSQL 16 de servicio, esquema recreado por prueba | La misma suite, con el motor de producción |
 | Local integrado | flavor `local` | uvicorn :8001 | SQLite en archivo | Guion manual |
 | Concurrencia | — | `pytest -m postgres` | Postgres cuyo nombre termina en `_test` | Bloqueo de fila |
 | Producción | flavor `production` | Render | Neon | Humo y demostración |
