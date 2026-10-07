@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_type.dart';
@@ -11,6 +13,7 @@ import 'package:cuycash/presentation/app/app_routes.dart';
 import 'package:cuycash/presentation/transfer/bloc/transfer_bloc.dart';
 import 'package:cuycash/presentation/transfer/recipient_screen.dart';
 import 'package:cuycash/presentation/transfer/widgets/frequent_row.dart';
+import 'package:cuycash/presentation/transfer/widgets/recipient_skeleton.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -188,6 +191,31 @@ void main() {
     expect(repo.busquedas, isEmpty);
   });
 
+  testWidgets('mientras busca muestra la silueta, no un indicador circular', (
+    t,
+  ) async {
+    final enVuelo = Completer<Result<TransferFailure, RecipientDirectory>>();
+    addTearDown(() {
+      if (!enVuelo.isCompleted) {
+        enVuelo.complete(right(directorioDePrueba));
+      }
+    });
+    await pump(t, resolver: (_) => enVuelo.future);
+    await t.enterText(find.byType(TextField), '87654321');
+    // El skeleton late sin fin: `pumpAndSettle` no terminaría.
+    await t.pump();
+    await t.pump();
+
+    expect(find.byType(RecipientSkeleton), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.bySemanticsLabel('Buscando…'), findsOneWidget);
+
+    enVuelo.complete(right(directorioDePrueba));
+    await t.pumpAndSettle();
+    expect(find.byType(RecipientSkeleton), findsNothing);
+    expect(find.text('J*** M*** R***'), findsOneWidget);
+  });
+
   testWidgets('tocar una tarjeta lleva al monto con esa cuenta', (t) async {
     final bloc = await pump(t);
     await t.enterText(find.byType(TextField), '87654321');
@@ -252,7 +280,9 @@ void main() {
     await t.tap(find.text('Mamá'));
     await t.pumpAndSettle();
     expect(
-      find.text('Ese frecuente recibe en US\$. Envía desde una cuenta en US\$.'),
+      find.text(
+        'Ese frecuente recibe en US\$. Envía desde una cuenta en US\$.',
+      ),
       findsOneWidget,
     );
     expect(find.text('MONTO'), findsNothing);
@@ -292,30 +322,30 @@ void main() {
     expect(find.text('MONTO'), findsNothing);
   });
 
-  testWidgets('tras un frecuente directo, al volver no quedan tarjetas viejas', (
-    t,
-  ) async {
-    await pump(t, frecuentes: [_frecuente(cuenta: cuentaDeDestinoDePrueba)]);
-    await t.enterText(find.byType(TextField), '87654321');
-    await t.pumpAndSettle();
-    expect(find.text('Corriente · S/ · ••••5510'), findsOneWidget);
-    await t.tap(find.text('Mamá'));
-    await t.pumpAndSettle();
-    expect(find.text('MONTO'), findsOneWidget);
-    expect(bloc.state.destinatario?.cuenta.cuentaId, 'acc-ext-1');
-    final contexto = t.element(find.text('MONTO'));
-    GoRouter.of(contexto).pop();
-    await t.pumpAndSettle();
-    expect(find.text('Corriente · S/ · ••••5510'), findsNothing);
-    expect(find.widgetWithText(TextField, '87654321'), findsNothing);
-  });
+  testWidgets(
+    'tras un frecuente directo, al volver no quedan tarjetas viejas',
+    (t) async {
+      await pump(t, frecuentes: [_frecuente(cuenta: cuentaDeDestinoDePrueba)]);
+      await t.enterText(find.byType(TextField), '87654321');
+      await t.pumpAndSettle();
+      expect(find.text('Corriente · S/ · ••••5510'), findsOneWidget);
+      await t.tap(find.text('Mamá'));
+      await t.pumpAndSettle();
+      expect(find.text('MONTO'), findsOneWidget);
+      expect(bloc.state.destinatario?.cuenta.cuentaId, 'acc-ext-1');
+      final contexto = t.element(find.text('MONTO'));
+      GoRouter.of(contexto).pop();
+      await t.pumpAndSettle();
+      expect(find.text('Corriente · S/ · ••••5510'), findsNothing);
+      expect(find.widgetWithText(TextField, '87654321'), findsNothing);
+    },
+  );
 
   testWidgets('con el envío sellado, tocar una tarjeta o un frecuente no hace '
       'nada', (t) async {
     final repo = FakeTransferRepository(
-      alEnviar: (_) async => left(const GlobalFailure.server(
-        TransferFailure.network(),
-      )),
+      alEnviar: (_) async =>
+          left(const GlobalFailure.server(TransferFailure.network())),
     );
     final bloc = await pump(
       t,

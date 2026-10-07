@@ -1,3 +1,4 @@
+import 'package:cuycash/core/config/feature_toggles.dart';
 import 'package:cuycash/core/injection/envs/mock_dependencies.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
@@ -91,57 +92,88 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('la pantalla de monto ofrece guardar como frecuente', (
-    tester,
-  ) async {
-    await pumpApp(tester);
-    await tester.tap(find.text('Enviar'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '87654321');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Ahorros · S/ · ••••7732'));
-    await tester.pumpAndSettle();
+  /// Con los frecuentes ocultos ([FeatureToggles.frecuentesEnEnvio]) estas
+  /// pruebas se saltan; al volver a mostrarlos corren solas.
+  const ocultos = !FeatureToggles.frecuentesEnEnvio;
 
-    expect(find.text('Guardar como frecuente'), findsOneWidget);
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-  });
+  testWidgets(
+    'con los frecuentes ocultos no hay fila ni interruptor',
+    skip: !ocultos,
+    (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Enviar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Frecuentes'), findsNothing);
+      expect(find.byType(FrequentRow), findsNothing);
 
-  testWidgets('guardar como frecuente: aparece la próxima vez y un toque '
-      'lleva directo al monto', (tester) async {
-    await pumpApp(tester);
-    await tester.tap(find.text('Enviar'));
-    await tester.pumpAndSettle();
-    // Sin frecuentes todavía no hay fila.
-    expect(find.text('Frecuentes'), findsNothing);
+      await tester.enterText(find.byType(TextField), '87654321');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ahorros · S/ · ••••7732'));
+      await tester.pumpAndSettle();
 
-    await enviarCincuenta(tester, guardar: true);
-    expect(find.text('¡Envío realizado!'), findsOneWidget);
-    expect(
-      find.text(
-        'El envío se realizó, pero no pudimos guardar a esta persona como '
-        'frecuente.',
-      ),
-      findsNothing,
-    );
+      expect(find.text('Monto del envío'), findsOneWidget);
+      expect(find.text('Guardar como frecuente'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+    },
+  );
 
-    await tester.tap(find.text('Volver al inicio'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Enviar'));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'la pantalla de monto ofrece guardar como frecuente',
+    skip: ocultos,
+    (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Enviar'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '87654321');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ahorros · S/ · ••••7732'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Frecuentes'), findsOneWidget);
-    await tester.tap(
-      find.descendant(
-        of: find.byType(FrequentRow),
-        matching: find.text('Carlos'),
-      ),
-    );
-    await tester.pumpAndSettle();
+      expect(find.text('Guardar como frecuente'), findsOneWidget);
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+    },
+  );
 
-    // Un frecuente con cuenta pasa directo al monto, que muestra la cuenta.
-    expect(find.text('Monto del envío'), findsOneWidget);
-    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
-  });
+  testWidgets(
+    'guardar como frecuente: aparece la próxima vez y un toque '
+    'lleva directo al monto',
+    skip: ocultos,
+    (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Enviar'));
+      await tester.pumpAndSettle();
+      // Sin frecuentes todavía no hay fila.
+      expect(find.text('Frecuentes'), findsNothing);
+
+      await enviarCincuenta(tester, guardar: true);
+      expect(find.text('¡Envío realizado!'), findsOneWidget);
+      expect(
+        find.text(
+          'El envío se realizó, pero no pudimos guardar a esta persona como '
+          'frecuente.',
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Volver al inicio'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enviar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Frecuentes'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(FrequentRow),
+          matching: find.text('Carlos'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Un frecuente con cuenta pasa directo al monto, que muestra la cuenta.
+      expect(find.text('Monto del envío'), findsOneWidget);
+      expect(find.text('Ahorros · ••••7732'), findsOneWidget);
+    },
+  );
 
   testWidgets('sin encender el interruptor el destinatario no se guarda', (
     tester,
