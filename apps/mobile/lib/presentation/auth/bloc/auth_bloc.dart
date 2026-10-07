@@ -132,7 +132,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final session = event.session;
     await _device.saveUser(RememberedUser(
       dni: session.identifier,
-      fullName: session.fullName ?? session.identifier,
+      // Nunca el DNI como nombre: si aún no llegó, vacío. Al activar, la
+      // sesión trae el nombre y `AppRoot` lo guarda.
+      fullName: session.fullName ?? '',
       alias: session.alias ?? '@${session.identifier}',
     ));
     await _actions.activate(session, otpTicket: event.otpTicket);

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../feature/account/domain/movement.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../app/app_routes.dart';
+import '../../movement/contraparte_visible.dart';
 import '../movement_amount_label.dart';
 
 /// Lista de últimos movimientos del libro mayor.
@@ -105,7 +106,7 @@ class _MovementRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    movement.contraparte ?? l10n.homeMovementFallbackTitle,
+                    contraparteVisible(movement) ?? l10n.homeMovementFallbackTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: CuyCashTypography.bodyMd.copyWith(

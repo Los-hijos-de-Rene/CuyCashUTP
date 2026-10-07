@@ -28,6 +28,24 @@ AuthBloc buildBloc(MemoryAuthRepository repo, {MemoryDeviceStore? store}) {
 void main() {
   const session = AuthSession(userId: 'u', identifier: '12345678');
 
+  test(
+    'verificar el dispositivo sin nombre en la sesión NO guarda el DNI como '
+    'nombre',
+    () async {
+      final store = MemoryDeviceStore();
+      final bloc = buildBloc(MemoryAuthRepository(), store: store);
+      addTearDown(bloc.close);
+
+      bloc.add(const AuthEvent.deviceVerified(session, 'ticket'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final guardado = await store.readUser();
+      expect(guardado?.dni, '12345678');
+      expect(guardado?.fullName, isNot('12345678'));
+      expect(guardado?.fullName, '');
+    },
+  );
+
   test('estado inicial sin sesión → AuthUnauthenticated', () {
     final bloc = buildBloc(MemoryAuthRepository());
     expect(bloc.state, isA<AuthUnauthenticated>());
