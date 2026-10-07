@@ -15,6 +15,7 @@ import '../app/app_routes.dart';
 import 'bloc/transfer_bloc.dart';
 import 'transfer_error_text.dart';
 import 'widgets/recipient_account_card.dart';
+import 'widgets/recipient_skeleton.dart';
 
 /// Paso 1 del envío: a qué cuenta. Se busca por DNI (al completar los 8
 /// dígitos) o por alias (con "Buscar" o la tecla del teclado: no se busca
@@ -266,11 +267,7 @@ class _RecipientScreenState extends State<RecipientScreen> {
                     const SizedBox(height: CuyCashSpacing.stackMd),
                   ],
                   if (state.status == TransferStatus.resolving)
-                    Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: l10n.transferSearching,
-                      ),
-                    ),
+                    RecipientSkeleton(semanticsLabel: l10n.transferSearching),
                   if (directorio != null)
                     ..._cuentas(context, state, directorio),
                   if (frecuentes != null) ...[

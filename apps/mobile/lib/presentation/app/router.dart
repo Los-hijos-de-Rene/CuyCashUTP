@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/feature_toggles.dart';
 import '../../core/injection/app_dependencies.dart';
 import '../../core/injection/modules/account_module.dart';
 import '../../core/injection/modules/beneficiary_module.dart';
@@ -256,7 +257,10 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
           create: (_) => TransferBloc(
             TransferModule.create(deps),
             pending: TransferModule.pending(deps),
-            beneficiaries: BeneficiaryModule.create(deps),
+            // Sin acciones de frecuentes, el monto no ofrece guardarlo.
+            beneficiaries: FeatureToggles.frecuentesEnEnvio
+                ? BeneficiaryModule.create(deps)
+                : null,
             // Las claves pendientes son de ESTE usuario y de nadie más.
             userId: switch (authBloc.state) {
               AuthAuthenticated(:final session) => session.userId,
@@ -274,10 +278,13 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
               if (state.extra case final Account cuenta) {
                 return RecipientScreen(
                   cuenta: cuenta,
-                  frecuentes: (onSelected) => FrequentSection(
-                    actions: BeneficiaryModule.create(deps),
-                    onSelected: onSelected,
-                  ),
+                  // Sin builder, la pantalla no pinta la fila de frecuentes.
+                  frecuentes: FeatureToggles.frecuentesEnEnvio
+                      ? (onSelected) => FrequentSection(
+                          actions: BeneficiaryModule.create(deps),
+                          onSelected: onSelected,
+                        )
+                      : null,
                 );
               }
               return const SplashScreen();

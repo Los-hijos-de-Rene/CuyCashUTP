@@ -28,6 +28,9 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 - Recarga de saldo: cash-in **simulado** contra una cuenta de sistema (la caja
   de CuyCash), la única que puede quedar en negativo.
 - Frecuentes por cuenta (tocar uno va directo al monto), detalle de movimiento y constancia compartible.
+  Los frecuentes están **ocultos** en el envío (`FeatureToggles.frecuentesEnEnvio`
+  en `core/config/feature_toggles.dart`): el código, sus pruebas y el backend
+  siguen; mostrarlos de nuevo es cambiar ese `false`.
 - Perfil: datos personales (solo lectura), alias, cambio de PIN con sesión
   abierta (cierra los otros teléfonos), dispositivos vinculados y acceso
   biométrico real: la huella libera una credencial emitida por el servidor
