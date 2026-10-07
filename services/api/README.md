@@ -41,6 +41,17 @@ cp .env.example .env
 docker compose up --build          # API en :8001, Postgres en :5432
 ```
 
+Con el KYC facial real (Postgres + API + KYC), con el repo `CuyCashKYC`
+clonado junto a `CuyCashUTP`:
+
+```sh
+docker compose --profile kyc up --build   # + KYC en 127.0.0.1:8000
+```
+
+La API llama al KYC por la red interna (`http://kyc:8000`) con una clave
+compartida solo entre los dos contenedores; la app nunca habla con el KYC.
+La primera construcción del KYC tarda (TensorFlow y los pesos de los modelos).
+
 Documentación interactiva: `http://localhost:8001/docs`.
 
 Desde el emulador de Android la IP del host es `10.0.2.2`; desde un teléfono

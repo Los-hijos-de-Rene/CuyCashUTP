@@ -10,41 +10,27 @@ import '../domain/kyc_repository.dart';
 import '../domain/liveness_challenge.dart';
 import '../domain/liveness_step.dart';
 
-/// Impl real contra el microservicio de KYC facial (FastAPI).
+/// Impl real del KYC facial, a través del proxy de `services/api`
+/// (`/v1/kyc/...`).
 ///
-/// ATENCIÓN — la `X-API-Key` viaja desde la app. Todo lo que se compila en el
-/// binario es extraíble, así que esta clave debe considerarse pública: sirve
-/// para la demo, NO para producción. El destino correcto es un backend propio
-/// que guarde la clave y llame al servicio en nombre del usuario; mientras
-/// tanto, la app habla directo. Ver `AppEnv.kycApiKey`.
+/// La app ya NO conoce la API key del microservicio: la agrega el backend, que
+/// es el único que la guarda. Por eso este repositorio usa el mismo `Dio` que
+/// el resto de las features (con `X-Device-Id`) y no uno propio con clave.
 class HttpKycRepository implements KycRepository {
-  HttpKycRepository({required Dio dio}) : _dio = dio;
-
-  /// Construye el cliente con la base y la key ya puestas.
-  factory HttpKycRepository.withConfig({
-    required String baseUrl,
-    required String apiKey,
-    Duration timeout = const Duration(seconds: 30),
-  }) =>
-      HttpKycRepository(
-        dio: Dio(BaseOptions(
-          baseUrl: baseUrl,
-          headers: {'X-API-Key': apiKey},
-          connectTimeout: timeout,
-          receiveTimeout: timeout,
-          sendTimeout: timeout,
-          // Los 4xx se leen como respuesta, no como excepción: el servicio
-          // distingue con ellos casos de negocio (token vencido, tarea fuera
-          // de orden) que hay que mapear a failures concretos.
-          validateStatus: (status) => status != null && status < 500,
-        )),
-      );
+  HttpKycRepository({
+    required Dio dio,
+    this.verifyTimeout = const Duration(seconds: 120),
+  }) : _dio = dio;
 
   final Dio _dio;
 
-  static const _challengePath = '/api/v1/liveness/challenge';
-  static const _evaluatePath = '/api/v1/liveness/evaluate';
-  static const _verifyFullPath = '/api/v1/identity/verify-full';
+  /// `verify-full` corre varios modelos en CPU (detección, embeddings,
+  /// MediaPipe) y, en un servicio recién despertado, además los carga. Su
+  /// espera es la de esa llamada, no la general del cliente.
+  final Duration verifyTimeout;
+
+  static const _challengePath = '/v1/kyc/liveness/challenge';
+  static const _verifyFullPath = '/v1/kyc/identity/verify-full';
 
   @override
   FutureResult<KycFailure, LivenessChallenge> requestChallenge() =>
@@ -65,7 +51,7 @@ class HttpKycRepository implements KycRepository {
         for (final raw in rawSteps) {
           final step = raw is String ? LivenessStep.fromWire(raw) : null;
           // Una tarea que esta versión no conoce invalida el desafío entero:
-          // pedirle al usuario algo que no sabemos dibujar sería peor.
+          // pedirle al usuario algo que no sabemos guiar sería peor.
           if (step == null) {
             return left(
                 const GlobalFailure.server(KycFailure.invalidResponse()));
@@ -77,37 +63,6 @@ class HttpKycRepository implements KycRepository {
           token: token,
           steps: steps,
           expiresAt: DateTime.now().add(Duration(seconds: expiresIn)),
-        ));
-      });
-
-  @override
-  FutureResult<KycFailure, StepEvaluation> evaluateStep({
-    required String token,
-    required LivenessStep step,
-    required List<String> framesBase64,
-  }) =>
-      _guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          _evaluatePath,
-          data: {
-            'token': token,
-            'step': step.wireName,
-            'frames_base64': framesBase64,
-          },
-        );
-        final failure = _failureFor(response);
-        if (failure != null) return left(GlobalFailure.server(failure));
-
-        final data = response.data;
-        final passed = data?['passed'];
-        if (passed is! bool) {
-          return left(const GlobalFailure.server(KycFailure.invalidResponse()));
-        }
-        return right(StepEvaluation(
-          step: step,
-          passed: passed,
-          reason: data?['reason'] as String? ?? '',
-          framesAnalyzed: data?['frames_analyzed'] as int? ?? 0,
         ));
       });
 
@@ -133,8 +88,14 @@ class HttpKycRepository implements KycRepository {
           'liveness_frames': payload,
         });
 
-        final response =
-            await _dio.post<Map<String, dynamic>>(_verifyFullPath, data: form);
+        final response = await _dio.post<Map<String, dynamic>>(
+          _verifyFullPath,
+          data: form,
+          options: Options(
+            sendTimeout: verifyTimeout,
+            receiveTimeout: verifyTimeout,
+          ),
+        );
         final failure = _failureFor(response);
         if (failure != null) return left(GlobalFailure.server(failure));
 
@@ -161,21 +122,11 @@ class HttpKycRepository implements KycRepository {
     if (status == 401 || status == 403) return const KycFailure.unauthorized();
     if (status != 400) return const KycFailure.serviceUnavailable();
 
-    // El servicio distingue tres casos de negocio dentro del mismo 400, y solo
-    // por el texto del detalle. Es frágil, pero es el contrato que hay.
+    // El servicio distingue el token vencido solo por el texto del detalle.
+    // Es frágil, pero es el contrato que hay.
     final detail = (response.data?['detail'] ?? '').toString().toLowerCase();
     if (detail.contains('inválido') || detail.contains('expirado')) {
       return const KycFailure.challengeExpired();
-    }
-    if (detail.contains('ya fue completado')) {
-      return const KycFailure.challengeCompleted();
-    }
-    if (detail.contains('se esperaba')) {
-      final expected = LivenessStep.values.firstWhere(
-        (step) => detail.contains(step.wireName),
-        orElse: () => LivenessStep.parpadeo,
-      );
-      return KycFailure.stepOutOfOrder(expected);
     }
     return const KycFailure.invalidResponse();
   }

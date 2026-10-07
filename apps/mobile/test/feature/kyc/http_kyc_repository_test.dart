@@ -45,18 +45,30 @@ void main() {
 
   setUp(() {
     adapter = _FakeAdapter();
+    // Como el `Dio` autenticado de la app: base del backend, `X-Device-Id`,
+    // y SIN ninguna clave del microservicio.
     final dio = Dio(BaseOptions(
-      baseUrl: 'http://10.0.2.2:8000',
-      headers: {'X-API-Key': 'demo'},
+      baseUrl: 'http://10.0.2.2:8001',
+      headers: {'X-Device-Id': 'device-1'},
       validateStatus: (status) => status != null && status < 500,
     ))..httpClientAdapter = adapter;
     repo = HttpKycRepository(dio: dio);
   });
 
+  test('habla con el proxy del backend, no con el microservicio', () async {
+    adapter.body = {'token': 't', 'steps': ['izquierda'], 'expires_in': 180};
+
+    await repo.requestChallenge();
+
+    expect(adapter.lastRequest?.path, '/v1/kyc/liveness/challenge');
+    // La clave la agrega el backend: la app no debe conocerla.
+    expect(adapter.lastRequest?.headers.containsKey('X-API-Key'), isFalse);
+  });
+
   test('el desafío se lee con sus tareas en el orden del servidor', () async {
     adapter.body = {
       'token': 'w9xQ',
-      'steps': ['abajo', 'izquierda', 'parpadeo'],
+      'steps': ['derecha', 'parpadeo'],
       'expires_in': 180,
     };
 
@@ -64,11 +76,7 @@ void main() {
         (await repo.requestChallenge()).getRight().toNullable()!;
 
     expect(challenge.token, 'w9xQ');
-    expect(challenge.steps, [
-      LivenessStep.abajo,
-      LivenessStep.izquierda,
-      LivenessStep.parpadeo,
-    ]);
+    expect(challenge.steps, [LivenessStep.derecha, LivenessStep.parpadeo]);
   });
 
   test('una tarea desconocida invalida el desafío en vez de adivinarse',
@@ -79,7 +87,7 @@ void main() {
       'expires_in': 180,
     };
 
-    // Pedirle al usuario algo que la app no sabe dibujar sería peor que fallar.
+    // Pedirle al usuario algo que la app no sabe guiar sería peor que fallar.
     expect(failureOf(await repo.requestChallenge()), isA<InvalidResponse>());
   });
 
@@ -91,7 +99,8 @@ void main() {
     expect(failureOf(await repo.requestChallenge()), isA<Unauthorized>());
   });
 
-  test('500 y la red caída dan el mismo failure de servicio', () async {
+  test('503 del proxy y la red caída dan el mismo failure de servicio',
+      () async {
     adapter.statusCode = 503;
     expect(failureOf(await repo.requestChallenge()), isA<ServiceUnavailable>());
 
@@ -102,60 +111,35 @@ void main() {
     expect(failureOf(await repo.requestChallenge()), isA<ServiceUnavailable>());
   });
 
-  group('los tres casos de negocio que el servicio mete en un mismo 400', () {
-    setUp(() => adapter.statusCode = 400);
-
-    test('token vencido → hay que rehacer el desafío', () async {
-      adapter.body = {'detail': 'Token de desafío inválido o expirado'};
-
-      final result = await repo.evaluateStep(
-          token: 'x', step: LivenessStep.abajo, framesBase64: const ['a']);
-
-      expect(failureOf(result), isA<ChallengeExpired>());
-    });
-
-    test('tarea fuera de orden → se conserva cuál esperaba el servidor',
-        () async {
-      adapter.body = {'detail': "Se esperaba la tarea 'izquierda'"};
-
-      final result = await repo.evaluateStep(
-          token: 'x', step: LivenessStep.abajo, framesBase64: const ['a']);
-
-      final failure = failureOf(result);
-      expect(failure, isA<StepOutOfOrder>());
-      expect((failure as StepOutOfOrder).expected, LivenessStep.izquierda);
-    });
-
-    test('desafío completado → toca la verificación final', () async {
-      adapter.body = {'detail': 'El desafío ya fue completado'};
-
-      final result = await repo.evaluateStep(
-          token: 'x', step: LivenessStep.abajo, framesBase64: const ['a']);
-
-      expect(failureOf(result), isA<ChallengeCompleted>());
-    });
-  });
-
-  test('un `passed:false` llega como valor, no como failure', () async {
+  test('un 400 de token vencido o ya usado pide rehacer el desafío', () async {
+    adapter.statusCode = 400;
     adapter.body = {
-      'step': 'abajo',
-      'passed': false,
-      'reason': 'No se detectó movimiento',
-      'frames_analyzed': 10,
+      'detail': 'Token de desafío inválido o expirado. Reinicia el liveness',
     };
 
-    final result = await repo.evaluateStep(
-        token: 'x', step: LivenessStep.abajo, framesBase64: const ['a']);
+    final result = await repo.verifyFull(
+      token: 'w9xQ',
+      documentImage: Uint8List.fromList([1]),
+      segments: const {},
+    );
 
-    // Reintentar es parte del flujo normal: tratarlo como error del sistema
-    // haría que la UI mostrara un fallo donde solo hubo un movimiento flojo.
-    expect(result.isRight(), isTrue);
-    final evaluation = result.getRight().toNullable()!;
-    expect(evaluation.passed, isFalse);
-    expect(evaluation.reason, 'No se detectó movimiento');
+    expect(failureOf(result), isA<ChallengeExpired>());
   });
 
-  test('verify-full manda el documento y los segmentos como multipart',
+  test('cualquier otro 400 es una respuesta que no encaja', () async {
+    adapter.statusCode = 400;
+    adapter.body = {'detail': 'Faltan segmentos de frames para: parpadeo'};
+
+    final result = await repo.verifyFull(
+      token: 'w9xQ',
+      documentImage: Uint8List.fromList([1]),
+      segments: const {},
+    );
+
+    expect(failureOf(result), isA<InvalidResponse>());
+  });
+
+  test('verify-full manda el documento y los segmentos en UNA llamada',
       () async {
     adapter.body = {
       'overall_result': true,
@@ -169,7 +153,7 @@ void main() {
       token: 'w9xQ',
       documentImage: Uint8List.fromList([1, 2, 3]),
       segments: {
-        LivenessStep.abajo: const ['a', 'b'],
+        LivenessStep.izquierda: const ['a', 'b'],
       },
     );
 
@@ -177,7 +161,10 @@ void main() {
     expect(veredicto.approved, isTrue);
     expect(veredicto.documentValid, isTrue);
     expect(veredicto.faceMatch, isTrue);
+    expect(adapter.lastRequest?.path, '/v1/kyc/identity/verify-full');
     expect(adapter.lastRequest?.data, isA<FormData>());
+    // Los modelos corren en CPU: su espera no es la general del cliente.
+    expect(adapter.lastRequest?.receiveTimeout, repo.verifyTimeout);
   });
 
   test('sin `overall_result` no se inventa un veredicto', () async {

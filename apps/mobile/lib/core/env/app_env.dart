@@ -10,15 +10,12 @@ abstract final class AppEnv {
   static String get authBaseUrl =>
       _authBaseUrl.isNotEmpty ? _authBaseUrl : DevHost.urlFor(8001);
 
-  /// Microservicio de KYC facial. En emulador Android la IP del host es
-  /// `10.0.2.2`; desde un teléfono físico, la IP del PC en la red local.
-  static const kycBaseUrl = String.fromEnvironment('KYC_BASE_URL');
-
-  /// ATAJO DE DEMO, no diseño final. Una clave compilada en la app es
-  /// extraíble (basta `strings` sobre el APK o un proxy mirando el tráfico),
-  /// así que debe tratarse como pública. Cuando exista backend propio, la
-  /// clave vive allí y la app deja de conocerla.
-  static const kycApiKey = String.fromEnvironment('KYC_API_KEY');
-
-  static bool get hasKycConfig => kycBaseUrl.isNotEmpty && kycApiKey.isNotEmpty;
+  /// Si el registro usa el KYC facial REAL, a través del proxy de
+  /// `services/api` (`/v1/kyc/...`). Solo tiene efecto en el flavor `local`:
+  /// `production` siempre simula (ver `usesRealKyc`).
+  ///
+  /// La app ya no recibe ni la URL ni la clave del microservicio: las guarda
+  /// el backend, que es quien lo llama. Todo lo compilado en el binario es
+  /// extraíble, así que una clave aquí sería pública.
+  static const kycEnabled = bool.fromEnvironment('KYC_ENABLED');
 }

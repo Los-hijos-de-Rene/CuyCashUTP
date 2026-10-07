@@ -119,30 +119,48 @@ emulador Android, `127.0.0.1` en simulador iOS). En un teléfono FÍSICO hay que
 ponerlo con la IP del PC en la red local.
 
 ## KYC facial (servicio externo)
-`feature/kyc` consume el microservicio de documento + liveness guiado. El
-teléfono NO ejecuta modelos: captura ráfagas y pregunta; el orden de las tareas
-lo impone el servidor (anti-replay).
+`feature/kyc` consume el microservicio de documento + liveness (repo aparte,
+`CuyCashKYC`) a través del proxy de `services/api` (`/v1/kyc/liveness/challenge`
+y `/v1/kyc/identity/verify-full`, nada más). La API key del microservicio vive
+SOLO en el backend (`KYC_BASE_URL`, `KYC_API_KEY`); la app no la conoce.
 
-Config en `config.<env>.json`: `KYC_BASE_URL` (emulador Android: `10.0.2.2`;
-teléfono físico: IP del PC) y `KYC_API_KEY`. Sin ellas se cae al
-`MemoryKycRepository` en vez de romper el arranque.
+Liveness como en la industria: cámara frontal en vivo con ML Kit
+(`MlKitFaceTracker`), óvalo guía, sin botones. El encuadre y cada gesto avanzan
+solos; al final va UN `verify-full` con un segmento de fotogramas clave por
+gesto (3 de frente + los del gesto). ML Kit solo GUÍA: el servidor vuelve a
+medir cada segmento y es el único que aprueba. El servidor elige los gestos
+(por defecto 2 de izquierda/derecha/parpadeo) y su orden (anti-replay). El
+giro usa la misma fórmula que el servicio (`FaceObservation.yaw`).
+
+Config en `config.local.json`: `KYC_ENABLED` (`"true"`/`"false"`). En
+`production` el KYC SIEMPRE se simula (`MemoryKycRepository`), diga lo que diga
+la config, hasta desplegar el microservicio en Render: lo decide
+`usesRealKyc` en `shared_backend_dependencies.dart`, único sitio a cambiar.
+
+Entorno local completo (Postgres + API + KYC) con Docker:
+`cd services/api && docker compose --profile kyc up --build`; espera el repo
+`CuyCashKYC` junto a este (o `KYC_REPO_DIR`). La app local apunta a
+`AUTH_BASE_URL` (`10.0.2.2:8001` en emulador).
+
+**Sin probar en un teléfono:** la orientación de los fotogramas (rotación por
+`sensorOrientation`), los umbrales de `LivenessGestures` y el flujo en iOS.
 
 Contrato, riesgos y acuerdos con el servicio: `docs/adr/0001-integracion-kyc-facial.md`.
 Diseño del backend propio de auth: `docs/adr/0002-backend-de-autenticacion.md`.
 Diseño de cuentas, envío y recarga: `docs/superpowers/specs/2026-10-05-cuentas-y-transferencias-design.md`.
 Modelo de datos (tablas reales y las diseñadas): `docs/modelo-datos.md`.
 
-**La `KYC_API_KEY` en la app es un atajo de demo.** Todo lo compilado en el
-binario es extraíble, así que esa clave debe tratarse como pública. El destino
-es un backend propio que la guarde y llame al servicio; hasta entonces, no
-usarla contra un despliegue real.
+**Brecha conocida:** `/v1/auth/register` todavía NO exige un KYC aprobado: el
+veredicto llega a la app y es la app la que sigue. Ligarlo en el servidor (un
+`verification_id` de un solo uso que el registro consuma) está pendiente.
 
 ## SLA comprometidos que condicionan el código
 Números que no son adorno: si un cambio los pone en riesgo, dilo. Tabla
 completa en `docs/sla-kpi.md`.
 
 - Nitidez del documento (OCR/blur): ≤ 2 s por imagen.
-- Un paso de liveness (`/liveness/evaluate`): < 1 s (solo MediaPipe).
+- Un paso de liveness: < 1 s. Hoy lo cumple la detección EN el teléfono (ML
+  Kit, cada fotograma en milisegundos); `/liveness/evaluate` ya no se llama.
 - Token de desafío de liveness: 180 s de vigencia.
 - `verify-full`: ≤ 5 s, y se llama **una sola vez al final**.
 - Autenticación biométrica o por PIN: < 1.5 s, siempre con PIN de contingencia.

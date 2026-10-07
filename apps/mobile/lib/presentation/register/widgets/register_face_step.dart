@@ -8,9 +8,9 @@ import 'package:camera/camera.dart';
 
 import '../../../core/env/app_flavor.dart';
 import '../../../feature/kyc/application/kyc_actions.dart';
-import '../../../feature/kyc/domain/frame_source.dart';
-import '../../../feature/kyc/infrastructure/camera_frame_source.dart';
-import '../../../feature/kyc/infrastructure/simulated_frame_source.dart';
+import '../../../feature/kyc/domain/face_tracker.dart';
+import '../../../feature/kyc/infrastructure/mlkit_face_tracker.dart';
+import '../../../feature/kyc/infrastructure/simulated_face_tracker.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../kyc/bloc/liveness_bloc.dart';
 import '../../kyc/liveness_view.dart';
@@ -19,8 +19,8 @@ import '../bloc/register_bloc.dart';
 
 /// Paso 3 · Rostro. Pantalla inmersiva con el liveness guiado por el servidor.
 ///
-/// Ya no hay simulación: cada tarea se graba con la cámara frontal y la valida
-/// el servicio. El paso se marca hecho solo cuando la verificación completa
+/// La cámara frontal se analiza en vivo con ML Kit para guiar (encuadre y
+/// avance de cada gesto) y, al final, el servicio valida los fotogramas clave. El paso se marca hecho solo cuando la verificación completa
 /// —documento + liveness + match— resulta aprobada.
 ///
 /// Necesita el frente del DNI capturado en el paso 2: es la imagen contra la
@@ -65,8 +65,8 @@ class RegisterFaceStep extends StatelessWidget {
 /// Monta la cámara frontal y, con ella, el bloc del liveness.
 ///
 /// El bloc se crea DENTRO del `CameraScope` porque necesita el controller ya
-/// inicializado: crearlo antes obligaría a un `FrameSource` que todavía no
-/// puede capturar.
+/// inicializado: crearlo antes obligaría a un `FaceTracker` que todavía no
+/// puede leer fotogramas.
 class _LivenessScope extends StatelessWidget {
   const _LivenessScope({required this.documento});
   final Uint8List documento;
@@ -76,17 +76,18 @@ class _LivenessScope extends StatelessWidget {
     final esMock = context.read<AppFlavor>() == AppFlavor.mock;
     return CameraScope(
       lens: CameraLensDirection.front,
+      imageFormatGroup: MlKitFaceTracker.preferredFormat,
       builder: (context, controller) => _Liveness(
         documento: documento,
-        frameSource: CameraFrameSource(controller),
-        preview: CameraPreview(controller),
+        createTracker: () => MlKitFaceTracker(controller),
+        preview: _CoverPreview(controller: controller),
       ),
       // En `mock` el flujo sigue aunque no haya cámara (el simulador de iOS no
       // tiene). Con backend real se muestra el aviso, como debe ser.
       unavailableBuilder: esMock
           ? (context, status) => _Liveness(
                 documento: documento,
-                frameSource: SimulatedFrameSource(),
+                createTracker: SimulatedFaceTracker.new,
                 preview: const _PreviewSimulado(),
               )
           : null,
@@ -94,16 +95,19 @@ class _LivenessScope extends StatelessWidget {
   }
 }
 
-/// Arma el bloc con la fuente de frames que corresponda.
+/// Arma el bloc con el tracker que corresponda (cámara real o simulado).
 class _Liveness extends StatelessWidget {
   const _Liveness({
     required this.documento,
-    required this.frameSource,
+    required this.createTracker,
     required this.preview,
   });
 
   final Uint8List documento;
-  final FrameSource frameSource;
+
+  /// Se llama UNA vez, al crear el bloc, que es quien lo libera al cerrarse.
+  /// Construirlo en `build` dejaría detectores huérfanos en cada reconstrucción.
+  final FaceTracker Function() createTracker;
   final Widget preview;
 
   @override
@@ -112,13 +116,38 @@ class _Liveness extends StatelessWidget {
     return BlocProvider(
       create: (_) => LivenessBloc(
         actions: context.read<KycActions>(),
-        frameSource: frameSource,
+        tracker: createTracker(),
         documentImage: documento,
       )..add(const LivenessEvent.started()),
       child: LivenessView(
         preview: preview,
         onVerified: () =>
             registerBloc.add(const RegisterEvent.faceScanCompleted()),
+      ),
+    );
+  }
+}
+
+/// Vista previa que LLENA el recuadro, recortando lo que sobra.
+///
+/// `CameraPreview` impone su propia proporción; dentro de un recuadro de otra
+/// proporción se deformaría la cara. El sensor entrega horizontal y la app va
+/// en vertical, por eso se intercambian ancho y alto.
+class _CoverPreview extends StatelessWidget {
+  const _CoverPreview({required this.controller});
+  final CameraController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = controller.value.previewSize;
+    if (size == null) return CameraPreview(controller);
+    return FittedBox(
+      fit: BoxFit.cover,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(
+        width: size.height,
+        height: size.width,
+        child: CameraPreview(controller),
       ),
     );
   }

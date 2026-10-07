@@ -2,23 +2,20 @@ part of 'liveness_bloc.dart';
 
 /// En qué punto del desafío está la pantalla.
 enum LivenessPhase {
-  /// Pidiendo el desafío al servidor.
+  /// Abriendo la cámara y pidiendo el desafío al servidor.
   preparing,
 
-  /// Mostrando la instrucción de la tarea actual, esperando al usuario.
-  waiting,
+  /// Esperando a que el rostro quede bien encuadrado y quieto.
+  positioning,
 
-  /// Grabando la ráfaga de la tarea actual.
-  capturing,
+  /// El usuario está haciendo el gesto [LivenessState.currentStep].
+  performing,
 
-  /// La ráfaga está en el servidor.
-  evaluating,
+  /// Entre dos gestos: volver a mirar al frente antes del siguiente.
+  recentering,
 
-  /// La última tarea no pasó: se reintenta LA MISMA.
-  retry,
-
-  /// Todas las tareas pasaron; corriendo la verificación final.
-  verifying,
+  /// Todos los gestos hechos: enviando los fotogramas al servidor.
+  sending,
 
   /// Terminó con veredicto.
   done,
@@ -41,7 +38,6 @@ enum LivenessError {
 abstract class LivenessState with _$LivenessState {
   const factory LivenessState({
     @Default(LivenessPhase.preparing) LivenessPhase phase,
-    String? token,
 
     /// Tareas en el orden que impuso el servidor.
     @Default(<LivenessStep>[]) List<LivenessStep> steps,
@@ -49,8 +45,11 @@ abstract class LivenessState with _$LivenessState {
     /// Índice de la tarea pendiente.
     @Default(0) int currentIndex,
 
-    /// Motivo del último intento fallido, tal como lo explicó el servidor.
-    String? lastReason,
+    /// Qué corregir del encuadre ahora mismo (null = está bien).
+    FramingIssue? framing,
+
+    /// El gesto lleva rato sin completarse: sugerir hacerlo más marcado.
+    @Default(false) bool slow,
     LivenessError? error,
     KycVerification? verification,
   }) = _LivenessState;
@@ -65,11 +64,9 @@ abstract class LivenessState with _$LivenessState {
 
   bool get isApproved => verification?.approved ?? false;
 
-  /// Mientras se captura o se evalúa no se aceptan más pulsaciones: una
-  /// segunda ráfaga sobre la misma tarea la mandaría fuera de orden.
-  bool get isBusy =>
-      phase == LivenessPhase.capturing ||
-      phase == LivenessPhase.evaluating ||
-      phase == LivenessPhase.verifying ||
-      phase == LivenessPhase.preparing;
+  /// Si la cámara está siguiendo al usuario (hay que mostrar la guía).
+  bool get isTracking =>
+      phase == LivenessPhase.positioning ||
+      phase == LivenessPhase.performing ||
+      phase == LivenessPhase.recentering;
 }

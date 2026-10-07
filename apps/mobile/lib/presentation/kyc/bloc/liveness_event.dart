@@ -2,9 +2,10 @@ part of 'liveness_bloc.dart';
 
 @freezed
 sealed class LivenessEvent with _$LivenessEvent {
-  /// Pide el desafío al servidor. También sirve para rehacerlo tras vencer.
+  /// Abre la cámara y pide el desafío. También sirve para rehacerlo.
   const factory LivenessEvent.started() = LivenessStarted;
 
-  /// El usuario dice que está listo: se graba la ráfaga de la tarea actual.
-  const factory LivenessEvent.stepCaptureRequested() = LivenessStepCaptureRequested;
+  /// El detector del teléfono analizó un fotograma.
+  const factory LivenessEvent.observed(FaceObservation observation) =
+      LivenessObserved;
 }

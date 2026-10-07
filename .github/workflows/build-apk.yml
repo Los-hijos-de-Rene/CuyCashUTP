@@ -35,15 +35,15 @@ jobs:
       - run: flutter pub get
       - name: Configuración de producción
         working-directory: apps/mobile
-        # Solo la URL pública del backend. La clave del KYC NO va en el
-        # binario (todo lo compilado es extraíble): el registro usa la
-        # verificación simulada hasta conectar el proxy del backend.
+        # Solo la URL pública del backend: la clave del KYC vive en el backend
+        # y nunca en el binario. KYC_ENABLED queda en "false" (registro con
+        # verificación simulada) hasta que el microservicio esté desplegado y
+        # KYC_BASE_URL/KYC_API_KEY cargadas en Render.
         run: |
           cat > config.production.json <<'JSON'
           {
             "AUTH_BASE_URL": "https://cuycashutp.onrender.com",
-            "KYC_BASE_URL": "",
-            "KYC_API_KEY": ""
+            "KYC_ENABLED": "false"
           }
           JSON
       - name: flutter build apk

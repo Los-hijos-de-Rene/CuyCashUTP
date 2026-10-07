@@ -1,6 +1,7 @@
 # Xcode 27 solo admite targets de despliegue entre 15.0 y 27.0: con 13.0 el
 # proyecto ni siquiera lanza en el dispositivo.
-platform :ios, '15.0'
+# ML Kit (detección de rostro del liveness) exige iOS 15.5.
+platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

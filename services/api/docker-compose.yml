@@ -1,3 +1,11 @@
+# Entorno local completo: Postgres + API (+ KYC facial con el perfil `kyc`).
+#
+#   docker compose up --build                  # Postgres :5432 y API :8001
+#   docker compose --profile kyc up --build    # además el KYC en :8000
+#
+# El KYC se construye desde su propio repositorio (CuyCashKYC), que se espera
+# clonado junto a este: `<carpeta>/CuyCashUTP` y `<carpeta>/CuyCashKYC`. Si
+# está en otro sitio, KYC_REPO_DIR en `.env` apunta a él.
 services:
   db:
     image: postgres:16-alpine
@@ -24,12 +32,31 @@ services:
       OTP_NOTIFIER: ${OTP_NOTIFIER:-log}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
-      KYC_BASE_URL: ${KYC_BASE_URL:-}
-      KYC_API_KEY: ${KYC_API_KEY:-}
+      # Por la red interna de compose. Sin el perfil `kyc` levantado, el
+      # proxy responde 503 y la app lo muestra como servicio no disponible.
+      KYC_BASE_URL: ${KYC_BASE_URL:-http://kyc:8000}
+      KYC_API_KEY: ${KYC_API_KEY:-cuycash-local-kyc}
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
+  kyc:
+    profiles: ["kyc"]
+    build: ${KYC_REPO_DIR:-../../../CuyCashKYC}
+    # Publicado solo en el loopback: la app NO habla con el KYC, habla con la
+    # API, que le agrega la clave. Así se prueba lo mismo que en producción.
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      API_KEY: ${KYC_API_KEY:-cuycash-local-kyc}
+      FACE_MATCH_THRESHOLD: ${FACE_MATCH_THRESHOLD:-0.68}
+      BLUR_LAPLACIAN_THRESHOLD: ${BLUR_LAPLACIAN_THRESHOLD:-80.0}
+    volumes:
+      # Pesos de los modelos entre reinicios y rebuilds.
+      - kyc_models:/app/.deepface
+    restart: unless-stopped
+
 volumes:
   cuycash_pgdata:
+  kyc_models:

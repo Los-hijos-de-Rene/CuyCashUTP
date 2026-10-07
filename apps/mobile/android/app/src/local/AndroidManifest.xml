@@ -1,0 +1,12 @@
+<!--
+  Solo el flavor `local`: se fusiona sobre src/main.
+
+  El backend local se sirve por HTTP plano en la IP del PC (p. ej.
+  http://192.168.1.57:8001), y Android bloquea el tráfico sin cifrar por
+  defecto desde la API 28: en un teléfono físico, sin esto, ninguna llamada
+  llega. `production` no lo lleva y sigue exigiendo HTTPS.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"/>
+</manifest>

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/env/app_flavor.dart';
-import '../../feature/kyc/infrastructure/simulated_frame_source.dart';
+import '../../feature/kyc/infrastructure/simulated_face_tracker.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/camera_scope.dart';
 
@@ -79,7 +79,7 @@ Widget _sample(BuildContext context, CameraStatus status) {
           PrimaryButton(
             label: l10n.useSampleDocument,
             onPressed: () async {
-              final bytes = await SimulatedFrameSource.sampleDocument();
+              final bytes = await SimulatedFaceTracker.sampleDocument();
               if (context.mounted) Navigator.of(context).pop(bytes);
             },
           ),
