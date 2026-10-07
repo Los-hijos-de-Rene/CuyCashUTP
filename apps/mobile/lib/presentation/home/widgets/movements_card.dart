@@ -5,11 +5,16 @@ import 'package:intl/intl.dart';
 
 import '../../../feature/account/domain/movement.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../account/account_label.dart';
 import '../../app/app_routes.dart';
 import '../../movement/contraparte_visible.dart';
 import '../movement_amount_label.dart';
 
-/// Lista de últimos movimientos del libro mayor.
+/// Lista de movimientos del libro mayor.
+///
+/// En el historial combinado cada fila dice de qué cuenta es, y una
+/// transferencia entre cuentas propias se ve como una sola fila neutra
+/// ("Entre tus cuentas", sin signo).
 class MovementsCard extends StatelessWidget {
   const MovementsCard({required this.movements, super.key});
 
@@ -63,19 +68,40 @@ class _MovementRow extends StatelessWidget {
     };
   }
 
+  /// De qué cuenta es: "Ahorros · ••••4521", o "Ahorros → Sueldo" entre
+  /// propias. `null` en el historial de una cuenta (no trae la cuenta).
+  String? _cuenta() => switch ((movement.cuenta, movement.cuentaDestino)) {
+    (final origen?, final destino?) => l10n.movementOwnRoute(
+      movementAccountName(l10n, origen),
+      movementAccountName(l10n, destino),
+    ),
+    (final c?, null) => movementAccountShort(l10n, c),
+    (null, _) => null,
+  };
+
   @override
   Widget build(BuildContext context) {
-    final isIncome = movement.direccion == MovementDirection.credito;
+    final propias = movement.entrePropias;
+    final isIncome =
+        !propias && movement.direccion == MovementDirection.credito;
     final local = movement.fecha.toLocal();
-    final when = l10n.homeDateTime(
+    final fecha = l10n.homeDateTime(
       _day(local, DateTime.now()),
       DateFormat('HH:mm').format(local),
     );
+    final when = switch (_cuenta()) {
+      final c? => '$fecha · $c',
+      null => fecha,
+    };
     final icon = switch (movement.tipo) {
+      _ when propias => Icons.sync_alt,
       MovementKind.recarga => Icons.add_circle_outline,
       MovementKind.transferencia ||
       MovementKind.otro => isIncome ? Icons.south_west : Icons.north_east,
     };
+    final titulo = propias
+        ? l10n.movementBetweenOwn
+        : contraparteVisible(movement) ?? l10n.homeMovementFallbackTitle;
     return InkWell(
       onTap: () => context.push(AppRoutes.movimientoDe(movement.transactionId)),
       child: Padding(
@@ -106,7 +132,7 @@ class _MovementRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    contraparteVisible(movement) ?? l10n.homeMovementFallbackTitle,
+                    titulo,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: CuyCashTypography.bodyMd.copyWith(
@@ -114,7 +140,12 @@ class _MovementRow extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(when, style: CuyCashTypography.labelSm),
+                  Text(
+                    when,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: CuyCashTypography.labelSm,
+                  ),
                 ],
               ),
             ),

@@ -22,6 +22,9 @@ abstract final class AppRoutes {
   static const enviarConfirmar = '/enviar/confirmar';
   static const enviarConstancia = '/enviar/constancia';
 
+  // Historial completo: de la cuenta que viaja como `extra`, o de todas.
+  static const movimientos = '/movimientos';
+
   // Detalle de un movimiento del historial.
   static const movimiento = '/movimientos/:id';
   static String movimientoDe(String transactionId) =>

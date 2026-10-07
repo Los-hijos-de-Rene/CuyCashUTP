@@ -21,13 +21,16 @@ class AccountActions {
   FutureResult<AccountFailure, MovementPage> movimientos(
     String cuentaId, {
     String? cursor,
-  }) =>
-      _repo.movimientos(cuentaId, cursor: cursor);
+  }) => _repo.movimientos(cuentaId, cursor: cursor);
+
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  }) => _repo.todosLosMovimientos(cursor: cursor, limit: limit);
 
   FutureResult<AccountFailure, MovementDetail> movimiento(
     String transactionId,
-  ) =>
-      _repo.movimiento(transactionId);
+  ) => _repo.movimiento(transactionId);
 
   FutureResult<AccountFailure, Account> abrir({
     required AccountType tipo,

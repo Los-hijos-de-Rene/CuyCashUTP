@@ -1,5 +1,6 @@
 import '../../feature/account/domain/account.dart';
 import '../../feature/account/domain/account_type.dart';
+import '../../feature/account/domain/movement.dart';
 import '../../feature/transfer/domain/recipient_account.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -29,3 +30,11 @@ String recipientAccountShort(AppLocalizations l10n, RecipientAccount c) =>
 /// qué cuenta propia se habla en una línea.
 String accountShort(AppLocalizations l10n, Account c) =>
     '${c.nombre ?? accountTypeShort(l10n, c.tipo)} · ${c.numeroMasked}';
+
+/// "Ahorros · ••••4521" para la cuenta de una fila del historial combinado.
+String movementAccountShort(AppLocalizations l10n, MovementAccountRef c) =>
+    '${movementAccountName(l10n, c)} · ${c.numeroMasked}';
+
+/// "Ahorros" (o su nombre), sin número: para "Ahorros → Sueldo".
+String movementAccountName(AppLocalizations l10n, MovementAccountRef c) =>
+    c.nombre ?? accountTypeShort(l10n, c.tipo);

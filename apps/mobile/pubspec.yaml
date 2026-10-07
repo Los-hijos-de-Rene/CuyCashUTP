@@ -50,12 +50,12 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/cuycash.png"
+  image_path: "assets/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
   background_color_ios: "#152A1F"
   adaptive_icon_background: "#152A1F"
-  adaptive_icon_foreground: "assets/cuycash.png"
+  adaptive_icon_foreground: "assets/app_icon_foreground.png"
 
 # Splash nativo. Generar: dart run flutter_native_splash:create
 flutter_native_splash:

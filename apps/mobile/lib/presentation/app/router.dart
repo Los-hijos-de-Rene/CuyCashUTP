@@ -25,6 +25,8 @@ import '../home/home_screen.dart';
 import '../home/refresh_after_send.dart';
 import '../movement/bloc/movement_detail_bloc.dart';
 import '../movement/movement_detail_screen.dart';
+import '../movements/bloc/movements_bloc.dart';
+import '../movements/movements_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../otp/bloc/otp_bloc.dart';
 import '../otp/flujo_cancelado_screen.dart';
@@ -305,6 +307,22 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             builder: (context, state) => const ReceiptScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.movimientos,
+        builder: (context, state) {
+          // Sin cuenta (o con un `extra` que no lo es) es el de todas.
+          final cuenta = switch (state.extra) {
+            final Account c => c,
+            _ => null,
+          };
+          return BlocProvider(
+            create: (_) =>
+                MovementsBloc(AccountModule.create(deps), cuentaId: cuenta?.id)
+                  ..add(const MovementsEvent.started()),
+            child: MovementsScreen(cuenta: cuenta),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.movimiento,

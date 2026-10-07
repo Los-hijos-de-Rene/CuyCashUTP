@@ -42,6 +42,68 @@ class MemoryLedger {
   List<MovementDetail> movimientosDe(String id) =>
       List.unmodifiable(_fila(id)?.movimientos ?? const []);
 
+  /// Historial de TODAS las cuentas, más reciente primero, como
+  /// `GET /v1/movements`: cada movimiento con su `cuenta`, y una
+  /// transferencia entre cuentas propias UNA vez (su débito, con
+  /// `cuentaDestino`; el crédito se omite).
+  List<Movement> todosLosMovimientos() {
+    MovementAccountRef ref(Account c) => MovementAccountRef(
+      id: c.id,
+      tipo: c.tipo,
+      moneda: c.moneda,
+      numeroMasked: c.numeroMasked,
+      nombre: c.nombre,
+    );
+    // Por transacción, en qué cuentas propias tiene asiento y con qué sentido.
+    final lados = <String, Map<MovementDirection, Account>>{};
+    for (final f in _filas) {
+      for (final m in f.movimientos) {
+        (lados[m.transactionId] ??= {})[m.direccion] = f.cuenta;
+      }
+    }
+    final todos = <Movement?>[
+      for (final f in _filas)
+        for (final m in f.movimientos)
+          switch (_entrePropias(m, lados)) {
+            null => _conCuenta(m, ref(f.cuenta), null),
+            // El lado que recibe se omite: ya sale por su débito.
+            _ when m.direccion == MovementDirection.credito => null,
+            final destino => _conCuenta(m, ref(f.cuenta), ref(destino)),
+          },
+    ].nonNulls.toList();
+    // Estable: a igual fecha conserva el orden de las cuentas.
+    return todos..sort((a, b) => b.fecha.compareTo(a.fecha));
+  }
+
+  /// La cuenta propia que recibió, si [m] es una transferencia con ambos
+  /// lados en cuentas del titular.
+  static Account? _entrePropias(
+    Movement m,
+    Map<String, Map<MovementDirection, Account>> lados,
+  ) {
+    if (m.tipo != MovementKind.transferencia) return null;
+    final ambos = lados[m.transactionId];
+    if (ambos == null || ambos.length < 2) return null;
+    return ambos[MovementDirection.credito];
+  }
+
+  static Movement _conCuenta(
+    Movement m,
+    MovementAccountRef cuenta,
+    MovementAccountRef? destino,
+  ) => Movement(
+    transactionId: m.transactionId,
+    tipo: m.tipo,
+    direccion: m.direccion,
+    monto: m.monto,
+    saldoPosterior: m.saldoPosterior,
+    fecha: m.fecha,
+    contraparte: m.contraparte,
+    motivo: m.motivo,
+    cuenta: cuenta,
+    cuentaDestino: destino,
+  );
+
   _Fila? _fila(String id) {
     for (final f in _filas) {
       if (f.cuenta.id == id) return f;

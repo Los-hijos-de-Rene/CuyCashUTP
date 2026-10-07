@@ -23,6 +23,12 @@ class _SinRed implements AccountRepository {
   }) async => left(const GlobalFailure.server(AccountFailure.network()));
 
   @override
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  }) async => left(const GlobalFailure.server(AccountFailure.network()));
+
+  @override
   FutureResult<AccountFailure, MovementDetail> movimiento(
     String transactionId,
   ) async => left(const GlobalFailure.noConnection());

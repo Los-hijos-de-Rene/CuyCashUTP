@@ -18,6 +18,15 @@ abstract interface class AccountRepository {
     String? cursor,
   });
 
+  /// Historial de TODAS las cuentas del titular, más reciente primero. Cada
+  /// movimiento trae su `cuenta`; una transferencia entre cuentas propias sale
+  /// una vez, con `cuentaDestino`. [limit] es el tamaño de página (el inicio
+  /// pide pocos); ausente, el del servidor.
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  });
+
   /// Ficha de un movimiento por su `transactionId`.
   FutureResult<AccountFailure, MovementDetail> movimiento(String transactionId);
 

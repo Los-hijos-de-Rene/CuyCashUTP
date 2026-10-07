@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import '../../../feature/account/domain/account.dart';
 import '../../../l10n/app_localizations.dart';
 import 'balance_card.dart';
+import 'open_account_card.dart';
 
-/// Las cuentas del titular, una por página. Solo cuentas: abrir otra está en
-/// `AccountsHeader`, así lo de debajo siempre es de la tarjeta visible.
+/// Las cuentas del titular, una por página. Tocar una abre sus movimientos.
+/// Con [onOpenNew] (hay cupo), la última página es "Abrir otra cuenta": esa
+/// página no es una cuenta, así que detenerse en ella no cambia la
+/// seleccionada.
 ///
 /// La página visible la manda [seleccionada] (el bloc): si cambia desde
 /// fuera (cuenta recién abierta), el carrusel salta a ella.
@@ -16,6 +19,8 @@ class AccountCarousel extends StatefulWidget {
     required this.seleccionada,
     required this.onSelected,
     required this.onRename,
+    required this.onOpen,
+    this.onOpenNew,
     super.key,
   });
 
@@ -23,6 +28,12 @@ class AccountCarousel extends StatefulWidget {
   final int seleccionada;
   final ValueChanged<int> onSelected;
   final ValueChanged<Account> onRename;
+
+  /// Tocar la tarjeta de una cuenta.
+  final ValueChanged<Account> onOpen;
+
+  /// `null` = sin tarjeta "Abrir otra cuenta" (no queda cupo).
+  final VoidCallback? onOpenNew;
 
   /// Alto fijo: un `PageView` necesita uno, y todas las tarjetas miden igual.
   static const height = 176.0;
@@ -76,7 +87,8 @@ class _AccountCarouselState extends State<AccountCarousel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final paginas = widget.cuentas.length;
+    final onOpenNew = widget.onOpenNew;
+    final paginas = widget.cuentas.length + (onOpenNew == null ? 0 : 1);
     return Column(
       children: [
         SizedBox(
@@ -86,16 +98,19 @@ class _AccountCarouselState extends State<AccountCarousel> {
             itemCount: paginas,
             onPageChanged: (i) {
               setState(() => _pagina = i);
-              if (!_animando) widget.onSelected(i);
+              if (!_animando && i < widget.cuentas.length) widget.onSelected(i);
             },
             itemBuilder: (context, i) => Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: CuyCashSpacing.stackXs,
               ),
-              child: BalanceCard(
-                cuenta: widget.cuentas[i],
-                onRename: () => widget.onRename(widget.cuentas[i]),
-              ),
+              child: i < widget.cuentas.length
+                  ? BalanceCard(
+                      cuenta: widget.cuentas[i],
+                      onRename: () => widget.onRename(widget.cuentas[i]),
+                      onTap: () => widget.onOpen(widget.cuentas[i]),
+                    )
+                  : OpenAccountCard(onTap: onOpenNew ?? () {}),
             ),
           ),
         ),
@@ -104,8 +119,8 @@ class _AccountCarouselState extends State<AccountCarousel> {
           const SizedBox(height: CuyCashSpacing.stackSm),
           Semantics(
             label: l10n.homeAccountPage(
-              _pagina.clamp(0, widget.cuentas.length - 1) + 1,
-              widget.cuentas.length,
+              _pagina.clamp(0, paginas - 1) + 1,
+              paginas,
             ),
             child: ExcludeSemantics(
               child: Row(

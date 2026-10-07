@@ -43,6 +43,7 @@ void main() {
           seleccionada: 0,
           onSelected: (_) {},
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -60,6 +61,7 @@ void main() {
           seleccionada: 0,
           onSelected: (i) => elegido = i,
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -69,7 +71,7 @@ void main() {
     expect(find.text('Planilla'), findsOneWidget);
   });
 
-  testWidgets('el carrusel solo tiene cuentas: nada después de la última', (
+  testWidgets('sin cupo no hay tarjeta de abrir: nada después de la última', (
     t,
   ) async {
     await t.pumpWidget(
@@ -79,6 +81,7 @@ void main() {
           seleccionada: 2,
           onSelected: (_) {},
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -99,6 +102,7 @@ void main() {
           seleccionada: 0,
           onSelected: (_) {},
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -115,6 +119,7 @@ void main() {
           seleccionada: 2,
           onSelected: (_) {},
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -136,6 +141,7 @@ void main() {
               seleccionada: 0,
               onSelected: (_) {},
               onRename: (_) {},
+              onOpen: (_) {},
             );
           },
         ),
@@ -160,6 +166,7 @@ void main() {
           seleccionada: 1,
           onSelected: (_) {},
           onRename: (_) {},
+          onOpen: (_) {},
         ),
       ),
     );
@@ -167,4 +174,70 @@ void main() {
     expect(find.text('Planilla'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
+
+  testWidgets('tocar una tarjeta abre esa cuenta', (t) async {
+    Account? abierta;
+    await t.pumpWidget(
+      _app(
+        AccountCarousel(
+          cuentas: tres,
+          seleccionada: 0,
+          onSelected: (_) {},
+          onRename: (_) {},
+          onOpen: (c) => abierta = c,
+        ),
+      ),
+    );
+    await t.tap(find.text('S/ 1,250.40'));
+    expect(abierta?.id, 'a');
+  });
+
+  testWidgets('el lápiz renombra y no abre la cuenta', (t) async {
+    Account? abierta;
+    Account? renombrada;
+    await t.pumpWidget(
+      _app(
+        AccountCarousel(
+          cuentas: tres,
+          seleccionada: 0,
+          onSelected: (_) {},
+          onRename: (c) => renombrada = c,
+          onOpen: (c) => abierta = c,
+        ),
+      ),
+    );
+    await t.tap(find.byIcon(Icons.edit_outlined).first);
+    expect(renombrada?.id, 'a');
+    expect(abierta, isNull);
+  });
+
+  testWidgets(
+    'con cupo, la última página es "Abrir otra cuenta" y no cambia la '
+    'seleccionada',
+    (t) async {
+      final elegidos = <int>[];
+      var abrir = 0;
+      await t.pumpWidget(
+        _app(
+          AccountCarousel(
+            cuentas: tres,
+            seleccionada: 2,
+            onSelected: elegidos.add,
+            onRename: (_) {},
+            onOpen: (_) {},
+            onOpenNew: () => abrir++,
+          ),
+        ),
+      );
+      expect(find.bySemanticsLabel('Cuenta 3 de 4'), findsOneWidget);
+
+      await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+      await t.pumpAndSettle();
+      expect(find.text('Abrir otra cuenta'), findsOneWidget);
+      expect(elegidos, isEmpty);
+
+      await t.tap(find.text('Abrir otra cuenta'));
+      expect(abrir, 1);
+    },
+  );
 }

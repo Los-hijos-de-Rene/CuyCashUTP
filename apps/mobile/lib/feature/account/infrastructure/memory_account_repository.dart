@@ -37,8 +37,8 @@ class MemoryAccountRepository implements AccountRepository {
     this.pageSize = 20,
     MemoryLedger? ledger,
     this.maxIntentosPin = LockoutPolicy.maxAttempts,
-  })  : assert(pageSize > 0),
-        _ledger = ledger ?? MemoryLedger(clock: clock);
+  }) : assert(pageSize > 0),
+       _ledger = ledger ?? MemoryLedger(clock: clock);
 
   static const cuentaId = MemoryLedger.cuentaId;
   static const tx1 = MemoryLedger.tx1;
@@ -65,20 +65,33 @@ class MemoryAccountRepository implements AccountRepository {
     if (_ledger.cuenta(cuentaId) == null) {
       return left(const GlobalFailure.server(AccountFailure.accountNotFound()));
     }
-    final todos = _ledger.movimientosDe(cuentaId);
+    return right(_pagina(_ledger.movimientosDe(cuentaId), cursor, pageSize));
+  }
+
+  @override
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  }) async =>
+      right(_pagina(_ledger.todosLosMovimientos(), cursor, limit ?? pageSize));
+
+  /// Cursor = índice del siguiente; uno ilegible empieza por el principio.
+  static MovementPage _pagina(
+    List<Movement> todos,
+    String? cursor,
+    int tamano,
+  ) {
     final inicio = switch (int.tryParse(cursor ?? '')) {
       final int i when i >= 0 && i < todos.length => i,
       _ => 0,
     };
-    final fin = inicio + pageSize;
+    final fin = inicio + tamano;
     final hayMas = fin < todos.length;
-    return right(
-      MovementPage(
+    return MovementPage(
       items: List.unmodifiable(
         todos.sublist(inicio, hayMas ? fin : todos.length),
       ),
       nextCursor: hayMas ? '$fin' : null,
-      ),
     );
   }
 

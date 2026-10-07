@@ -4,12 +4,20 @@ import 'package:flutter/material.dart';
 import '../../../feature/device/domain/remembered_user.dart';
 import '../../../l10n/app_localizations.dart';
 
-/// Saludo + avatar + campana. Reemplaza al `AppBar`: Inicio no necesita título,
-/// necesita decirte quién eres.
+/// Saludo + avatar + campana + menú. Reemplaza al `AppBar`: Inicio no
+/// necesita título, necesita decirte quién eres.
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({required this.user, this.onNotifications, super.key});
+  const HomeHeader({
+    required this.user,
+    this.onNotifications,
+    this.menu,
+    super.key,
+  });
 
   final RememberedUser user;
+
+  /// El botón ⋮ (`HomeMenuButton`); sin él, no hay menú.
+  final Widget? menu;
 
   /// Sin él no hay campana: las notificaciones aún no existen.
   final VoidCallback? onNotifications;
@@ -65,6 +73,10 @@ class HomeHeader extends StatelessWidget {
               minimumSize: const Size.square(44),
             ),
           ),
+        if (menu case final menu?) ...[
+          const SizedBox(width: CuyCashSpacing.stackXs),
+          menu,
+        ],
       ],
     );
   }

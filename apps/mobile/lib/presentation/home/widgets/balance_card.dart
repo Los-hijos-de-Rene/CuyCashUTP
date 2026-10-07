@@ -6,14 +6,24 @@ import '../../../feature/account/domain/account.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../account/account_label.dart';
 
-/// Card de saldo sobre Eucalipto, con el ojo para ocultarlo.
+/// Card de saldo sobre Eucalipto, con el ojo para ocultarlo. Con [onTap],
+/// tocarla abre los movimientos de la cuenta (el lápiz y el ojo conservan su
+/// propio toque).
 ///
 /// Ocultar el saldo es local y efímero a propósito: es una comodidad de la
 /// sesión, no una preferencia que deba sobrevivir al reinicio.
 class BalanceCard extends StatefulWidget {
-  const BalanceCard({required this.cuenta, this.onRename, super.key});
+  const BalanceCard({
+    required this.cuenta,
+    this.onRename,
+    this.onTap,
+    super.key,
+  });
 
   final Account cuenta;
+
+  /// `null` = la tarjeta no se toca (p. ej. ya estás en sus movimientos).
+  final VoidCallback? onTap;
 
   /// `null` = sin lápiz para cambiar el nombre.
   final VoidCallback? onRename;
@@ -28,7 +38,7 @@ class _BalanceCardState extends State<BalanceCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Container(
+    final card = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
       decoration: BoxDecoration(
@@ -112,9 +122,27 @@ class _BalanceCardState extends State<BalanceCard> {
                   ),
                 ),
               ),
+              // Pista de que la tarjeta lleva a algún lado.
+              if (widget.onTap != null)
+                const Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: CuyCashColors.onPrimaryContainer,
+                ),
             ],
           ),
         ],
+      ),
+    );
+    final onTap = widget.onTap;
+    if (onTap == null) return card;
+    return Semantics(
+      button: true,
+      label: l10n.homeAccountOpenSemantics(accountLabel(l10n, widget.cuenta)),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: card,
       ),
     );
   }

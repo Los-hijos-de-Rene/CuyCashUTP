@@ -8,7 +8,8 @@ import '../domain/account_type.dart';
 import '../domain/account_repository.dart';
 import '../domain/movement.dart';
 
-/// Impl real contra `services/api` (`GET /v1/accounts`, `/movements`).
+/// Impl real contra `services/api` (`GET /v1/accounts`, `/movements`,
+/// `/v1/movements` para el historial combinado).
 ///
 /// [dio] debe venir de `buildAuthenticatedDio`: el token y `X-Device-Id` los
 /// pone su interceptor, este repositorio no sabe de ellos.
@@ -22,37 +23,61 @@ class HttpAccountRepository implements AccountRepository {
 
   @override
   FutureResult<AccountFailure, List<Account>> cuentas() => _guard(() async {
-        final response = await _dio.get<dynamic>('/v1/accounts');
-        final failure = _failureFor(response);
-        if (failure != null) return left(GlobalFailure.server(failure));
+    final response = await _dio.get<dynamic>('/v1/accounts');
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
 
-        final cuentas = _cuerpo(response)['cuentas'] as List;
+    final cuentas = _cuerpo(response)['cuentas'] as List;
     return right([for (final c in cuentas) _cuenta(c as Map<String, dynamic>)]);
-      });
+  });
 
   @override
   FutureResult<AccountFailure, MovementPage> movimientos(
     String cuentaId, {
     String? cursor,
   }) => _guard(() async {
-        final response = await _dio.get<dynamic>(
-          '/v1/accounts/${Uri.encodeComponent(cuentaId)}/movements',
-          queryParameters: {'cursor': ?cursor},
-        );
-        final failure = _failureFor(response);
-        if (failure != null) return left(GlobalFailure.server(failure));
+    final response = await _dio.get<dynamic>(
+      '/v1/accounts/${Uri.encodeComponent(cuentaId)}/movements',
+      queryParameters: {'cursor': ?cursor},
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
 
-        final data = _cuerpo(response);
+    final data = _cuerpo(response);
     return right(
       MovementPage(
-          items: [
-            for (final m in data['movimientos'] as List)
-              _movimiento(m as Map<String, dynamic>),
-          ],
-          nextCursor: data['next_cursor'] as String?,
+        items: [
+          for (final m in data['movimientos'] as List)
+            _movimiento(m as Map<String, dynamic>),
+        ],
+        nextCursor: data['next_cursor'] as String?,
       ),
     );
-      });
+  });
+
+  @override
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
+  }) => _guard(() async {
+    final response = await _dio.get<dynamic>(
+      '/v1/movements',
+      queryParameters: {'cursor': ?cursor, 'limit': ?limit},
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
+
+    final data = _cuerpo(response);
+    return right(
+      MovementPage(
+        items: [
+          for (final m in data['movimientos'] as List)
+            _movimiento(m as Map<String, dynamic>),
+        ],
+        nextCursor: data['next_cursor'] as String?,
+      ),
+    );
+  });
 
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(
@@ -61,11 +86,11 @@ class HttpAccountRepository implements AccountRepository {
     final response = await _dio.get<dynamic>(
       '/v1/movements/${Uri.encodeComponent(transactionId)}',
     );
-        final failure = _failureFor(response);
-        if (failure != null) return left(GlobalFailure.server(failure));
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
 
-        return right(_detalle(_cuerpo(response)));
-      });
+    return right(_detalle(_cuerpo(response)));
+  });
 
   @override
   FutureResult<AccountFailure, Account> abrir({
@@ -113,17 +138,17 @@ class HttpAccountRepository implements AccountRepository {
   Account _cuenta(Map<String, dynamic> j) {
     final moneda = _moneda(j['moneda']);
     return Account(
-        id: j['id'] as String,
-        numero: j['numero'] as String,
-        tipo:
-            AccountType.fromCode(j['tipo'] as String) ??
-            (throw FormatException('Tipo desconocido: ${j['tipo']}')),
+      id: j['id'] as String,
+      numero: j['numero'] as String,
+      tipo:
+          AccountType.fromCode(j['tipo'] as String) ??
+          (throw FormatException('Tipo desconocido: ${j['tipo']}')),
       moneda: moneda,
-        estado: j['estado'] as String,
-        nombre: j['nombre'] as String?,
+      estado: j['estado'] as String,
+      nombre: j['nombre'] as String?,
       saldoDisponible: Money(j['saldo_disponible'] as int, moneda),
       saldoContable: Money(j['saldo_contable'] as int, moneda),
-      );
+    );
   }
 
   /// Una moneda desconocida NO se adivina: pintar dólares como soles es peor
@@ -137,46 +162,66 @@ class HttpAccountRepository implements AccountRepository {
   Movement _movimiento(Map<String, dynamic> j) {
     final moneda = _moneda(j['moneda']);
     return Movement(
-        transactionId: j['transaction_id'] as String,
-        tipo: _tipo(j['tipo'] as String),
-        direccion: _direccion(j['direccion'] as String),
+      transactionId: j['transaction_id'] as String,
+      tipo: _tipo(j['tipo'] as String),
+      direccion: _direccion(j['direccion'] as String),
       monto: Money(j['monto'] as int, moneda),
-        contraparte: j['contraparte'] as String?,
-        motivo: j['motivo'] as String?,
+      contraparte: j['contraparte'] as String?,
+      motivo: j['motivo'] as String?,
       saldoPosterior: Money(j['saldo_posterior'] as int, moneda),
-        fecha: _fecha(j['created_at'] as String),
-      );
+      fecha: _fecha(j['created_at'] as String),
+      cuenta: _ref(j['cuenta']),
+      // Solo cuenta si el servidor dice que es entre propias.
+      cuentaDestino: j['entre_propias'] == true
+          ? _ref(j['cuenta_destino'])
+          : null,
+    );
   }
+
+  /// La cuenta de una fila del historial combinado; `null` si no viene (el
+  /// historial de una cuenta no la manda).
+  MovementAccountRef? _ref(Object? j) => switch (j) {
+    final Map<String, dynamic> c => MovementAccountRef(
+      id: c['id'] as String,
+      tipo:
+          AccountType.fromCode(c['tipo'] as String) ??
+          (throw FormatException('Tipo desconocido: ${c['tipo']}')),
+      moneda: _moneda(c['moneda']),
+      numeroMasked: c['numero_masked'] as String,
+      nombre: c['nombre'] as String?,
+    ),
+    _ => null,
+  };
 
   MovementDetail _detalle(Map<String, dynamic> j) {
     final moneda = _moneda(j['moneda']);
     return MovementDetail(
-        transactionId: j['transaction_id'] as String,
-        tipo: _tipo(j['tipo'] as String),
-        direccion: _direccion(j['direccion'] as String),
+      transactionId: j['transaction_id'] as String,
+      tipo: _tipo(j['tipo'] as String),
+      direccion: _direccion(j['direccion'] as String),
       monto: Money(j['monto'] as int, moneda),
-        contraparte: j['contraparte'] as String?,
-        motivo: j['motivo'] as String?,
+      contraparte: j['contraparte'] as String?,
+      motivo: j['motivo'] as String?,
       saldoPosterior: Money(j['saldo_posterior'] as int, moneda),
-        fecha: _fecha(j['created_at'] as String),
-        estado: j['estado'] as String,
-        cuentaDestinoMasked: j['cuenta_destino_masked'] as String?,
-      );
+      fecha: _fecha(j['created_at'] as String),
+      estado: j['estado'] as String,
+      cuentaDestinoMasked: j['cuenta_destino_masked'] as String?,
+    );
   }
 
   MovementKind _tipo(String tipo) => switch (tipo) {
-        'transferencia' => MovementKind.transferencia,
-        'recarga' => MovementKind.recarga,
-        _ => MovementKind.otro,
-      };
+    'transferencia' => MovementKind.transferencia,
+    'recarga' => MovementKind.recarga,
+    _ => MovementKind.otro,
+  };
 
   /// Un sentido desconocido NO se adivina: signar mal un monto es peor que
   /// fallar. La `FormatException` la recoge `_guard` como inesperado.
   MovementDirection _direccion(String d) => switch (d) {
-        'debito' => MovementDirection.debito,
-        'credito' => MovementDirection.credito,
-        _ => throw FormatException('Dirección desconocida: $d'),
-      };
+    'debito' => MovementDirection.debito,
+    'credito' => MovementDirection.credito,
+    _ => throw FormatException('Dirección desconocida: $d'),
+  };
 
   /// El contrato es UTC con `Z`. Si faltara el sufijo, `DateTime.parse` lo
   /// leería como hora LOCAL y el movimiento saldría a horas equivocadas: se
@@ -218,11 +263,12 @@ class HttpAccountRepository implements AccountRepository {
         final int n => AccountFailure.wrongPin(n),
         _ => const AccountFailure.unexpected(),
       },
-      'IDENTIFIER_LOCKED' || 'DEVICE_LOCKED' =>
-        switch (_instante(body['locked_until'])) {
-          final DateTime hasta => AccountFailure.locked(hasta),
-          _ => const AccountFailure.unexpected(),
-        },
+      'IDENTIFIER_LOCKED' || 'DEVICE_LOCKED' => switch (_instante(
+        body['locked_until'],
+      )) {
+        final DateTime hasta => AccountFailure.locked(hasta),
+        _ => const AccountFailure.unexpected(),
+      },
       _ => const AccountFailure.unexpected(),
     };
   }
@@ -241,11 +287,11 @@ class HttpAccountRepository implements AccountRepository {
     } on DioException catch (e) {
       return left(
         GlobalFailure.server(switch (e.type) {
-        DioExceptionType.connectionTimeout ||
-        DioExceptionType.sendTimeout ||
-        DioExceptionType.receiveTimeout ||
+          DioExceptionType.connectionTimeout ||
+          DioExceptionType.sendTimeout ||
+          DioExceptionType.receiveTimeout ||
           DioExceptionType.connectionError => const AccountFailure.network(),
-        _ => const AccountFailure.unexpected(),
+          _ => const AccountFailure.unexpected(),
         }),
       );
     } catch (error, stackTrace) {

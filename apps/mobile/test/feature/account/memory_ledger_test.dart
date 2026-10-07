@@ -105,12 +105,82 @@ void main() {
     expect(await saldo(), const Money.soles(125040));
   });
 
+  test('el historial combinado junta una transferencia entre propias en una '
+      'fila, y cada cuenta conserva su lado', () async {
+    final r = await transferencias.enviar(
+      cuentaOrigenId: MemoryTransferRepository.cuentaId,
+      cuentaDestinoId: MemoryLedger.cuentaSueldoId,
+      monto: const Money.soles(5000),
+      pin: MemoryTransferRepository.pinValido,
+      idempotencyKey: 'propias-0001',
+    );
+    final tx = r.getRight().toNullable()?.transactionId;
+
+    final todos = (await cuentas.todosLosMovimientos()).getRight().toNullable();
+    final filas = todos?.items.where((m) => m.transactionId == tx).toList();
+    expect(filas, hasLength(1));
+    expect(filas?.first.direccion, MovementDirection.debito);
+    expect(filas?.first.entrePropias, isTrue);
+    expect(filas?.first.cuenta?.id, MemoryTransferRepository.cuentaId);
+    expect(filas?.first.cuentaDestino?.id, MemoryLedger.cuentaSueldoId);
+    expect(filas?.first.cuentaDestino?.tipo, AccountType.sueldo);
+
+    final sueldo = (await cuentas.movimientos(
+      MemoryLedger.cuentaSueldoId,
+    )).getRight().toNullable();
+    expect(sueldo?.items.single.direccion, MovementDirection.credito);
+  });
+
+  test(
+    'el historial combinado mezcla las cuentas, más reciente primero',
+    () async {
+      var ahora = DateTime.utc(2026, 10, 5, 18);
+      final ledger = MemoryLedger(clock: () => ahora);
+      final repo = MemoryAccountRepository(ledger: ledger);
+      final transfer = MemoryTransferRepository(
+        clock: () => ahora,
+        ledger: ledger,
+      );
+      // Días después: la demo siembra "hoy" en hora local.
+    ahora = ahora.add(const Duration(days: 3));
+      await transfer.recargar(
+        cuentaId: MemoryLedger.cuentaDolaresId,
+        monto: const Money.dolares(100),
+        idempotencyKey: 'dep-usd-0001',
+      );
+
+      final items = (await repo.todosLosMovimientos())
+          .getRight()
+          .toNullable()!
+          .items;
+      expect(items.first.cuenta?.id, MemoryLedger.cuentaDolaresId);
+      expect(items.first.cuenta?.moneda, Currency.usd);
+      final fechas = items.map((m) => m.fecha).toList();
+      expect(fechas, [...fechas]..sort((a, b) => b.compareTo(a)));
+    },
+  );
+
   test('el titular de demo tiene tres cuentas y cada una su saldo', () async {
     final lista = (await cuentas.cuentas()).getRight().toNullable()!;
     expect(lista.map((c) => (c.id, c.tipo, c.moneda, c.saldoDisponible)), [
-      ('acc-demo-1', AccountType.ahorro, Currency.pen, const Money.soles(125040)),
-      ('acc-demo-2', AccountType.sueldo, Currency.pen, const Money.soles(350000)),
-      ('acc-demo-3', AccountType.ahorro, Currency.usd, const Money.dolares(12000)),
+      (
+        'acc-demo-1',
+        AccountType.ahorro,
+        Currency.pen,
+        const Money.soles(125040),
+      ),
+      (
+        'acc-demo-2',
+        AccountType.sueldo,
+        Currency.pen,
+        const Money.soles(350000),
+      ),
+      (
+        'acc-demo-3',
+        AccountType.ahorro,
+        Currency.usd,
+        const Money.dolares(12000),
+      ),
     ]);
   });
 
@@ -123,12 +193,16 @@ void main() {
     final lista = (await cuentas.cuentas()).getRight().toNullable()!;
     expect(lista[0].saldoDisponible, const Money.soles(125040));
     expect(lista[2].saldoDisponible, const Money.dolares(12500));
-    final movs = (await cuentas.movimientos(MemoryLedger.cuentaDolaresId)).getRight().toNullable()!;
+    final movs = (await cuentas.movimientos(
+      MemoryLedger.cuentaDolaresId,
+    )).getRight().toNullable()!;
     expect(movs.items.single.monto, const Money.dolares(500));
   });
 
   test('las cuentas sin movimientos devuelven una página vacía', () async {
-    final p = (await cuentas.movimientos(MemoryLedger.cuentaSueldoId)).getRight().toNullable()!;
+    final p = (await cuentas.movimientos(
+      MemoryLedger.cuentaSueldoId,
+    )).getRight().toNullable()!;
     expect(p.items, isEmpty);
     expect(p.nextCursor, isNull);
   });

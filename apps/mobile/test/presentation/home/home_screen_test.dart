@@ -185,7 +185,7 @@ void main() {
 
     expect(find.text('Cobrar'), findsNothing);
     expect(find.text('Retirar'), findsNothing);
-    for (final label in ['Enviar', 'Depósito simulado']) {
+    for (final label in ['Transferir', 'Depósito simulado']) {
       await tester.tap(find.text(label));
     }
 
@@ -202,12 +202,34 @@ void main() {
     expect(find.text('Retirar'), findsNothing);
     expect(find.text('WasiBot'), findsNothing);
     expect(find.text('Ver todo'), findsNothing);
+    // Solo hay 3 movimientos: no hay más que ver.
+    expect(find.text('Ver más'), findsNothing);
     expect(find.byTooltip('Notificaciones'), findsNothing);
     // Lo que sí existe sigue ahí.
-    expect(find.text('Enviar'), findsOneWidget);
+    expect(find.text('Transferir'), findsOneWidget);
+    expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
     expect(find.text('Depósito simulado'), findsOneWidget);
     expect(find.text('Últimos movimientos'), findsOneWidget);
   });
+
+  Widget wrapRouter(AccountBloc b, GoRouter router) {
+    addTearDown(router.dispose);
+    return RepositoryProvider<DeviceActions>.value(
+      value: device,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: bloc),
+          BlocProvider<AccountBloc>.value(value: b),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: CuyCashTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+  }
 
   Widget wrapWith(AccountBloc b) => RepositoryProvider<DeviceActions>.value(
     value: device,
@@ -226,24 +248,14 @@ void main() {
   );
 
   testWidgets(
-    'cargando los movimientos de otra cuenta muestra la silueta, sin "aún no '
-    'tienes movimientos" ni spinner',
+    'refrescando sin movimientos muestra la silueta, sin "aún no tienes '
+    'movimientos" ni spinner',
     (tester) async {
       final cargando = _BlocConEstado(
         const AccountState(
           status: AccountStatus.ready,
-          cargandoMovimientos: true,
-          cuentas: [
-            Account(
-              id: 'a',
-              numero: '19100000004521',
-              tipo: AccountType.ahorro,
-              moneda: Currency.pen,
-              estado: 'activa',
-              saldoDisponible: Money.soles(125040),
-              saldoContable: Money.soles(125040),
-            ),
-          ],
+          refreshing: true,
+          cuentas: [_ahorro],
         ),
       );
       addTearDown(cargando.close);
@@ -396,31 +408,70 @@ void main() {
     expect(find.text('Nombre de la cuenta'), findsNothing);
   });
 
-  testWidgets('los movimientos dicen de qué cuenta son', (tester) async {
+  testWidgets(
+    'los últimos movimientos son de todas las cuentas y cada uno dice de cuál',
+    (tester) async {
+      final b = _BlocConEstado(
+        AccountState(
+          status: AccountStatus.ready,
+          cuentas: const [_ahorro],
+          recientes: [
+            _mov('tx-1', cuenta: _refAhorro, monto: const Money.soles(4500)),
+            _mov('tx-2', cuenta: _refAhorro, destino: _refSueldo),
+          ],
+        ),
+      );
+      addTearDown(b.close);
+      await tester.pumpWidget(wrapWith(b));
+      await tester.pump();
+
+      expect(find.text('Últimos movimientos'), findsOneWidget);
+      expect(find.text('De todas tus cuentas'), findsOneWidget);
+      // Ya no hay fila "Mis cuentas" con botón.
+      expect(find.text('Mis cuentas'), findsNothing);
+      expect(find.textContaining('Ahorros · ••••4521'), findsOneWidget);
+      expect(find.text('- S/ 45.00'), findsOneWidget);
+      // Entre propias: una fila neutra, sin signo.
+      expect(find.text('Entre tus cuentas'), findsOneWidget);
+      expect(find.textContaining('Ahorros → Planilla'), findsOneWidget);
+      expect(find.text('S/ 30.00'), findsOneWidget);
+      expect(find.text('- S/ 30.00'), findsNothing);
+    },
+  );
+
+  testWidgets('el menú ⋮ ofrece abrir cuenta y la abre', (tester) async {
     final b = _BlocConEstado(
-      const AccountState(
-        status: AccountStatus.ready,
-        cuentas: [
-          Account(
-            id: 'a',
-            numero: '19100000004521',
-            tipo: AccountType.ahorro,
-            moneda: Currency.pen,
-            estado: 'activa',
-            saldoDisponible: Money.soles(125040),
-            saldoContable: Money.soles(125040),
-          ),
-        ],
-      ),
+      const AccountState(status: AccountStatus.ready, cuentas: [_ahorro]),
     );
     addTearDown(b.close);
-    await tester.pumpWidget(wrapWith(b));
+    final router = _router();
+    await tester.pumpWidget(wrapRouter(b, router));
     await tester.pump();
 
-    expect(find.text('Últimos movimientos'), findsOneWidget);
-    expect(find.text('Ahorros · ••••4521'), findsOneWidget);
-    expect(find.text('Mi cuenta'), findsOneWidget);
-    expect(find.text('Abrir cuenta'), findsOneWidget);
+    await tester.tap(find.byTooltip('Más opciones'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Abrir cuenta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ABRIR 1'), findsOneWidget);
+  });
+
+  testWidgets('con cupo, el carrusel termina en "Abrir otra cuenta"', (
+    tester,
+  ) async {
+    final b = _BlocConEstado(
+      const AccountState(status: AccountStatus.ready, cuentas: [_ahorro]),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapRouter(b, _router()));
+    await tester.pump();
+
+    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Abrir otra cuenta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ABRIR 1'), findsOneWidget);
   });
 
   testWidgets('con cinco cuentas no se ofrece abrir otra', (tester) async {
@@ -444,8 +495,54 @@ void main() {
     await tester.pumpWidget(wrapWith(b));
     await tester.pump();
 
-    expect(find.text('Mis cuentas'), findsOneWidget);
-    expect(find.text('Abrir cuenta'), findsNothing);
+    // La última página es la cuenta, no la tarjeta de abrir.
+    expect(find.text('Abrir otra cuenta'), findsNothing);
+    await tester.tap(find.byTooltip('Más opciones'));
+    await tester.pumpAndSettle();
+    final opcion = tester.widget<PopupMenuItem<Object?>>(
+      find.ancestor(
+        of: find.text('Abrir cuenta'),
+        matching: find.byWidgetPredicate((w) => w is PopupMenuItem),
+      ),
+    );
+    expect(opcion.enabled, isFalse);
+  });
+
+  testWidgets('tocar una tarjeta abre los movimientos de esa cuenta', (
+    tester,
+  ) async {
+    final b = _BlocConEstado(
+      const AccountState(status: AccountStatus.ready, cuentas: [_ahorro]),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapRouter(b, _router()));
+    await tester.pump();
+
+    await tester.tap(find.text('S/ 1,250.40'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('MOVIMIENTOS a'), findsOneWidget);
+  });
+
+  testWidgets('"Ver más" aparece si hay más y abre el historial de todas', (
+    tester,
+  ) async {
+    final b = _BlocConEstado(
+      AccountState(
+        status: AccountStatus.ready,
+        cuentas: const [_ahorro],
+        recientes: [_mov('tx-1', cuenta: _refAhorro)],
+        hayMasMovimientos: true,
+      ),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapRouter(b, _router()));
+    await tester.pump();
+
+    await tester.tap(find.text('Ver más'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('MOVIMIENTOS todas'), findsOneWidget);
   });
 
   testWidgets('un refresco fallido avisa sin quitar el saldo', (tester) async {
@@ -478,6 +575,67 @@ void main() {
   });
 }
 
+const _ahorro = Account(
+  id: 'a',
+  numero: '19100000004521',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
+  estado: 'activa',
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
+);
+
+const _refAhorro = MovementAccountRef(
+  id: 'a',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
+  numeroMasked: '••••4521',
+);
+
+const _refSueldo = MovementAccountRef(
+  id: 's',
+  tipo: AccountType.sueldo,
+  moneda: Currency.pen,
+  numeroMasked: '••••8830',
+  nombre: 'Planilla',
+);
+
+Movement _mov(
+  String id, {
+  required MovementAccountRef cuenta,
+  MovementAccountRef? destino,
+  Money monto = const Money.soles(3000),
+}) => Movement(
+  transactionId: id,
+  tipo: MovementKind.transferencia,
+  direccion: MovementDirection.debito,
+  monto: monto,
+  saldoPosterior: const Money.soles(122040),
+  fecha: DateTime.utc(2026, 10, 6, 15),
+  contraparte: 'c*** p***',
+  cuenta: cuenta,
+  cuentaDestino: destino,
+);
+
+/// Inicio con rutas de mentira para ver a dónde navega cada toque.
+GoRouter _router() => GoRouter(
+  routes: [
+    GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+    GoRoute(
+      path: '/movimientos',
+      builder: (_, state) => Text(switch (state.extra) {
+        final Account c => 'MOVIMIENTOS ${c.id}',
+        _ => 'MOVIMIENTOS todas',
+      }),
+    ),
+    GoRoute(
+      path: '/cuentas/abrir',
+      builder: (_, state) =>
+          Text('ABRIR ${(state.extra as List<Account>).length}'),
+    ),
+  ],
+);
+
 /// Bloc que ya nace en un estado dado y anota los eventos que recibe, sin
 /// tocar ningún repositorio.
 class _BlocConEstado extends AccountBloc {
@@ -505,6 +663,12 @@ class _RepoCaido implements AccountRepository {
   FutureResult<AccountFailure, MovementPage> movimientos(
     String cuentaId, {
     String? cursor,
+  }) async => left(_caida);
+
+  @override
+  FutureResult<AccountFailure, MovementPage> todosLosMovimientos({
+    String? cursor,
+    int? limit,
   }) async => left(_caida);
 
   @override

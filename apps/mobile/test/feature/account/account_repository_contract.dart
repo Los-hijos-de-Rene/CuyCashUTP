@@ -249,6 +249,51 @@ void probarContratoDeCuentas(
       expect(detalle.fecha, fila.fecha);
     });
 
+    group('todosLosMovimientos', () {
+      test('cada fila dice de qué cuenta es', () async {
+        final page = valorDe(await construir().todosLosMovimientos());
+
+        expect(
+          page.items.map((m) => m.transactionId),
+          containsAll(['tx-demo-1', 'tx-demo-2', 'tx-demo-3']),
+        );
+        for (final m in page.items) {
+          expect(m.cuenta?.id, 'acc-demo-1');
+          expect(m.cuenta?.numeroMasked, '••••4521');
+          expect(m.cuenta?.tipo, AccountType.ahorro);
+          expect(m.cuenta?.moneda, Currency.pen);
+          expect(m.entrePropias, isFalse);
+        }
+      });
+
+      test('respeta el límite y pagina sin repetir ni saltar', () async {
+        final repo = construir();
+        final primera = valorDe(await repo.todosLosMovimientos(limit: 2));
+        expect(primera.items, hasLength(2));
+        expect(primera.nextCursor, isNotNull);
+
+        final resto = valorDe(
+          await repo.todosLosMovimientos(cursor: primera.nextCursor, limit: 2),
+        );
+        expect(resto.nextCursor, isNull);
+        expect([...primera.items, ...resto.items].map((m) => m.transactionId), [
+          'tx-demo-1',
+          'tx-demo-2',
+          'tx-demo-3',
+        ]);
+      });
+
+      test(
+        'el historial de una cuenta no trae la cuenta en cada fila',
+        () async {
+          final repo = construir();
+          final c = await primeraCuenta(repo);
+          final page = valorDe(await repo.movimientos(c.id));
+          expect(page.items.every((m) => m.cuenta == null), isTrue);
+        },
+      );
+    });
+
     test('abrir una cuenta la agrega a la lista', () async {
       final repo = construir();
       final nueva = valorDe(

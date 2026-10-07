@@ -176,6 +176,44 @@ class FakeAccountsBackend implements HttpClientAdapter {
         },
       );
     }
+    if (path == '/v1/movements') {
+      // Historial combinado: los de demo son todos de `acc-demo-1`.
+      final crudo = query['cursor'] as String?;
+      final tamano = switch (query['limit']) {
+        final int l => l,
+        _ => pageSize,
+      };
+      final desde = switch (int.tryParse((crudo ?? '').replaceFirst('c', ''))) {
+        final int i when i >= 0 && i < _movimientos.length => i,
+        _ => 0,
+      };
+      final hasta = desde + tamano;
+      final hayMas = hasta < _movimientos.length;
+      return (
+        200,
+        {
+          'movimientos': [
+            for (final m in _movimientos.sublist(
+              desde,
+              hayMas ? hasta : _movimientos.length,
+            ))
+              {
+                ...m,
+                'cuenta': {
+                  'id': 'acc-demo-1',
+                  'tipo': 'ahorro',
+                  'moneda': 'PEN',
+                  'numero_masked': '••••4521',
+                  'nombre': _nombres['acc-demo-1'],
+                },
+                'entre_propias': false,
+                'cuenta_destino': null,
+              },
+          ],
+          'next_cursor': hayMas ? 'c$hasta' : null,
+        },
+      );
+    }
     if (path.startsWith('/v1/accounts/')) return (404, _error404);
     final id = path.replaceFirst('/v1/movements/', '');
     final fila = _movimientos.where((m) => m['transaction_id'] == id);
@@ -391,8 +429,15 @@ void main() {
         isA<AccountKeyReused>(),
       );
       expect(
-        await falla(403, {'code': 'INVALID_CREDENTIALS', 'intentos_restantes': 2}),
-        isA<AccountWrongPin>().having((f) => f.intentosRestantes, 'restantes', 2),
+        await falla(403, {
+          'code': 'INVALID_CREDENTIALS',
+          'intentos_restantes': 2,
+        }),
+        isA<AccountWrongPin>().having(
+          (f) => f.intentosRestantes,
+          'restantes',
+          2,
+        ),
       );
       expect(
         await falla(423, {

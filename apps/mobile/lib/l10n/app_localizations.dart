@@ -1462,12 +1462,6 @@ abstract class AppLocalizations {
   /// **'Cambiar el nombre de la cuenta'**
   String get homeRenameTooltip;
 
-  /// No description provided for @homeAccountsTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'{count, plural, =1{Mi cuenta} other{Mis cuentas}}'**
-  String homeAccountsTitle(int count);
-
   /// No description provided for @homeOpenAccountCta.
   ///
   /// In es, this message translates to:
@@ -1513,7 +1507,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeActionSend.
   ///
   /// In es, this message translates to:
-  /// **'Enviar'**
+  /// **'Transferir'**
   String get homeActionSend;
 
   /// No description provided for @homeActionCharge.
@@ -1557,6 +1551,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver todo'**
   String get homeSeeAll;
+
+  /// No description provided for @homeSeeMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver más'**
+  String get homeSeeMore;
+
+  /// No description provided for @homeMovementsAllAccounts.
+  ///
+  /// In es, this message translates to:
+  /// **'De todas tus cuentas'**
+  String get homeMovementsAllAccounts;
+
+  /// No description provided for @homeMenuTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Más opciones'**
+  String get homeMenuTooltip;
+
+  /// No description provided for @homeOpenAccountCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir otra cuenta'**
+  String get homeOpenAccountCard;
+
+  /// No description provided for @homeOpenAccountCardHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros, corriente o sueldo'**
+  String get homeOpenAccountCardHint;
+
+  /// No description provided for @homeAccountOpenSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver los movimientos de {cuenta}'**
+  String homeAccountOpenSemantics(String cuenta);
+
+  /// No description provided for @movementsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos'**
+  String get movementsTitle;
+
+  /// No description provided for @movementsLoadMoreFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar más movimientos. Desliza para reintentar.'**
+  String get movementsLoadMoreFailed;
+
+  /// No description provided for @movementBetweenOwn.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre tus cuentas'**
+  String get movementBetweenOwn;
+
+  /// No description provided for @movementOwnRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'{origen} → {destino}'**
+  String movementOwnRoute(String origen, String destino);
 
   /// No description provided for @homeMovementCompleted.
   ///
