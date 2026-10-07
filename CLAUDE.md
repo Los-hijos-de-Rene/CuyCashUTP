@@ -66,11 +66,11 @@ los tests usan `MemoryBiometricGate`.
 `pending`. La pantalla de datos personales muestra el sello "Identidad
 verificada" solo si el servidor dice `verified`, así que hoy nunca aparece.
 
-**Concurrencia sin probar.** Los tests marcados `postgres` (envíos cruzados,
-misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`, aperturas
-simultáneas de sueldo) **nunca se han ejecutado contra un Postgres real**:
-el orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están
-razonados, no probados. Es la única garantía del sprint en ese estado.
+**Concurrencia: probada en CI.** Los tests marcados `postgres` (envíos
+cruzados, misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`,
+aperturas simultáneas de sueldo) corren contra Postgres 16 real en el job
+*Concurrencia (Postgres real)* de `ci-backend.yml`. La primera corrida
+(2026-10-07) pasó 3 de 3. Siguen sin medir los 200 ms bajo carga.
 
 Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 `SLA_KPI_Banca_Online_Integral.xlsx`).
@@ -182,8 +182,8 @@ acepta SQLite y los hosts `localhost`/`127.0.0.1` (y rechaza `ENV=production`).
 Contra una base remota hay que pasar esa variable a propósito.
 
 **Tests que exigen Postgres** (el bloqueo de fila y la concurrencia no se
-pueden probar en SQLite; sin esta variable se omiten, y hasta hoy nadie los ha
-ejecutado contra un Postgres real):
+pueden probar en SQLite; sin esta variable se omiten. En CI corren solos
+contra un Postgres de servicio):
 ```sh
 cd services/api
 TEST_POSTGRES_URL="postgresql+asyncpg://user:pass@localhost/cuycash_test" \

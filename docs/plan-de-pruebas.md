@@ -32,7 +32,7 @@ antifraude, conciliación) y el dashboard web.
 | **API (integración)** | Cada endpoint por HTTP contra una base real (SQLite en memoria): contrato, reglas, errores | `pytest` + `httpx` | `services/api/tests` | 299 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
 | **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 40 |
-| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en *CI backend*; ver §7) |
+| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en *CI backend*; primera corrida 2026-10-07: 3 de 3) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
 
@@ -110,7 +110,6 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#8-evidencia-de-prueba
 
 | Qué | Por qué | Cómo cerrarlo |
 |---|---|---|
-| Concurrencia en Postgres real (3 pruebas `postgres`) | El bloqueo `FOR UPDATE` no existe en SQLite; nunca se habían corrido contra Postgres | Desde este avance las corre el job *Concurrencia (Postgres real)* de *CI backend*: su primera ejecución es la del PR que agrega el pipeline |
 | Recorrido E2E app ↔ backend en emulador | `docs/verificacion-manual.md` nunca se ejecutó | Ejecutar el guion y anotar el resultado |
 | Diálogo real de `local_auth` en un teléfono | Los tests usan `MemoryBiometricGate` | Prueba manual en un dispositivo |
 | SLA de 200 ms por operación y 1.5 s de autenticación | Sin medición automatizada | Medir con carga en el despliegue |

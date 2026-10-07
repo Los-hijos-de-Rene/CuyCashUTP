@@ -34,7 +34,7 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | DT-01 | Dinero en céntimos enteros (`BIGINT`, `Money`) | I | P | `db/models.py`; `core_kernel · Money` | `test_consistencia_ddl.py` | ✅ |
 | DT-02 | Partida doble atómica (débito y crédito en la misma transacción) | I | P | `app/services/ledger.py` | `test_libro_mayor.py`, `test_motor_de_asientos.py` | ✅ |
 | DT-03 | Saldo no negativo y monto positivo forzados por el motor (`CHECK`) | I | P | `db/models.py` → `schema.sql` | `test_consistencia_ddl.py` | ✅ |
-| DT-04 | Bloqueo de fila (`FOR UPDATE`) contra doble gasto | I | P | `app/services/ledger.py` | `test_concurrencia_multicuenta.py` | ⚠️ nunca corrido en Postgres real |
+| DT-04 | Bloqueo de fila (`FOR UPDATE`) contra doble gasto | I | P | `app/services/ledger.py` | `test_concurrencia_multicuenta.py`, `test_transferencias.py` (marca `postgres`, en CI contra Postgres 16) | ✅ |
 | DT-05 | Idempotencia por `UNIQUE (idempotency_key)` | I | P | `db/models.py`, `ledger.py` | `test_transferencias.py`, `test_libro_mayor.py` | ✅ |
 | DT-06 | DDL consistente con el modelo | I | D | `scripts/dump_schema.py` | `test_consistencia_ddl.py` | ✅ |
 | DT-07 | Nombre del destinatario enmascarado | C | P | `routers/directory.py · enmascarar` | `test_directorio_y_frecuentes.py` | ✅ |
@@ -74,6 +74,6 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | OP-09 | Logs estructurados con correlación | C D | D | — | — | ⏳ |
 | OP-10 | Migraciones versionadas | I D | P | — | — | ⏳ |
 
-**Resumen**: 47 controles; 41 implementados (✅), 2 parciales (⚠️) y 4
+**Resumen**: 47 controles; 42 implementados (✅), 1 parcial (⚠️) y 4
 pendientes (⏳). Los pendientes y parciales están detallados con su
 mitigación en [`seguridad.md`](seguridad.md#7-riesgos-abiertos).

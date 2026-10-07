@@ -46,6 +46,7 @@ Leyenda: ✅ cubierto en el repositorio · 📸 falta solo la captura para el PD
 | Sin forma de monitorear la base desde fuera | `GET /health/db` y `scripts/monitoreo.sql` |
 | Sin prueba de humo del despliegue | `scripts/smoke_prod.sh` |
 | **500 intermitente en producción** tras el reposo de Neon | `pool_pre_ping=True` en `app/db/base.py` (confirmar tras desplegar) |
+| Las 3 pruebas de concurrencia nunca se habían ejecutado contra Postgres | Job *Concurrencia (Postgres real)* en CI: 3 de 3 en verde |
 | Informes de administración, seguridad, catálogo, plan de pruebas y despliegue inexistentes o dispersos | Los cinco documentos de esta carpeta |
 
 ## Pendientes antes de entregar
@@ -55,5 +56,5 @@ Leyenda: ✅ cubierto en el repositorio · 📸 falta solo la captura para el PD
 2. Tomar las capturas marcadas con 📸 (las listas están al final de
    `administracion-bd.md` y `despliegue.md`).
 3. Limitaciones que conviene **decir** en la sustentación, no esconder:
-   concurrencia del libro mayor sin prueba en Postgres real, verificación E2E
+   rendimiento bajo carga sin medir, verificación E2E
    en emulador sin ejecutar, KYC simulado en producción, migraciones pendientes.

@@ -138,4 +138,4 @@ almacenamiento del teléfono) se cifra.
 | 3 | Vales de ingreso y topes de consultas en memoria del proceso | Llevarlos a la base o a Redis si hay más de una instancia. |
 | 4 | Logs sin estructura ni correlación | Logs JSON con id de correlación. |
 | 5 | Esquema sin migraciones | Alembic. |
-| 6 | Concurrencia del libro mayor sin prueba en Postgres real | Correr `pytest -m postgres` contra una rama de Neon `_test`. |
+| 6 | Rendimiento del libro mayor bajo carga sin medir (la concurrencia ya se prueba en CI contra Postgres real) | Prueba de carga contra el despliegue. |
