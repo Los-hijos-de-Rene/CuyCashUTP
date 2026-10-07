@@ -1462,17 +1462,17 @@ abstract class AppLocalizations {
   /// **'Cambiar el nombre de la cuenta'**
   String get homeRenameTooltip;
 
-  /// No description provided for @homeOpenAccountTitle.
+  /// No description provided for @homeAccountsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Abrir otra cuenta'**
-  String get homeOpenAccountTitle;
+  /// **'Mis cuentas'**
+  String get homeAccountsTitle;
 
-  /// No description provided for @homeOpenAccountHint.
+  /// No description provided for @homeOpenAccountCta.
   ///
   /// In es, this message translates to:
-  /// **'Ahorros, corriente o sueldo, en soles o dólares'**
-  String get homeOpenAccountHint;
+  /// **'Abrir cuenta'**
+  String get homeOpenAccountCta;
 
   /// No description provided for @renameAccountTitle.
   ///

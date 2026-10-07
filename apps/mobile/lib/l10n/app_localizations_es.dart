@@ -814,11 +814,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
 
   @override
-  String get homeOpenAccountTitle => 'Abrir otra cuenta';
+  String get homeAccountsTitle => 'Mis cuentas';
 
   @override
-  String get homeOpenAccountHint =>
-      'Ahorros, corriente o sueldo, en soles o dólares';
+  String get homeOpenAccountCta => 'Abrir cuenta';
 
   @override
   String get renameAccountTitle => 'Nombre de la cuenta';

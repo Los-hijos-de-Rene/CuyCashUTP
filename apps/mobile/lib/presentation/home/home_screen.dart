@@ -10,7 +10,9 @@ import '../app/app_routes.dart';
 import '../session/remembered_user_builder.dart';
 import 'bloc/account_bloc.dart';
 import 'home_action.dart';
+import '../account/account_label.dart';
 import 'widgets/account_carousel.dart';
+import 'widgets/accounts_header.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/insight_card.dart';
@@ -176,15 +178,18 @@ class _ReadyView extends StatelessWidget {
           const SizedBox(height: CuyCashSpacing.stackSm),
         ],
         if (state.cuentas.isNotEmpty) ...[
+          AccountsHeader(
+            onOpenAccount: state.puedeAbrirOtra
+                ? () => _openAccount(context)
+                : null,
+          ),
+          const SizedBox(height: CuyCashSpacing.stackSm),
           AccountCarousel(
             cuentas: state.cuentas,
             seleccionada: state.seleccionada,
             onSelected: (i) =>
                 context.read<AccountBloc>().add(AccountEvent.selected(i)),
             onRename: (c) => RenameAccountSheet.show(context, c),
-            onOpenAccount: state.puedeAbrirOtra
-                ? () => _openAccount(context)
-                : null,
           ),
           const SizedBox(height: CuyCashSpacing.stackMd),
         ],
@@ -197,9 +202,22 @@ class _ReadyView extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                l10n.homeMovementsTitle,
-                style: CuyCashTypography.titleMd,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.homeMovementsTitle,
+                    style: CuyCashTypography.titleMd,
+                  ),
+                  // De qué cuenta son: la que se ve en el carrusel.
+                  if (state.cuenta case final c?)
+                    Text(
+                      accountShort(l10n, c),
+                      style: CuyCashTypography.bodyMd.copyWith(
+                        color: CuyCashColors.secondaryText,
+                      ),
+                    ),
+                ],
               ),
             ),
             if (_showUnfinished)

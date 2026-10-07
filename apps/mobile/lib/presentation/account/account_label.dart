@@ -24,3 +24,8 @@ String accountLabel(AppLocalizations l10n, Account c) =>
 /// Cuenta que recibe: el nombre solo si es propia; si no, "Ahorros · ••••7732".
 String recipientAccountShort(AppLocalizations l10n, RecipientAccount c) =>
     c.nombre ?? '${accountTypeShort(l10n, c.tipo)} · ${c.numeroMasked}';
+
+/// "Ahorros · ••••4521" (o "Viaje · ••••4521" si tiene nombre), para decir de
+/// qué cuenta propia se habla en una línea.
+String accountShort(AppLocalizations l10n, Account c) =>
+    '${c.nombre ?? accountTypeShort(l10n, c.tipo)} · ${c.numeroMasked}';

@@ -43,7 +43,6 @@ void main() {
           seleccionada: 0,
           onSelected: (_) {},
           onRename: (_) {},
-          onOpenAccount: () {},
         ),
       ),
     );
@@ -61,7 +60,6 @@ void main() {
           seleccionada: 0,
           onSelected: (i) => elegido = i,
           onRename: (_) {},
-          onOpenAccount: () {},
         ),
       ),
     );
@@ -71,26 +69,7 @@ void main() {
     expect(find.text('Planilla'), findsOneWidget);
   });
 
-  testWidgets('la última página es abrir otra cuenta', (t) async {
-    var abrio = false;
-    await t.pumpWidget(
-      _app(
-        AccountCarousel(
-          cuentas: tres,
-          seleccionada: 2,
-          onSelected: (_) {},
-          onRename: (_) {},
-          onOpenAccount: () => abrio = true,
-        ),
-      ),
-    );
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
-    await t.pumpAndSettle();
-    await t.tap(find.text('Abrir otra cuenta'));
-    expect(abrio, isTrue);
-  });
-
-  testWidgets('sin onOpenAccount (tope alcanzado) no hay tarjeta de abrir', (
+  testWidgets('el carrusel solo tiene cuentas: nada después de la última', (
     t,
   ) async {
     await t.pumpWidget(
@@ -100,13 +79,14 @@ void main() {
           seleccionada: 2,
           onSelected: (_) {},
           onRename: (_) {},
-          onOpenAccount: null,
         ),
       ),
     );
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
+    expect(find.text(r'US$ 120.00'), findsOneWidget);
     expect(find.text('Abrir otra cuenta'), findsNothing);
+    expect(find.bySemanticsLabel('Cuenta 3 de 3'), findsOneWidget);
   });
 
   testWidgets('el saldo en dólares se pinta en dólares', (t) async {
@@ -117,14 +97,13 @@ void main() {
           seleccionada: 2,
           onSelected: (_) {},
           onRename: (_) {},
-          onOpenAccount: () {},
         ),
       ),
     );
     expect(find.text(r'US$ 120.00'), findsOneWidget);
   });
 
-  testWidgets('un rebuild con la misma selección no saca de "abrir"', (
+  testWidgets('un rebuild con la misma selección no devuelve la página', (
     t,
   ) async {
     late StateSetter rebuild;
@@ -136,10 +115,9 @@ void main() {
             rebuild = setState;
             return AccountCarousel(
               cuentas: tres,
-              seleccionada: 2,
+              seleccionada: 0,
               onSelected: (_) {},
               onRename: (_) {},
-              onOpenAccount: () {},
             );
           },
         ),
@@ -147,29 +125,28 @@ void main() {
     );
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
-    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+    expect(find.text('Planilla'), findsOneWidget);
 
     rebuild(() => n++);
     await t.pumpAndSettle();
-    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+    expect(find.text('Planilla'), findsOneWidget);
   });
 
-  testWidgets('la tarjeta de abrir cuenta no desborda en 360x800', (t) async {
+  testWidgets('la tarjeta de saldo no desborda en 360x800', (t) async {
     await t.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
       _app(
         AccountCarousel(
           cuentas: tres,
-          seleccionada: 3,
+          seleccionada: 1,
           onSelected: (_) {},
           onRename: (_) {},
-          onOpenAccount: () {},
         ),
       ),
     );
     await t.pumpAndSettle();
-    expect(find.text('Abrir otra cuenta'), findsOneWidget);
+    expect(find.text('Planilla'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 }

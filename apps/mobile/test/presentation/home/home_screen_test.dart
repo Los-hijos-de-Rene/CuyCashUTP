@@ -396,7 +396,34 @@ void main() {
     expect(find.text('Nombre de la cuenta'), findsNothing);
   });
 
-  testWidgets('con cinco cuentas no hay tarjeta de abrir otra', (tester) async {
+  testWidgets('los movimientos dicen de qué cuenta son', (tester) async {
+    final b = _BlocConEstado(
+      const AccountState(
+        status: AccountStatus.ready,
+        cuentas: [
+          Account(
+            id: 'a',
+            numero: '19100000004521',
+            tipo: AccountType.ahorro,
+            moneda: Currency.pen,
+            estado: 'activa',
+            saldoDisponible: Money.soles(125040),
+            saldoContable: Money.soles(125040),
+          ),
+        ],
+      ),
+    );
+    addTearDown(b.close);
+    await tester.pumpWidget(wrapWith(b));
+    await tester.pump();
+
+    expect(find.text('Últimos movimientos'), findsOneWidget);
+    expect(find.text('Ahorros · ••••4521'), findsOneWidget);
+    expect(find.text('Mis cuentas'), findsOneWidget);
+    expect(find.text('Abrir cuenta'), findsOneWidget);
+  });
+
+  testWidgets('con cinco cuentas no se ofrece abrir otra', (tester) async {
     Account cuenta(int i) => Account(
       id: 'c$i',
       numero: '1910000000000$i'.padRight(14, '0'),
@@ -417,9 +444,8 @@ void main() {
     await tester.pumpWidget(wrapWith(b));
     await tester.pump();
 
-    await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
-    await tester.pumpAndSettle();
-    expect(find.text('Abrir otra cuenta'), findsNothing);
+    expect(find.text('Mis cuentas'), findsOneWidget);
+    expect(find.text('Abrir cuenta'), findsNothing);
   });
 
   testWidgets('un refresco fallido avisa sin quitar el saldo', (tester) async {
