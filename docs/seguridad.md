@@ -117,6 +117,8 @@ almacenamiento del teléfono) se cifra.
 | CORS | **Cerrado a propósito**: sin `Access-Control-Allow-Origin`, ningún navegador de otro origen puede leer la API. La app nativa no usa CORS. Se abrirá con lista blanca exacta cuando exista el dashboard. |
 | Inyección SQL | Mitigada por construcción: todo acceso pasa por el ORM con parámetros. Probado con cargas clásicas. |
 | XSS | La API solo devuelve JSON con `nosniff`; los textos libres son datos. El cliente es nativo, sin WebView. Probado. |
+| Dependencias vulnerables | `pip-audit` en CI y CD: un aviso publicado en una dependencia de producción bloquea el merge y el despliegue. |
+| Escaneo DAST | OWASP ZAP (`.github/workflows/seguridad.yml`): activo sobre una copia efímera, pasivo sobre producción. |
 | Límite por IP / WAF | **Pendiente.** Hay topes de negocio (por DNI, dispositivo y usuario) y Cloudflare delante de Render, pero no un límite por IP propio. |
 
 ## 6. Secretos

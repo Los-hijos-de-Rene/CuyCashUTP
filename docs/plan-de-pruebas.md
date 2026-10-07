@@ -52,6 +52,14 @@ antifraude, conciliación) y el dashboard web.
 | Seguridad transversal | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
 | Base de datos y operación | `test_consistencia_ddl.py`, `test_reset_schema.py` | 7 |
 
+**Cobertura de líneas** (`pytest --cov`, la imprime el job *Backend (PostgreSQL
+16)* al final de su log): **96 %** del backend (1588 sentencias, 62 sin
+ejecutar), medida el 07/10/2026 en macOS sobre SQLite. Módulos críticos:
+`services/ledger.py` 99 %, `core/security.py` 98 %, `services/lockout.py` 97 %,
+`services/otp.py` 96 %, `routers/auth.py` 94 %. Hace falta
+`concurrency = greenlet` (`.coveragerc`): sin ella coverage no sigue el código
+que corre dentro de SQLAlchemy async y reporta ~72 %.
+
 ## 4. Pruebas de seguridad web
 
 Criterio 2.3. `services/api/tests/test_seguridad_web.py` ataca la API por HTTP.
@@ -75,6 +83,14 @@ error controlado, nunca un 500.
 | **Entradas más largas que su columna** (DNI de 50 dígitos, `X-Device-Id` de 500, identificador de OTP de 1000) | 3 | 422 en la entrada. Antes daban **500 en Postgres** (SQLite no hace cumplir el largo de `VARCHAR`): lo encontró el CI |
 
 Ejecutar solo estas: `cd services/api && .venv/bin/python -m pytest -q tests/test_seguridad_web.py tests/test_sesion_requerida.py`.
+
+Además de la suite, dos verificaciones automáticas fuera de pytest:
+
+| Verificación | Dónde corre | Qué hace |
+|---|---|---|
+| **`pip-audit`** sobre `requirements.txt` | CI y CD (`.github/actions/pruebas-backend`), en cada cambio del backend | Falla si una dependencia de producción tiene un aviso publicado. El primer run encontró 7 en starlette 0.38.6; FastAPI 0.142.4 los cierra |
+| **OWASP ZAP activo** (`zap-api-scan`) | `.github/workflows/seguridad.yml`, a mano y cada lunes | Ataca cada ruta del OpenAPI, con y sin sesión, en una copia efímera del backend (SQLite). Nunca contra producción |
+| **OWASP ZAP pasivo** (`zap-baseline`) | El mismo workflow | Lee las respuestas de producción: cabeceras, TLS, filtraciones. No escribe |
 
 ## 5. Pruebas de despliegue
 
@@ -121,8 +137,8 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#8-evidencia-de-prueba
 
 **Entrada a un merge**: `flutter analyze` sin issues, `flutter test` y
 `pytest` en verde, `schema.sql` regenerado si cambió un modelo (lo exige
-`test_consistencia_ddl.py`). Lo verifican **en cada PR** los workflows *CI
-backend* y *CI app* de GitHub Actions.
+`test_consistencia_ddl.py`). Lo verifica **en cada PR** el workflow *CI* de GitHub Actions; la regla de
+`main` exige su check *CI listo*.
 
 **Salida a producción**: el workflow *CD backend* vuelve a correr el CI, pide
 aprobación, despliega el commit probado y corre `scripts/smoke_prod.sh`; si el

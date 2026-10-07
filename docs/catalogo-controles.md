@@ -58,6 +58,8 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | WB-07 | Errores con `code` estable, sin trazas internas | C | P | `app/core/errors.py`, `app/main.py` | `test_seguridad_web.py` | ✅ |
 | WB-08 | Conexión cifrada a la base (TLS) | C | P | `app/db/base.py` | Configuración de Neon | ✅ |
 | WB-09 | Límite de peticiones por IP / WAF | D | P | Cloudflare delante de Render (sin reglas propias) | — | ⏳ |
+| WB-10 | Dependencias sin vulnerabilidades conocidas (`pip-audit`, bloquea CI y CD) | C I D | P | `.github/actions/pruebas-backend` | Paso `pip-audit` del job *Backend (PostgreSQL 16)*. Encontró 7 avisos en starlette 0.38.6 (vía FastAPI 0.115); se subió a FastAPI 0.142.4 y starlette ≥ 1.3.1: 0 avisos | ✅ |
+| WB-11 | Escaneo DAST con OWASP ZAP: activo sobre una copia efímera (con y sin sesión) y pasivo sobre producción | C I | D | `.github/workflows/seguridad.yml` (a mano y cada lunes) | Reportes HTML/JSON como artefactos del run | ⏳ |
 
 ## Operación y secretos
 
@@ -74,6 +76,6 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | OP-09 | Logs estructurados con correlación | C D | D | — | — | ⏳ |
 | OP-10 | Migraciones versionadas | I D | P | — | — | ⏳ |
 
-**Resumen**: 47 controles; 42 implementados (✅), 1 parcial (⚠️) y 4
+**Resumen**: 49 controles; 43 implementados (✅), 1 parcial (⚠️) y 5
 pendientes (⏳). Los pendientes y parciales están detallados con su
 mitigación en [`seguridad.md`](seguridad.md#7-riesgos-abiertos).

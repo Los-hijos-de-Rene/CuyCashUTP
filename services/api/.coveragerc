@@ -1,0 +1,7 @@
+# SQLAlchemy async corre las consultas dentro de greenlets. Sin `greenlet`
+# aquí, coverage no sigue esas líneas y marca como "sin probar" casi todo lo
+# que toca la base: auth, OTP y bloqueos salían en 40–47 % cuando de verdad
+# están por encima del 94 %.
+[run]
+source = app
+concurrency = greenlet,thread
