@@ -81,6 +81,11 @@ APF2 (criterios 1–3): matriz en `docs/apf2-cumplimiento.md`, que enlaza
 esquema, actualiza el documento que corresponda. Humo contra producción:
 `services/api/scripts/smoke_prod.sh` (solo lectura).
 
+**Despliegue: solo por GitHub Actions.** Render tiene `autoDeployTrigger: "off"`;
+el workflow `cd-backend.yml` despliega el commit probado tras aprobación en el
+environment `production`, y `rollback-backend.yml` vuelve a un commit de
+`main`. `GET /health` devuelve el commit que corre.
+
 ## Estructura
 - `apps/mobile` — app Flutter (Bloc).
 - `packages/core_kernel` — Result/Either, GlobalFailure, ExceptionMapper, ids (Dart puro).

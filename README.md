@@ -32,8 +32,10 @@ cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
   (`FeatureToggles.frecuentesEnEnvio`).
 
 **Desplegado**: la API corre en Render (`https://cuycashutp.onrender.com`,
-documentación en `/docs`) contra Postgres gestionado en Neon. Ver
-[`docs/despliegue.md`](docs/despliegue.md).
+documentación en `/docs`) contra Postgres gestionado en Neon. Se despliega
+**solo** por GitHub Actions: CI en cada PR, CD con aprobación y prueba de humo
+al fusionar en `main`, y un workflow de rollback a cualquier versión anterior.
+Ver [`docs/despliegue.md`](docs/despliegue.md).
 
 **No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
 antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el

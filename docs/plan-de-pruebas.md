@@ -32,7 +32,7 @@ antifraude, conciliación) y el dashboard web.
 | **API (integración)** | Cada endpoint por HTTP contra una base real (SQLite en memoria): contrato, reglas, errores | `pytest` + `httpx` | `services/api/tests` | 299 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
 | **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 40 |
-| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (⚠️ sin ejecutar, §7) |
+| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en *CI backend*; ver §7) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
 
@@ -90,7 +90,7 @@ dinero) y se puede correr contra producción cuando haga falta:
 | 6–8 | Cabeceras HSTS, `nosniff`, `X-Frame-Options` | Presentes |
 | 9 | CORS | Ausente |
 
-Resultado más reciente en [`despliegue.md`](despliegue.md#5-evidencia-de-pruebas-de-despliegue).
+Resultado más reciente en [`despliegue.md`](despliegue.md#8-evidencia-de-pruebas-de-despliegue).
 
 ## 6. Entornos y datos
 
@@ -110,7 +110,7 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#5-evidencia-de-prueba
 
 | Qué | Por qué | Cómo cerrarlo |
 |---|---|---|
-| Concurrencia en Postgres real (3 pruebas `postgres`) | El bloqueo `FOR UPDATE` no existe en SQLite y nadie ha corrido la marca contra Postgres | Crear una rama `cuycash_test` en Neon y correr `TEST_POSTGRES_URL=… pytest -m postgres` |
+| Concurrencia en Postgres real (3 pruebas `postgres`) | El bloqueo `FOR UPDATE` no existe en SQLite; nunca se habían corrido contra Postgres | Desde este avance las corre el job *Concurrencia (Postgres real)* de *CI backend*: su primera ejecución es la del PR que agrega el pipeline |
 | Recorrido E2E app ↔ backend en emulador | `docs/verificacion-manual.md` nunca se ejecutó | Ejecutar el guion y anotar el resultado |
 | Diálogo real de `local_auth` en un teléfono | Los tests usan `MemoryBiometricGate` | Prueba manual en un dispositivo |
 | SLA de 200 ms por operación y 1.5 s de autenticación | Sin medición automatizada | Medir con carga en el despliegue |
@@ -120,10 +120,13 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#5-evidencia-de-prueba
 
 **Entrada a un merge**: `flutter analyze` sin issues, `flutter test` y
 `pytest` en verde, `schema.sql` regenerado si cambió un modelo (lo exige
-`test_consistencia_ddl.py`).
+`test_consistencia_ddl.py`). Lo verifican **en cada PR** los workflows *CI
+backend* y *CI app* de GitHub Actions.
 
-**Salida a producción**: lo anterior + `scripts/smoke_prod.sh` sin fallos
-después del despliegue.
+**Salida a producción**: el workflow *CD backend* vuelve a correr el CI, pide
+aprobación, despliega el commit probado y corre `scripts/smoke_prod.sh`; si el
+humo falla, la ejecución queda en rojo y se aplica el rollback
+(`despliegue.md` §5).
 
 ## 9. Cómo ejecutar
 

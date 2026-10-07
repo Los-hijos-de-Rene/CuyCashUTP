@@ -31,8 +31,8 @@ Leyenda: ✅ cubierto en el repositorio · 📸 falta solo la captura para el PD
 | # | Artefacto exigido | Artefacto | Estado | Evidencia para el PDF |
 |---|---|---|---|---|
 | 3.1 | Plan de pruebas | [`plan-de-pruebas.md`](plan-de-pruebas.md): niveles, cobertura por módulo, entornos, criterios de entrada/salida y lo no probado | ✅ | — |
-| 3.2 | Manual de despliegue (paso a paso, arquitectura cloud) | [`despliegue.md`](despliegue.md) §1–4; `render.yaml`, `Dockerfile` | ✅ | — |
-| 3.3 | Evidencia de pruebas de despliegue | [`despliegue.md`](despliegue.md#5-evidencia-de-pruebas-de-despliegue); **`scripts/smoke_prod.sh`** | ⚠️ 📸 | La corrida registrada es **anterior** a desplegar este avance (5 fallos explicados). Falta correrla después del despliegue y las capturas listadas |
+| 3.2 | Manual de despliegue (paso a paso, arquitectura cloud) | [`despliegue.md`](despliegue.md) §1–7: Render + Neon, **pipeline CI/CD en GitHub Actions** con aprobación, **rollback** y guion de la demostración; `render.yaml`, `Dockerfile`, `.github/workflows/` | ✅ 📸 | Pestaña *Actions* con un despliegue y un rollback en verde; environment `production` esperando aprobación |
+| 3.3 | Evidencia de pruebas de despliegue | [`despliegue.md`](despliegue.md#8-evidencia-de-pruebas-de-despliegue); **`scripts/smoke_prod.sh`** | ⚠️ 📸 | La corrida registrada es **anterior** a desplegar este avance (5 fallos explicados). Falta correrla después del despliegue y las capturas listadas |
 | 3.4 | Monitoreo y administración de la BD en producción | [`administracion-bd.md`](administracion-bd.md#5-monitoreo-en-producción-criterio-34); **`/health/db`**; **`scripts/monitoreo.sql`** | ✅ 📸 | Neon *Monitoring* + consultas 1, 2, 6 y 7 ejecutadas en la consola SQL |
 
 ## Qué se agregó en este avance para cerrar huecos
@@ -51,7 +51,7 @@ Leyenda: ✅ cubierto en el repositorio · 📸 falta solo la captura para el PD
 ## Pendientes antes de entregar
 
 1. **Desplegar este avance** (merge a `main`; Render redespliega solo) y correr
-   `scripts/smoke_prod.sh`. Pegar la salida en `despliegue.md` §5.
+   `scripts/smoke_prod.sh`. Pegar la salida en `despliegue.md` §8.
 2. Tomar las capturas marcadas con 📸 (las listas están al final de
    `administracion-bd.md` y `despliegue.md`).
 3. Limitaciones que conviene **decir** en la sustentación, no esconder:

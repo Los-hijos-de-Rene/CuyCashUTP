@@ -1,0 +1,53 @@
+# CI de la app Flutter y sus paquetes.
+#
+# Solo corre si cambia algo de Flutter: un cambio que solo toca el backend no
+# gasta minutos aquí, y viceversa. Un PR que toca ambos corre los dos CI.
+name: CI app
+
+on:
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "analysis_options.yaml"
+      - ".github/workflows/ci-app.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "analysis_options.yaml"
+      - ".github/workflows/ci-app.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  analizar-y-probar:
+    name: Analyze + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          # La misma versión con la que se desarrolla (ver `flutter --version`).
+          flutter-version: "3.41.7"
+          channel: stable
+          cache: true
+      - name: Dependencias del workspace
+        run: flutter pub get
+      - name: flutter analyze (cero issues)
+        run: flutter analyze
+      - name: Tests de la app (flavor mock)
+        working-directory: apps/mobile
+        run: flutter test
+      - name: Tests de core_kernel
+        working-directory: packages/core_kernel
+        run: flutter test
+      - name: Tests de design_system
+        working-directory: packages/design_system
+        run: flutter test
