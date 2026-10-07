@@ -13,9 +13,9 @@ class ProfileIdentityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final name = user.fullName.trim().isEmpty
+    final name = user.nombreCompleto.isEmpty
         ? l10n.profileHeadlineFallback
-        : user.fullName.trim();
+        : user.nombreCompleto;
     return SurfaceCard(
       padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
       child: Column(

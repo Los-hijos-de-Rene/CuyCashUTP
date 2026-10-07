@@ -254,7 +254,7 @@ async def test_quien_recibio_ve_el_nombre_completo_de_la_contraparte(
 
     # Completo porque este asiento es un CRÉDITO: el dinero lo mandaron, no se
     # lo pidió nadie. En el débito (quien envía) va enmascarado.
-    assert mov["contraparte"] == "Luis Alberto Quispe"
+    assert mov["contraparte"] == "luis alberto quispe"
     assert mov["motivo"] == "Almuerzo"
     assert mov["tipo"] == "transferencia"
     assert mov["direccion"] == "credito"
@@ -298,7 +298,7 @@ async def test_la_ficha_de_un_movimiento_propio(
     assert r.status_code == 200
     cuerpo = r.json()
     assert cuerpo["transaction_id"] == tx_id
-    assert cuerpo["contraparte"] == "Luis Alberto Quispe"
+    assert cuerpo["contraparte"] == "luis alberto quispe"
 
     # Se enmascara el número de la cuenta destino (la propia, en este asiento).
     numero = (

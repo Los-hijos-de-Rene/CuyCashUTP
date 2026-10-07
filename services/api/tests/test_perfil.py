@@ -7,8 +7,8 @@ async def test_me_devuelve_los_datos_del_titular(client, registrado):
     assert r.status_code == 200
     cuerpo = r.json()
     assert cuerpo["dni"] == "71234567"
-    assert cuerpo["nombres"] == "Jenny Marisol"
-    assert cuerpo["apellidos"] == "Ruiz"
+    assert cuerpo["nombres"] == "jenny marisol"
+    assert cuerpo["apellidos"] == "ruiz"
     assert cuerpo["alias"] == "@jenny"
     assert cuerpo["kyc_status"] == "pending"
     assert cuerpo["created_at"].endswith("Z")

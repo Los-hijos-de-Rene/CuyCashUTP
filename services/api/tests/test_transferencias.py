@@ -749,4 +749,4 @@ async def test_un_envio_de_un_centimo_no_destapa_el_nombre_completo(
     recibido = await client.get(
         f"/v1/accounts/{suya}/movements", headers=otro_registrado.auth
     )
-    assert recibido.json()["movimientos"][0]["contraparte"] == "Jenny Marisol Ruiz"
+    assert recibido.json()["movimientos"][0]["contraparte"] == "jenny marisol ruiz"

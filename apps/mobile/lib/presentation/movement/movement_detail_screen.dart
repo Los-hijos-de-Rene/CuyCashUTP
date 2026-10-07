@@ -6,6 +6,7 @@ import '../../feature/account/domain/account_failure.dart';
 import '../../feature/account/domain/movement.dart';
 import '../../l10n/app_localizations.dart';
 import 'bloc/movement_detail_bloc.dart';
+import 'contraparte_visible.dart';
 import 'widgets/receipt_card.dart';
 import 'widgets/share_receipt_button.dart';
 
@@ -81,7 +82,7 @@ class _Ready extends StatelessWidget {
       transactionId: detalle.transactionId,
       estado: detalle.estado,
       contraparteLabel: _label(l10n),
-      contraparte: detalle.contraparte,
+      contraparte: contraparteVisible(detalle),
       cuentaDestinoMasked: detalle.cuentaDestinoMasked,
       motivo: detalle.motivo,
       saldoPosterior: detalle.saldoPosterior,

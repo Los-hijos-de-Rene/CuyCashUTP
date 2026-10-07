@@ -1,3 +1,4 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -61,8 +62,8 @@ class PersonalDataScreen extends StatelessWidget {
       child: Column(
         children: [
           for (final (i, (label, value)) in [
-            (l10n.personalDataNames, d.nombres),
-            (l10n.personalDataSurnames, d.apellidos),
+            (l10n.personalDataNames, formatNombre(d.nombres)),
+            (l10n.personalDataSurnames, formatNombre(d.apellidos)),
             (l10n.profileDniLabel, d.dni),
             (l10n.personalDataEmail, d.emailMasked),
             (l10n.personalDataAlias, d.alias),

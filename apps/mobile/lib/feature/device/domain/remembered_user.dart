@@ -1,3 +1,5 @@
+import 'package:core_kernel/core_kernel.dart';
+
 /// Usuario recordado en este dispositivo (para el acceso rápido). Dato local
 /// no secreto salvo el DNI; se guarda cifrado vía secure storage.
 class RememberedUser {
@@ -11,10 +13,17 @@ class RememberedUser {
   final String fullName;
   final String alias;
 
+  /// El nombre se guarda en minúsculas (así lo devuelve el backend); estos
+  /// getters son los que se pintan, con mayúscula al inicio de cada palabra.
   String get firstName {
     final trimmed = fullName.trim();
-    return trimmed.isEmpty ? alias : trimmed.split(RegExp(r'\s+')).first;
+    return trimmed.isEmpty
+        ? alias
+        : formatNombre(trimmed.split(RegExp(r'\s+')).first);
   }
+
+  /// Nombre completo para mostrar; vacío si no se conoce.
+  String get nombreCompleto => formatNombre(fullName);
 
   String get initials {
     final parts =

@@ -93,11 +93,9 @@ class HttpAuthRepository implements AuthRepository {
     if (failure != null) return left(GlobalFailure.server(failure));
 
     final data = response.data ?? const {};
-    final session = AuthSession(
-      userId: (data['user'] as Map?)?['id'] as String? ?? '',
-      identifier: identifier,
-      alias: (data['user'] as Map?)?['alias'] as String?,
-    );
+    // Con teléfono desconocido no viene `user`: el nombre llega recién con
+    // la sesión que abre el OTP (ver `activate`).
+    final session = _sesionDe(data['user'], identifier);
 
     if (data['result'] == 'session') {
       // El teléfono ya era de confianza: la sesión viene hecha.
@@ -165,7 +163,10 @@ class HttpAuthRepository implements AuthRepository {
     }
     _tokenHolder.token = token;
     _pendingToken = null;
-    _emit(session);
+    // `authenticate` no supo quién era (teléfono desconocido): la respuesta
+    // de la sesión trae id, alias y nombre.
+    final usuario = response.data?['user'];
+    _emit(usuario is Map ? _sesionDe(usuario, session.identifier) : session);
     return right(unit);
   });
 
@@ -215,13 +216,8 @@ class HttpAuthRepository implements AuthRepository {
     if (failure != null) return left(GlobalFailure.server(failure));
 
     final data = response.data ?? const {};
-    final user = data['user'] as Map? ?? const {};
     _tokenHolder.token = data['session_token'] as String?;
-    final session = AuthSession(
-      userId: user['id'] as String? ?? '',
-      identifier: dni,
-      alias: user['alias'] as String?,
-    );
+    final session = _sesionDe(data['user'], dni);
     _emit(session);
     return right(session);
   });
@@ -258,6 +254,18 @@ class HttpAuthRepository implements AuthRepository {
   /// Se mapea por código y NUNCA por el texto: el `detail` está para redactarse
   /// mejor, y atarse a él haría que un cambio de copy rompiera la app en
   /// silencio (la lección del servicio de KYC, R2 del ADR-0001).
+  /// La sesión a partir del `user` que devuelve el backend al abrirla
+  /// (`{id, dni, alias, full_name}`). Sin `user`, solo el identificador.
+  AuthSession _sesionDe(Object? user, String identifier) {
+    final u = user is Map ? user : const <String, Object?>{};
+    return AuthSession(
+      userId: u['id'] as String? ?? '',
+      identifier: identifier,
+      alias: u['alias'] as String?,
+      fullName: u['full_name'] as String?,
+    );
+  }
+
   AuthFailure? _failureFor(Response<Map<String, dynamic>> response) {
     final status = response.statusCode ?? 0;
     if (status == 200 || status == 201) return null;

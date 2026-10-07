@@ -172,6 +172,76 @@ void main() {
     expect((session! as dynamic).alias, '@juan');
   });
 
+  group('el nombre llega en todo login, no solo en el alta', () {
+    test('teléfono de confianza: authenticate trae full_name', () async {
+      adapter.body = {
+        'result': 'session',
+        'session_token': 'tok',
+        'user': {
+          'id': 'u1',
+          'dni': '12345678',
+          'alias': '@juan',
+          'full_name': 'juan carlos pérez',
+        },
+      };
+
+      final session = (await autenticar()).getRight().toNullable();
+
+      expect((session! as AuthSession).fullName, 'juan carlos pérez');
+    });
+
+    test('teléfono nuevo: la sesión que abre el OTP trae el nombre', () async {
+      adapter.body = {
+        'result': 'device_verification_required',
+        'pending_token': 'pend',
+      };
+      final pendiente =
+          (await autenticar()).getRight().toNullable()! as AuthSession;
+      expect(pendiente.fullName, isNull);
+
+      adapter.body = {
+        'result': 'session',
+        'session_token': 'tok',
+        'user': {
+          'id': 'u1',
+          'dni': '12345678',
+          'alias': '@juan',
+          'full_name': 'juan carlos pérez',
+        },
+      };
+      final emitidas = <AuthSession?>[];
+      repo.sessionChanges().listen(emitidas.add);
+
+      final r = await repo.activate(pendiente, otpTicket: 'ticket');
+
+      expect(r.isRight(), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(emitidas.single?.fullName, 'juan carlos pérez');
+      expect(emitidas.single?.userId, 'u1');
+      expect(repo.currentSession?.fullName, 'juan carlos pérez');
+    });
+
+    test('huella: la sesión trae el nombre', () async {
+      adapter.body = {
+        'result': 'session',
+        'session_token': 't',
+        'user': {
+          'id': 'u',
+          'dni': '71234567',
+          'alias': '@j',
+          'full_name': 'jenny marisol ruiz',
+        },
+      };
+
+      final r = await repo.signInWithBiometric(
+        dni: '71234567',
+        credential: 'secreto',
+      );
+
+      expect(r.getRight().toNullable()?.fullName, 'jenny marisol ruiz');
+    });
+  });
+
   test('un teléfono desconocido NO abre sesión con signIn', () async {
     adapter.body = {
       'result': 'device_verification_required',

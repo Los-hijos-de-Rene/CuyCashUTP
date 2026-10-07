@@ -44,6 +44,27 @@ async def _uniform_delay(started: float) -> None:
         await asyncio.sleep(restante)
 
 
+def _nombre_normalizado(crudo: str) -> str:
+    """
+    Minúsculas y un solo espacio entre palabras. Se guarda así para que el
+    mismo nombre no exista en dos formas ("JAIR" y "Jair"); la app pone la
+    mayúscula al mostrarlo.
+    """
+    return " ".join(crudo.split()).lower()
+
+
+def _usuario_json(user: User) -> dict:
+    """Quién abrió la sesión. Toda respuesta que abre sesión lo devuelve:
+    tras cerrar sesión el teléfono olvida al usuario y el login es la única
+    fuente del nombre."""
+    return {
+        "id": user.id,
+        "dni": user.dni,
+        "alias": user.alias,
+        "full_name": f"{user.nombres} {user.apellidos}".strip(),
+    }
+
+
 def _alias(nombres: str, dni: str) -> str:
     primero = nombres.strip().split()[0].lower() if nombres.strip() else ""
     slug = "".join(c for c in primero if c.isalnum())
@@ -64,12 +85,14 @@ async def register(
     if existing.scalars().first() is not None:
         raise ApiError(ErrorCode.IDENTIFIER_TAKEN, "Este DNI ya está registrado.")
 
+    nombres = _nombre_normalizado(payload.nombres)
+    apellidos = _nombre_normalizado(payload.apellidos)
     user = User(
         dni=payload.dni,
-        nombres=payload.nombres,
-        apellidos=payload.apellidos,
+        nombres=nombres,
+        apellidos=apellidos,
         email=str(payload.email),
-        alias=_alias(payload.nombres, payload.dni),
+        alias=_alias(nombres, payload.dni),
         pin_hash=await ahash_pin(payload.pin),
     )
     session.add(user)
@@ -173,7 +196,7 @@ async def authenticate(
         return {
             "result": "session",
             "session_token": token,
-            "user": {"id": user.id, "dni": user.dni, "alias": user.alias},
+            "user": _usuario_json(user),
         }
 
     await session.commit()
@@ -233,8 +256,17 @@ async def open_session(
     session.add(vinculado)
 
     token, _ = await sessions.open_session(session, user_id, x_device_id)
+    user = (
+        await session.execute(select(User).where(User.id == user_id))
+    ).scalar_one()
+    # Se arma antes del commit: tras él los atributos podrían estar expirados.
+    cuerpo = {
+        "result": "session",
+        "session_token": token,
+        "user": _usuario_json(user),
+    }
     await session.commit()
-    return {"result": "session", "session_token": token}
+    return cuerpo
 
 
 @router.delete("/sessions/current", status_code=status.HTTP_204_NO_CONTENT)
@@ -413,5 +445,5 @@ async def biometric_session(
     return {
         "result": "session",
         "session_token": token,
-        "user": {"id": user.id, "dni": user.dni, "alias": user.alias},
+        "user": _usuario_json(user),
     }
