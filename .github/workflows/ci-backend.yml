@@ -1,15 +1,12 @@
 # CI del backend (services/api).
 #
-# Corre en cada PR que toque el backend, y en main lo llama el CD
-# (`workflow_call`): nada se despliega sin pasar por aquí.
+# Lo llaman `ci.yml` en cada PR que toque el backend y `cd-backend.yml` antes
+# de desplegar: nada se despliega sin pasar por aquí.
 name: CI backend
 
 on:
-  pull_request:
-    paths:
-      - "services/api/**"
-      - ".github/workflows/ci-backend.yml"
-  # En main no se dispara solo: lo llama el CD, que corre después el despliegue.
+  # Reutilizable: lo llaman `ci.yml` (en cada PR, si cambió el backend) y
+  # `cd-backend.yml` (antes de cada despliegue).
   workflow_call:
 
 permissions:

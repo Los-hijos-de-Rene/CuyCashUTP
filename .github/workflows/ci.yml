@@ -1,0 +1,78 @@
+# Puerta de entrada de todo PR.
+#
+# Corre SIEMPRE (sin filtro de rutas en el disparador) y decide por dentro qué
+# CI hace falta. Termina con el job `CI listo`, que es el único check que exige
+# la regla de `main`: si se exigieran los checks de cada CI, un PR que no toca
+# esa carpeta los dejaría "esperando" para siempre y no se podría fusionar.
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cambios:
+    name: Qué cambió
+    runs-on: ubuntu-24.04
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend }}
+      app: ${{ steps.filtro.outputs.app }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          filters: |
+            backend:
+              - "services/api/**"
+              - ".github/workflows/ci-backend.yml"
+              - ".github/workflows/ci.yml"
+            app:
+              - "apps/**"
+              - "packages/**"
+              - "pubspec.yaml"
+              - "pubspec.lock"
+              - "analysis_options.yaml"
+              - ".github/workflows/ci-app.yml"
+              - ".github/workflows/ci.yml"
+
+  backend:
+    name: Backend
+    needs: cambios
+    if: needs.cambios.outputs.backend == 'true'
+    uses: ./.github/workflows/ci-backend.yml
+
+  app:
+    name: App
+    needs: cambios
+    if: needs.cambios.outputs.app == 'true'
+    uses: ./.github/workflows/ci-app.yml
+
+  listo:
+    name: CI listo
+    needs: [cambios, backend, app]
+    # Corre siempre: "omitido" (no cambió esa carpeta) cuenta como bien;
+    # "fallido" o "cancelado", no.
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Resultado
+        env:
+          CAMBIOS: ${{ needs.cambios.result }}
+          BACKEND: ${{ needs.backend.result }}
+          APP: ${{ needs.app.result }}
+        run: |
+          echo "Qué cambió: $CAMBIOS · Backend: $BACKEND · App: $APP"
+          for r in "$CAMBIOS" "$BACKEND" "$APP"; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::Algún CI no pasó ($r)."; exit 1 ;;
+            esac
+          done

@@ -129,8 +129,9 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 
 | Workflow | Archivo | Se dispara | Qué hace |
 |---|---|---|---|
-| CI backend | `.github/workflows/ci-backend.yml` | PR que toca `services/api/**` (y el CD lo llama en `main`) | **Toda** la suite `pytest` contra PostgreSQL 16 (servicio de Actions), el motor de producción, incluida la concurrencia; en local la misma suite corre sobre SQLite |
-| CI app | `.github/workflows/ci-app.yml` | PR o push que toca `apps/**`, `packages/**` | `flutter analyze` y los tests de la app y los dos paquetes |
+| **CI** (puerta) | `.github/workflows/ci.yml` | **Todo** PR | Detecta qué cambió, llama a *CI backend* y/o *CI app* y termina con **`CI listo`**: el único check que exige la regla de `main` |
+| CI backend | `.github/workflows/ci-backend.yml` | Lo llaman *CI* (si cambió el backend) y *CD backend* | **Toda** la suite `pytest` contra PostgreSQL 16 (servicio de Actions), el motor de producción, incluida la concurrencia; en local la misma suite corre sobre SQLite |
+| CI app | `.github/workflows/ci-app.yml` | Lo llama *CI* si cambió Flutter; push a `main` que toca `apps/**`, `packages/**` | `flutter analyze` y los tests de la app y los dos paquetes |
 | CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
 | Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` (firmado con la clave de depuración) adjunto a un Release |
@@ -139,6 +140,9 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 carpeta, y un PR que toca ambos corre los dos. La app no tiene rollback remoto
 (un APK instalado no se retrocede); por eso el backend debe seguir aceptando lo
 que envían las versiones anteriores de la app.
+
+**Regla de `main`** (*Settings → Rules → Rulesets*): solo se fusiona por PR,
+con el check **`CI listo`** en verde; sin borrar la rama ni `force push`.
 
 **Aprobación**: el environment `production` (*Settings → Environments*) exige
 que un colaborador apruebe antes de desplegar o retroceder, y solo admite la

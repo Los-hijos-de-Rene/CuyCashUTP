@@ -1,18 +1,14 @@
 # CI de la app Flutter y sus paquetes.
 #
-# Solo corre si cambia algo de Flutter: un cambio que solo toca el backend no
-# gasta minutos aquí, y viceversa. Un PR que toca ambos corre los dos CI.
+# Solo corre si cambia algo de Flutter (lo decide `ci.yml`): un cambio que
+# solo toca el backend no gasta minutos aquí, y viceversa.
 name: CI app
 
 on:
-  pull_request:
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "analysis_options.yaml"
-      - ".github/workflows/ci-app.yml"
+  # En los PR lo llama `ci.yml` si cambió algo de Flutter.
+  workflow_call:
+  # En main corre directo: la app no tiene CD, y así `main` siempre muestra
+  # si la app sigue en verde.
   push:
     branches: [main]
     paths:
