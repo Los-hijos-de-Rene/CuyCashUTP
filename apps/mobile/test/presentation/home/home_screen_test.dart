@@ -185,7 +185,7 @@ void main() {
 
     expect(find.text('Cobrar'), findsNothing);
     expect(find.text('Retirar'), findsNothing);
-    for (final label in ['Enviar', 'Recargar']) {
+    for (final label in ['Enviar', 'Depósito simulado']) {
       await tester.tap(find.text(label));
     }
 
@@ -205,7 +205,7 @@ void main() {
     expect(find.byTooltip('Notificaciones'), findsNothing);
     // Lo que sí existe sigue ahí.
     expect(find.text('Enviar'), findsOneWidget);
-    expect(find.text('Recargar'), findsOneWidget);
+    expect(find.text('Depósito simulado'), findsOneWidget);
     expect(find.text('Últimos movimientos'), findsOneWidget);
   });
 
@@ -267,7 +267,7 @@ void main() {
     await tester.pumpWidget(wrapWith(sinCuenta));
     await tester.pump();
 
-    await tester.tap(find.text('Recargar'));
+    await tester.tap(find.text('Depósito simulado'));
     await tester.pump();
 
     expect(
@@ -336,7 +336,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Recargar'));
+      await tester.tap(find.text('Depósito simulado'));
       await tester.pumpAndSettle();
       expect(find.text('RECARGA a'), findsOneWidget);
       expect(

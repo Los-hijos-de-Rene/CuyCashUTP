@@ -1525,7 +1525,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeActionTopUp.
   ///
   /// In es, this message translates to:
-  /// **'Recargar'**
+  /// **'Depósito simulado'**
   String get homeActionTopUp;
 
   /// No description provided for @homeActionWithdraw.
@@ -2333,8 +2333,14 @@ abstract class AppLocalizations {
   /// No description provided for @topUpTitle.
   ///
   /// In es, this message translates to:
-  /// **'Recargar saldo'**
+  /// **'Depósito simulado'**
   String get topUpTitle;
+
+  /// No description provided for @topUpDemoNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ahora puedes sumar saldo de prueba desde aquí. Pronto podrás depositar como en cualquier banco: en un agente o ventanilla, o transfiriendo desde otra cuenta.'**
+  String get topUpDemoNotice;
 
   /// No description provided for @topUpHeadline.
   ///

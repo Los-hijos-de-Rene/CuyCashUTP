@@ -845,7 +845,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeActionCharge => 'Cobrar';
 
   @override
-  String get homeActionTopUp => 'Recargar';
+  String get homeActionTopUp => 'Depósito simulado';
 
   @override
   String get homeActionWithdraw => 'Retirar';
@@ -1332,7 +1332,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos compartir la constancia. Inténtalo de nuevo.';
 
   @override
-  String get topUpTitle => 'Recargar saldo';
+  String get topUpTitle => 'Depósito simulado';
+
+  @override
+  String get topUpDemoNotice =>
+      'Por ahora puedes sumar saldo de prueba desde aquí. Pronto podrás depositar como en cualquier banco: en un agente o ventanilla, o transfiriendo desde otra cuenta.';
 
   @override
   String get topUpHeadline => '¿Cuánto quieres recargar?';

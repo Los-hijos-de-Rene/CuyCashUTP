@@ -303,7 +303,7 @@ void main() {
       expect(find.text('¿Salir sin confirmar?'), findsOneWidget);
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
-      expect(find.text('Recargar saldo'), findsOneWidget);
+      expect(find.text('Depósito simulado'), findsOneWidget);
 
       await tester.tap(boton('Reintentar recarga'));
       await tester.pumpAndSettle();
