@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 
 import '../domain/account.dart';
 import '../domain/account_failure.dart';
+import '../domain/account_type.dart';
 import '../domain/account_repository.dart';
 import '../domain/movement.dart';
 
@@ -26,17 +27,14 @@ class HttpAccountRepository implements AccountRepository {
         if (failure != null) return left(GlobalFailure.server(failure));
 
         final cuentas = _cuerpo(response)['cuentas'] as List;
-        return right([
-          for (final c in cuentas) _cuenta(c as Map<String, dynamic>),
-        ]);
+    return right([for (final c in cuentas) _cuenta(c as Map<String, dynamic>)]);
       });
 
   @override
   FutureResult<AccountFailure, MovementPage> movimientos(
     String cuentaId, {
     String? cursor,
-  }) =>
-      _guard(() async {
+  }) => _guard(() async {
         final response = await _dio.get<dynamic>(
           '/v1/accounts/${Uri.encodeComponent(cuentaId)}/movements',
           queryParameters: {'cursor': ?cursor},
@@ -45,27 +43,66 @@ class HttpAccountRepository implements AccountRepository {
         if (failure != null) return left(GlobalFailure.server(failure));
 
         final data = _cuerpo(response);
-        return right(MovementPage(
+    return right(
+      MovementPage(
           items: [
             for (final m in data['movimientos'] as List)
               _movimiento(m as Map<String, dynamic>),
           ],
           nextCursor: data['next_cursor'] as String?,
-        ));
+      ),
+    );
       });
 
   @override
   FutureResult<AccountFailure, MovementDetail> movimiento(
     String transactionId,
-  ) =>
-      _guard(() async {
-        final response = await _dio
-            .get<dynamic>('/v1/movements/${Uri.encodeComponent(transactionId)}');
+  ) => _guard(() async {
+    final response = await _dio.get<dynamic>(
+      '/v1/movements/${Uri.encodeComponent(transactionId)}',
+    );
         final failure = _failureFor(response);
         if (failure != null) return left(GlobalFailure.server(failure));
 
         return right(_detalle(_cuerpo(response)));
       });
+
+  @override
+  FutureResult<AccountFailure, Account> abrir({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+    required String pin,
+    required String idempotencyKey,
+  }) => _guard(() async {
+    final response = await _dio.post<dynamic>(
+      '/v1/accounts',
+      data: {
+        'tipo': tipo.code,
+        'moneda': moneda.code,
+        'nombre': nombre,
+        'pin': pin,
+        'idempotency_key': idempotencyKey,
+      },
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
+    return right(_cuenta(_cuerpo(response)));
+  });
+
+  @override
+  FutureResult<AccountFailure, Account> renombrar(
+    String cuentaId,
+    String? nombre,
+  ) => _guard(() async {
+    final response = await _dio.patch<dynamic>(
+      '/v1/accounts/${Uri.encodeComponent(cuentaId)}/nombre',
+      data: {'nombre': nombre},
+    );
+    final failure = _failureFor(response);
+    if (failure != null) return left(GlobalFailure.server(failure));
+    return right(_cuenta(_cuerpo(response)));
+  });
 
   Map<String, dynamic> _cuerpo(Response<dynamic> response) {
     final data = response.data;
@@ -73,39 +110,59 @@ class HttpAccountRepository implements AccountRepository {
     throw const FormatException('Cuerpo que no es un objeto JSON');
   }
 
-  Account _cuenta(Map<String, dynamic> j) => Account(
+  Account _cuenta(Map<String, dynamic> j) {
+    final moneda = _moneda(j['moneda']);
+    return Account(
         id: j['id'] as String,
         numero: j['numero'] as String,
-        tipo: j['tipo'] as String,
-        moneda: j['moneda'] as String,
+        tipo:
+            AccountType.fromCode(j['tipo'] as String) ??
+            (throw FormatException('Tipo desconocido: ${j['tipo']}')),
+      moneda: moneda,
         estado: j['estado'] as String,
-        saldoDisponible: Money.fromCentimos(j['saldo_disponible'] as int),
-        saldoContable: Money.fromCentimos(j['saldo_contable'] as int),
+        nombre: j['nombre'] as String?,
+      saldoDisponible: Money(j['saldo_disponible'] as int, moneda),
+      saldoContable: Money(j['saldo_contable'] as int, moneda),
       );
+  }
 
-  Movement _movimiento(Map<String, dynamic> j) => Movement(
+  /// Una moneda desconocida NO se adivina: pintar dólares como soles es peor
+  /// que fallar. La `FormatException` la recoge `_guard` como inesperado.
+  Currency _moneda(Object? code) => switch (code) {
+    final String c =>
+      Currency.fromCode(c) ?? (throw FormatException('Moneda desconocida: $c')),
+    _ => throw const FormatException('Objeto sin moneda'),
+  };
+
+  Movement _movimiento(Map<String, dynamic> j) {
+    final moneda = _moneda(j['moneda']);
+    return Movement(
         transactionId: j['transaction_id'] as String,
         tipo: _tipo(j['tipo'] as String),
         direccion: _direccion(j['direccion'] as String),
-        monto: Money.fromCentimos(j['monto'] as int),
+      monto: Money(j['monto'] as int, moneda),
         contraparte: j['contraparte'] as String?,
         motivo: j['motivo'] as String?,
-        saldoPosterior: Money.fromCentimos(j['saldo_posterior'] as int),
+      saldoPosterior: Money(j['saldo_posterior'] as int, moneda),
         fecha: _fecha(j['created_at'] as String),
       );
+  }
 
-  MovementDetail _detalle(Map<String, dynamic> j) => MovementDetail(
+  MovementDetail _detalle(Map<String, dynamic> j) {
+    final moneda = _moneda(j['moneda']);
+    return MovementDetail(
         transactionId: j['transaction_id'] as String,
         tipo: _tipo(j['tipo'] as String),
         direccion: _direccion(j['direccion'] as String),
-        monto: Money.fromCentimos(j['monto'] as int),
+      monto: Money(j['monto'] as int, moneda),
         contraparte: j['contraparte'] as String?,
         motivo: j['motivo'] as String?,
-        saldoPosterior: Money.fromCentimos(j['saldo_posterior'] as int),
+      saldoPosterior: Money(j['saldo_posterior'] as int, moneda),
         fecha: _fecha(j['created_at'] as String),
         estado: j['estado'] as String,
         cuentaDestinoMasked: j['cuenta_destino_masked'] as String?,
       );
+  }
 
   MovementKind _tipo(String tipo) => switch (tipo) {
         'transferencia' => MovementKind.transferencia,
@@ -126,8 +183,18 @@ class HttpAccountRepository implements AccountRepository {
   /// fuerza UTC en ese caso (el backend siempre escribe en UTC).
   DateTime _fecha(String texto) {
     final f = DateTime.parse(texto);
-    return f.isUtc ? f : DateTime.utc(f.year, f.month, f.day, f.hour,
-        f.minute, f.second, f.millisecond, f.microsecond);
+    return f.isUtc
+        ? f
+        : DateTime.utc(
+            f.year,
+            f.month,
+            f.day,
+            f.hour,
+            f.minute,
+            f.second,
+            f.millisecond,
+            f.microsecond,
+          );
   }
 
   /// Traduce estado y `code` estable (cuerpo PLANO `{code, detail}`) a un
@@ -138,13 +205,33 @@ class HttpAccountRepository implements AccountRepository {
     if (status == 401) return const AccountFailure.unauthenticated();
 
     final data = response.data;
-    final code = data is Map ? data['code'] : null;
-    return switch ((status, code)) {
-      (404, 'ACCOUNT_NOT_FOUND' || 'MOVEMENT_NOT_FOUND') =>
-        const AccountFailure.accountNotFound(),
+    final body = data is Map ? data : const <Object?, Object?>{};
+    return switch (body['code']) {
+      'ACCOUNT_NOT_FOUND' ||
+      'MOVEMENT_NOT_FOUND' => const AccountFailure.accountNotFound(),
+      'ACCOUNT_LIMIT_REACHED' => const AccountFailure.limitReached(),
+      'SALARY_ACCOUNT_EXISTS' => const AccountFailure.salaryAccountExists(),
+      'INVALID_ACCOUNT_CURRENCY' => const AccountFailure.invalidCurrency(),
+      'INVALID_ACCOUNT_NAME' => const AccountFailure.invalidName(),
+      'IDEMPOTENCY_KEY_REUSED' => const AccountFailure.idempotencyKeyReused(),
+      'INVALID_CREDENTIALS' => switch (body['intentos_restantes']) {
+        final int n => AccountFailure.wrongPin(n),
+        _ => const AccountFailure.unexpected(),
+      },
+      'IDENTIFIER_LOCKED' || 'DEVICE_LOCKED' =>
+        switch (_instante(body['locked_until'])) {
+          final DateTime hasta => AccountFailure.locked(hasta),
+          _ => const AccountFailure.unexpected(),
+        },
       _ => const AccountFailure.unexpected(),
     };
   }
+
+  /// Instante del servidor; sin sufijo de zona se fuerza UTC.
+  DateTime? _instante(Object? crudo) =>
+      crudo is String && DateTime.tryParse(crudo) != null
+      ? _fecha(crudo)
+      : null;
 
   Future<Either<GlobalFailure<AccountFailure>, T>> _guard<T>(
     Future<Either<GlobalFailure<AccountFailure>, T>> Function() call,
@@ -152,14 +239,15 @@ class HttpAccountRepository implements AccountRepository {
     try {
       return await call();
     } on DioException catch (e) {
-      return left(GlobalFailure.server(switch (e.type) {
+      return left(
+        GlobalFailure.server(switch (e.type) {
         DioExceptionType.connectionTimeout ||
         DioExceptionType.sendTimeout ||
         DioExceptionType.receiveTimeout ||
-        DioExceptionType.connectionError =>
-          const AccountFailure.network(),
+          DioExceptionType.connectionError => const AccountFailure.network(),
         _ => const AccountFailure.unexpected(),
-      }));
+        }),
+      );
     } catch (error, stackTrace) {
       return left(GlobalFailure.unexpected(error, stackTrace));
     }

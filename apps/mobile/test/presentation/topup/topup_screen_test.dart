@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_receipt.dart';
@@ -21,13 +22,13 @@ import '../transfer/fake_transfer_repositories.dart';
 const _cuenta = Account(
   id: 'acc-demo-1',
   numero: '19100000004521',
-  tipo: 'ahorro',
-  moneda: 'PEN',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
-const _monto = Money.fromCentimos(10000);
+const _monto = Money.soles(10000);
 
 void main() {
   late FakeTransferRepository repo;

@@ -93,4 +93,15 @@ Todos los pasos son [inferido] del código; ninguno se ha ejecutado. Requiere el
 5. [inferido] Desde un segundo teléfono vinculado, desvincular el primero: el primero vuelve al login y su huella deja de funcionar (aviso "Tu acceso con huella ya no es válido").
 6. [inferido] Cambiar el PIN desde el segundo teléfono: la huella del primero deja de funcionar.
 
+### Multicuenta y envío por cuenta (no ejecutado)
+
+Todos los pasos son [inferido] del código; ninguno se ha ejecutado. Requiere el esquema recreado (paso 1) y dos titulares registrados (A con saldo, B; pasos 4 a 7).
+
+1. [inferido] Como A: abrir una cuenta en dólares desde el home. Esperado: aparece una cuenta de ahorros US$ con saldo US$ 0.00 y número `••••NNNN`.
+2. [inferido] Enviar entre dos cuentas propias en soles (abrir antes una segunda cuenta en soles): Enviar -> DNI propio -> elegir la otra cuenta en soles (la de origen no aparece). Esperado: se muestra el nombre que A le puso a su propia cuenta; con PIN, los saldos de ambas cuentas cambian. Fallo: si la cuenta de origen aparece como destino, falla la exclusión (backend: SAME_ACCOUNT).
+3. [inferido] Buscar el DNI de B, que tiene varias cuentas (incluida una en dólares): una tarjeta por cuenta, sin botón Continuar; la de dólares sale apagada con "Solo recibe US$" y no se puede tocar. Nunca debe verse el nombre que B le puso a sus cuentas. Fallo: si se puede elegir la cuenta en dólares desde una de soles, el backend debe responder CURRENCY_MISMATCH.
+4. [inferido] Tocar una cuenta en soles de B: pasa directo al monto, que muestra la cuenta destino ("Ahorros · ••••NNNN"); confirmar muestra la misma cuenta. Guardar al destinatario como frecuente al terminar.
+5. [inferido] Volver a Enviar y tocar el frecuente: va directo al monto, sin consultar el DNI. Si la cuenta guardada ya no recibe, el frecuente aparece sin cuenta; uno de otra moneda o igual a la de origen muestra un aviso y no navega.
+6. [inferido] Recargar la cuenta en dólares: Recargar, elegir la cuenta US$, monto, PIN. Esperado: saldo en US$ de esa cuenta; la de soles no cambia. Backend: `POST /v1/topups ... 201`.
+
 Al terminar: Ctrl+C en el backend y `rm services/api/cuycash.db`.

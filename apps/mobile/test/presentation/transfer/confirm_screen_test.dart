@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
 import 'package:cuycash/feature/transfer/domain/pending_transfer_store.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
@@ -24,13 +25,13 @@ import 'fake_transfer_repositories.dart';
 const _cuenta = Account(
   id: 'acc-demo-1',
   numero: '19100000004521',
-  tipo: 'ahorro',
-  moneda: 'PEN',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
-const _monto = Money.fromCentimos(5000);
+const _monto = Money.soles(5000);
 
 Future<TransferBloc> _blocEnConfirmacion(
   FakeTransferRepository repo, {
@@ -42,7 +43,7 @@ Future<TransferBloc> _blocEnConfirmacion(
     userId: 'u1',
   );
   b.add(const TransferEvent.started(_cuenta));
-  b.add(const TransferEvent.recipientRequested('87654321'));
+  b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
   await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
   b.add(const TransferEvent.amountEntered(monto: _monto, motivo: 'Almuerzo'));
   b.add(const TransferEvent.confirmationOpened());
@@ -178,6 +179,16 @@ void main() {
     expect(repo.pines, ['000000']);
   });
 
+  testWidgets('el resumen muestra la cuenta que recibe y la de origen', (
+    tester,
+  ) async {
+    await preparar(null);
+    await pump(tester);
+
+    expect(find.text('J*** M*** R*** · Ahorros · ••••7732'), findsOneWidget);
+    expect(find.text('Cuenta de ahorros · ••••4521'), findsOneWidget);
+  });
+
   testWidgets('un envío exitoso lleva a la constancia con el nombre resuelto', (
     tester,
   ) async {
@@ -192,6 +203,11 @@ void main() {
     expect(find.textContaining('J*** M*** R***'), findsOneWidget);
     // El monto sale una vez, con su formato, sin signo.
     expect(find.text('S/ 50.00'), findsOneWidget);
+    // Origen y destino, con su rótulo.
+    expect(find.text('Cuenta destino'), findsOneWidget);
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
+    expect(find.text('Cuenta origen'), findsOneWidget);
+    expect(find.text('Cuenta de ahorros · ••••4521'), findsOneWidget);
   });
 
   testWidgets(
@@ -295,9 +311,7 @@ void main() {
       expect(find.text('Volver al inicio'), findsOneWidget);
 
       // Aunque algo intentara editar el monto, el bloc lo ignora.
-      bloc.add(
-        const TransferEvent.amountEntered(monto: Money.fromCentimos(4000)),
-      );
+      bloc.add(const TransferEvent.amountEntered(monto: Money.soles(4000)));
       await tester.pump();
       expect(bloc.state.monto, _monto);
 

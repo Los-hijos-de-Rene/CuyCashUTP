@@ -1,12 +1,14 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/format/soles.dart';
+import '../../core/format/money_format.dart';
 import '../../core/security/secure_screen_scope.dart';
 import '../../feature/transfer/domain/transfer_failure.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import '../pin/pin_entry_view.dart';
 import 'bloc/transfer_bloc.dart';
@@ -136,7 +138,13 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         errorText: failed
                             ? (state.keyUnsaved && failure.outcomeUnknown
                                   ? l10n.transferKeyUnsavedWarning
-                                  : transferSubmitErrorText(l10n, failure))
+                                  : transferSubmitErrorText(
+                                      l10n,
+                                      failure,
+                                      state.monto?.currency ??
+                                          state.cuenta?.moneda ??
+                                          Currency.pen,
+                                    ))
                             : null,
                         hasError: failed && failure is WrongPin,
                         extra: Column(
@@ -225,15 +233,20 @@ class _Summary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (monto != null)
-            Text(formatSoles(monto), style: CuyCashTypography.headlineMd),
+            Text(formatMoney(monto), style: CuyCashTypography.headlineMd),
           const SizedBox(height: CuyCashSpacing.stackSm),
           if (state.destinatario case final d?)
             _Row(
               label: l10n.transferSummaryTo,
-              value: '${d.nombreEnmascarado} · ${d.cuentaDestinoMasked}',
+              value:
+                  '${d.nombreEnmascarado} · '
+                  '${recipientAccountShort(l10n, d.cuenta)}',
             ),
           if (state.cuenta case final c?)
-            _Row(label: l10n.transferSummaryFrom, value: c.numeroMasked),
+            _Row(
+              label: l10n.transferSummaryFrom,
+              value: '${accountLabel(l10n, c)} · ${c.numeroMasked}',
+            ),
           if (motivo != null)
             _Row(label: l10n.transferSummaryMotivo, value: motivo),
         ],

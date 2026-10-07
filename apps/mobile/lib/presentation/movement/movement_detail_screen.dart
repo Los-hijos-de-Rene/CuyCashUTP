@@ -113,6 +113,13 @@ class _Error extends StatelessWidget {
       AccountNotFound() => l10n.movementDetailNotFound,
       NetworkFailure() => l10n.homeErrorNetwork,
       Unauthenticated() ||
+      AccountLimitReached() ||
+      SalaryAccountExists() ||
+      InvalidAccountCurrency() ||
+      InvalidAccountName() ||
+      AccountWrongPin() ||
+      AccountLocked() ||
+      AccountKeyReused() ||
       UnexpectedFailure() ||
       null => l10n.movementDetailError,
     };

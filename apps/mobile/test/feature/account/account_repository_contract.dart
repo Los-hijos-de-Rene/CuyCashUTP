@@ -2,6 +2,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_failure.dart';
 import 'package:cuycash/feature/account/domain/account_repository.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,15 +39,23 @@ void probarContratoDeCuentas(
       final cuentas = valorDe(await construir().cuentas());
 
       expect(cuentas, isNotEmpty);
-      expect(cuentas.first.moneda, 'PEN');
+      expect(cuentas.first.moneda, Currency.pen);
       expect(cuentas.first.estado, 'activa');
+    });
+
+    test('cada cuenta trae tipo, moneda y nombre', () async {
+      final c = await primeraCuenta(construir());
+
+      expect(c.tipo, AccountType.ahorro);
+      expect(c.moneda, Currency.pen);
+      expect(c.nombre, isNull);
     });
 
     test('el saldo es Money en céntimos exactos', () async {
       final c = await primeraCuenta(construir());
 
-      expect(c.saldoDisponible, const Money.fromCentimos(125040));
-      expect(c.saldoContable, const Money.fromCentimos(125040));
+      expect(c.saldoDisponible, const Money.soles(125040));
+      expect(c.saldoContable, const Money.soles(125040));
     });
 
     test('el número enmascarado son los últimos cuatro dígitos', () async {
@@ -148,15 +157,15 @@ void probarContratoDeCuentas(
       final cuenta = await primeraCuenta(repo);
       final items = valorDe(await repo.movimientos(cuenta.id)).items;
 
-      expect(items.every((m) => m.monto > Money.zero), isTrue);
+      expect(items.every((m) => m.monto > Money.zero(Currency.pen)), isTrue);
       expect(items[0].direccion, MovementDirection.debito);
-      expect(items[0].monto, const Money.fromCentimos(4500));
+      expect(items[0].monto, const Money.soles(4500));
       expect(items[0].contraparte, 'B*** D*** A***');
       expect(items[1].direccion, MovementDirection.credito);
-      expect(items[1].monto, const Money.fromCentimos(120000));
+      expect(items[1].monto, const Money.soles(120000));
       expect(items[1].contraparte, 'Jenny Marisol Ruiz');
       expect(items[2].direccion, MovementDirection.debito);
-      expect(items[2].monto, const Money.fromCentimos(1850));
+      expect(items[2].monto, const Money.soles(1850));
       expect(items[2].contraparte, 'M*** L*** C***');
     });
 
@@ -184,10 +193,18 @@ void probarContratoDeCuentas(
         expect(enviados, isNotEmpty);
         expect(recibidos, isNotEmpty);
         for (final m in enviados) {
-          expect(m.contraparte, matches(enmascarado), reason: '\${m.transactionId}');
+          expect(
+            m.contraparte,
+            matches(enmascarado),
+            reason: '\${m.transactionId}',
+          );
         }
         for (final m in recibidos) {
-          expect(m.contraparte, isNot(contains('***')), reason: '\${m.transactionId}');
+          expect(
+            m.contraparte,
+            isNot(contains('***')),
+            reason: '\${m.transactionId}',
+          );
         }
       },
     );
@@ -213,7 +230,7 @@ void probarContratoDeCuentas(
         expect(d.transactionId, 'tx-demo-1');
         expect(d.tipo, MovementKind.transferencia);
         expect(d.estado, 'confirmada');
-        expect(d.monto, const Money.fromCentimos(4500));
+        expect(d.monto, const Money.soles(4500));
         expect(d.cuentaDestinoMasked, matches(RegExp(r'^••••\d{4}$')));
         expect(d.fecha.isUtc, isTrue);
       },
@@ -230,6 +247,58 @@ void probarContratoDeCuentas(
       expect(detalle.contraparte, fila.contraparte);
       expect(detalle.saldoPosterior, fila.saldoPosterior);
       expect(detalle.fecha, fila.fecha);
+    });
+
+    test('abrir una cuenta la agrega a la lista', () async {
+      final repo = construir();
+      final nueva = valorDe(
+        await repo.abrir(
+          tipo: AccountType.corriente,
+          moneda: Currency.usd,
+          nombre: 'Viaje',
+          pin: '000000',
+          idempotencyKey: 'abrir-contrato-01',
+        ),
+      );
+
+      expect(nueva.tipo, AccountType.corriente);
+      expect(nueva.moneda, Currency.usd);
+      expect(nueva.nombre, 'Viaje');
+      expect(nueva.saldoDisponible, Money.zero(Currency.usd));
+      final ids = valorDe(await repo.cuentas()).map((c) => c.id);
+      expect(ids, contains(nueva.id));
+    });
+
+    test(
+      'reintentar la apertura con la misma clave devuelve la misma cuenta',
+      () async {
+        final repo = construir();
+        Future<Account> abrir() async => valorDe(
+          await repo.abrir(
+            tipo: AccountType.ahorro,
+            moneda: Currency.pen,
+            pin: '000000',
+            idempotencyKey: 'abrir-contrato-02',
+          ),
+        );
+        final a = await abrir();
+        final b = await abrir();
+        expect(b.id, a.id);
+      },
+    );
+
+    test('renombrar devuelve la cuenta con su nombre nuevo', () async {
+      final repo = construir();
+      final c = await primeraCuenta(repo);
+      expect(valorDe(await repo.renombrar(c.id, 'Casa')).nombre, 'Casa');
+      expect(valorDe(await repo.renombrar(c.id, null)).nombre, isNull);
+    });
+
+    test('renombrar una cuenta inexistente es accountNotFound', () async {
+      expect(
+        falloDe(await construir().renombrar('no-existe', 'X')),
+        isA<AccountNotFound>(),
+      );
     });
   });
 }

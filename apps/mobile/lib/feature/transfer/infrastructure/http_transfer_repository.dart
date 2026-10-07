@@ -2,7 +2,8 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
-import '../domain/recipient.dart';
+import '../domain/recipient_account.dart';
+import '../domain/recipient_directory.dart';
 import '../domain/transfer_failure.dart';
 import '../domain/transfer_receipt.dart';
 import '../domain/transfer_repository.dart';
@@ -22,29 +23,33 @@ class HttpTransferRepository implements TransferRepository {
   final Dio _dio;
 
   @override
-  FutureResult<TransferFailure, Recipient> resolverDestinatario(String dni) =>
-      _guard(() async {
-        final response = await _dio.get<dynamic>(
-          '/v1/directory/resolve',
-          queryParameters: {'dni': dni},
-        );
-        if (_failureFor(response) case final f?) {
-          return left(GlobalFailure.server(f));
-        }
-        final j = _cuerpo(response);
-        return right(
-          Recipient(
-            dni: j['dni'] as String,
-            nombreEnmascarado: j['nombre_enmascarado'] as String,
-            cuentaDestinoMasked: j['cuenta_destino_numero_masked'] as String,
-          ),
-        );
-      });
+  FutureResult<TransferFailure, RecipientDirectory> resolverDestinatario(
+    String dni,
+  ) => _guard(() async {
+    final response = await _dio.get<dynamic>(
+      '/v1/directory/resolve',
+      queryParameters: {'dni': dni},
+    );
+    if (_failureFor(response) case final f?) {
+      return left(GlobalFailure.server(f));
+    }
+    final j = _cuerpo(response);
+    return right(
+      RecipientDirectory(
+        dni: j['dni'] as String,
+        nombreEnmascarado: j['nombre_enmascarado'] as String,
+        cuentas: [
+          for (final c in j['cuentas'] as List)
+            recipientAccountFromJson(c as Map<String, dynamic>),
+        ],
+      ),
+    );
+  });
 
   @override
   FutureResult<TransferFailure, TransferReceipt> enviar({
     required String cuentaOrigenId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
     required String pin,
@@ -54,12 +59,12 @@ class HttpTransferRepository implements TransferRepository {
     // más largo da 422 (cae en `TransferUnexpectedFailure`): la UI debe
     // recortarlo y limitar el campo; este repositorio no lo hace.
     'cuenta_origen_id': cuentaOrigenId,
-    'destinatario_dni': destinatarioDni,
+    'cuenta_destino_id': cuentaDestinoId,
     'monto_centimos': monto.centimos,
     'motivo': ?motivo,
     'pin': pin,
     'idempotency_key': idempotencyKey,
-  });
+  }, monto.currency);
 
   @override
   FutureResult<TransferFailure, TransferReceipt> recargar({
@@ -72,11 +77,12 @@ class HttpTransferRepository implements TransferRepository {
     'monto_centimos': monto.centimos,
     'pin': pin,
     'idempotency_key': idempotencyKey,
-  });
+  }, monto.currency);
 
   FutureResult<TransferFailure, TransferReceipt> _mover(
     String path,
     Map<String, Object?> body,
+    Currency moneda,
   ) => _guard(() async {
     final response = await _dio.post<dynamic>(path, data: body);
     if (_failureFor(response) case final f?) {
@@ -86,7 +92,7 @@ class HttpTransferRepository implements TransferRepository {
     return right(
       TransferReceipt(
         transactionId: j['transaction_id'] as String,
-        monto: Money.fromCentimos(j['monto_centimos'] as int),
+        monto: Money(j['monto_centimos'] as int, moneda),
         fecha: _utc(j['created_at'] as String),
         // 200 = el servidor devolvió la operación original; 201 = nueva.
         reutilizada: response.statusCode == 200,
@@ -133,7 +139,8 @@ class HttpTransferRepository implements TransferRepository {
     return switch (body['code']) {
       'INSUFFICIENT_FUNDS' => const TransferFailure.insufficientFunds(),
       'RECIPIENT_NOT_FOUND' => const TransferFailure.recipientNotFound(),
-      'SELF_TRANSFER' => const TransferFailure.selfTransfer(),
+      'CURRENCY_MISMATCH' => const TransferFailure.currencyMismatch(),
+      'SAME_ACCOUNT' => const TransferFailure.sameAccount(),
       'ACCOUNT_NOT_FOUND' => const TransferFailure.accountNotFound(),
       'ACCOUNT_BLOCKED' => const TransferFailure.accountBlocked(),
       'AMOUNT_OUT_OF_RANGE' => const TransferFailure.amountOutOfRange(),

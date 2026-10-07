@@ -8,7 +8,6 @@ sealed class BeneficiaryFailure {
 
   const factory BeneficiaryFailure.recipientNotFound() =
       BeneficiaryRecipientNotFound;
-  const factory BeneficiaryFailure.selfTransfer() = BeneficiarySelfTransfer;
   const factory BeneficiaryFailure.rateLimited(Duration? reintentarEn) =
       BeneficiaryRateLimited;
   const factory BeneficiaryFailure.unauthenticated() =
@@ -17,14 +16,9 @@ sealed class BeneficiaryFailure {
   const factory BeneficiaryFailure.unexpected() = BeneficiaryUnexpectedFailure;
 }
 
-/// Ese DNI no es cliente de CuyCash, o su cuenta no puede recibir.
+/// Esa cuenta no existe o no puede recibir.
 final class BeneficiaryRecipientNotFound extends BeneficiaryFailure {
   const BeneficiaryRecipientNotFound();
-}
-
-/// El DNI es el del propio titular.
-final class BeneficiarySelfTransfer extends BeneficiaryFailure {
-  const BeneficiarySelfTransfer();
 }
 
 /// Demasiadas consultas de destinatario (429): guardar comparte presupuesto

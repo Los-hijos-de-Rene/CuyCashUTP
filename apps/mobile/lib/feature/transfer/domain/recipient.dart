@@ -1,4 +1,6 @@
-/// Un destinatario resuelto por DNI, tal como lo informa el servidor.
+import 'recipient_account.dart';
+
+/// El destino ELEGIDO de un envío: la persona y una de sus cuentas.
 ///
 /// El nombre llega ENMASCARADO (`C*** A*** N***`): confirma lo justo para que
 /// quien ya conoce a la persona la reconozca. El teléfono no debe intentar
@@ -7,12 +9,10 @@ class Recipient {
   const Recipient({
     required this.dni,
     required this.nombreEnmascarado,
-    required this.cuentaDestinoMasked,
+    required this.cuenta,
   });
 
   final String dni;
   final String nombreEnmascarado;
-
-  /// `••••NNNN`: los últimos cuatro dígitos de la cuenta que recibirá.
-  final String cuentaDestinoMasked;
+  final RecipientAccount cuenta;
 }

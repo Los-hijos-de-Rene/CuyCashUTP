@@ -20,12 +20,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.routers.accounts import _iso
 from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
-from app.core.security import averify_pin
 from app.db.base import get_session
 from app.db.models import Account, LedgerEntry, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
 from app.services import accounts as accounts_service
-from app.services import lockout
+from app.services.autorizacion import exigir_pin_de_operacion
 from app.services.rate_limit import consumir_consulta_de_destinatario
 from app.services.ledger import Asiento, post
 
@@ -37,7 +36,7 @@ MONTO_MAXIMO = 200_000  # S/ 2,000.00
 
 class TransferIn(BaseModel):
     cuenta_origen_id: str
-    destinatario_dni: str = Field(min_length=8, max_length=8, pattern=r"^\d{8}$")
+    cuenta_destino_id: str = Field(min_length=1, max_length=36)
     # StrictInt: dinero es entero de céntimos; que "100" o 100.7 se coerzan en
     # silencio es justo lo que no debe pasar aquí.
     monto_centimos: StrictInt
@@ -53,11 +52,15 @@ class TopUpIn(BaseModel):
     idempotency_key: str = Field(min_length=8, max_length=64)
 
 
-def _validar_monto(centimos: int) -> None:
+SIMBOLOS = {"PEN": "S/", "USD": "US$"}
+
+
+def _validar_monto(centimos: int, moneda: str) -> None:
     if centimos < MONTO_MINIMO or centimos > MONTO_MAXIMO:
+        s = SIMBOLOS[moneda]
         raise ApiError(
             ErrorCode.AMOUNT_OUT_OF_RANGE,
-            f"El monto debe estar entre S/ 0.01 y S/ {MONTO_MAXIMO / 100:,.2f}.",
+            f"El monto debe estar entre {s} 0.01 y {s} {MONTO_MAXIMO / 100:,.2f}.",
         )
 
 
@@ -91,21 +94,18 @@ async def _clave_ya_usada(
 
 async def _destino_original(
     session: AsyncSession, cuenta_origen_id: str, idempotency_key: str
-) -> Optional[Tuple[Account, User]]:
+) -> Optional[Account]:
     """
-    El destino del envío que esa clave YA registró desde esta cuenta, con su
-    titular; `None` si no hay tal envío.
+    La cuenta destino del envío que esa clave YA registró desde esta cuenta;
+    `None` si no hay tal envío.
 
-    Un reintento no vuelve a preguntar por el DNI del payload: su destino es el
-    de la operación original. Así el reintento no consulta el padrón (ni gasta
-    presupuesto, ni puede distinguir "no existe" de "existe bloqueado") y, de
-    paso, con multicuenta seguirá apuntando a la cuenta que recibió y no a "la
-    primera de ahorro".
+    Un reintento no vuelve a buscar el destino del payload: es el de la
+    operación original. Así no consulta el padrón ni gasta presupuesto, ni
+    puede distinguir "no existe" de "existe bloqueada".
     """
     return (
         await session.execute(
-            select(Account, User)
-            .join(User, User.id == Account.user_id)
+            select(Account)
             .join(Transfer, Transfer.cuenta_destino == Account.id)
             .join(Transaction, Transaction.id == Transfer.transaction_id)
             .where(
@@ -114,7 +114,7 @@ async def _destino_original(
             )
             .limit(1)
         )
-    ).first()
+    ).scalars().first()
 
 
 def _clave_reusada() -> ApiError:
@@ -168,62 +168,6 @@ async def _buscar_cuenta_propia(
     return cuenta
 
 
-def _bloqueado(hasta, code: str = ErrorCode.IDENTIFIER_LOCKED) -> ApiError:
-    return ApiError(
-        code,
-        "Tu cuenta está bloqueada por ahora.",
-        status_code=status.HTTP_423_LOCKED,
-        extra={"locked_until": hasta.isoformat()},
-    )
-
-
-async def _exigir_pin(
-    session: AsyncSession, user: User, device_id: str, pin: str
-) -> None:
-    """
-    Autoriza el movimiento con el PIN. Los fallos alimentan el MISMO bloqueo que
-    el login (sujeto `dni`, y de paso el del dispositivo): se agotan los
-    intentos se gasten entrando o enviando.
-    """
-    for kind, value, code in (
-        ("dni", user.dni, ErrorCode.IDENTIFIER_LOCKED),
-        ("device", device_id, ErrorCode.DEVICE_LOCKED),
-    ):
-        hasta = await lockout.locked_until(session, kind, value)
-        if hasta is not None:
-            raise _bloqueado(hasta, code)
-
-    if await averify_pin(pin, user.pin_hash):
-        # Sin commit: viaja con el movimiento. Si el movimiento falla, el
-        # reinicio del contador se descarta con él, lo cual es lo prudente.
-        # OJO: esto escribe una `LoginAttempt(succeeded=True)` por cada
-        # movimiento. `login_attempts` ya no es solo el registro de ingresos:
-        # una auditoría leerá "sesión iniciada" donde hubo una transferencia.
-        await lockout.register_success(session, user.dni, device_id)
-        return
-
-    disparo = await lockout.register_failure_detail(session, user.dni, device_id)
-    restantes = await lockout.attempts_left(session, user.dni)
-    # El fallo TIENE que persistirse antes de lanzar el error: al propagarse la
-    # excepción la sesión se cierra sin commit y el intento no contaría nunca,
-    # con lo que el bloqueo sería decorativo.
-    await session.commit()
-    if disparo is not None:
-        hasta, kind = disparo
-        raise _bloqueado(
-            hasta,
-            ErrorCode.IDENTIFIER_LOCKED if kind == "dni" else ErrorCode.DEVICE_LOCKED,
-        )
-    raise ApiError(
-        ErrorCode.INVALID_CREDENTIALS,
-        "PIN incorrecto.",
-        # 403 y no 401: la sesión es válida, lo que falla es la autorización de
-        # ESTA operación. Un 401 haría que el cliente cerrara la sesión.
-        status_code=status.HTTP_403_FORBIDDEN,
-        extra={"intentos_restantes": restantes},
-    )
-
-
 def _respuesta(tx: Transaction, monto: int) -> dict:
     return {
         "transaction_id": tx.id,
@@ -243,26 +187,23 @@ async def transferir(
 ):
     origen = await _buscar_cuenta_propia(session, user, payload.cuenta_origen_id)
 
-    if payload.destinatario_dni == user.dni:
-        raise ApiError(ErrorCode.SELF_TRANSFER, "No puedes enviarte dinero a ti mismo.")
+    if payload.cuenta_destino_id == origen.id:
+        raise ApiError(ErrorCode.SAME_ACCOUNT, "Elige una cuenta distinta a la de origen.")
 
-    original = await _destino_original(
-        session, origen.id, payload.idempotency_key
-    )
-    if original is not None:
+    destino = await _destino_original(session, origen.id, payload.idempotency_key)
+    if destino is not None:
         # REINTENTO del MISMO envío desde la MISMA cuenta. No se vuelve a tocar
         # el padrón: el destino es el de la operación original, así que esta
-        # rama no distingue "ese DNI no existe" de "existe pero está
-        # bloqueado" (lo que `directory._destinatario` se cuida de no revelar)
-        # y no descuenta presupuesto. Esto último es lo que hace posible la
-        # pregunta "¿se cobró?": quien tiene un envío con resultado desconocido
-        # debe poder repetirlo hasta saberlo, y un 429 lo dejaría sin respuesta
-        # para siempre.
-        destino, titular_destino = original
-        if titular_destino.dni != payload.destinatario_dni:
-            # La clave es de un envío a OTRA persona: devolver la original
-            # haría creer al usuario que envió lo que acaba de escribir. La
-            # respuesta no depende del DNI del payload, así que no es oráculo.
+        # rama no distingue "esa cuenta no existe" de "existe pero está
+        # bloqueada" y no descuenta presupuesto. Esto último es lo que hace
+        # posible la pregunta "¿se cobró?": quien tiene un envío con resultado
+        # desconocido debe poder repetirlo hasta saberlo, y un 429 lo dejaría
+        # sin respuesta para siempre.
+        if destino.id != payload.cuenta_destino_id:
+            # La clave es de un envío a OTRA cuenta (aunque sea de la misma
+            # persona): devolver la original haría creer al usuario que envió
+            # a donde acaba de elegir. La respuesta no depende de si la cuenta
+            # del payload existe, así que no es oráculo.
             raise _clave_reusada()
     else:
         if origen.estado != "activa":
@@ -271,35 +212,38 @@ async def transferir(
                 "Esa cuenta no está activa.",
                 status_code=status.HTTP_409_CONFLICT,
             )
-        # Esta búsqueda es un oráculo del padrón: responde 404 antes de
-        # verificar el PIN, así que no gasta intentos de bloqueo. Comparte
-        # presupuesto con `/directory/resolve`; si no, se esquivaría usando la
-        # ruta sin tope.
+        # Buscar una cuenta por id también es un oráculo (existe o no): responde
+        # 404 antes de verificar el PIN, así que no gasta intentos de bloqueo.
+        # Comparte presupuesto con `/directory/resolve`; si no, se esquivaría
+        # usando la ruta sin tope.
         consumir_consulta_de_destinatario(user.id)
         destino = (
             await session.execute(
-                select(Account)
-                .join(User, User.id == Account.user_id)
-                .where(
-                    User.dni == payload.destinatario_dni,
-                    Account.tipo == "ahorro",
-                    # Mismo filtro que `/directory/resolve`: una cuenta
-                    # bloqueada no es un destinatario, y la respuesta es la
-                    # misma que para un DNI inexistente.
+                select(Account).where(
+                    Account.id == payload.cuenta_destino_id,
+                    # Una caja no es un destinatario, y una cuenta bloqueada
+                    # tampoco: la respuesta es la de una cuenta inexistente.
+                    Account.tipo != "sistema",
                     Account.estado == "activa",
                 )
-                .order_by(Account.created_at, Account.id)
             )
-        ).scalars().first()
+        ).scalar_one_or_none()
         if destino is None:
             raise ApiError(
                 ErrorCode.RECIPIENT_NOT_FOUND,
-                "No encontramos a nadie con ese DNI en CuyCash.",
+                "No encontramos esa cuenta en CuyCash.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+        if destino.moneda != origen.moneda:
+            # Antes del PIN: no gasta intentos. Y antes del motor, cuyo
+            # `assert` de monedas es la última defensa, no la respuesta.
+            raise ApiError(
+                ErrorCode.CURRENCY_MISMATCH,
+                "Solo puedes enviar entre cuentas de la misma moneda.",
+            )
 
-    _validar_monto(payload.monto_centimos)
-    await _exigir_pin(session, user, sesion.device_id, payload.pin)
+    _validar_monto(payload.monto_centimos, origen.moneda)
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
     # Cuentas y montos ya los incorpora el motor a la huella; solo se aporta lo
     # que él no ve. El motivo en blanco y el ausente son la misma petición.
@@ -352,10 +296,10 @@ async def recargar(
     cuenta, _ = await _cuenta_propia(
         session, user, payload.cuenta_id, payload.idempotency_key
     )
-    _validar_monto(payload.monto_centimos)
-    await _exigir_pin(session, user, sesion.device_id, payload.pin)
+    _validar_monto(payload.monto_centimos, cuenta.moneda)
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
-    caja = await accounts_service.cuenta_de_sistema(session)
+    caja = await accounts_service.cuenta_de_sistema(session, cuenta.moneda)
     tx, reutilizada = await post(
         session,
         tipo="recarga",

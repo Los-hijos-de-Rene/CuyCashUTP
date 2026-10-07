@@ -3,18 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../feature/account/domain/account.dart';
 import '../../feature/account/domain/account_failure.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import '../session/remembered_user_builder.dart';
 import 'bloc/account_bloc.dart';
 import 'home_action.dart';
-import 'widgets/balance_card.dart';
+import 'widgets/account_carousel.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/insight_card.dart';
 import 'widgets/movements_card.dart';
 import 'widgets/quick_actions_row.dart';
+import 'widgets/rename_account_sheet.dart';
 
 void _showMessage(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
@@ -24,6 +26,15 @@ void _showMessage(BuildContext context, String message) {
 
 void _showComingSoon(BuildContext context) =>
     _showMessage(context, AppLocalizations.of(context).comingSoon);
+
+Future<void> _openAccount(BuildContext context) async {
+  final bloc = context.read<AccountBloc>();
+  final nueva = await context.push<Account>(
+    AppRoutes.abrirCuenta,
+    extra: bloc.state.cuentas,
+  );
+  if (nueva != null) bloc.add(AccountEvent.opened(nueva));
+}
 
 /// Muestra los ganchos que aún no tienen feature detrás (campana, WasiBot,
 /// "Ver todo"). Apagado: se ocultan en vez de avisar "próximamente". Las
@@ -156,7 +167,6 @@ class _ReadyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final cuenta = state.cuenta;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,10 +174,16 @@ class _ReadyView extends StatelessWidget {
           InfoStrip(icon: Icons.info_outline, text: l10n.homeRefreshFailed),
           const SizedBox(height: CuyCashSpacing.stackSm),
         ],
-        if (cuenta != null) ...[
-          BalanceCard(
-            balance: cuenta.saldoDisponible,
-            walletMasked: cuenta.numeroMasked,
+        if (state.cuentas.isNotEmpty) ...[
+          AccountCarousel(
+            cuentas: state.cuentas,
+            seleccionada: state.seleccionada,
+            onSelected: (i) =>
+                context.read<AccountBloc>().add(AccountEvent.selected(i)),
+            onRename: (c) => RenameAccountSheet.show(context, c),
+            onOpenAccount: state.puedeAbrirOtra
+                ? () => _openAccount(context)
+                : null,
           ),
           const SizedBox(height: CuyCashSpacing.stackMd),
         ],
@@ -217,6 +233,13 @@ class _ErrorView extends StatelessWidget {
       null ||
       AccountNotFound() ||
       Unauthenticated() ||
+      AccountLimitReached() ||
+      SalaryAccountExists() ||
+      InvalidAccountCurrency() ||
+      InvalidAccountName() ||
+      AccountWrongPin() ||
+      AccountLocked() ||
+      AccountKeyReused() ||
       UnexpectedFailure() => l10n.homeErrorGeneric,
     };
     return Padding(

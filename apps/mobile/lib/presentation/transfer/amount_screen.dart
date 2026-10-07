@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/format/soles.dart';
+import '../../core/format/money_format.dart';
 import '../../feature/beneficiary/domain/beneficiary_limits.dart';
 import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import 'bloc/transfer_bloc.dart';
 import 'money_input_formatter.dart';
@@ -63,26 +64,28 @@ class _AmountScreenState extends State<AmountScreen> {
   }
 
   /// `null` si el texto no es un monto legible.
-  Money? get _parsed => Money.parse(_amount.text);
+  Money? _parsed(Currency moneda) => Money.parse(_amount.text, moneda);
 
-  String? _error(AppLocalizations l10n, Money disponible) {
+  String? _error(AppLocalizations l10n, Money disponible, Currency moneda) {
     if (_amount.text.isEmpty || _incomplete) return null;
-    final monto = _parsed;
+    final monto = _parsed(moneda);
     if (monto == null) return l10n.transferAmountInvalid;
-    if (monto < TransferLimits.montoMinimo) return l10n.transferAmountZero;
-    if (monto > TransferLimits.montoMaximo) {
+    if (monto < TransferLimits.montoMinimo(moneda)) {
+      return l10n.transferAmountZero(formatMoney(Money.zero(moneda)));
+    }
+    if (monto > TransferLimits.montoMaximo(moneda)) {
       return l10n.transferAmountOverMax(
-        formatSoles(TransferLimits.montoMaximo),
+        formatMoney(TransferLimits.montoMaximo(moneda)),
       );
     }
     if (monto > disponible) {
-      return l10n.transferAmountOverBalance(formatSoles(disponible));
+      return l10n.transferAmountOverBalance(formatMoney(disponible));
     }
     return null;
   }
 
-  void _continue() {
-    final monto = _parsed;
+  void _continue(Currency moneda) {
+    final monto = _parsed(moneda);
     if (monto == null) return;
     context.read<TransferBloc>().add(
       TransferEvent.amountEntered(monto: monto, motivo: _motivo.text),
@@ -94,16 +97,16 @@ class _AmountScreenState extends State<AmountScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = context.watch<TransferBloc>().state;
-    final disponible =
-        state.cuenta?.saldoDisponible ?? const Money.fromCentimos(0);
+    final moneda = state.cuenta?.moneda ?? Currency.pen;
+    final disponible = state.cuenta?.saldoDisponible ?? Money.zero(moneda);
     final destinatario = state.destinatario;
     // El rechazo del formateador tiene su propio aviso; si no, el de validación.
-    final error = _rejectedMessage ?? _error(l10n, disponible);
+    final error = _rejectedMessage ?? _error(l10n, disponible, moneda);
     final valid =
         _rejectedMessage == null &&
-        _parsed != null &&
+        _parsed(moneda) != null &&
         !_incomplete &&
-        _error(l10n, disponible) == null;
+        _error(l10n, disponible, moneda) == null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.transferAmountTitle)),
@@ -125,6 +128,12 @@ class _AmountScreenState extends State<AmountScreen> {
                     color: CuyCashColors.secondaryText,
                   ),
                 ),
+                Text(
+                  recipientAccountShort(l10n, destinatario.cuenta),
+                  style: CuyCashTypography.bodyMd.copyWith(
+                    color: CuyCashColors.secondaryText,
+                  ),
+                ),
               ],
               const SizedBox(height: CuyCashSpacing.stackLg),
               CuyCashTextField(
@@ -133,7 +142,7 @@ class _AmountScreenState extends State<AmountScreen> {
                 controller: _amount,
                 autofocus: true,
                 errorText: error,
-                helperText: l10n.transferAvailable(formatSoles(disponible)),
+                helperText: l10n.transferAvailable(formatMoney(disponible)),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -153,12 +162,12 @@ class _AmountScreenState extends State<AmountScreen> {
               Wrap(
                 spacing: CuyCashSpacing.stackSm,
                 children: [
-                  for (final soles in _quickAmounts)
+                  for (final unidades in _quickAmounts)
                     ActionChip(
-                      label: Text(formatSoles(Money.fromCentimos(soles * 100))),
+                      label: Text(formatMoney(Money(unidades * 100, moneda))),
                       onPressed: () => setState(() {
                         _rejectedMessage = null;
-                        _amount.text = '$soles';
+                        _amount.text = '$unidades';
                       }),
                     ),
                 ],
@@ -203,7 +212,7 @@ class _AmountScreenState extends State<AmountScreen> {
               const SizedBox(height: CuyCashSpacing.stackLg),
               PrimaryButton(
                 label: l10n.transferContinue,
-                onPressed: valid ? _continue : null,
+                onPressed: valid ? () => _continue(moneda) : null,
               ),
             ],
           ),

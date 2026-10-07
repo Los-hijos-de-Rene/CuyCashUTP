@@ -1,9 +1,10 @@
 import 'package:core_kernel/core_kernel.dart';
 
+import '../../account/domain/account_type.dart';
 import '../domain/pending_transfer_store.dart';
 
 /// Recuerda la clave de idempotencia de un envío que pudo haberse ejecutado,
-/// ligada a su INTENCIÓN (cuenta + destinatario + monto + motivo), para que
+/// ligada a su INTENCIÓN (cuenta + cuenta destino + monto + motivo), para que
 /// reentrar al flujo con la misma intención recupere la misma clave en vez de
 /// fabricar otra y cobrar dos veces.
 ///
@@ -29,20 +30,28 @@ class PendingTransferActions {
   /// Huella estable de una intención.
   static String huella({
     required String cuentaId,
-    required String destinatarioDni,
+    required String cuentaDestinoId,
     required Money monto,
     String? motivo,
-  }) => '$cuentaId|$destinatarioDni|${monto.centimos}|${motivo ?? ''}';
+  }) => '$cuentaId|$cuentaDestinoId|${monto.centimos}|${motivo ?? ''}';
 
   /// Huella de una RECARGA: no tiene destinatario ni motivo, así que la
   /// intención es cuenta + monto. El prefijo `recarga|` la separa de la de un
-  /// envío (`cuenta|dni|monto|motivo`): un DNI son ocho dígitos, jamás
+  /// envío (`cuenta|cuentaDestino|monto|motivo`): un id de cuenta nunca es
   /// «recarga», así que ambas familias no pueden chocar. Comparten almacén,
   /// vencimiento y `hasPending` (una operación sin resolver avisa en las dos).
   static String huellaRecarga({
     required String cuentaId,
     required Money monto,
   }) => 'recarga|$cuentaId|${monto.centimos}';
+
+  /// Huella de una APERTURA de cuenta: comparte almacén con envíos y recargas
+  /// porque el riesgo es el mismo (no saber si se ejecutó).
+  static String huellaApertura({
+    required AccountType tipo,
+    required Currency moneda,
+    String? nombre,
+  }) => 'abrir|${tipo.code}|${moneda.code}|${nombre ?? ''}';
 
   Map<String, PendingTransfer> _vigentes(Map<String, PendingTransfer> todas) {
     final ahora = _clock().toUtc();
@@ -60,8 +69,16 @@ class PendingTransferActions {
   /// ¿Hay CUALQUIER envío pendiente vigente de este usuario? Sirve para avisar
   /// cuando la intención nueva no coincide exacta con la pendiente (otro
   /// monto, otro motivo...) y por eso no se puede reconocer como repetida.
-  Future<bool> hasPending(String userId) async =>
-      _vigentes(await _store.readAll(userId)).isNotEmpty;
+  ///
+  /// Las aperturas de cuenta (`abrir|...`) comparten almacén pero no cuentan
+  /// por defecto: un envío o una recarga no deben avisar de "un envío sin
+  /// resolver" cuando lo pendiente es abrir una cuenta.
+  Future<bool> hasPending(
+    String userId, {
+    bool incluirAperturas = false,
+  }) async => _vigentes(
+    await _store.readAll(userId),
+  ).keys.any((h) => incluirAperturas || !h.startsWith('abrir|'));
 
   /// Anota la clave de esta intención (y limpia las caducadas). `false` si NO
   /// quedó guardada: el envío debe seguir, pero el usuario sin red de

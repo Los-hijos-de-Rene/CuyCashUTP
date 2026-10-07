@@ -3,9 +3,11 @@ import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/lockout/domain/lockout_policy.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/infrastructure/http_transfer_repository.dart';
+import 'package:cuycash/feature/transfer/infrastructure/memory_transfer_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,7 +22,18 @@ class FakeTransfersBackend implements HttpClientAdapter {
   static const dniPropio = '70123456';
   static const dniDestino = '87654321';
   static const cuenta = 'acc-demo-1';
+
+  /// Cuentas que pueden recibir, por id, con su moneda (`acc-ext-*` son de
+  /// [dniDestino]; `acc-demo-2` es otra cuenta propia en soles).
+  static const _monedaDe = <String, String>{
+    'acc-ext-1': 'PEN',
+    'acc-ext-2': 'PEN',
+    'acc-ext-3': 'USD',
+    'acc-demo-1': 'PEN',
+    'acc-demo-2': 'PEN',
+  };
   static const consultasMaximas = 20;
+
   /// El tope REAL del backend (`IDENTIFIER_MAX_ATTEMPTS`). Transcribirlo a
   /// mano fue lo que hizo que la batería de contrato certificara un 5 que no
   /// existe en ninguno de los dos lados.
@@ -38,7 +51,10 @@ class FakeTransfersBackend implements HttpClientAdapter {
   int consultas = 0;
   int secuencia = 0;
   final operaciones =
-      <String, ({String huella, Map<String, Object?> cuerpo})>{};
+      <
+        String,
+        ({String huella, String? destino, Map<String, Object?> cuerpo})
+      >{};
 
   static (int, Object?) _error(
     int status,
@@ -83,15 +99,62 @@ class FakeTransfersBackend implements HttpClientAdapter {
   }
 
   (int, Object?) _resolver(String dni) {
-    if (dni == dniPropio) return _error(400, 'SELF_TRANSFER');
     if (_consultar() case final e?) return e;
+    if (dni == dniPropio) {
+      // El propio DNI lista mis cuentas, CON su nombre.
+      return (
+        200,
+        {
+          'dni': dniPropio,
+          'nombre_enmascarado': 'T*** C***',
+          'cuentas': [
+            {
+              'cuenta_id': 'acc-demo-1',
+              'tipo': 'ahorro',
+              'moneda': 'PEN',
+              'numero_masked': '••••4521',
+              'nombre': 'Gastos',
+            },
+            {
+              'cuenta_id': 'acc-demo-2',
+              'tipo': 'sueldo',
+              'moneda': 'PEN',
+              'numero_masked': '••••8830',
+              'nombre': null,
+            },
+          ],
+        },
+      );
+    }
     if (dni != dniDestino) return _error(404, 'RECIPIENT_NOT_FOUND');
     return (
       200,
       {
         'dni': dniDestino,
         'nombre_enmascarado': 'J*** M*** R***',
-        'cuenta_destino_numero_masked': '••••7732',
+        'cuentas': [
+          {
+            'cuenta_id': 'acc-ext-1',
+            'tipo': 'ahorro',
+            'moneda': 'PEN',
+            'numero_masked': '••••7732',
+            'nombre': null,
+          },
+          {
+            'cuenta_id': 'acc-ext-2',
+            'tipo': 'corriente',
+            'moneda': 'PEN',
+            'numero_masked': '••••5510',
+            'nombre': null,
+          },
+          {
+            'cuenta_id': 'acc-ext-3',
+            'tipo': 'ahorro',
+            'moneda': 'USD',
+            'numero_masked': '••••0419',
+            'nombre': null,
+          },
+        ],
       },
     );
   }
@@ -124,19 +187,29 @@ class FakeTransfersBackend implements HttpClientAdapter {
     final monto = b['monto_centimos'] as int;
     final clave = b['idempotency_key'] as String;
     if (cuentaId != cuenta) return _error(404, 'ACCOUNT_NOT_FOUND');
+    final previa = operaciones[clave];
+    final destino = b['cuenta_destino_id'] as String?;
     if (envio) {
-      final dni = b['destinatario_dni'] as String;
-      if (dni == dniPropio) return _error(400, 'SELF_TRANSFER');
-      if (_consultar() case final e?) return e;
-      if (dni != dniDestino) return _error(404, 'RECIPIENT_NOT_FOUND');
+      if (destino == cuentaId) return _error(400, 'SAME_ACCOUNT');
+      if (previa != null) {
+        // Reintento: no vuelve a buscar el destino ni gasta presupuesto; la
+        // clave de un envío a OTRA cuenta es 409 antes del PIN.
+        if (previa.destino != destino) {
+          return _error(409, 'IDEMPOTENCY_KEY_REUSED');
+        }
+      } else {
+        if (_consultar() case final e?) return e;
+        final moneda = _monedaDe[destino];
+        if (moneda == null) return _error(404, 'RECIPIENT_NOT_FOUND');
+        if (moneda != 'PEN') return _error(400, 'CURRENCY_MISMATCH');
+      }
     }
     if (monto < 1 || monto > 200000) return _error(400, 'AMOUNT_OUT_OF_RANGE');
     if (_exigirPin(b['pin'] as String) case final e?) return e;
 
     final huella =
-        '$envio|$cuentaId|${b['destinatario_dni']}|$monto|'
+        '$envio|$cuentaId|$destino|$monto|'
         '${(b['motivo'] as String? ?? '').trim()}';
-    final previa = operaciones[clave];
     if (previa != null) {
       return previa.huella == huella
           ? (200, previa.cuerpo)
@@ -150,7 +223,7 @@ class FakeTransfersBackend implements HttpClientAdapter {
       'monto_centimos': monto,
       'created_at': '2026-10-05T18:00:00.000000Z',
     };
-    operaciones[clave] = (huella: huella, cuerpo: cuerpo);
+    operaciones[clave] = (huella: huella, destino: destino, cuerpo: cuerpo);
     return (201, cuerpo);
   }
 
@@ -186,6 +259,8 @@ void main() {
     cuentaOrigenId: FakeTransfersBackend.cuenta,
     dniPropio: FakeTransfersBackend.dniPropio,
     dniDestino: FakeTransfersBackend.dniDestino,
+    cuentaDestinoId: MemoryTransferRepository.cuentaDestinoId,
+    cuentaOtraMonedaId: MemoryTransferRepository.cuentaDestinoDolaresId,
     consultasMaximas: FakeTransfersBackend.consultasMaximas,
     maxIntentos: FakeTransfersBackend.maxIntentos,
   );
@@ -198,8 +273,8 @@ void main() {
 
   Future<Result<TransferFailure, Object?>> enviar() => repo.enviar(
     cuentaOrigenId: 'acc-demo-1',
-    destinatarioDni: '87654321',
-    monto: const Money.fromCentimos(1000),
+    cuentaDestinoId: 'acc-ext-1',
+    monto: const Money.soles(1000),
     pin: '000000',
     idempotencyKey: 'clave-0001',
   );
@@ -327,6 +402,47 @@ void main() {
       },
     );
 
+    test('mapea CURRENCY_MISMATCH y SAME_ACCOUNT', () async {
+      backend.forced = (status: 400, body: {'code': 'CURRENCY_MISMATCH'});
+      expect(falloDe(await enviar()), isA<CurrencyMismatch>());
+      backend.forced = (status: 400, body: {'code': 'SAME_ACCOUNT'});
+      expect(falloDe(await enviar()), isA<SameAccount>());
+    });
+
+    test('SELF_TRANSFER ya no existe: es unexpected', () async {
+      backend.forced = (status: 400, body: {'code': 'SELF_TRANSFER'});
+      expect(falloDe(await enviar()), isA<TransferUnexpectedFailure>());
+    });
+
+    test(
+      'una cuenta con moneda o tipo desconocidos en resolve es inesperado',
+      () async {
+        for (final (tipo, moneda) in [('ahorro', 'EUR'), ('plazo', 'PEN')]) {
+          backend.forced = (
+            status: 200,
+            body: {
+              'dni': '87654321',
+              'nombre_enmascarado': 'J***',
+              'cuentas': [
+                {
+                  'cuenta_id': 'x',
+                  'tipo': tipo,
+                  'moneda': moneda,
+                  'numero_masked': '••••1',
+                  'nombre': null,
+                },
+              ],
+            },
+          );
+          expect(
+            (await repo.resolverDestinatario('87654321')).isLeft(),
+            isTrue,
+            reason: '$tipo/$moneda',
+          );
+        }
+      },
+    );
+
     test('ACCOUNT_BLOCKED (409) es accountBlocked', () async {
       backend.forced = (
         status: 409,
@@ -383,8 +499,8 @@ void main() {
     test('enviar manda céntimos enteros y los campos del router', () async {
       await repo.enviar(
         cuentaOrigenId: 'acc-demo-1',
-        destinatarioDni: '87654321',
-        monto: const Money.fromCentimos(25000),
+        cuentaDestinoId: 'acc-ext-1',
+        monto: const Money.soles(25000),
         motivo: 'Cena',
         pin: '000000',
         idempotencyKey: 'clave-0001',
@@ -395,7 +511,7 @@ void main() {
       expect(req.uri.path, '/v1/transfers');
       expect(req.data, {
         'cuenta_origen_id': 'acc-demo-1',
-        'destinatario_dni': '87654321',
+        'cuenta_destino_id': 'acc-ext-1',
         'monto_centimos': 25000,
         'motivo': 'Cena',
         'pin': '000000',
@@ -406,8 +522,8 @@ void main() {
     test('sin motivo no se manda la clave motivo', () async {
       await repo.enviar(
         cuentaOrigenId: 'acc-demo-1',
-        destinatarioDni: '87654321',
-        monto: const Money.fromCentimos(100),
+        cuentaDestinoId: 'acc-ext-1',
+        monto: const Money.soles(100),
         pin: '000000',
         idempotencyKey: 'clave-0001',
       );
@@ -421,7 +537,7 @@ void main() {
     test('recargar va a /v1/topups con cuenta_id y sin destinatario', () async {
       await repo.recargar(
         cuentaId: 'acc-demo-1',
-        monto: const Money.fromCentimos(5000),
+        monto: const Money.soles(5000),
         pin: '000000',
         idempotencyKey: 'recarga-0001',
       );
@@ -436,6 +552,40 @@ void main() {
       });
     });
 
+    test('la constancia lleva la moneda del monto enviado', () async {
+      final r = await repo.recargar(
+        cuentaId: 'acc-demo-1',
+        monto: const Money.dolares(2000),
+        pin: '000000',
+        idempotencyKey: 'recarga-usd-1',
+      );
+
+      expect(r.getRight().toNullable()!.monto.currency, Currency.usd);
+    });
+
+    test('enviar manda cuenta_destino_id y no el DNI', () async {
+      await repo.enviar(
+        cuentaOrigenId: 'acc-demo-1',
+        cuentaDestinoId: 'acc-ext-2',
+        monto: const Money.soles(100),
+        pin: '000000',
+        idempotencyKey: 'clave-http-01',
+      );
+      final body = backend.requests.last.data as Map;
+      expect(body['cuenta_destino_id'], 'acc-ext-2');
+      expect(body.containsKey('destinatario_dni'), isFalse);
+    });
+
+    test('resolve lee las cuentas con tipo, moneda y nombre', () async {
+      final r = await repo.resolverDestinatario('70123456');
+
+      final d = r.getRight().toNullable();
+      expect(d?.cuentas.map((c) => c.cuentaId), ['acc-demo-1', 'acc-demo-2']);
+      expect(d?.cuentas.first.nombre, 'Gastos');
+      expect(d?.cuentas.last.tipo, AccountType.sueldo);
+      expect(d?.cuentas.last.moneda, Currency.pen);
+    });
+
     test('resolver manda el DNI como query', () async {
       await repo.resolverDestinatario('87654321');
 
@@ -445,7 +595,7 @@ void main() {
     test('la fecha de la constancia con Z se lee como UTC', () async {
       final r = await repo.recargar(
         cuentaId: 'acc-demo-1',
-        monto: const Money.fromCentimos(5000),
+        monto: const Money.soles(5000),
         pin: '000000',
         idempotencyKey: 'recarga-0001',
       );

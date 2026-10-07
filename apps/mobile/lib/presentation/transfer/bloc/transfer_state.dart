@@ -2,7 +2,7 @@ part of 'transfer_bloc.dart';
 
 /// `idle`: sin destinatario (nada buscado, o la búsqueda falló).
 /// `resolving`: buscando el DNI.
-/// `ready`: destinatario resuelto; también vuelve aquí un envío fallido, con
+/// `ready`: hay directorio hallado o destino elegido; también vuelve aquí un envío fallido, con
 /// todo lo que el usuario ya eligió intacto.
 /// `submitting`: el envío va en vuelo; no admite otro.
 /// `done`: hay constancia.
@@ -13,6 +13,12 @@ abstract class TransferState with _$TransferState {
   const factory TransferState({
     @Default(TransferStatus.idle) TransferStatus status,
     Account? cuenta,
+
+    /// Lo que devolvió buscar el DNI: la persona y sus cuentas. La pantalla
+    /// pinta una tarjeta por cuenta.
+    RecipientDirectory? directorio,
+
+    /// La cuenta destino ELEGIDA (al tocar una tarjeta o un frecuente).
     Recipient? destinatario,
     Money? monto,
     String? motivo,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/account_label.dart';
 import '../app/app_routes.dart';
 import '../movement/widgets/receipt_card.dart';
 import '../movement/widgets/share_receipt_button.dart';
@@ -33,7 +34,14 @@ class ReceiptScreen extends StatelessWidget {
             estado: 'confirmada',
             contraparteLabel: l10n.transferReceiptTo,
             contraparte: destinatario?.nombreEnmascarado,
-            cuentaDestinoMasked: destinatario?.cuentaDestinoMasked,
+            cuentaDestinoMasked: switch (destinatario) {
+              final d? => recipientAccountShort(l10n, d.cuenta),
+              null => null,
+            },
+            cuentaOrigen: switch (state.cuenta) {
+              final c? => '${accountLabel(l10n, c)} · ${c.numeroMasked}',
+              null => null,
+            },
             motivo: state.motivo,
             reutilizada: constancia.reutilizada,
           );

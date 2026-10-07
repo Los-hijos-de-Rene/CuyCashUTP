@@ -3,7 +3,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/format/soles.dart';
+import '../../../core/format/money_format.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// La constancia de una operación: la MISMA para un envío recién hecho y para
@@ -20,6 +20,7 @@ class ReceiptCard extends StatelessWidget {
     this.contraparteLabel,
     this.contraparte,
     this.cuentaDestinoMasked,
+    this.cuentaOrigen,
     this.motivo,
     this.saldoPosterior,
     this.reutilizada = false,
@@ -41,6 +42,9 @@ class ReceiptCard extends StatelessWidget {
   final String? contraparteLabel;
   final String? contraparte;
   final String? cuentaDestinoMasked;
+
+  /// La cuenta desde la que salió el dinero, ya con su rótulo.
+  final String? cuentaOrigen;
   final String? motivo;
   final Money? saldoPosterior;
 
@@ -54,22 +58,23 @@ class ReceiptCard extends StatelessWidget {
       (contraparteLabel ?? l10n.movementDetailCounterparty, c),
     if (cuentaDestinoMasked case final cuenta?)
       (l10n.movementDetailDestinationAccount, cuenta),
-    if (motivo case final m? when m.isNotEmpty)
-      (l10n.movementDetailReason, m),
+    if (cuentaOrigen case final origen?)
+      (l10n.movementDetailSourceAccount, origen),
+    if (motivo case final m? when m.isNotEmpty) (l10n.movementDetailReason, m),
     (l10n.movementDetailStatus, _estadoTexto(l10n)),
     (
       l10n.transferReceiptDate,
       DateFormat('dd/MM/yyyy HH:mm').format(fecha.toLocal()),
     ),
     if (saldoPosterior case final saldo?)
-      (l10n.movementDetailBalanceAfter, formatSoles(saldo)),
+      (l10n.movementDetailBalanceAfter, formatMoney(saldo)),
     (l10n.transferReceiptId, transactionId),
   ];
 
   /// Resumen en texto plano para compartir.
   String shareText(AppLocalizations l10n) => [
     l10n.movementShareHeader,
-    '$headline: ${formatSoles(monto)}',
+    '$headline: ${formatMoney(monto)}',
     for (final (label, value) in lines(l10n)) '$label: $value',
   ].join('\n');
 
@@ -98,7 +103,7 @@ class ReceiptCard extends StatelessWidget {
         const SizedBox(height: CuyCashSpacing.stackMd),
         Text(headline, style: CuyCashTypography.headlineSm),
         const SizedBox(height: CuyCashSpacing.stackXs),
-        Text(formatSoles(monto), style: CuyCashTypography.headlineMd),
+        Text(formatMoney(monto), style: CuyCashTypography.headlineMd),
         const SizedBox(height: CuyCashSpacing.stackLg),
         SurfaceCard(
           child: Column(
@@ -110,10 +115,7 @@ class ReceiptCard extends StatelessWidget {
         ),
         if (reutilizada) ...[
           const SizedBox(height: CuyCashSpacing.stackMd),
-          InfoStrip(
-            icon: Icons.info_outline,
-            text: l10n.transferReceiptReused,
-          ),
+          InfoStrip(icon: Icons.info_outline, text: l10n.transferReceiptReused),
         ],
       ],
     );

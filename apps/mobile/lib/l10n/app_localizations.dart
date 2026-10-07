@@ -1381,8 +1381,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeBalanceHidden.
   ///
   /// In es, this message translates to:
-  /// **'S/ ••••••'**
-  String get homeBalanceHidden;
+  /// **'{simbolo} ••••••'**
+  String homeBalanceHidden(String simbolo);
 
   /// No description provided for @homeShowBalance.
   ///
@@ -1401,6 +1401,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Billetera {masked}'**
   String homeWalletMask(String masked);
+
+  /// No description provided for @accountTypeAhorroLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de ahorros'**
+  String get accountTypeAhorroLong;
+
+  /// No description provided for @accountTypeCorrienteLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta corriente'**
+  String get accountTypeCorrienteLong;
+
+  /// No description provided for @accountTypeSueldoLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta sueldo'**
+  String get accountTypeSueldoLong;
+
+  /// No description provided for @accountTypeAhorroShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros'**
+  String get accountTypeAhorroShort;
+
+  /// No description provided for @accountTypeCorrienteShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Corriente'**
+  String get accountTypeCorrienteShort;
+
+  /// No description provided for @accountTypeSueldoShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Sueldo'**
+  String get accountTypeSueldoShort;
+
+  /// No description provided for @currencyPenName.
+  ///
+  /// In es, this message translates to:
+  /// **'Soles'**
+  String get currencyPenName;
+
+  /// No description provided for @currencyUsdName.
+  ///
+  /// In es, this message translates to:
+  /// **'Dólares'**
+  String get currencyUsdName;
+
+  /// No description provided for @homeAccountPage.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta {actual} de {total}'**
+  String homeAccountPage(int actual, int total);
+
+  /// No description provided for @homeRenameTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar el nombre de la cuenta'**
+  String get homeRenameTooltip;
+
+  /// No description provided for @homeOpenAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir otra cuenta'**
+  String get homeOpenAccountTitle;
+
+  /// No description provided for @homeOpenAccountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahorros, corriente o sueldo, en soles o dólares'**
+  String get homeOpenAccountHint;
+
+  /// No description provided for @renameAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de la cuenta'**
+  String get renameAccountTitle;
+
+  /// No description provided for @renameAccountHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Viaje'**
+  String get renameAccountHint;
+
+  /// No description provided for @renameAccountSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get renameAccountSave;
+
+  /// No description provided for @renameAccountClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar nombre'**
+  String get renameAccountClear;
+
+  /// No description provided for @renameAccountError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos guardar el nombre. Inténtalo de nuevo.'**
+  String get renameAccountError;
+
+  /// No description provided for @renameAccountTooLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Usa hasta 30 caracteres.'**
+  String get renameAccountTooLong;
 
   /// No description provided for @homeActionSend.
   ///
@@ -1684,6 +1792,64 @@ abstract class AppLocalizations {
   /// **'Cuenta {masked}'**
   String transferRecipientAccount(String masked);
 
+  /// No description provided for @transferRecipientAccountLine.
+  ///
+  /// In es, this message translates to:
+  /// **'{tipo} · {simbolo} · {masked}'**
+  String transferRecipientAccountLine(
+    String tipo,
+    String simbolo,
+    String masked,
+  );
+
+  /// No description provided for @transferRecipientChooseAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige la cuenta que recibe'**
+  String get transferRecipientChooseAccount;
+
+  /// No description provided for @transferRecipientOnlyReceives.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo recibe {simbolo}'**
+  String transferRecipientOnlyReceives(String simbolo);
+
+  /// No description provided for @transferRecipientNoEligible.
+  ///
+  /// In es, this message translates to:
+  /// **'No tiene cuentas en {simbolo} para recibir desde esta cuenta.'**
+  String transferRecipientNoEligible(String simbolo);
+
+  /// No description provided for @transferRecipientNoOwnEligible.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes otra cuenta en {simbolo}.'**
+  String transferRecipientNoOwnEligible(String simbolo);
+
+  /// No description provided for @transferFrequentOtherCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese frecuente recibe en {simbolo}. Envía desde una cuenta en {simbolo}.'**
+  String transferFrequentOtherCurrency(String simbolo);
+
+  /// No description provided for @transferFrequentIsOrigin.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese frecuente es la cuenta desde la que envías. Elige otra.'**
+  String get transferFrequentIsOrigin;
+
+  /// No description provided for @transferRecipientAccountSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar a {linea}'**
+  String transferRecipientAccountSemantics(String linea);
+
+  /// No description provided for @transferRecipientAccountDisabledSemantics.
+  ///
+  /// In es, this message translates to:
+  /// **'{linea}. {motivo}'**
+  String transferRecipientAccountDisabledSemantics(String linea, String motivo);
+
   /// No description provided for @transferContinue.
   ///
   /// In es, this message translates to:
@@ -1711,7 +1877,7 @@ abstract class AppLocalizations {
   /// No description provided for @transferAmountLabel.
   ///
   /// In es, this message translates to:
-  /// **'Monto en soles'**
+  /// **'Monto'**
   String get transferAmountLabel;
 
   /// No description provided for @transferAmountHint.
@@ -1753,8 +1919,8 @@ abstract class AppLocalizations {
   /// No description provided for @transferAmountZero.
   ///
   /// In es, this message translates to:
-  /// **'El monto debe ser mayor a S/ 0.00.'**
-  String get transferAmountZero;
+  /// **'El monto debe ser mayor a {cero}.'**
+  String transferAmountZero(String cero);
 
   /// No description provided for @transferAmountOverMax.
   ///
@@ -1888,11 +2054,17 @@ abstract class AppLocalizations {
   /// **'No encontramos a nadie con ese DNI en CuyCash.'**
   String get transferErrorRecipientNotFound;
 
-  /// No description provided for @transferErrorSelfTransfer.
+  /// No description provided for @transferErrorCurrencyMismatch.
   ///
   /// In es, this message translates to:
-  /// **'No puedes enviarte dinero a ti mismo.'**
-  String get transferErrorSelfTransfer;
+  /// **'Solo puedes enviar entre cuentas de la misma moneda.'**
+  String get transferErrorCurrencyMismatch;
+
+  /// No description provided for @transferErrorSameAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una cuenta distinta a la de origen.'**
+  String get transferErrorSameAccount;
 
   /// No description provided for @transferErrorSearchRateLimited.
   ///
@@ -1915,8 +2087,8 @@ abstract class AppLocalizations {
   /// No description provided for @transferErrorAmountOutOfRange.
   ///
   /// In es, this message translates to:
-  /// **'El monto debe estar entre S/ 0.01 y {max}.'**
-  String transferErrorAmountOutOfRange(String max);
+  /// **'El monto debe estar entre {min} y {max}.'**
+  String transferErrorAmountOutOfRange(String min, String max);
 
   /// No description provided for @transferErrorAccountBlocked.
   ///
@@ -2005,8 +2177,14 @@ abstract class AppLocalizations {
   /// No description provided for @transferFrequentSemantics.
   ///
   /// In es, this message translates to:
+  /// **'Enviar a {name}, {cuenta}'**
+  String transferFrequentSemantics(String name, String cuenta);
+
+  /// No description provided for @transferFrequentSemanticsNoAccount.
+  ///
+  /// In es, this message translates to:
   /// **'Enviar a {name}'**
-  String transferFrequentSemantics(String name);
+  String transferFrequentSemanticsNoAccount(String name);
 
   /// No description provided for @transferSaveFrequentTitle.
   ///
@@ -2067,6 +2245,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuenta destino'**
   String get movementDetailDestinationAccount;
+
+  /// No description provided for @movementDetailSourceAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta origen'**
+  String get movementDetailSourceAccount;
 
   /// No description provided for @movementDetailReason.
   ///
@@ -2517,6 +2701,138 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Listo, ya puedes entrar con tu huella o rostro.'**
   String get biometricSettingsEnabled;
+
+  /// No description provided for @openAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir cuenta'**
+  String get openAccountTitle;
+
+  /// No description provided for @openAccountHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué cuenta quieres abrir?'**
+  String get openAccountHeadline;
+
+  /// No description provided for @openAccountTypeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de cuenta'**
+  String get openAccountTypeLabel;
+
+  /// No description provided for @openAccountCurrencyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Moneda'**
+  String get openAccountCurrencyLabel;
+
+  /// No description provided for @openAccountNameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre (opcional)'**
+  String get openAccountNameLabel;
+
+  /// No description provided for @openAccountNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Viaje'**
+  String get openAccountNameHint;
+
+  /// No description provided for @openAccountSalaryOnlyPen.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta sueldo es solo en soles.'**
+  String get openAccountSalaryOnlyPen;
+
+  /// No description provided for @openAccountSalaryTaken.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes una cuenta sueldo.'**
+  String get openAccountSalaryTaken;
+
+  /// No description provided for @openAccountContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get openAccountContinue;
+
+  /// No description provided for @openAccountPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get openAccountPinHeadline;
+
+  /// No description provided for @openAccountPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vas a abrir: {cuenta} en {moneda}'**
+  String openAccountPinSubtitle(String cuenta, String moneda);
+
+  /// No description provided for @openAccountCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir cuenta'**
+  String get openAccountCta;
+
+  /// No description provided for @openAccountRetryCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get openAccountRetryCta;
+
+  /// No description provided for @openAccountErrorLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes 5 cuentas, el máximo.'**
+  String get openAccountErrorLimit;
+
+  /// No description provided for @openAccountErrorSalary.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes una cuenta sueldo.'**
+  String get openAccountErrorSalary;
+
+  /// No description provided for @openAccountErrorCurrency.
+  ///
+  /// In es, this message translates to:
+  /// **'La cuenta sueldo es solo en soles.'**
+  String get openAccountErrorCurrency;
+
+  /// No description provided for @openAccountErrorName.
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre puede tener hasta 30 caracteres.'**
+  String get openAccountErrorName;
+
+  /// No description provided for @openAccountErrorKeyReused.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa apertura ya se pidió con otros datos. Vuelve a empezar.'**
+  String get openAccountErrorKeyReused;
+
+  /// No description provided for @openAccountErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.'**
+  String get openAccountErrorNetwork;
+
+  /// No description provided for @openAccountErrorUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.'**
+  String get openAccountErrorUnexpected;
+
+  /// No description provided for @openAccountLeaveTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Salir sin confirmar?'**
+  String get openAccountLeaveTitle;
+
+  /// No description provided for @openAccountLeaveBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.'**
+  String get openAccountLeaveBody;
 }
 
 class _AppLocalizationsDelegate

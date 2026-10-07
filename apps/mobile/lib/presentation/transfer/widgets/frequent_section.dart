@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../feature/beneficiary/application/beneficiary_actions.dart';
+import '../../../feature/beneficiary/domain/beneficiary.dart';
 import '../bloc/beneficiaries_bloc.dart';
 import 'frequent_row.dart';
 
@@ -15,7 +16,7 @@ class FrequentSection extends StatelessWidget {
   });
 
   final BeneficiaryActions actions;
-  final ValueChanged<String> onSelected;
+  final ValueChanged<Beneficiary> onSelected;
 
   @override
   Widget build(BuildContext context) {

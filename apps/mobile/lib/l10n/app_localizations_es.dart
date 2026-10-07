@@ -766,7 +766,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeBalanceLabel => 'Saldo disponible';
 
   @override
-  String get homeBalanceHidden => 'S/ ••••••';
+  String homeBalanceHidden(String simbolo) {
+    return '$simbolo ••••••';
+  }
 
   @override
   String get homeShowBalance => 'Mostrar saldo';
@@ -778,6 +780,64 @@ class AppLocalizationsEs extends AppLocalizations {
   String homeWalletMask(String masked) {
     return 'Billetera $masked';
   }
+
+  @override
+  String get accountTypeAhorroLong => 'Cuenta de ahorros';
+
+  @override
+  String get accountTypeCorrienteLong => 'Cuenta corriente';
+
+  @override
+  String get accountTypeSueldoLong => 'Cuenta sueldo';
+
+  @override
+  String get accountTypeAhorroShort => 'Ahorros';
+
+  @override
+  String get accountTypeCorrienteShort => 'Corriente';
+
+  @override
+  String get accountTypeSueldoShort => 'Sueldo';
+
+  @override
+  String get currencyPenName => 'Soles';
+
+  @override
+  String get currencyUsdName => 'Dólares';
+
+  @override
+  String homeAccountPage(int actual, int total) {
+    return 'Cuenta $actual de $total';
+  }
+
+  @override
+  String get homeRenameTooltip => 'Cambiar el nombre de la cuenta';
+
+  @override
+  String get homeOpenAccountTitle => 'Abrir otra cuenta';
+
+  @override
+  String get homeOpenAccountHint =>
+      'Ahorros, corriente o sueldo, en soles o dólares';
+
+  @override
+  String get renameAccountTitle => 'Nombre de la cuenta';
+
+  @override
+  String get renameAccountHint => 'Ej. Viaje';
+
+  @override
+  String get renameAccountSave => 'Guardar';
+
+  @override
+  String get renameAccountClear => 'Quitar nombre';
+
+  @override
+  String get renameAccountError =>
+      'No pudimos guardar el nombre. Inténtalo de nuevo.';
+
+  @override
+  String get renameAccountTooLong => 'Usa hasta 30 caracteres.';
 
   @override
   String get homeActionSend => 'Enviar';
@@ -933,6 +993,55 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String transferRecipientAccountLine(
+    String tipo,
+    String simbolo,
+    String masked,
+  ) {
+    return '$tipo · $simbolo · $masked';
+  }
+
+  @override
+  String get transferRecipientChooseAccount => 'Elige la cuenta que recibe';
+
+  @override
+  String transferRecipientOnlyReceives(String simbolo) {
+    return 'Solo recibe $simbolo';
+  }
+
+  @override
+  String transferRecipientNoEligible(String simbolo) {
+    return 'No tiene cuentas en $simbolo para recibir desde esta cuenta.';
+  }
+
+  @override
+  String transferRecipientNoOwnEligible(String simbolo) {
+    return 'No tienes otra cuenta en $simbolo.';
+  }
+
+  @override
+  String transferFrequentOtherCurrency(String simbolo) {
+    return 'Ese frecuente recibe en $simbolo. Envía desde una cuenta en $simbolo.';
+  }
+
+  @override
+  String get transferFrequentIsOrigin =>
+      'Ese frecuente es la cuenta desde la que envías. Elige otra.';
+
+  @override
+  String transferRecipientAccountSemantics(String linea) {
+    return 'Enviar a $linea';
+  }
+
+  @override
+  String transferRecipientAccountDisabledSemantics(
+    String linea,
+    String motivo,
+  ) {
+    return '$linea. $motivo';
+  }
+
+  @override
   String get transferContinue => 'Continuar';
 
   @override
@@ -947,7 +1056,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get transferAmountLabel => 'Monto en soles';
+  String get transferAmountLabel => 'Monto';
 
   @override
   String get transferAmountHint => '0.00';
@@ -972,7 +1081,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Escribe un monto válido, como 50 o 50.50.';
 
   @override
-  String get transferAmountZero => 'El monto debe ser mayor a S/ 0.00.';
+  String transferAmountZero(String cero) {
+    return 'El monto debe ser mayor a $cero.';
+  }
 
   @override
   String transferAmountOverMax(String max) {
@@ -1062,8 +1173,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'No encontramos a nadie con ese DNI en CuyCash.';
 
   @override
-  String get transferErrorSelfTransfer =>
-      'No puedes enviarte dinero a ti mismo.';
+  String get transferErrorCurrencyMismatch =>
+      'Solo puedes enviar entre cuentas de la misma moneda.';
+
+  @override
+  String get transferErrorSameAccount =>
+      'Elige una cuenta distinta a la de origen.';
 
   @override
   String get transferErrorSearchRateLimited =>
@@ -1078,8 +1193,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos confirmar tu envío. Espera un momento y reintenta: si ya salió, no se cobrará dos veces.';
 
   @override
-  String transferErrorAmountOutOfRange(String max) {
-    return 'El monto debe estar entre S/ 0.01 y $max.';
+  String transferErrorAmountOutOfRange(String min, String max) {
+    return 'El monto debe estar entre $min y $max.';
   }
 
   @override
@@ -1132,7 +1247,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get transferFrequentsTitle => 'Frecuentes';
 
   @override
-  String transferFrequentSemantics(String name) {
+  String transferFrequentSemantics(String name, String cuenta) {
+    return 'Enviar a $name, $cuenta';
+  }
+
+  @override
+  String transferFrequentSemanticsNoAccount(String name) {
     return 'Enviar a $name';
   }
 
@@ -1168,6 +1288,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get movementDetailDestinationAccount => 'Cuenta destino';
+
+  @override
+  String get movementDetailSourceAccount => 'Cuenta origen';
 
   @override
   String get movementDetailReason => 'Motivo';
@@ -1447,4 +1570,77 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get biometricSettingsEnabled =>
       'Listo, ya puedes entrar con tu huella o rostro.';
+
+  @override
+  String get openAccountTitle => 'Abrir cuenta';
+
+  @override
+  String get openAccountHeadline => '¿Qué cuenta quieres abrir?';
+
+  @override
+  String get openAccountTypeLabel => 'Tipo de cuenta';
+
+  @override
+  String get openAccountCurrencyLabel => 'Moneda';
+
+  @override
+  String get openAccountNameLabel => 'Nombre (opcional)';
+
+  @override
+  String get openAccountNameHint => 'Ej. Viaje';
+
+  @override
+  String get openAccountSalaryOnlyPen => 'La cuenta sueldo es solo en soles.';
+
+  @override
+  String get openAccountSalaryTaken => 'Ya tienes una cuenta sueldo.';
+
+  @override
+  String get openAccountContinue => 'Continuar';
+
+  @override
+  String get openAccountPinHeadline => 'Confirma con tu PIN';
+
+  @override
+  String openAccountPinSubtitle(String cuenta, String moneda) {
+    return 'Vas a abrir: $cuenta en $moneda';
+  }
+
+  @override
+  String get openAccountCta => 'Abrir cuenta';
+
+  @override
+  String get openAccountRetryCta => 'Reintentar';
+
+  @override
+  String get openAccountErrorLimit => 'Ya tienes 5 cuentas, el máximo.';
+
+  @override
+  String get openAccountErrorSalary => 'Ya tienes una cuenta sueldo.';
+
+  @override
+  String get openAccountErrorCurrency => 'La cuenta sueldo es solo en soles.';
+
+  @override
+  String get openAccountErrorName =>
+      'El nombre puede tener hasta 30 caracteres.';
+
+  @override
+  String get openAccountErrorKeyReused =>
+      'Esa apertura ya se pidió con otros datos. Vuelve a empezar.';
+
+  @override
+  String get openAccountErrorNetwork =>
+      'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.';
+
+  @override
+  String get openAccountErrorUnexpected =>
+      'No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.';
+
+  @override
+  String get openAccountLeaveTitle => '¿Salir sin confirmar?';
+
+  @override
+  String get openAccountLeaveBody =>
+      'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.';
 }

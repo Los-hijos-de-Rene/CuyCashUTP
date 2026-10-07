@@ -17,8 +17,13 @@ class BeneficiaryActions {
   FutureResult<BeneficiaryFailure, List<Beneficiary>> listar() =>
       _repo.listar();
 
-  FutureResult<BeneficiaryFailure, Unit> guardar(String dni, String apodo) =>
-      _repo.guardar(dni, BeneficiaryLimits.normalizarApodo(apodo));
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  }) => _repo.guardar(
+    cuentaDestinoId: cuentaDestinoId,
+    apodo: BeneficiaryLimits.normalizarApodo(apodo),
+  );
 
   FutureResult<BeneficiaryFailure, Unit> eliminar(String id) =>
       _repo.eliminar(id);

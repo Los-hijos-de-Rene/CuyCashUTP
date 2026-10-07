@@ -15,14 +15,33 @@ import 'beneficiary_repository_contract.dart';
 /// `{code, detail, <extras>}`; alta 201 también al actualizar; baja 204;
 /// presupuesto 429).
 class FakeBeneficiariesBackend implements HttpClientAdapter {
-  static const dniPropio = '70123456';
   static const dniConocido = '87654321';
-  static const dniConocido2 = '43219876';
+  static const cuentaConocida = 'acc-ext-1';
+  static const cuentaConocida2 = 'acc-ext-2';
   static const consultasMaximas = 20;
-  static const nombres = {
-    dniConocido: 'J*** M*** R***',
-    dniConocido2: 'C*** A*** N***',
+  static const nombre = 'J*** M*** R***';
+
+  /// cuenta_id → su forma en `cuenta` (como la sirve el directorio).
+  static const cuentas = <String, Map<String, Object?>>{
+    cuentaConocida: {
+      'cuenta_id': cuentaConocida,
+      'tipo': 'ahorro',
+      'moneda': 'PEN',
+      'numero_masked': '••••7732',
+      'nombre': null,
+    },
+    cuentaConocida2: {
+      'cuenta_id': cuentaConocida2,
+      'tipo': 'corriente',
+      'moneda': 'PEN',
+      'numero_masked': '••••5510',
+      'nombre': null,
+    },
   };
+
+  /// Fuerza `cuenta` de cada fila en el GET (p. ej. `null` o una inválida).
+  Object? cuentaForzada = _sinForzar;
+  static const _sinForzar = Object();
 
   ({int status, Object? body})? forced;
   DioException? throwIt;
@@ -81,32 +100,37 @@ class FakeBeneficiariesBackend implements HttpClientAdapter {
             'id': f['id'],
             'dni': f['dni'],
             'apodo': f['apodo'],
-            'nombre_enmascarado': nombres[f['dni']],
+            'nombre_enmascarado': nombre,
+            'cuenta': identical(cuentaForzada, _sinForzar)
+                ? cuentas[f['cuenta_id']]
+                : cuentaForzada,
           },
       ],
     },
   );
 
   (int, Object?) _guardar(Map<String, dynamic> b) {
-    final dni = b['dni'] as String;
+    final cuentaId = b['cuenta_destino_id'] as String;
     final apodo = b['apodo'] as String;
-    // Pydantic: 8 dígitos, apodo de 1 a 40.
-    if (!RegExp(r'^\d{8}$').hasMatch(dni) ||
-        apodo.isEmpty ||
-        apodo.length > 40) {
-      return (422, {'detail': <Object?>[]});
-    }
-    if (dni == dniPropio) return _error(400, 'SELF_TRANSFER');
+    // Pydantic: apodo de 1 a 40.
+    if (apodo.isEmpty || apodo.length > 40) return (422, {'detail': <Object?>[]});
     if (consultas >= consultasMaximas) {
       return _error(429, 'RATE_LIMITED', {'retry_after_seconds': 312});
     }
     consultas++;
-    if (!nombres.containsKey(dni)) return _error(404, 'RECIPIENT_NOT_FOUND');
-    final i = filas.indexWhere((f) => f['dni'] == dni);
+    if (!cuentas.containsKey(cuentaId)) {
+      return _error(404, 'RECIPIENT_NOT_FOUND');
+    }
+    final i = filas.indexWhere((f) => f['cuenta_id'] == cuentaId);
     if (i >= 0) {
       filas[i] = {...filas[i], 'apodo': apodo};
     } else {
-      filas.add({'id': 'ben-${++secuencia}', 'dni': dni, 'apodo': apodo});
+      filas.add({
+        'id': 'ben-${++secuencia}',
+        'dni': dniConocido,
+        'cuenta_id': cuentaId,
+        'apodo': apodo,
+      });
     }
     return (201, {'ok': true});
   }
@@ -139,9 +163,9 @@ void main() {
   probarContratoDeBeneficiarios(
     'HttpBeneficiaryRepository',
     nuevo,
-    dniPropio: FakeBeneficiariesBackend.dniPropio,
     dniConocido: FakeBeneficiariesBackend.dniConocido,
-    dniConocido2: FakeBeneficiariesBackend.dniConocido2,
+    cuentaConocida: FakeBeneficiariesBackend.cuentaConocida,
+    cuentaConocida2: FakeBeneficiariesBackend.cuentaConocida2,
     consultasMaximas: FakeBeneficiariesBackend.consultasMaximas,
   );
 
@@ -152,12 +176,16 @@ void main() {
   }
 
   group('HttpBeneficiaryRepository · detalles del cable', () {
-    test('guardar manda dni y apodo y trata el 201 como éxito', () async {
-      final r = await repo.guardar('87654321', 'Carlos');
+    test('guardar manda cuenta_destino_id y apodo y trata el 201 como éxito',
+        () async {
+      final r = await repo.guardar(
+        cuentaDestinoId: 'acc-ext-1',
+        apodo: 'Carlos',
+      );
       expect(r.isRight(), isTrue);
       final req = backend.requests.single;
       expect(req.method, 'POST');
-      expect(req.data, {'dni': '87654321', 'apodo': 'Carlos'});
+      expect(req.data, {'cuenta_destino_id': 'acc-ext-1', 'apodo': 'Carlos'});
     });
 
     test('RATE_LIMITED lee retry_after_seconds de la RAÍZ', () async {
@@ -169,7 +197,7 @@ void main() {
           'retry_after_seconds': 312,
         },
       );
-      final f = falloDe(await repo.guardar('87654321', 'C'));
+      final f = falloDe(await repo.guardar(cuentaDestinoId: 'acc-ext-1', apodo: 'C'));
       expect(
         (f as BeneficiaryRateLimited).reintentarEn,
         const Duration(seconds: 312),
@@ -198,7 +226,7 @@ void main() {
     test('un código desconocido o un 500 es unexpected', () async {
       backend.forced = (status: 500, body: {'code': 'BOOM', 'detail': 'x'});
       expect(
-        falloDe(await repo.guardar('87654321', 'C')),
+        falloDe(await repo.guardar(cuentaDestinoId: 'acc-ext-1', apodo: 'C')),
         isA<BeneficiaryUnexpectedFailure>(),
       );
     });
@@ -207,6 +235,25 @@ void main() {
       backend.forced = (status: 200, body: '[no es un objeto]');
       final r = await repo.listar();
       expect(r.isLeft(), isTrue);
+    });
+
+    test('un frecuente con cuenta: null se lee como null', () async {
+      await repo.guardar(cuentaDestinoId: 'acc-ext-1', apodo: 'C');
+      backend.cuentaForzada = null;
+      final b = (await repo.listar()).getRight().toNullable()?.single;
+      expect(b, isNotNull);
+      expect(b?.cuenta, isNull);
+      expect(b?.dni, '87654321');
+    });
+
+    test('una moneda desconocida en cuenta es un fallo inesperado', () async {
+      await repo.guardar(cuentaDestinoId: 'acc-ext-1', apodo: 'C');
+      backend.cuentaForzada = {
+        ...FakeBeneficiariesBackend.cuentas['acc-ext-1']!,
+        'moneda': 'EUR',
+      };
+      final r = await repo.listar();
+      expect(r.getLeft().toNullable(), isA<Unexpected<BeneficiaryFailure>>());
     });
   });
 }

@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 
 import '../../../feature/beneficiary/domain/beneficiary.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../account/account_label.dart';
 
-/// Fila horizontal de frecuentes. Tocar uno avisa con su DNI; quien la usa
-/// decide qué hacer (rellenar el campo y buscar). Sin frecuentes no ocupa
-/// espacio.
+/// Fila horizontal de frecuentes. Tocar uno avisa con el frecuente entero;
+/// quien la usa decide qué hacer (ir al monto con su cuenta, o rellenar el
+/// DNI). Sin frecuentes no ocupa espacio.
 class FrequentRow extends StatelessWidget {
   const FrequentRow({
     required this.beneficiarios,
@@ -15,7 +16,7 @@ class FrequentRow extends StatelessWidget {
   });
 
   final List<Beneficiary> beneficiarios;
-  final ValueChanged<String> onSelected;
+  final ValueChanged<Beneficiary> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class FrequentRow extends StatelessWidget {
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
         SizedBox(
-          height: 84,
+          height: 100,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: beneficiarios.length,
@@ -40,12 +41,18 @@ class FrequentRow extends StatelessWidget {
                 const SizedBox(width: CuyCashSpacing.stackMd),
             itemBuilder: (context, i) {
               final b = beneficiarios[i];
+              final cuenta = switch (b.cuenta) {
+                final c? => recipientAccountShort(l10n, c),
+                null => null,
+              };
               return Semantics(
                 button: true,
-                label: l10n.transferFrequentSemantics(b.apodo),
+                label: cuenta == null
+                    ? l10n.transferFrequentSemanticsNoAccount(b.apodo)
+                    : l10n.transferFrequentSemantics(b.apodo, cuenta),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () => onSelected(b.dni),
+                  onTap: () => onSelected(b),
                   child: SizedBox(
                     width: 72,
                     child: Column(
@@ -63,6 +70,15 @@ class FrequentRow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: CuyCashTypography.labelSm,
                         ),
+                        if (cuenta != null)
+                          Text(
+                            cuenta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: CuyCashTypography.labelSm.copyWith(
+                              color: CuyCashColors.secondaryText,
+                            ),
+                          ),
                       ],
                     ),
                   ),

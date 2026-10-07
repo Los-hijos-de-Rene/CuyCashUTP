@@ -101,8 +101,9 @@ void main() {
     await tester.enterText(find.byType(TextField), '87654321');
     await tester.pumpAndSettle();
     expect(find.text('J*** M*** R***'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.tap(find.text('Ahorros · S/ · ••••7732'));
     await tester.pumpAndSettle();
+    expect(find.text('Ahorros · ••••7732'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, '50');
     await tester.pump();
@@ -143,13 +144,6 @@ void main() {
       find.text('No encontramos a nadie con ese DNI en CuyCash.'),
       findsOneWidget,
     );
-    expect(
-      tester
-          .widget<ElevatedButton>(
-            find.widgetWithText(ElevatedButton, 'Continuar'),
-          )
-          .onPressed,
-      isNull,
-    );
+    expect(find.widgetWithText(ElevatedButton, 'Continuar'), findsNothing);
   });
 }

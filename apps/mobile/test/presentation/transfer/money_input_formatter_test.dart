@@ -40,7 +40,7 @@ void main() {
 
   test('todo lo que deja pasar y es completo lo lee Money.parse', () {
     for (final t in ['250', '250.5', '250,50', '0.01']) {
-      expect(Money.parse(t), isNotNull, reason: t);
+      expect(Money.parse(t, Currency.pen), isNotNull, reason: t);
     }
   });
 

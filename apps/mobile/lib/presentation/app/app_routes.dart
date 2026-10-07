@@ -30,6 +30,9 @@ abstract final class AppRoutes {
   // Recarga de saldo (una sola pantalla: monto + PIN).
   static const recargar = '/recargar';
 
+  // Abrir otra cuenta (desde el carrusel del inicio).
+  static const abrirCuenta = '/cuentas/abrir';
+
   // Recuperación de PIN.
   static const recuperar = '/recuperar';
   static const recuperarCodigo = '/recuperar/codigo';

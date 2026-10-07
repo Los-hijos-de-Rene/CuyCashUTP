@@ -10,10 +10,14 @@ abstract interface class BeneficiaryRepository {
   /// Del más reciente al más antiguo. No gasta presupuesto de consultas.
   FutureResult<BeneficiaryFailure, List<Beneficiary>> listar();
 
-  /// Guarda [dni] con [apodo]. Si ya estaba guardado solo actualiza el apodo
-  /// (upsert: el doble toque es inofensivo). Valida que el DNI sea cliente,
+  /// Guarda la cuenta [cuentaDestinoId] con [apodo]. Si ya estaba guardada
+  /// solo actualiza el apodo (upsert por cuenta: el doble toque es
+  /// inofensivo). Valida que la cuenta pueda recibir (también las propias),
   /// así que CONSUME el presupuesto de consultas de destinatario.
-  FutureResult<BeneficiaryFailure, Unit> guardar(String dni, String apodo);
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  });
 
   /// Idempotente: borrar uno que no existe no es un error.
   FutureResult<BeneficiaryFailure, Unit> eliminar(String id);

@@ -10,14 +10,19 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 
 - Identidad: splash → onboarding → (login | registro con KYC) → home → perfil,
   más OTP, PIN y acceso rápido con bloqueo por intentos.
-- Cuentas: una cuenta de ahorro en soles por titular, con saldo y movimientos.
+- Cuentas: hasta 5 cuentas por titular (ahorros, corriente o sueldo; soles o
+  dólares; sueldo única y en soles), con nombre opcional; se abren desde el
+  carrusel del inicio con PIN. Cada una con saldo y movimientos. Rutas:
+  `POST /v1/accounts`, `PATCH /v1/accounts/{id}/nombre`.
 - Libro mayor con partida doble: toda operación de dinero pasa por
   `services/api/app/services/ledger.py`, con idempotencia y bloqueo de fila.
-- Envío de dinero entre titulares de CuyCash, identificando al destinatario por
-  DNI y confirmando con PIN. Resolver un DNI devuelve el nombre enmascarado.
+- Envío de dinero a una cuenta de CuyCash: se busca por DNI, se elige una de sus
+  cuentas (misma moneda que la de origen) y se confirma con PIN; también entre
+  cuentas propias. Resolver un DNI devuelve el nombre enmascarado y sus cuentas
+  (`••••NNNN`, tipo, moneda).
 - Recarga de saldo: cash-in **simulado** contra una cuenta de sistema (la caja
   de CuyCash), la única que puede quedar en negativo.
-- Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+- Frecuentes por cuenta (tocar uno va directo al monto), detalle de movimiento y constancia compartible.
 - Perfil: datos personales (solo lectura), alias, cambio de PIN con sesión
   abierta (cierra los otros teléfonos), dispositivos vinculados y acceso
   biométrico real: la huella libera una credencial emitida por el servidor
@@ -31,8 +36,8 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
 
 **Sigue sin existir** (no asumas que hay código de esto): transferencia
 interbancaria y CCI, pagos y cobro por QR, préstamos, antifraude, conciliación
-y cumplimiento (PLDFT). Tampoco hay cuentas en USD ni más de una cuenta por
-titular. El dashboard web está diferido.
+y cumplimiento (PLDFT). Tampoco hay conversión entre monedas (un envío solo va
+entre cuentas de la misma moneda). El dashboard web está diferido.
 
 **Lo que no se ha comprobado:** la app y el backend se probaron cada uno contra
 su propio doble (la app contra `Memory*`, el backend por HTTP con su suite). La
@@ -47,8 +52,9 @@ los tests usan `MemoryBiometricGate`.
 `pending`. La pantalla de datos personales muestra el sello "Identidad
 verificada" solo si el servidor dice `verified`, así que hoy nunca aparece.
 
-**Concurrencia sin probar.** Los dos tests marcados `postgres` (envíos cruzados
-y misma clave en paralelo) **nunca se han ejecutado contra un Postgres real**:
+**Concurrencia sin probar.** Los tests marcados `postgres` (envíos cruzados,
+misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`, aperturas
+simultáneas de sueldo) **nunca se han ejecutado contra un Postgres real**:
 el orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están
 razonados, no probados. Es la única garantía del sprint en ese estado.
 

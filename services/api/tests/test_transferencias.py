@@ -44,10 +44,13 @@ async def _con_saldo(client, titular, centimos: int) -> str:
     return cuenta_id
 
 
-def _envio(origen, destinatario_dni, monto, clave, pin=PIN, motivo=None):
+INEXISTENTE_ID = "00000000-0000-0000-0000-000000000000"
+
+
+def _envio(origen, destino, monto, clave, pin=PIN, motivo=None):
     return {
         "cuenta_origen_id": origen,
-        "destinatario_dni": destinatario_dni,
+        "cuenta_destino_id": destino,
         "monto_centimos": monto,
         "motivo": motivo,
         "pin": pin,
@@ -63,7 +66,7 @@ async def test_un_envio_debita_al_origen_y_acredita_al_destino(
 
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 25_000, "envio-001", motivo="Cena compartida"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 25_000, "envio-001", motivo="Cena compartida"),
         headers=registrado.auth,
     )
     assert r.status_code == 201, r.text
@@ -83,7 +86,7 @@ async def test_reintentar_con_la_misma_clave_responde_200_y_no_cobra_dos_veces(
     client, otp_codes, registrado, otro_registrado, db_de_client
 ):
     origen = await _con_saldo(client, registrado, 100_000)
-    cuerpo = _envio(origen, otro_registrado.dni, 25_000, "envio-002")
+    cuerpo = _envio(origen, await _cuenta_id(client, otro_registrado), 25_000, "envio-002")
 
     primera = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
     segunda = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
@@ -104,11 +107,11 @@ async def test_la_misma_clave_con_otro_monto_responde_409(
     origen = await _con_saldo(client, registrado, 100_000)
 
     await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 10_000, "envio-003"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-003"),
         headers=registrado.auth,
     )
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 50_000, "envio-003"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 50_000, "envio-003"),
         headers=registrado.auth,
     )
 
@@ -126,12 +129,12 @@ async def test_la_misma_clave_con_otro_motivo_responde_409(
 
     await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-004", motivo="Cena"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-004", motivo="Cena"),
         headers=registrado.auth,
     )
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-004", motivo="Alquiler"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-004", motivo="Alquiler"),
         headers=registrado.auth,
     )
 
@@ -146,7 +149,7 @@ async def test_sin_saldo_suficiente_responde_insufficient_funds(
     origen = await _con_saldo(client, registrado, 5_000)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 50_000, "envio-005"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 50_000, "envio-005"),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "INSUFFICIENT_FUNDS"
@@ -155,14 +158,14 @@ async def test_sin_saldo_suficiente_responde_insufficient_funds(
 
 
 @pytest.mark.asyncio
-async def test_enviarse_a_uno_mismo_es_rechazado(client, otp_codes, registrado):
+async def test_enviar_a_la_misma_cuenta_es_rechazado(client, otp_codes, registrado):
     origen = await _con_saldo(client, registrado, 50_000)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, registrado.dni, 1_000, "envio-006"),
+        "/v1/transfers", json=_envio(origen, origen, 1_000, "envio-006"),
         headers=registrado.auth,
     )
-    assert r.json()["code"] == "SELF_TRANSFER"
+    assert r.json()["code"] == "SAME_ACCOUNT"
 
 
 @pytest.mark.asyncio
@@ -170,7 +173,7 @@ async def test_un_destinatario_inexistente_responde_404(client, otp_codes, regis
     origen = await _con_saldo(client, registrado, 50_000)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, "99999999", 1_000, "envio-007"),
+        "/v1/transfers", json=_envio(origen, INEXISTENTE_ID, 1_000, "envio-007"),
         headers=registrado.auth,
     )
     assert r.status_code == 404
@@ -184,7 +187,7 @@ async def test_una_cuenta_ajena_se_trata_como_inexistente(
     ajena = await _cuenta_id(client, otro_registrado)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(ajena, registrado.dni, 1_000, "envio-008"),
+        "/v1/transfers", json=_envio(ajena, await _cuenta_id(client, registrado), 1_000, "envio-008"),
         headers=registrado.auth,
     )
     assert r.status_code == 404
@@ -201,7 +204,7 @@ async def test_una_cuenta_origen_bloqueada_responde_account_blocked(
     await db_de_client.commit()
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-009"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-009"),
         headers=registrado.auth,
     )
     assert r.status_code == 409
@@ -218,7 +221,7 @@ async def test_un_destinatario_con_cuenta_bloqueada_no_recibe(
     await db_de_client.commit()
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-010"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-010"),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "RECIPIENT_NOT_FOUND"
@@ -234,7 +237,7 @@ async def test_un_monto_fuera_de_rango_es_rechazado(
 
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, monto, f"envio-rango{monto}"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), monto, f"envio-rango{monto}"),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "AMOUNT_OUT_OF_RANGE"
@@ -250,13 +253,13 @@ async def test_un_monto_fuera_de_rango_no_gasta_intentos_de_pin(
     for n in range(settings.IDENTIFIER_MAX_ATTEMPTS + 1):
         r = await client.post(
             "/v1/transfers",
-            json=_envio(origen, otro_registrado.dni, 0, f"envio-sinpin{n}", pin=PIN_MALO),
+            json=_envio(origen, await _cuenta_id(client, otro_registrado), 0, f"envio-sinpin{n}", pin=PIN_MALO),
             headers=registrado.auth,
         )
         assert r.json()["code"] == "AMOUNT_OUT_OF_RANGE"
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-sinpin-ok"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-sinpin-ok"),
         headers=registrado.auth,
     )
     assert r.status_code == 201
@@ -267,7 +270,7 @@ async def test_el_monto_maximo_exacto_se_acepta(client, otp_codes, registrado, o
     origen = await _con_saldo(client, registrado, 200_000)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 200_000, "envio-maximo"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 200_000, "envio-maximo"),
         headers=registrado.auth,
     )
     assert r.status_code == 201
@@ -281,7 +284,7 @@ async def test_un_pin_errado_no_mueve_dinero_y_descuenta_intentos(
 
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-pin001", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-pin001", pin=PIN_MALO),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "INVALID_CREDENTIALS"
@@ -300,14 +303,14 @@ async def test_agotados_los_intentos_se_bloquea_y_ni_el_pin_correcto_pasa(
     for n in range(maximo - 1):
         r = await client.post(
             "/v1/transfers",
-            json=_envio(origen, otro_registrado.dni, 10_000, f"envio-bloq{n}", pin=PIN_MALO),
+            json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, f"envio-bloq{n}", pin=PIN_MALO),
             headers=registrado.auth,
         )
         assert r.json()["code"] == "INVALID_CREDENTIALS"
 
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-bloq-ultimo", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-bloq-ultimo", pin=PIN_MALO),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "IDENTIFIER_LOCKED"
@@ -315,7 +318,7 @@ async def test_agotados_los_intentos_se_bloquea_y_ni_el_pin_correcto_pasa(
 
     # Bloqueado: el PIN correcto tampoco mueve dinero.
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 10_000, "envio-bloq-ok"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-bloq-ok"),
         headers=registrado.auth,
     )
     assert r.json()["code"] == "IDENTIFIER_LOCKED"
@@ -339,7 +342,7 @@ async def test_los_fallos_al_entrar_y_al_enviar_son_el_mismo_contador(
     # ...ya cuenta contra el envío.
     r = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-mismo1", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-mismo1", pin=PIN_MALO),
         headers=registrado.auth,
     )
     assert r.json()["intentos_restantes"] == settings.IDENTIFIER_MAX_ATTEMPTS - 2
@@ -350,7 +353,7 @@ async def test_sin_sesion_no_se_mueve_dinero(client, otp_codes, registrado, otro
     origen = await _cuenta_id(client, registrado)
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-nosesion")
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-nosesion")
     )
     assert r.status_code == 401
     r = await client.post(
@@ -426,9 +429,9 @@ async def test_si_otra_peticion_crea_la_caja_a_la_vez_la_sesion_sigue_sirviendo(
     real = accounts_service._buscar_caja
     llamadas = []
 
-    async def ciega_la_primera_vez(session):
+    async def ciega_la_primera_vez(session, moneda="PEN"):
         llamadas.append(1)
-        return None if len(llamadas) == 1 else await real(session)
+        return None if len(llamadas) == 1 else await real(session, moneda)
 
     monkeypatch.setattr(accounts_service, "_buscar_caja", ciega_la_primera_vez)
 
@@ -519,7 +522,7 @@ async def test_un_pin_errado_persiste_el_intento_fallido(
 
     await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 10_000, "envio-persist", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 10_000, "envio-persist", pin=PIN_MALO),
         headers=registrado.auth,
     )
 
@@ -540,7 +543,7 @@ async def test_reintentar_con_el_origen_ya_bloqueado_devuelve_la_original(
     """El antifraude bloquea tras el envío cuya respuesta se perdió: el reintento
     debe ver la transacción original, no 'tu cuenta no está activa'."""
     origen = await _con_saldo(client, registrado, 100_000)
-    cuerpo = _envio(origen, otro_registrado.dni, 25_000, "envio-bloqueado")
+    cuerpo = _envio(origen, await _cuenta_id(client, otro_registrado), 25_000, "envio-bloqueado")
     primera = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
     assert primera.status_code == 201
 
@@ -556,14 +559,14 @@ async def test_reintentar_con_el_origen_ya_bloqueado_devuelve_la_original(
     # Con la clave NUEVA, el bloqueo sí se aplica.
     otra = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 25_000, "envio-bloqueado-2"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 25_000, "envio-bloqueado-2"),
         headers=registrado.auth,
     )
     assert otra.json()["code"] == "ACCOUNT_BLOCKED"
     # Y con la clave vieja pero otros datos, 409 (no se disfraza de reintento).
     distinta = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 99, "envio-bloqueado"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 99, "envio-bloqueado"),
         headers=registrado.auth,
     )
     assert distinta.json()["code"] == "IDEMPOTENCY_KEY_REUSED"
@@ -575,12 +578,12 @@ async def test_una_cuenta_ajena_sigue_siendo_404_aunque_la_clave_exista(
 ):
     origen = await _con_saldo(client, registrado, 100_000)
     await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-ajena"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-ajena"),
         headers=registrado.auth,
     )
 
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, registrado.dni, 1_000, "envio-ajena"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, registrado), 1_000, "envio-ajena"),
         headers=otro_registrado.auth,
     )
     assert r.status_code == 404
@@ -597,21 +600,21 @@ async def test_si_se_dispara_el_bloqueo_del_dispositivo_el_codigo_es_device_lock
 
     primera = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-001", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-dev-001", pin=PIN_MALO),
         headers=registrado.auth,
     )
     assert primera.json()["code"] == "INVALID_CREDENTIALS"
 
     segunda = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-002", pin=PIN_MALO),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-dev-002", pin=PIN_MALO),
         headers=registrado.auth,
     )
     assert segunda.status_code == 423
     assert segunda.json()["code"] == "DEVICE_LOCKED"
 
     tercera = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-dev-003"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-dev-003"),
         headers=registrado.auth,
     )
     assert tercera.json()["code"] == "DEVICE_LOCKED"
@@ -640,11 +643,11 @@ async def test_la_clave_de_la_propia_recarga_no_revela_al_destinatario_bloqueado
 
     gastada = f"recarga-{registrado.dni}"
     bloqueado = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1, gastada),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1, gastada),
         headers=registrado.auth,
     )
     inexistente = await client.post(
-        "/v1/transfers", json=_envio(origen, "99999999", 1, gastada),
+        "/v1/transfers", json=_envio(origen, INEXISTENTE_ID, 1, gastada),
         headers=registrado.auth,
     )
 
@@ -659,13 +662,13 @@ async def test_la_clave_de_un_envio_a_otra_persona_tampoco_lo_revela(
 ):
     """La clave de un envío REAL desde la cuenta propia tampoco sirve de sonda:
     el reintento resuelve su destino desde la operación original, así que la
-    respuesta no depende del DNI que traiga el payload."""
+    respuesta no depende de la cuenta destino que traiga el payload."""
     tercero = await registrar(
         client, otp_codes, dni="33445566", nombres="Rosa Elena", apellidos="Paredes"
     )
     origen = await _con_saldo(client, registrado, 100_000)
     primera = await client.post(
-        "/v1/transfers", json=_envio(origen, tercero.dni, 1_000, "envio-oraculo"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, tercero), 1_000, "envio-oraculo"),
         headers=registrado.auth,
     )
     assert primera.status_code == 201
@@ -675,11 +678,11 @@ async def test_la_clave_de_un_envio_a_otra_persona_tampoco_lo_revela(
     await db_de_client.commit()
 
     bloqueado = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1_000, "envio-oraculo"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-oraculo"),
         headers=registrado.auth,
     )
     inexistente = await client.post(
-        "/v1/transfers", json=_envio(origen, "99999999", 1_000, "envio-oraculo"),
+        "/v1/transfers", json=_envio(origen, INEXISTENTE_ID, 1_000, "envio-oraculo"),
         headers=registrado.auth,
     )
 
@@ -698,7 +701,7 @@ async def test_un_reintento_no_gasta_presupuesto_de_consultas(
     cobró?" hasta saberlo. Si el reintento descontara presupuesto, un 429 lo
     dejaría sin respuesta para siempre y la app sellaría la clave."""
     origen = await _con_saldo(client, registrado, 100_000)
-    cuerpo = _envio(origen, otro_registrado.dni, 25_000, "envio-presupuesto")
+    cuerpo = _envio(origen, await _cuenta_id(client, otro_registrado), 25_000, "envio-presupuesto")
     primera = await client.post("/v1/transfers", json=cuerpo, headers=registrado.auth)
     assert primera.status_code == 201
 
@@ -709,7 +712,7 @@ async def test_un_reintento_no_gasta_presupuesto_de_consultas(
 
     nuevo = await client.post(
         "/v1/transfers",
-        json=_envio(origen, otro_registrado.dni, 1_000, "envio-presupuesto-2"),
+        json=_envio(origen, await _cuenta_id(client, otro_registrado), 1_000, "envio-presupuesto-2"),
         headers=registrado.auth,
     )
     assert nuevo.status_code == 429, nuevo.text
@@ -729,7 +732,7 @@ async def test_un_envio_de_un_centimo_no_destapa_el_nombre_completo(
     nunca da, y `/movements` no descuenta presupuesto."""
     origen = await _con_saldo(client, registrado, 100_000)
     r = await client.post(
-        "/v1/transfers", json=_envio(origen, otro_registrado.dni, 1, "envio-centimo"),
+        "/v1/transfers", json=_envio(origen, await _cuenta_id(client, otro_registrado), 1, "envio-centimo"),
         headers=registrado.auth,
     )
     assert r.status_code == 201, r.text

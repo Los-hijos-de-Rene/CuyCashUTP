@@ -88,8 +88,8 @@ class TopUpBloc extends Bloc<TopUpEvent, TopUpState> {
     }
     final monto = state.monto;
     if (monto == null || state.idempotencyKey.isEmpty) return;
-    if (monto < TransferLimits.montoMinimo ||
-        monto > TransferLimits.montoMaximo) {
+    if (monto < TransferLimits.montoMinimo(monto.currency) ||
+        monto > TransferLimits.montoMaximo(monto.currency)) {
       emit(state.copyWith(failure: const TransferFailure.amountOutOfRange()));
       return;
     }

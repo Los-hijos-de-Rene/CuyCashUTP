@@ -9,8 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   final huella = PendingTransferActions.huella(
     cuentaId: 'acc-1',
-    destinatarioDni: '87654321',
-    monto: const Money.fromCentimos(5000),
+    cuentaDestinoId: 'acc-ext-1',
+    monto: const Money.soles(5000),
     motivo: 'Almuerzo',
   );
 
@@ -53,8 +53,8 @@ void main() {
         await acciones.remember('u1', huella, 'clave-1');
         final otra = PendingTransferActions.huella(
           cuentaId: 'acc-1',
-          destinatarioDni: '87654321',
-          monto: const Money.fromCentimos(4000),
+          cuentaDestinoId: 'acc-ext-1',
+          monto: const Money.soles(4000),
           motivo: 'Almuerzo',
         );
 
@@ -101,6 +101,20 @@ void main() {
         ahora = ahora.add(const Duration(hours: 25));
         expect(await acciones.hasPending('u1'), isFalse);
       });
+
+      test(
+        'hasPending ignora las aperturas de cuenta salvo que se pidan',
+        () async {
+          await acciones.remember('u1', 'abrir|ahorro|PEN|', 'clave-a');
+          expect(await acciones.hasPending('u1'), isFalse);
+          expect(
+            await acciones.hasPending('u1', incluirAperturas: true),
+            isTrue,
+          );
+          await acciones.remember('u1', huella, 'clave-1');
+          expect(await acciones.hasPending('u1'), isTrue);
+        },
+      );
 
       test('al guardar se limpian las caducadas', () async {
         await acciones.remember('u1', 'vieja', 'clave-v');

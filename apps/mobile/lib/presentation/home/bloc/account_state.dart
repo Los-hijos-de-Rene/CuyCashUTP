@@ -7,9 +7,16 @@ enum AccountStatus { loading, ready, error }
 
 @freezed
 abstract class AccountState with _$AccountState {
+  const AccountState._();
+
   const factory AccountState({
     @Default(AccountStatus.loading) AccountStatus status,
-    Account? cuenta,
+
+    /// Todas las cuentas del titular, en el orden del servidor.
+    @Default(<Account>[]) List<Account> cuentas,
+
+    /// Índice en [cuentas] de la que se ve en el carrusel.
+    @Default(0) int seleccionada,
     @Default(<Movement>[]) List<Movement> movimientos,
 
     /// Cursor opaco de la siguiente página; `null` = no hay más.
@@ -22,5 +29,17 @@ abstract class AccountState with _$AccountState {
 
     /// Solo con `status == error`.
     AccountFailure? failure,
+
+    /// Hay un cambio de nombre en vuelo.
+    @Default(false) bool renaming,
+
+    /// El último cambio de nombre falló; `null` si salió bien o no hubo.
+    AccountFailure? renameFailure,
   }) = _AccountState;
+
+  /// La cuenta visible; `null` sin cuentas.
+  Account? get cuenta =>
+      seleccionada < cuentas.length ? cuentas[seleccionada] : null;
+
+  bool get puedeAbrirOtra => cuentas.length < AccountLimits.maxCuentas;
 }

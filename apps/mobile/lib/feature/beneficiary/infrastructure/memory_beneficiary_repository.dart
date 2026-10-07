@@ -1,6 +1,8 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../../account/infrastructure/memory_ledger.dart';
+import '../../transfer/domain/recipient_account.dart';
 import '../../transfer/infrastructure/memory_transfer_repository.dart';
 import '../domain/beneficiary.dart';
 import '../domain/beneficiary_failure.dart';
@@ -9,33 +11,35 @@ import '../domain/beneficiary_repository.dart';
 
 /// Impl en memoria (flavor `mock`). Reproduce `directory.py`:
 ///
-/// - `guardar`: orden idéntico al backend: DNI propio, presupuesto de
-///   consultas, destinatario existente. Un apodo vacío o de más de 40
+/// - `guardar`: orden idéntico al backend: presupuesto de consultas, cuenta
+///   existente (propia o de un tercero). Un apodo vacío o de más de 40
 ///   caracteres es un 422 (`unexpected`), como el `BeneficiaryIn` real.
-/// - Upsert: guardar el mismo DNI dos veces deja UNA fila con el último
-///   apodo y conserva su posición (el alta original).
+/// - Upsert por CUENTA: guardar la misma cuenta dos veces deja UNA fila con
+///   el último apodo y conserva su posición (el alta original); dos cuentas
+///   de la misma persona son dos frecuentes.
 /// - Presupuesto: [consultasMaximas] por [ventana] deslizante, la misma
 ///   regla que `MemoryTransferRepository`. OJO: aquí es un presupuesto
 ///   PROPIO; en el backend se comparte con la búsqueda y el envío.
 /// - `listar` va del más reciente al más antiguo; `eliminar` es idempotente.
 ///
-/// Clientes conocidos: los de `MemoryTransferRepository`. Titular
-/// [dniPropio].
+/// Cuentas conocidas: las de terceros de `MemoryTransferRepository` y, si hay
+/// [ledger], las propias del titular (que se guardan con su nombre).
 class MemoryBeneficiaryRepository implements BeneficiaryRepository {
   MemoryBeneficiaryRepository({
     required DateTime Function() clock,
     this.consultasMaximas = 20,
     this.ventana = const Duration(minutes: 10),
-    this.dniPropio = MemoryTransferRepository.dniPropio,
-  }) : _clock = clock;
+    MemoryLedger? ledger,
+  }) : _clock = clock,
+       _ledger = ledger;
 
   final DateTime Function() _clock;
   final int consultasMaximas;
   final Duration ventana;
-  final String dniPropio;
+  final MemoryLedger? _ledger;
 
   final _consultas = <DateTime>[];
-  final _filas = <({String id, String dni, String apodo})>[];
+  final _filas = <({String id, String cuentaId, String apodo})>[];
   int _secuencia = 0;
 
   Result<BeneficiaryFailure, T> _falla<T>(BeneficiaryFailure f) =>
@@ -54,42 +58,59 @@ class MemoryBeneficiaryRepository implements BeneficiaryRepository {
     return null;
   }
 
+  /// La cuenta [id] con su titular: propia (con su nombre) o de un tercero.
+  ({String dni, String nombreEnmascarado, RecipientAccount cuenta})? _buscar(
+    String id,
+  ) {
+    if (_ledger?.cuenta(id) case final propia?) {
+      return (
+        dni: MemoryTransferRepository.dniPropio,
+        nombreEnmascarado: MemoryTransferRepository.nombrePropioEnmascarado,
+        cuenta: RecipientAccount(
+          cuentaId: propia.id,
+          tipo: propia.tipo,
+          moneda: propia.moneda,
+          numeroMasked: propia.numeroMasked,
+          nombre: propia.nombre,
+        ),
+      );
+    }
+    return MemoryTransferRepository.cuentaConocida(id);
+  }
+
   @override
   FutureResult<BeneficiaryFailure, List<Beneficiary>> listar() async => right([
     for (final f in _filas.reversed)
       Beneficiary(
         id: f.id,
-        dni: f.dni,
+        dni: _buscar(f.cuentaId)?.dni ?? '',
         apodo: f.apodo,
-        nombreEnmascarado: MemoryTransferRepository.destinatarioConocido(
-          f.dni,
-        )?.nombreEnmascarado,
+        nombreEnmascarado: _buscar(f.cuentaId)?.nombreEnmascarado,
+        cuenta: _buscar(f.cuentaId)?.cuenta,
       ),
   ]);
 
   @override
-  FutureResult<BeneficiaryFailure, Unit> guardar(
-    String dni,
-    String apodo,
-  ) async {
-    final formatoValido = RegExp(r'^\d{8}$').hasMatch(dni);
-    if (!formatoValido ||
-        apodo.isEmpty ||
-        apodo.length > BeneficiaryLimits.apodoMaxLength) {
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  }) async {
+    if (apodo.isEmpty || apodo.length > BeneficiaryLimits.apodoMaxLength) {
       return _falla(const BeneficiaryFailure.unexpected());
     }
-    if (dni == dniPropio) {
-      return _falla(const BeneficiaryFailure.selfTransfer());
-    }
     if (_consumirConsulta() case final f?) return _falla(f);
-    if (MemoryTransferRepository.destinatarioConocido(dni) == null) {
+    if (_buscar(cuentaDestinoId) == null) {
       return _falla(const BeneficiaryFailure.recipientNotFound());
     }
-    final i = _filas.indexWhere((f) => f.dni == dni);
+    final i = _filas.indexWhere((f) => f.cuentaId == cuentaDestinoId);
     if (i >= 0) {
-      _filas[i] = (id: _filas[i].id, dni: dni, apodo: apodo);
+      _filas[i] = (id: _filas[i].id, cuentaId: cuentaDestinoId, apodo: apodo);
     } else {
-      _filas.add((id: 'ben-mem-${++_secuencia}', dni: dni, apodo: apodo));
+      _filas.add((
+        id: 'ben-mem-${++_secuencia}',
+        cuentaId: cuentaDestinoId,
+        apodo: apodo,
+      ));
     }
     return right(unit);
   }

@@ -1,5 +1,6 @@
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/beneficiary/application/beneficiary_actions.dart';
 import 'package:cuycash/feature/beneficiary/domain/beneficiary.dart';
 import 'package:cuycash/feature/beneficiary/domain/beneficiary_failure.dart';
@@ -17,14 +18,14 @@ import 'fake_transfer_repositories.dart';
 const _cuenta = Account(
   id: MemoryTransferRepository.cuentaId,
   numero: '19100000004521',
-  tipo: 'ahorro',
-  moneda: 'PEN',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
   estado: 'activa',
-  saldoDisponible: Money.fromCentimos(125040),
-  saldoContable: Money.fromCentimos(125040),
+  saldoDisponible: Money.soles(125040),
+  saldoContable: Money.soles(125040),
 );
 
-const _monto = Money.fromCentimos(5000);
+const _monto = Money.soles(5000);
 
 class _FrecuentesQueFallan implements BeneficiaryRepository {
   @override
@@ -32,12 +33,11 @@ class _FrecuentesQueFallan implements BeneficiaryRepository {
       left(const GlobalFailure.server(BeneficiaryFailure.network()));
 
   @override
-  FutureResult<BeneficiaryFailure, Unit> guardar(
-    String dni,
-    String apodo,
-  ) async => left(
-    const GlobalFailure.server(BeneficiaryFailure.rateLimited(null)),
-  );
+  FutureResult<BeneficiaryFailure, Unit> guardar({
+    required String cuentaDestinoId,
+    required String apodo,
+  }) async =>
+      left(const GlobalFailure.server(BeneficiaryFailure.rateLimited(null)));
 
   @override
   FutureResult<BeneficiaryFailure, Unit> eliminar(String id) async =>
@@ -56,8 +56,7 @@ Future<TransferBloc> _hastaConfirmar(
     beneficiaries: BeneficiaryActions(frecuentes),
   );
   b.add(const TransferEvent.started(_cuenta));
-  b.add(const TransferEvent.recipientRequested('87654321'));
-  await b.stream.firstWhere((s) => s.status == TransferStatus.ready);
+  b.add(const TransferEvent.recipientSelected(destinatarioDePrueba));
   if (guardar) b.add(const TransferEvent.saveFrequentToggled(true));
   b.add(const TransferEvent.amountEntered(monto: _monto));
   b.add(const TransferEvent.confirmationOpened());
@@ -85,6 +84,7 @@ void main() {
 
     final guardado = await _guardado(frecuentes);
     expect(guardado?.dni, '87654321');
+    expect(guardado?.cuenta?.cuentaId, 'acc-ext-1');
     expect(guardado?.apodo, 'J*** M*** R***');
     expect(b.state.frecuenteNoGuardado, isFalse);
     await b.close();

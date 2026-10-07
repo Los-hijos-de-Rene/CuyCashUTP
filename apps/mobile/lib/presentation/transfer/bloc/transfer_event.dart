@@ -12,6 +12,10 @@ sealed class TransferEvent with _$TransferEvent {
   /// El DNI se editó: lo resuelto o el error ya no corresponden.
   const factory TransferEvent.recipientCleared() = TransferRecipientCleared;
 
+  /// El usuario tocó una cuenta (de la búsqueda o un frecuente que ya la trae).
+  const factory TransferEvent.recipientSelected(Recipient destinatario) =
+      TransferRecipientSelected;
+
   /// El monto y el motivo quedaron fijados al pasar a la confirmación.
   const factory TransferEvent.amountEntered({
     required Money monto,

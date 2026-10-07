@@ -7,6 +7,7 @@ import '../../../feature/beneficiary/application/beneficiary_actions.dart';
 import '../../../feature/transfer/application/pending_transfer_actions.dart';
 import '../../../feature/transfer/application/transfer_actions.dart';
 import '../../../feature/transfer/domain/recipient.dart';
+import '../../../feature/transfer/domain/recipient_directory.dart';
 import '../../../feature/transfer/domain/transfer_failure.dart';
 import '../../../feature/transfer/domain/transfer_limits.dart';
 import '../../../feature/transfer/domain/transfer_receipt.dart';
@@ -27,7 +28,7 @@ part 'transfer_state.dart';
 ///    envíos distintos. Una vez fijada, [TransferSubmitted] solo la LEE: un
 ///    reintento tras un fallo de red (el envío pudo haberse ejecutado) repite
 ///    la misma clave y el servidor devuelve la operación original.
-///    Solo cambia si cambia la intención (otro destinatario, monto o motivo).
+///    Solo cambia si cambia la intención (otra cuenta destino, monto o motivo).
 /// 2. **Un envío en curso no admite otro**: [TransferSubmitted] sale sin
 ///    emitir ni llamar al repositorio mientras el estado es `submitting`.
 ///    El primer evento pasa a `submitting` de forma síncrona, antes de su
@@ -49,6 +50,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     );
     on<TransferRecipientRequested>(_onRecipientRequested);
     on<TransferRecipientCleared>(_onRecipientCleared);
+    on<TransferRecipientSelected>(_onRecipientSelected);
     on<TransferAmountEntered>(_onAmountEntered);
     on<TransferConfirmationOpened>(_onConfirmationOpened);
     on<TransferSubmitted>(_onSubmitted);
@@ -73,7 +75,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
   /// usuario no puede inventar una intención nueva (otro monto u otro
   /// destinatario, con otra clave) mientras la anterior sigue en el aire: solo
   /// reintentar con la MISMA clave o abandonar el flujo.
-  bool get _intentSealed =>
+  bool get intentSealed =>
       state.status == TransferStatus.submitting ||
       state.status == TransferStatus.done ||
       state.outcomeUnknown;
@@ -86,11 +88,12 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientRequested event,
     Emitter<TransferState> emit,
   ) async {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     final search = ++_search;
     emit(
       state.copyWith(
         status: TransferStatus.resolving,
+        directorio: null,
         destinatario: null,
         failure: null,
         idempotencyKey: '',
@@ -104,10 +107,8 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
           status: TransferStatus.idle,
           failure: _flatten(failure),
         ),
-        (recipient) => state.copyWith(
-          status: TransferStatus.ready,
-          destinatario: recipient,
-        ),
+        (directorio) =>
+            state.copyWith(status: TransferStatus.ready, directorio: directorio),
       ),
     );
   }
@@ -116,14 +117,45 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferRecipientCleared event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     _search++;
     emit(
       state.copyWith(
         status: TransferStatus.idle,
+        directorio: null,
         destinatario: null,
         failure: null,
         idempotencyKey: '',
+      ),
+    );
+  }
+
+  void _onRecipientSelected(
+    TransferRecipientSelected event,
+    Emitter<TransferState> emit,
+  ) {
+    if (intentSealed) return;
+    final elegido = event.destinatario;
+    final origen = state.cuenta;
+    if (origen != null && elegido.cuenta.cuentaId == origen.id) {
+      emit(state.copyWith(failure: const TransferFailure.sameAccount()));
+      return;
+    }
+    if (origen != null && elegido.cuenta.moneda != origen.moneda) {
+      emit(state.copyWith(failure: const TransferFailure.currencyMismatch()));
+      return;
+    }
+    final cambio =
+        state.destinatario?.cuenta.cuentaId != elegido.cuenta.cuentaId;
+    emit(
+      state.copyWith(
+        status: TransferStatus.ready,
+        destinatario: elegido,
+        failure: null,
+        // Otra cuenta, otra intención: la clave anterior quedó ligada a otro
+        // destino y reutilizarla daría 409 (o, peor, un reintento hacia la
+        // cuenta equivocada si el servidor no comparara el destino).
+        idempotencyKey: cambio ? '' : state.idempotencyKey,
       ),
     );
   }
@@ -132,7 +164,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferAmountEntered event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     // El motivo se limita en la UI Y aquí: el cliente HTTP no lo recorta y el
     // backend responde 422 (error que el usuario no podría entender).
     final motivo = TransferLimits.normalizarMotivo(event.motivo);
@@ -157,7 +189,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     if (cuenta == null || destinatario == null || monto == null) return null;
     return PendingTransferActions.huella(
       cuentaId: cuenta.id,
-      destinatarioDni: destinatario.dni,
+      cuentaDestinoId: destinatario.cuenta.cuentaId,
       monto: monto,
       motivo: state.motivo,
     );
@@ -167,7 +199,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferSaveFrequentToggled event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     emit(state.copyWith(guardarFrecuente: event.value));
   }
 
@@ -175,7 +207,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     TransferFrequentNicknameChanged event,
     Emitter<TransferState> emit,
   ) {
-    if (_intentSealed) return;
+    if (intentSealed) return;
     emit(state.copyWith(apodoFrecuente: event.value));
   }
 
@@ -196,6 +228,10 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     // pago con otro motivo tras matar la app): no se sella, pero se avisa.
     final otro = pendiente == null && await _pending.hasPending(_userId);
     if (state.idempotencyKey.isNotEmpty) return;
+    // La intención pudo cambiar durante los `await` (otra cuenta, otro monto):
+    // la clave hallada sería de la intención anterior. La próxima apertura de
+    // la confirmación lo rehace.
+    if (_huella != huella) return;
     emit(
       pendiente == null
           ? state.copyWith(idempotencyKey: _newKey(), pendingElsewhere: otro)
@@ -235,7 +271,7 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     if (!guardada) emit(state.copyWith(keyUnsaved: true));
     final result = await _actions.enviar(
       cuentaOrigenId: cuenta.id,
-      destinatarioDni: destinatario.dni,
+      cuentaDestinoId: destinatario.cuenta.cuentaId,
       monto: monto,
       motivo: state.motivo,
       pin: event.pin,
@@ -292,8 +328,8 @@ class TransferBloc extends Bloc<TransferEvent, TransferState> {
     // Sin apodo propio, el enmascarado: es lo único que la app sabe.
     final apodo = state.apodoFrecuente.trim();
     final saved = await beneficiaries.guardar(
-      destinatario.dni,
-      apodo.isEmpty ? destinatario.nombreEnmascarado : apodo,
+      cuentaDestinoId: destinatario.cuenta.cuentaId,
+      apodo: apodo.isEmpty ? destinatario.nombreEnmascarado : apodo,
     );
     if (saved.isLeft()) emit(state.copyWith(frecuenteNoGuardado: true));
   }
