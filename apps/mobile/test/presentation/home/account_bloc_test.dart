@@ -358,6 +358,31 @@ void main() {
       },
     );
 
+    test(
+      'al deslizar, la primera página de la cuenta nueva se marca como carga '
+      'de movimientos y no como paginación',
+      () async {
+        final b = AccountBloc(
+          AccountActions(_CountingRepo(MemoryAccountRepository(clock: _reloj))),
+        );
+        addTearDown(b.close);
+        b.add(const AccountEvent.started());
+        await b.stream.firstWhere((s) => s.status == AccountStatus.ready);
+
+        final estados = <AccountState>[];
+        final sub = b.stream.listen(estados.add);
+        b.add(const AccountEvent.selected(1));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await sub.cancel();
+
+        final cargando = estados.first;
+        expect(cargando.cargandoMovimientos, isTrue);
+        expect(cargando.loadingMore, isFalse);
+        expect(cargando.movimientos, isEmpty);
+        expect(b.state.cargandoMovimientos, isFalse);
+      },
+    );
+
     blocTest<AccountBloc, AccountState>(
       'una respuesta tardía de la cuenta anterior no se pinta en la nueva',
       build: () {

@@ -21,6 +21,12 @@ abstract class AccountState with _$AccountState {
 
     /// Cursor opaco de la siguiente página; `null` = no hay más.
     String? nextCursor,
+
+    /// Llega la primera página de la cuenta recién elegida en el carrusel: la
+    /// lista está vacía porque aún no llegó, no porque no haya movimientos.
+    @Default(false) bool cargandoMovimientos,
+
+    /// Pidiendo la página siguiente (scroll). Solo paginación.
     @Default(false) bool loadingMore,
     @Default(false) bool refreshing,
 

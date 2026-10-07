@@ -23,6 +23,7 @@ import 'package:cuycash/presentation/home/widgets/movements_card.dart';
 import 'package:cuycash/presentation/home/widgets/quick_actions_row.dart';
 import 'package:cuycash/presentation/home/widgets/balance_card.dart';
 import 'package:cuycash/presentation/home/widgets/home_skeleton.dart';
+import 'package:cuycash/presentation/home/widgets/movements_skeleton.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -222,6 +223,38 @@ void main() {
         home: const HomeScreen(),
       ),
     ),
+  );
+
+  testWidgets(
+    'cargando los movimientos de otra cuenta muestra la silueta, sin "aún no '
+    'tienes movimientos" ni spinner',
+    (tester) async {
+      final cargando = _BlocConEstado(
+        const AccountState(
+          status: AccountStatus.ready,
+          cargandoMovimientos: true,
+          cuentas: [
+            Account(
+              id: 'a',
+              numero: '19100000004521',
+              tipo: AccountType.ahorro,
+              moneda: Currency.pen,
+              estado: 'activa',
+              saldoDisponible: Money.soles(125040),
+              saldoContable: Money.soles(125040),
+            ),
+          ],
+        ),
+      );
+      addTearDown(cargando.close);
+      await tester.pumpWidget(wrapWith(cargando));
+      await tester.pump();
+
+      expect(find.byType(MovementsSkeleton), findsOneWidget);
+      expect(find.byType(MovementsCard), findsNothing);
+      expect(find.text('Aún no tienes movimientos'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
   );
 
   testWidgets('"Recargar" sin la cuenta cargada lo dice en vez de callar', (

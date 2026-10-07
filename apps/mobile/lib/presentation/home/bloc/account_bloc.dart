@@ -109,6 +109,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     if (cuenta == null ||
         cursor == null ||
         state.loadingMore ||
+        state.cargandoMovimientos ||
         state.status != AccountStatus.ready) {
       return;
     }
@@ -177,16 +178,18 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
         seleccionada: event.indice,
         movimientos: const [],
         nextCursor: null,
-        loadingMore: true,
+        cargandoMovimientos: true,
+        loadingMore: false,
       ),
     );
     final result = await _actions.movimientos(state.cuentas[event.indice].id);
     if (generation != _generation) return;
     emit(
       result.match(
-        (failure) => state.copyWith(loadingMore: false, refreshFailed: true),
+        (failure) =>
+            state.copyWith(cargandoMovimientos: false, refreshFailed: true),
         (page) => state.copyWith(
-          loadingMore: false,
+          cargandoMovimientos: false,
           movimientos: page.items,
           nextCursor: page.nextCursor,
         ),
