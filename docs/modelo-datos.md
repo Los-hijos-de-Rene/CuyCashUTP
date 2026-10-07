@@ -294,8 +294,8 @@ son dinero.
 | `otp_tickets` | Prueba de que un OTP se verificó. Lo exige el restablecimiento de PIN. |
 | `kyc_verifications` | Veredicto y distancias faciales. **Nunca las imágenes.** |
 
-Nota: `devices.nombre`, `devices.plataforma` y la tabla `biometric_credentials`
-son posteriores; `create_all` no altera tablas existentes, así que las bases
+Nota: `devices.nombre`, `devices.plataforma`, la tabla `biometric_credentials`
+y el índice único de `users.alias` son posteriores; `create_all` no altera tablas existentes, así que las bases
 creadas antes exigen `scripts/reset_schema.py`.
 
 ### Tablas implementadas de dinero (épicas 2 y 3)
@@ -359,3 +359,32 @@ contra una implementación en memoria con el mismo contrato. Es la regla 3 del
 
 La frontera entre las dos es HTTP, y el contrato está en
 `docs/adr/0002-backend-de-autenticacion.md`.
+
+---
+
+## Consistencia entre el modelo y el script SQL
+
+El DDL que se entrega (`services/api/schema.sql`) **no se escribe a mano**: lo
+genera `scripts/dump_schema.py` a partir de los modelos de
+`app/db/models.py`, que son también los que el servicio usa para crear las
+tablas. Así la base que corre y el script que se documenta salen de la misma
+fuente.
+
+`services/api/tests/test_consistencia_ddl.py` lo garantiza en cada corrida
+de la suite:
+
+| Prueba | Qué falla si alguien se equivoca |
+|---|---|
+| `test_schema_sql_es_exactamente_lo_que_generan_los_modelos` | Se cambió un modelo sin regenerar el script, o se editó el script a mano. |
+| `test_cada_tabla_del_modelo_esta_en_el_ddl_y_ninguna_sobra` | Tablas que existen en uno y no en el otro. |
+| `test_las_reglas_de_dinero_del_modelo_llegan_al_ddl` | El dinero dejó de ser `BIGINT`, se perdió un `CHECK` de saldo o monto, o una restricción `UNIQUE` (idempotencia, DNI, alias). |
+| `test_el_script_de_volcado_se_ejecuta_solo` | El comando documentado dejó de funcionar. |
+
+Regenerar tras cambiar un modelo:
+
+```sh
+cd services/api && .venv/bin/python scripts/dump_schema.py > schema.sql
+```
+
+Administración, replicación y monitoreo de esta base en producción:
+[`administracion-bd.md`](administracion-bd.md).

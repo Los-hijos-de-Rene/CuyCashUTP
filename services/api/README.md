@@ -1,9 +1,13 @@
 # CuyCash · servicio de API
 
 Backend de CuyCash: identidad (registro, ingreso con DNI + PIN, verificación de
-dispositivo, recuperación de PIN, proxy del servicio de KYC), cuentas, libro
-mayor con partida doble, envío por DNI, recarga simulada y beneficiarios
-frecuentes.
+dispositivo, recuperación de PIN, biometría, proxy del servicio de KYC),
+perfil y alias único, hasta 5 cuentas por titular, libro mayor con partida
+doble, transferencias buscando por DNI o alias, depósito simulado, historial
+por cuenta y combinado, y beneficiarios frecuentes.
+
+Desplegado en Render: `https://cuycashutp.onrender.com` (manual en
+[`docs/despliegue.md`](../../docs/despliegue.md)).
 
 Diseño y razones: [`docs/adr/0002-backend-de-autenticacion.md`](../../docs/adr/0002-backend-de-autenticacion.md).
 
@@ -49,7 +53,21 @@ físico, la IP del PC en la red local.
 ```
 
 Corren sobre **SQLite en memoria**: no hace falta Postgres levantado. El
-esquema es el mismo, y lo que se prueba es la lógica, no el motor.
+esquema es el mismo, y lo que se prueba es la lógica, no el motor. Incluyen
+pruebas de seguridad web (`test_seguridad_web.py`) y de consistencia del DDL
+(`test_consistencia_ddl.py`). Plan completo en
+[`docs/plan-de-pruebas.md`](../../docs/plan-de-pruebas.md).
+
+## Operación
+
+| Herramienta | Para qué |
+|---|---|
+| `GET /health` | Vida del proceso (health check de Render; no toca la base). |
+| `GET /health/db` | La base responde: `SELECT 1` y su latencia; 503 si no. |
+| `scripts/smoke_prod.sh [URL]` | Prueba de humo de solo lectura contra un despliegue. |
+| `scripts/monitoreo.sql` | Consultas de monitoreo e integridad del libro para la consola SQL de Neon. |
+| `scripts/dump_schema.py > schema.sql` | Regenera el DDL desde los modelos. |
+| `scripts/reset_schema.py` | Recrea el esquema (**borra los datos**; con cerrojo contra hosts remotos). |
 
 ## El código del OTP durante el desarrollo
 

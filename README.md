@@ -9,33 +9,44 @@ PLDFT. Este repositorio contiene **la app móvil y un backend de identidad,
 cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
 [`docs/sla-kpi.md`](docs/sla-kpi.md)).
 
-**Implementado hoy**
+**Implementado hoy** (Sprint 1 completo, épica 2 y parte de la 3)
 
-- Identidad: splash, onboarding, registro con KYC facial, ingreso con DNI + PIN,
-  OTP, acceso rápido con bloqueo por intentos, home y perfil.
-- Cuentas: una cuenta de ahorro en soles por titular, con saldo e historial de
-  movimientos.
-- Libro mayor con partida doble, idempotencia y bloqueo de fila.
-- Envío de dinero a otro titular de CuyCash por DNI, confirmado con PIN.
-- Recarga de saldo, **simulada**: el dinero sale de una cuenta de sistema, no de
+- **Identidad**: splash, onboarding, registro con KYC facial (documento +
+  liveness), ingreso con DNI + PIN, OTP al correo para teléfonos nuevos,
+  recuperación de PIN, acceso rápido con bloqueo por intentos (por DNI y por
+  dispositivo) y **acceso biométrico real** (la huella libera una credencial
+  emitida por el servidor, revocable).
+- **Perfil**: datos personales, **alias único** (con al menos una letra, para
+  no confundirse con un DNI), cambio de PIN con sesión abierta y dispositivos
+  vinculados.
+- **Cuentas**: hasta 5 por titular (ahorros, corriente o sueldo; soles o
+  dólares), con nombre opcional. El inicio muestra las cuentas en un carrusel
+  (tocar una abre sus movimientos), un menú ⋮ para abrir otra y los últimos
+  movimientos de **todas** las cuentas, con "Ver más" al historial paginado.
+- **Libro mayor** con partida doble, idempotencia y bloqueo de fila.
+- **Transferir** a otra cuenta CuyCash buscando por **DNI o alias**, o entre
+  cuentas propias, confirmado con PIN y con constancia compartible.
+- **Depósito simulado**: cash-in desde una cuenta de sistema, sin PIN. No es
   un medio de pago real.
-- Beneficiarios frecuentes, detalle de movimiento y constancia compartible.
+- Frecuentes por cuenta: implementados y **ocultos** por ahora
+  (`FeatureToggles.frecuentesEnEnvio`).
+
+**Desplegado**: la API corre en Render (`https://cuycashutp.onrender.com`,
+documentación en `/docs`) contra Postgres gestionado en Neon. Ver
+[`docs/despliegue.md`](docs/despliegue.md).
 
 **No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
-antifraude, conciliación y cumplimiento PLDFT. Tampoco cuentas en USD ni varias
-cuentas por titular.
+antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el
+dashboard web.
 
-**Estado de la verificación.** La app y el backend tienen sus propias suites
-(contra dobles en memoria la app, por HTTP contra SQLite el backend), y el
-recorrido del backend se ejercitó a mano con `curl`. La prueba con la app
-real hablando con el backend (flavor `local`, en emulador) **nunca se ha
-ejecutado**; el guion está en [`docs/verificacion-manual.md`](docs/verificacion-manual.md).
-
-**Sin probar:** los dos tests de concurrencia (marca `postgres`: envíos cruzados
-y misma clave en paralelo) nunca se han ejecutado contra un Postgres real; el
-orden de bloqueo del `FOR UPDATE` y la ventana de idempotencia están razonados,
-no probados. Y el SLA de 200 ms por operación del motor no tiene medición
-automatizada.
+**Estado de la verificación.** 1 172 pruebas automatizadas en verde (299 del
+backend por HTTP, 838 de la app, 35 de los paquetes), incluidas pruebas de
+seguridad web (SQLi, XSS, CORS) y de consistencia del DDL. Plan completo en
+[`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). **Sin ejecutar**: el
+recorrido de la app real contra el backend en un emulador
+([`docs/verificacion-manual.md`](docs/verificacion-manual.md)) y las 3 pruebas
+de concurrencia que exigen Postgres real; el SLA de 200 ms por operación no
+tiene medición automatizada.
 
 ---
 
@@ -96,6 +107,7 @@ flutter test                         # toda la suite (corre sobre el flavor mock
 dart run build_runner build --delete-conflicting-outputs   # freezed
 cd apps/mobile && flutter gen-l10n   # regenera l10n desde los ARB
 cd services/api && .venv/bin/python -m pytest             # tests del backend
+services/api/scripts/smoke_prod.sh                         # humo contra producción (solo lectura)
 ```
 
 Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
@@ -177,7 +189,8 @@ lib/presentation/<x>/   Widgets + Bloc.
 ```
 
 `feature/auth` es la plantilla: cópiala para features nuevas. Features actuales:
-`auth`, `kyc`, `otp`, `device`, `lockout`, `account`, `transfer`, `beneficiary`.
+`auth`, `kyc`, `otp`, `device`, `lockout`, `profile`, `security`, `biometric`,
+`account`, `transfer`, `beneficiary`.
 
 ### Composición y arranque
 
@@ -217,7 +230,13 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 | [`CLAUDE.md`](CLAUDE.md) | Guía de trabajo en el repo (arquitectura, comandos, reglas). |
 | [`docs/sla-kpi.md`](docs/sla-kpi.md) | SLA por módulo, KPI de negocio y ágiles, backlog y sprints. |
 | [`docs/verificacion-manual.md`](docs/verificacion-manual.md) | Guion para probar la app contra el backend en un emulador (pendiente de ejecutar). |
-| [`docs/modelo-datos.md`](docs/modelo-datos.md) | Modelo de datos: tablas implementadas (con sus columnas) y diseñadas. |
+| [`docs/apf2-cumplimiento.md`](docs/apf2-cumplimiento.md) | Matriz de cumplimiento del APF2 (criterios 1 a 3) y evidencias pendientes. |
+| [`docs/modelo-datos.md`](docs/modelo-datos.md) | Diseño físico: diagrama relacional, tablas, patrón de acceso y consistencia con el DDL. |
+| [`docs/administracion-bd.md`](docs/administracion-bd.md) | Administración, replicación, respaldo y monitoreo de la base en producción. |
+| [`docs/seguridad.md`](docs/seguridad.md) | Informe técnico de seguridad: autenticación, autorización y cifrado. |
+| [`docs/catalogo-controles.md`](docs/catalogo-controles.md) | Catálogo de 47 controles de seguridad con su evidencia. |
+| [`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md) | Plan de pruebas: niveles, cobertura, seguridad web y despliegue. |
+| [`docs/despliegue.md`](docs/despliegue.md) | Manual de despliegue en Render + Neon y evidencia de pruebas. |
 | [`docs/adr/0001-integracion-kyc-facial.md`](docs/adr/0001-integracion-kyc-facial.md) | Contrato, riesgos y acuerdos con el servicio de KYC. |
 | [`docs/adr/0002-backend-de-autenticacion.md`](docs/adr/0002-backend-de-autenticacion.md) | Diseño del backend propio de auth. |
 | [`docs/superpowers/specs/`](docs/superpowers/specs/) | Diseño de las funcionalidades implementadas. |

@@ -50,7 +50,14 @@ def _engine_config(url: str) -> tuple:
 
 _url, _connect_args = _engine_config(settings.DATABASE_URL)
 
-engine = create_async_engine(_url, future=True, connect_args=_connect_args)
+# `pool_pre_ping`: Neon suspende el cómputo tras 5 min sin uso y cierra las
+# conexiones; sin el ping, la primera petición después del reposo tomaba una
+# conexión muerta del pool y respondía 500 (visto en producción el
+# 2026-10-07 con scripts/smoke_prod.sh). El ping (`SELECT 1` al sacar una
+# conexión) la descarta y abre otra. Cuesta un viaje corto por petición.
+engine = create_async_engine(
+    _url, future=True, connect_args=_connect_args, pool_pre_ping=True
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
