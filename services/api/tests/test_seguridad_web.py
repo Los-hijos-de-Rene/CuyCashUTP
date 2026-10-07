@@ -183,3 +183,35 @@ async def test_health_dice_que_version_corre(client, monkeypatch):
     assert (await client.get("/health")).json() == {"status": "ok", "version": "local"}
     monkeypatch.setenv("RENDER_GIT_COMMIT", "abc1234")
     assert (await client.get("/health")).json()["version"] == "abc1234"
+
+
+# ------------------------------------------------- entradas más largas que la columna
+#
+# SQLite ignora el largo de VARCHAR; Postgres lo hace cumplir. Un valor más
+# largo que la columna llegaba a la base y daba 500 (lo encontró el CI al correr
+# la suite contra Postgres). Ahora se rechaza en la entrada con 422.
+
+
+async def test_un_dni_largo_en_el_login_es_422_y_no_500(client, registrado):
+    r = await client.post(
+        "/v1/auth/authenticate",
+        json={"identifier": "1" * 50, "pin": PIN_DE_PRUEBA},
+        headers={"X-Device-Id": "dev-1"},
+    )
+    assert r.status_code == 422
+
+
+async def test_un_device_id_larguisimo_es_422_y_no_500(client, registrado):
+    r = await client.post(
+        "/v1/auth/authenticate",
+        json={"identifier": registrado.dni, "pin": PIN_DE_PRUEBA},
+        headers={"X-Device-Id": "d" * 500},
+    )
+    assert r.status_code == 422
+
+
+async def test_un_identificador_de_otp_larguisimo_es_422_y_no_500(client):
+    r = await client.post(
+        "/v1/otp/challenges", json={"purpose": "recovery", "identifier": "a" * 1000}
+    )
+    assert r.status_code == 422
