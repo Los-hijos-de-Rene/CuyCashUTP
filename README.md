@@ -32,8 +32,10 @@ cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
   (`FeatureToggles.frecuentesEnEnvio`).
 
 **Desplegado**: la API corre en Render (`https://cuycashutp.onrender.com`,
-documentación en `/docs`) contra Postgres gestionado en Neon. Ver
-[`docs/despliegue.md`](docs/despliegue.md).
+documentación en `/docs`) contra Postgres gestionado en Neon. Se despliega
+**solo** por GitHub Actions: CI en cada PR, CD con aprobación y prueba de humo
+al fusionar en `main`, y un workflow de rollback a cualquier versión anterior.
+Ver [`docs/despliegue.md`](docs/despliegue.md).
 
 **No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
 antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el
@@ -42,10 +44,10 @@ dashboard web.
 **Estado de la verificación.** 1 172 pruebas automatizadas en verde (299 del
 backend por HTTP, 838 de la app, 35 de los paquetes), incluidas pruebas de
 seguridad web (SQLi, XSS, CORS) y de consistencia del DDL. Plan completo en
-[`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). **Sin ejecutar**: el
+[`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). Las 3 pruebas de
+concurrencia corren contra Postgres real en el CI. **Sin ejecutar**: el
 recorrido de la app real contra el backend en un emulador
-([`docs/verificacion-manual.md`](docs/verificacion-manual.md)) y las 3 pruebas
-de concurrencia que exigen Postgres real; el SLA de 200 ms por operación no
+([`docs/verificacion-manual.md`](docs/verificacion-manual.md)); el SLA de 200 ms por operación no
 tiene medición automatizada.
 
 ---
@@ -112,7 +114,7 @@ services/api/scripts/smoke_prod.sh                         # humo contra producc
 
 Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
 con `TEST_POSTGRES_URL`; la base debe terminar en `_test`) y se omiten sin él.
-Nunca se han ejecutado contra un Postgres real. Detalle en [`CLAUDE.md`](CLAUDE.md).
+En GitHub Actions corren solos contra un Postgres 16 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 `services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato

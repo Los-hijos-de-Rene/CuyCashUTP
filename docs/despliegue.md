@@ -1,7 +1,7 @@
 # Manual de despliegue en la nube
 
-**APF2 · criterio 3.2 (Manual de despliegue) y 3.3 (Evidencia de pruebas de
-despliegue).** El monitoreo de la base (3.4) está en
+**APF2 · criterio 3.2 (Manual de despliegue, CI/CD y rollback) y 3.3
+(Evidencia de pruebas de despliegue).** El monitoreo de la base (3.4) está en
 [`administracion-bd.md`](administracion-bd.md#5-monitoreo-en-producción-criterio-34)
 y el plan de pruebas (3.1) en [`plan-de-pruebas.md`](plan-de-pruebas.md).
 
@@ -69,7 +69,11 @@ tiempo sin configurar respaldos.
 
 3. *Apply*. Render construye la imagen y la arranca. Al arrancar, el servicio
    crea las tablas que falten (`create_all` en `app/main.py`).
-4. Cada `push` a `main` redespliega solo.
+4. Render → servicio → *Settings* → **Deploy Hook**: copiar la URL y guardarla
+   en GitHub como secreto `RENDER_DEPLOY_HOOK_URL` (*Settings → Secrets and
+   variables → Actions*). Es como una contraseña: quien la tiene, despliega.
+5. A partir de aquí **Render no despliega solo** (`autoDeployTrigger: "off"`
+   en `render.yaml`): lo hace el pipeline de GitHub Actions (§4).
 
 ### Paso 3 · Esquema limpio (solo si cambió un modelo)
 
@@ -111,17 +115,105 @@ flutter build apk --flavor production -t lib/main_production.dart \
 Instalar el APK en el teléfono y registrarse: el registro abre sesión y
 vincula ese teléfono.
 
-## 4. Operación
+## 4. Pipeline CI/CD (GitHub Actions)
+
+```
+PR ──▶ CI backend ─┐   (solo si cambia services/api)
+   └─▶ CI app ─────┤   (solo si cambia apps/ o packages/)
+                   ▼
+merge a main ──▶ CD backend: CI ─▶ aprobación ─▶ deploy hook ?ref=<sha> ─▶ esperar /health = <sha> ─▶ smoke
+                                   (environment production)
+tag v* ─────────▶ Build APK ─▶ Release con el APK
+a mano ─────────▶ Rollback backend: validar commit ─▶ aprobación ─▶ deploy hook ?ref=<estable> ─▶ esperar ─▶ smoke
+```
+
+| Workflow | Archivo | Se dispara | Qué hace |
+|---|---|---|---|
+| CI backend | `.github/workflows/ci-backend.yml` | PR que toca `services/api/**` (y el CD lo llama en `main`) | `pytest` sobre SQLite **y** las pruebas de concurrencia contra un Postgres 16 real (servicio de Actions) |
+| CI app | `.github/workflows/ci-app.yml` | PR o push que toca `apps/**`, `packages/**` | `flutter analyze` y los tests de la app y los dos paquetes |
+| CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
+| Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
+| Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` (firmado con la clave de depuración) adjunto a un Release |
+
+**App y backend en el mismo repositorio no chocan**: cada CI se filtra por
+carpeta, y un PR que toca ambos corre los dos. La app no tiene rollback remoto
+(un APK instalado no se retrocede); por eso el backend debe seguir aceptando lo
+que envían las versiones anteriores de la app.
+
+**Aprobación**: el environment `production` (*Settings → Environments*) exige
+que un colaborador apruebe antes de desplegar o retroceder, y solo admite la
+rama `main`. Quien lanzó el workflow puede aprobarlo él mismo.
+
+**Saber qué versión corre**: `GET /health` → `{"status":"ok","version":"<commit>"}`
+(Render pone el commit en `RENDER_GIT_COMMIT`).
+
+## 5. Rollback
+
+Hay dos caminos, y conviene conocer los dos:
+
+| | Rollback backend (Actions) | Botón *Rollback* de Render |
+|---|---|---|
+| Dónde | GitHub → *Actions* → *Rollback backend* → *Run workflow* | Render → servicio → *Deploys* → *Rollback* |
+| A qué versión | Cualquier commit que haya estado en `main` | Solo los **2 despliegues previos** (plan gratuito) |
+| Velocidad | Minutos (reconstruye la imagen) | Segundos (reutiliza la imagen) |
+| Trazabilidad | Queda el motivo, quién aprobó y el resultado del humo | Queda en *Events* de Render |
+| Verificación | Espera la versión y corre `smoke_prod.sh` | Manual |
+
+Paso a paso con Actions:
+
+1. Copiar el commit de la última versión estable: lo dice el **resumen** de su
+   ejecución de *CD backend* ("Antes / Ahora"), o `GET /health` antes de
+   desplegar lo nuevo.
+2. *Actions → Rollback backend → Run workflow*: pegar el commit y el motivo.
+3. Aprobar en el environment `production`.
+4. Esperar el verde: el resumen muestra la versión retirada y la restaurada.
+5. **En `main`, `git revert` del cambio malo** y PR: si no, el siguiente
+   despliegue lo trae de vuelta.
+6. **Los datos no vuelven atrás.** Lo que la versión mala escribió sigue en la
+   base: revisarlo con `scripts/monitoreo.sql` y corregirlo con un asiento de
+   ajuste o, si hace falta, con la restauración a un punto en el tiempo de
+   Neon (`administracion-bd.md` §3).
+
+## 6. Guion de la demostración de rollback
+
+Un mismo error contado en tres actos: el CI protege, un error que el CI no ve
+llega a producción y se retrocede, y el rollback no arregla los datos.
+
+**Preparación** (antes de la clase): abrir `/health` para despertar el
+servicio; anotar el commit estable que devuelve; tener la app `production`
+instalada con una cuenta y saldo.
+
+1. **El CI protege.** Rama con el depósito simulado al doble en
+   `services/api/app/api/v1/routers/transfers.py` (`recargar`: acreditar
+   `monto * 2`). PR → *CI backend* en rojo
+   (`test_una_recarga_acredita_y_deja_el_libro_cuadrado` y otras) → no se puede
+   desplegar.
+2. **Un error que las pruebas no ven.** El desarrollador cree que el doble es
+   una promoción y cambia también las pruebas para que esperen el doble. CI en
+   verde → merge → *CD backend* → aprobar → producción. En la app: depositar
+   S/ 10 y la constancia dice S/ 20. Las pruebas verifican lo que el equipo
+   cree correcto, no lo que el negocio pide: para eso existe el rollback.
+   *Rollback backend* con el commit estable → aprobar → verde. Depositar
+   S/ 10: entran S/ 10. `/health` muestra el commit restaurado.
+3. **El rollback no deshace los datos.** El saldo sigue inflado con los S/ 10
+   de más: se muestra en el historial y con la consulta 7 de
+   `monitoreo.sql`. Se corrige con un asiento de ajuste, y en `main` se hace
+   `git revert` del cambio.
+
+Tiempos aproximados: CI backend ~2 min, build de Render ~3 min, rollback por
+Actions ~4 min (el botón de Render, segundos).
+
+## 7. Operación
 
 | Situación | Qué pasa | Qué hacer |
 |---|---|---|
 | El servicio duerme (plan Free de Render, 15 min sin tráfico) | La primera petición tarda ~1 min | Abrir `/health` antes de una demostración |
 | Neon suspende el cómputo (5 min sin uso) | La primera consulta lo despierta (~1 s) | Nada: `pool_pre_ping` descarta las conexiones muertas |
 | Despliegue fallido | Render mantiene la versión anterior | Ver *Events* y *Logs* en Render |
-| Volver a una versión anterior | — | Render → *Deploys* → *Rollback* sobre un despliegue previo |
+| Volver a una versión anterior | — | §5 (Actions o botón de Render) |
 | Datos dañados | — | Restauración PITR (ver `administracion-bd.md` §3) |
 
-## 5. Evidencia de pruebas de despliegue
+## 8. Evidencia de pruebas de despliegue
 
 ### Ejecución del 2026-10-07 15:40 UTC (antes de desplegar este avance)
 

@@ -1,0 +1,87 @@
+# CD del backend: pruebas → aprobación → despliegue en Render → verificación.
+#
+# Render ya NO despliega solo (render.yaml: autoDeployTrigger: off). El único
+# camino a producción es este workflow, y solo si el CI pasó: un commit con
+# pruebas en rojo nunca llega a Render.
+#
+# Se despliega EXACTAMENTE el commit probado (`?ref=<sha>` en el deploy hook).
+name: CD backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/api/**"
+      - "render.yaml"
+      - ".github/workflows/cd-backend.yml"
+      - ".github/scripts/esperar_version.sh"
+  workflow_dispatch:
+
+# Un despliegue o rollback a la vez: nunca dos peleando por producción.
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://cuycashutp.onrender.com
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci-backend.yml
+
+  desplegar:
+    name: Desplegar en Render
+    needs: ci
+    runs-on: ubuntu-latest
+    # El environment `production` pide la aprobación de un responsable antes
+    # de seguir (Settings → Environments).
+    environment:
+      name: production
+      url: ${{ env.API_URL }}/docs
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Versión en producción antes de desplegar
+        id: antes
+        run: |
+          v=$(curl -s -m 90 "$API_URL/health" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p' || true)
+          echo "version=${v:-desconocida}" >> "$GITHUB_OUTPUT"
+          echo "Antes: ${v:-desconocida}"
+
+      - name: Disparar el despliegue del commit ${{ github.sha }}
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          # El hook ya trae `?key=…`: el commit va como parámetro adicional.
+          codigo=$(curl -s -o respuesta.json -w '%{http_code}' -X POST "${HOOK}&ref=${GITHUB_SHA}")
+          echo "Render respondió HTTP $codigo"
+          cat respuesta.json || true
+          case "$codigo" in
+            200|202) ;;
+            *) echo "::error::Render rechazó el despliegue (HTTP $codigo)"; exit 1 ;;
+          esac
+
+      - name: Esperar a que la API corra el commit nuevo
+        run: .github/scripts/esperar_version.sh "$API_URL" "$GITHUB_SHA" 20
+
+      - name: Prueba de humo contra producción
+        run: services/api/scripts/smoke_prod.sh "$API_URL"
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "## Despliegue del backend"
+            echo ""
+            echo "| | Commit |"
+            echo "|---|---|"
+            echo "| Antes | \`${{ steps.antes.outputs.version }}\` |"
+            echo "| Ahora | \`${GITHUB_SHA}\` |"
+            echo ""
+            echo "Si esta versión falla, vuelve a la anterior con **Actions → Rollback backend**"
+            echo "y el commit \`${{ steps.antes.outputs.version }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"

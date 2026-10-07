@@ -1,0 +1,106 @@
+# Rollback del backend: vuelve producción a un commit anterior y verifica.
+#
+# Se lanza a mano: Actions → Rollback backend → Run workflow, con el commit de
+# la última versión estable (el resumen de cada despliegue lo dice).
+#
+# Vuelve el CÓDIGO, no los DATOS: lo que la versión mala escribió en la base
+# sigue ahí y se corrige aparte (asiento de ajuste o PITR de Neon, ver
+# docs/administracion-bd.md).
+#
+# Más rápido, en una emergencia: Render → Deploys → Rollback, que reutiliza la
+# imagen ya construida (en el plan gratuito, solo a los 2 despliegues previos).
+name: Rollback backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit (SHA) de la versión estable a la que volver"
+        required: true
+      motivo:
+        description: "Por qué se vuelve atrás"
+        required: true
+
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://cuycashutp.onrender.com
+
+jobs:
+  rollback:
+    name: Volver a ${{ inputs.commit }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ env.API_URL }}/docs
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validar el commit
+        id: destino
+        env:
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          # Solo commits que existen y que pasaron por main: no se "vuelve" a
+          # una rama que nunca estuvo en producción.
+          if ! sha=$(git rev-parse --verify --quiet "${COMMIT}^{commit}"); then
+            echo "::error::El commit ${COMMIT} no existe en el repositorio."; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo "::error::${sha} no está en main: no fue una versión de producción."; exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Destino: $sha — $(git log -1 --format='%s (%an, %ad)' --date=short "$sha")"
+
+      - name: Versión en producción ahora
+        id: antes
+        run: |
+          v=$(curl -s -m 90 "$API_URL/health" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p' || true)
+          echo "version=${v:-desconocida}" >> "$GITHUB_OUTPUT"
+          echo "Ahora corre: ${v:-desconocida}"
+
+      - name: Desplegar la versión estable
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          SHA: ${{ steps.destino.outputs.sha }}
+        run: |
+          codigo=$(curl -s -o respuesta.json -w '%{http_code}' -X POST "${HOOK}&ref=${SHA}")
+          echo "Render respondió HTTP $codigo"
+          cat respuesta.json || true
+          case "$codigo" in
+            200|202) ;;
+            *) echo "::error::Render rechazó el rollback (HTTP $codigo)"; exit 1 ;;
+          esac
+
+      - name: Esperar a que la API corra la versión estable
+        run: .github/scripts/esperar_version.sh "$API_URL" "${{ steps.destino.outputs.sha }}" 20
+
+      - name: Prueba de humo contra producción
+        run: services/api/scripts/smoke_prod.sh "$API_URL"
+
+      - name: Resumen
+        if: always()
+        env:
+          MOTIVO: ${{ inputs.motivo }}
+        run: |
+          {
+            echo "## Rollback del backend"
+            echo ""
+            echo "**Motivo:** ${MOTIVO}"
+            echo ""
+            echo "| | Commit |"
+            echo "|---|---|"
+            echo "| Versión retirada | \`${{ steps.antes.outputs.version }}\` |"
+            echo "| Versión restaurada | \`${{ steps.destino.outputs.sha }}\` |"
+            echo ""
+            echo "### Pendiente"
+            echo "1. \`git revert\` del cambio malo en \`main\`: si no, el próximo despliegue lo trae de vuelta."
+            echo "2. Revisar los datos que escribió la versión retirada (\`services/api/scripts/monitoreo.sql\`)."
+          } >> "$GITHUB_STEP_SUMMARY"

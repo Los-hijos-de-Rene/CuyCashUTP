@@ -1,0 +1,68 @@
+# CI del backend (services/api).
+#
+# Corre en cada PR que toque el backend, y en main lo llama el CD
+# (`workflow_call`): nada se despliega sin pasar por aquí.
+name: CI backend
+
+on:
+  pull_request:
+    paths:
+      - "services/api/**"
+      - ".github/workflows/ci-backend.yml"
+  # En main no se dispara solo: lo llama el CD, que corre después el despliegue.
+  workflow_call:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: services/api
+
+jobs:
+  pruebas:
+    name: Pruebas (SQLite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          # La misma versión que la imagen de Docker que corre en Render.
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: services/api/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: pytest (incluye seguridad web y consistencia del DDL)
+        run: python -m pytest -q
+
+  concurrencia:
+    name: Concurrencia (Postgres real)
+    # El bloqueo de fila (FOR UPDATE) no existe en SQLite: estas pruebas solo
+    # tienen sentido contra Postgres, el motor de producción.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cuycash
+          POSTGRES_PASSWORD: cuycash
+          # El fixture se niega a correr si la base no termina en `_test`.
+          POSTGRES_DB: cuycash_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cuycash"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: services/api/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: pytest -m postgres
+        env:
+          TEST_POSTGRES_URL: postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash_test
+        run: python -m pytest -m postgres -q -rs
