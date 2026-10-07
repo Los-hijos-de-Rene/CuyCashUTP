@@ -24,7 +24,7 @@ Leyenda: ✅ cubierto en el repositorio · 📸 falta solo la captura para el PD
 | 2.1 | Módulo de autenticación y autorización funcional | [`seguridad.md`](seguridad.md#2-módulo-de-autenticación-y-autorización-21); código en `routers/auth.py`, `core/deps.py`; `test_sesion_requerida.py` recorre todas las rutas | ✅ 📸 | Capturas del login, OTP de dispositivo nuevo, bloqueo al 3.er intento y acceso con huella |
 | 2.2 | Informe técnico de seguridad y cifrado | [`seguridad.md`](seguridad.md) §1, 3–6: argon2id, SHA‑256 de tokens, TLS app↔API y API↔BD, almacén cifrado del teléfono | ✅ | Fragmento de `app/core/security.py` |
 | 2.3 | Pruebas de seguridad web (CORS, XSS, SQLi) | [`plan-de-pruebas.md`](plan-de-pruebas.md#4-pruebas-de-seguridad-web); **`tests/test_seguridad_web.py`** (33 pruebas) | ✅ | Salida de `pytest tests/test_seguridad_web.py -v` |
-| 2.4 | Catálogo de controles | [`catalogo-controles.md`](catalogo-controles.md): 47 controles con pilar CIA, tipo, código y prueba | ✅ | La tabla misma |
+| 2.4 | Catálogo de controles | [`catalogo-controles.md`](catalogo-controles.md): 49 controles con pilar CIA, tipo, código y prueba | ✅ | La tabla misma |
 
 ## Criterio 3 · Despliegue de la aplicación (4 pts)
 

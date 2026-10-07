@@ -21,6 +21,15 @@ runs:
       shell: bash
       working-directory: services/api
       run: pip install -r requirements-dev.txt
+    - name: pip-audit (dependencias con vulnerabilidades conocidas)
+      shell: bash
+      working-directory: services/api
+      # Falla si alguna dependencia de producción tiene un aviso publicado: así
+      # se cayó starlette 0.38.6 (vía FastAPI 0.115). Se audita requirements.txt
+      # y no el entorno: pytest y compañía no llegan a la imagen de Render.
+      run: |
+        pip install pip-audit==2.10.1
+        pip-audit -r requirements.txt --desc on
     - name: pytest (seguridad web, DDL y concurrencia incluidos)
       shell: bash
       working-directory: services/api
@@ -30,4 +39,5 @@ runs:
           exit 1
         fi
         # -rs lista lo omitido: con Postgres no debería omitirse nada.
-        python -m pytest -q -rs
+        # Cobertura de líneas al final del log (config en .coveragerc).
+        python -m pytest -q -rs --cov --cov-report=term

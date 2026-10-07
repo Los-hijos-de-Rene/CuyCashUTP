@@ -1,0 +1,85 @@
+# Escaneo de seguridad web con OWASP ZAP. Se lanza a mano (Actions → Seguridad
+# → Run workflow) y además cada lunes; no es un check de los PR.
+#
+# Dos escaneos con distinto riesgo, a propósito:
+# - Activo (zap-api-scan): manda cargas de ataque (SQLi, XSS, inyección de
+#   cabeceras…) a CADA ruta del OpenAPI, con y sin sesión. Va contra una copia
+#   EFÍMERA del backend levantada en este mismo job sobre SQLite, nunca contra
+#   producción: en Render crearía titulares basura y dispararía OTP reales.
+# - Pasivo (zap-baseline): solo navega y lee las respuestas de la API
+#   desplegada (cabeceras, TLS, cookies, filtraciones). No escribe nada.
+#
+# Los reportes (HTML, JSON, Markdown) quedan como artefactos del run.
+name: Seguridad
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * 1" # lunes 08:00 en Lima
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://cuycashutp.onrender.com
+
+jobs:
+  zap-activo:
+    name: ZAP activo (copia efímera)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: services/api/requirements.txt
+      - name: Levantar la API sobre SQLite
+        working-directory: services/api
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./zap.db
+          OTP_NOTIFIER: log
+        run: |
+          pip install -r requirements.txt
+          nohup python -m uvicorn app.main:app --port 8001 > uvicorn.log 2>&1 &
+          for _ in $(seq 30); do
+            curl -fs http://localhost:8001/health && exit 0
+            sleep 1
+          done
+          cat uvicorn.log
+          exit 1
+      - name: Titular de prueba (para escanear también las rutas con sesión)
+        run: |
+          token=$(curl -fs http://localhost:8001/v1/auth/register \
+            -H "Content-Type: application/json" -H "X-Device-Id: zap-scan" \
+            -d '{"dni":"70000001","nombres":"Zap","apellidos":"Escaneo","email":"zap@correo.pe","pin":"839201"}' \
+            | python -c 'import json,sys; print(json.load(sys.stdin)["session_token"])')
+          echo "::add-mask::$token"
+          echo "ZAP_TOKEN=$token" >> "$GITHUB_ENV"
+      - uses: zaproxy/action-api-scan@v0.10.0
+        env:
+          ZAP_AUTH_HEADER: Authorization
+          ZAP_AUTH_HEADER_VALUE: Bearer ${{ env.ZAP_TOKEN }}
+          ZAP_AUTH_HEADER_SITE: localhost
+        with:
+          target: http://localhost:8001/openapi.json
+          format: openapi
+          allow_issue_writing: false
+          artifact_name: zap-activo
+          # -a: también las reglas alfa/beta; -I: no fallar por avisos.
+          cmd_options: "-a -I"
+
+  zap-pasivo:
+    name: ZAP pasivo (producción)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Despertar el servicio
+        # El plan gratuito de Render duerme: la primera petición tarda ~20 s.
+        run: curl -fsS --retry 5 --retry-delay 10 --max-time 60 "$API_URL/health"
+      - uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ env.API_URL }}/docs
+          allow_issue_writing: false
+          artifact_name: zap-pasivo
+          cmd_options: "-a -I"
