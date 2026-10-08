@@ -37,6 +37,11 @@ void main() {
 
   // Visto en un iPhone: girar el stream de iOS lo dejaba acostado y el
   // servidor no reconocía la cara contra el DNI.
+  test('solo el stream de iOS llega en espejo', () {
+    expect(MlKitFaceTracker.streamMirrored(isIOS: true), isTrue);
+    expect(MlKitFaceTracker.streamMirrored(isIOS: false), isFalse);
+  });
+
   test('iOS no gira el stream (ya llega derecho); Android sí', () {
     expect(
       MlKitFaceTracker.frameRotation(isIOS: true, sensorOrientation: 90),
