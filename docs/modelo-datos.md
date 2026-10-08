@@ -385,4 +385,5 @@ cd services/api && .venv/bin/python scripts/dump_schema.py > schema.sql
 ```
 
 Administración, replicación y monitoreo de esta base en producción:
-[`administracion-bd.md`](administracion-bd.md).
+[`administracion-bd.md`](administracion-bd.md). Columna por columna de las
+tablas implementadas: [`diccionario-datos.md`](diccionario-datos.md).
