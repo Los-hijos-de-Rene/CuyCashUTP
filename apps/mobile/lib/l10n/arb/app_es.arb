@@ -538,5 +538,22 @@
   "openAccountErrorNetwork": "No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.",
   "openAccountErrorUnexpected": "No pudimos confirmar si se abrió. Reintenta: no se abrirá dos veces.",
   "openAccountLeaveTitle": "¿Salir sin confirmar?",
-  "openAccountLeaveBody": "Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez."
+  "openAccountLeaveBody": "Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.",
+  "devToolsButton": "Menú de desarrollo",
+  "devToolsBadge": "DEV",
+  "devToolsTitle": "Menú de desarrollo (solo local)",
+  "devToolsReset": "Reiniciar todo",
+  "devToolsResetHint": "Vacía la base local, crea los usuarios de prueba y cierra la sesión en este teléfono.",
+  "devToolsResetConfirm": "¿Vaciar la base local? Se borran todas las cuentas, incluida la tuya.",
+  "devToolsConfirm": "Sí, reiniciar",
+  "devToolsCancel": "Cancelar",
+  "devToolsSeed": "Crear usuarios de prueba",
+  "devToolsSeedHint": "Los agrega sin borrar nada.",
+  "devToolsOtp": "Ver últimos códigos OTP",
+  "devToolsOtpEmpty": "Todavía no se envió ningún código.",
+  "devToolsUsers": "Usuarios de prueba · PIN {pin}",
+  "@devToolsUsers": { "placeholders": { "pin": { "type": "String" } } },
+  "devToolsUnavailable": "El backend no tiene las herramientas de desarrollo. ¿Está corriendo en local con DEV_TOOLS y la clave en services/api/.env?",
+  "devToolsWrongKey": "La clave DEV_TOOLS_KEY de config.local.json no es la de services/api/.env.",
+  "devToolsCommandHint": "También por terminal, en services/api:\ndocker compose exec auth python -m scripts.dev reset-y-seed"
 }

@@ -1741,4 +1741,59 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get openAccountLeaveBody =>
       'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.';
+
+  @override
+  String get devToolsButton => 'Menú de desarrollo';
+
+  @override
+  String get devToolsBadge => 'DEV';
+
+  @override
+  String get devToolsTitle => 'Menú de desarrollo (solo local)';
+
+  @override
+  String get devToolsReset => 'Reiniciar todo';
+
+  @override
+  String get devToolsResetHint =>
+      'Vacía la base local, crea los usuarios de prueba y cierra la sesión en este teléfono.';
+
+  @override
+  String get devToolsResetConfirm =>
+      '¿Vaciar la base local? Se borran todas las cuentas, incluida la tuya.';
+
+  @override
+  String get devToolsConfirm => 'Sí, reiniciar';
+
+  @override
+  String get devToolsCancel => 'Cancelar';
+
+  @override
+  String get devToolsSeed => 'Crear usuarios de prueba';
+
+  @override
+  String get devToolsSeedHint => 'Los agrega sin borrar nada.';
+
+  @override
+  String get devToolsOtp => 'Ver últimos códigos OTP';
+
+  @override
+  String get devToolsOtpEmpty => 'Todavía no se envió ningún código.';
+
+  @override
+  String devToolsUsers(String pin) {
+    return 'Usuarios de prueba · PIN $pin';
+  }
+
+  @override
+  String get devToolsUnavailable =>
+      'El backend no tiene las herramientas de desarrollo. ¿Está corriendo en local con DEV_TOOLS y la clave en services/api/.env?';
+
+  @override
+  String get devToolsWrongKey =>
+      'La clave DEV_TOOLS_KEY de config.local.json no es la de services/api/.env.';
+
+  @override
+  String get devToolsCommandHint =>
+      'También por terminal, en services/api:\ndocker compose exec auth python -m scripts.dev reset-y-seed';
 }

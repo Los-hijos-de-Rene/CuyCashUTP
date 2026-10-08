@@ -28,6 +28,11 @@ class LogNotifier:
 
     async def send(self, destination: str, code: str, purpose: str) -> None:
         logger.warning("[OTP:%s] %s -> %s", purpose, destination, code)
+        # Para el menú de desarrollo de la app ("Ver último código"). Solo se
+        # guarda si las rutas /v1/dev están habilitadas (local).
+        from app.services import dev_tools  # diferido: evita un ciclo de import
+
+        dev_tools.registrar_otp(destination, code, purpose)
 
 
 class TelegramNotifier:

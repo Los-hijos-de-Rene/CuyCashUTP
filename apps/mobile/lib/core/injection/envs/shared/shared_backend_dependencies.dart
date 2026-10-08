@@ -5,6 +5,7 @@ import '../../../../feature/auth/infrastructure/http_auth_repository.dart';
 import '../../../../feature/beneficiary/infrastructure/http_beneficiary_repository.dart';
 import '../../../../feature/biometric/infrastructure/local_auth_biometric_gate.dart';
 import '../../../../feature/device/domain/device_store.dart';
+import '../../../../feature/dev_tools/infrastructure/http_dev_tools_repository.dart';
 import '../../../../feature/device/infrastructure/secure_device_store.dart';
 import '../../../../feature/kyc/infrastructure/http_kyc_repository.dart';
 import '../../../../feature/kyc/infrastructure/memory_kyc_repository.dart';
@@ -75,6 +76,9 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
     profileRepository: HttpProfileRepository(dio: dio),
     securityRepository: HttpSecurityRepository(dio: dio),
     biometricGate: LocalAuthBiometricGate(),
+    devToolsRepository: flavor == AppFlavor.local && AppEnv.devToolsKey.isNotEmpty
+        ? HttpDevToolsRepository(dio: dio, devKey: AppEnv.devToolsKey)
+        : null,
   );
 }
 

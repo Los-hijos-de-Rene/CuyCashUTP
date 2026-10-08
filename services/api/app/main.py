@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.v1.routers import accounts, auth, directory, kyc, otp, profile, transfers
+from app.api.v1.routers import accounts, auth, dev, directory, kyc, otp, profile, transfers
 from app.core.config import settings
 from app.core.errors import ApiError
 from app.db.base import Base, engine
@@ -108,3 +108,5 @@ app.include_router(accounts.router)
 app.include_router(transfers.router)
 app.include_router(directory.router)
 app.include_router(profile.router)
+# Responde 404 salvo en local con DEV_TOOLS (ver routers/dev.py).
+app.include_router(dev.router)

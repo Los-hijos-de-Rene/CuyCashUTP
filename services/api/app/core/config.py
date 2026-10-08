@@ -66,6 +66,14 @@ class Settings(BaseSettings):
     KYC_WAKE_TIMEOUT_SECONDS: float = 60
     KYC_RETRY_DELAY_SECONDS: float = 5
 
+    # ---- Herramientas de desarrollo (SOLO local) ----
+    # Rutas /v1/dev/* para reiniciar la base y sembrar usuarios de prueba
+    # desde el menú de desarrollo de la app. Solo existen con DEV_TOOLS=true,
+    # una DEV_TOOLS_KEY no vacía y una base local (ver app/services/dev_tools.py).
+    # Nunca se encienden en render.yaml.
+    DEV_TOOLS: bool = False
+    DEV_TOOLS_KEY: str = ""
+
     # Respuestas de duración uniforme: sin esto, que un DNI inexistente
     # responda más rápido reabre la enumeración de cuentas que la app cerró
     # con el mensaje genérico.

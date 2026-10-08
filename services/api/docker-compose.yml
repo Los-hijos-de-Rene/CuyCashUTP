@@ -40,6 +40,12 @@ services:
       # sin el perfil `kyc`, o con la app en KYC simulado, pon KYC_REQUIRED=false
       # en `.env` o el registro responderá KYC_REQUIRED.
       KYC_REQUIRED: ${KYC_REQUIRED:-true}
+      # Menú de desarrollo de la app y rutas /v1/dev (reiniciar base, usuarios de
+      # prueba). Solo local: render.yaml nunca lo enciende. La clave va en
+      # `.env` (DEV_TOOLS_KEY) y la misma en apps/mobile/config.local.json;
+      # sin clave, las rutas no existen. Ver README, "Datos de prueba en local".
+      DEV_TOOLS: ${DEV_TOOLS:-true}
+      DEV_TOOLS_KEY: ${DEV_TOOLS_KEY:-}
     depends_on:
       db:
         condition: service_healthy

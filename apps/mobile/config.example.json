@@ -5,5 +5,8 @@
   "AUTH_BASE_URL": "http://10.0.2.2:8001",
 
   "//KYC_ENABLED": "En local y production: \"true\" usa el KYC facial real a través del proxy del backend (/v1/kyc). La URL y la clave del microservicio viven en el backend, nunca aquí. \"false\" simula el reconocimiento con MemoryKycRepository.",
-  "KYC_ENABLED": "false"
+  "KYC_ENABLED": "false",
+
+  "//DEV_TOOLS_KEY": "Solo en config.local.json: activa el botón DEV (reiniciar la base, usuarios de prueba). La MISMA que DEV_TOOLS_KEY en services/api/.env. Vacía = sin botón. NUNCA en config.production.json.",
+  "DEV_TOOLS_KEY": ""
 }
