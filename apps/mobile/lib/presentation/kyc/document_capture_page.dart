@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
@@ -6,11 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/env/app_flavor.dart';
+import '../../feature/kyc/infrastructure/document_cropper.dart';
 import '../../feature/kyc/infrastructure/simulated_face_tracker.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/camera_scope.dart';
+import 'widgets/cover_camera_preview.dart';
+import 'widgets/document_frame_overlay.dart';
 
-/// Captura de una cara del DNI con la cámara trasera.
+/// Captura de una cara del DNI con la cámara trasera, con un marco de la
+/// proporción de la tarjeta. La foto se recorta a ese marco antes de salir:
+/// al servidor llega el documento, no la mesa.
 ///
 /// Devuelve los bytes del JPEG por `Navigator.pop`, o null si el usuario se
 /// arrepiente. La imagen NO se guarda en disco: viaja en memoria hasta que se
@@ -44,8 +50,13 @@ class DocumentCapturePage extends StatelessWidget {
       body: SafeArea(
         child: CameraScope(
           lens: CameraLensDirection.back,
+          // Alta a propósito: el servidor exige al menos 600×400 del
+          // documento, y en media (720×480) la foto vertical no llegaba ni a
+          // 600 de ancho, así que el DNI siempre salía "inválido".
+          resolution: ResolutionPreset.veryHigh,
           builder: (context, controller) => _Capture(
             controller: controller,
+            frameHint: l10n.documentTip3,
             hint: l10n.documentSubtitle,
             label: l10n.takePhoto,
           ),
@@ -92,11 +103,13 @@ Widget _sample(BuildContext context, CameraStatus status) {
 class _Capture extends StatefulWidget {
   const _Capture({
     required this.controller,
+    required this.frameHint,
     required this.hint,
     required this.label,
   });
 
   final CameraController controller;
+  final String frameHint;
   final String hint;
   final String label;
 
@@ -107,12 +120,19 @@ class _Capture extends StatefulWidget {
 class _CaptureState extends State<_Capture> {
   bool _busy = false;
 
+  /// Tamaño del recuadro de la vista previa: con él se traduce el marco de
+  /// pantalla a la foto.
+  Size? _viewport;
+
   Future<void> _take() async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
       final shot = await widget.controller.takePicture();
-      final bytes = await shot.readAsBytes();
+      final photo = await shot.readAsBytes();
+      // La foto del DNI es un dato personal: no se deja en la caché.
+      await _deleteQuietly(shot.path);
+      final bytes = await _cropToFrame(photo);
       if (!mounted) return;
       Navigator.of(context).pop(bytes);
     } on CameraException catch (_) {
@@ -120,11 +140,48 @@ class _CaptureState extends State<_Capture> {
     }
   }
 
+  Future<Uint8List> _cropToFrame(Uint8List photo) async {
+    final viewport = _viewport;
+    final content = CoverCameraPreview.portraitSizeOf(widget.controller);
+    if (viewport == null || content == null) return photo;
+    return cropDocument(
+      photo,
+      normalizedCropFor(
+        frame: documentFrameFor(viewport),
+        viewport: viewport,
+        content: content,
+      ),
+    );
+  }
+
+  static Future<void> _deleteQuietly(String path) async {
+    try {
+      final file = File(path);
+      if (file.existsSync()) await file.delete();
+    } catch (_) {
+      // Si no se puede borrar, queda en la caché de la app, que el sistema
+      // recoge; no se interrumpe la captura por eso.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(child: CameraPreview(widget.controller)),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              _viewport = constraints.biggest;
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  CoverCameraPreview(controller: widget.controller),
+                  DocumentFrameOverlay(hint: widget.frameHint),
+                ],
+              );
+            },
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
           child: Column(

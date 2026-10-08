@@ -15,6 +15,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../kyc/bloc/liveness_bloc.dart';
 import '../../kyc/liveness_view.dart';
 import '../../kyc/widgets/camera_scope.dart';
+import '../../kyc/widgets/cover_camera_preview.dart';
 import '../bloc/register_bloc.dart';
 
 /// Paso 3 · Rostro. Pantalla inmersiva con el liveness guiado por el servidor.
@@ -80,7 +81,7 @@ class _LivenessScope extends StatelessWidget {
       builder: (context, controller) => _Liveness(
         documento: documento,
         createTracker: () => MlKitFaceTracker(controller),
-        preview: _CoverPreview(controller: controller),
+        preview: CoverCameraPreview(controller: controller),
       ),
       // En `mock` el flujo sigue aunque no haya cámara (el simulador de iOS no
       // tiene). Con backend real se muestra el aviso, como debe ser.
@@ -123,31 +124,6 @@ class _Liveness extends StatelessWidget {
         preview: preview,
         onVerified: () =>
             registerBloc.add(const RegisterEvent.faceScanCompleted()),
-      ),
-    );
-  }
-}
-
-/// Vista previa que LLENA el recuadro, recortando lo que sobra.
-///
-/// `CameraPreview` impone su propia proporción; dentro de un recuadro de otra
-/// proporción se deformaría la cara. El sensor entrega horizontal y la app va
-/// en vertical, por eso se intercambian ancho y alto.
-class _CoverPreview extends StatelessWidget {
-  const _CoverPreview({required this.controller});
-  final CameraController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = controller.value.previewSize;
-    if (size == null) return CameraPreview(controller);
-    return FittedBox(
-      fit: BoxFit.cover,
-      clipBehavior: Clip.hardEdge,
-      child: SizedBox(
-        width: size.height,
-        height: size.width,
-        child: CameraPreview(controller),
       ),
     );
   }

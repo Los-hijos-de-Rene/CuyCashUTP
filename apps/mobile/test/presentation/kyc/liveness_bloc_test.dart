@@ -20,6 +20,10 @@ class FakeFaceTracker implements FaceTracker {
   /// Si es true, los fotogramas pedidos ya salieron del búfer.
   bool framesEvicted = false;
 
+  /// Si es true, `stop` no vuelve nunca (como `stopImageStream` en algunos
+  /// teléfonos).
+  bool hangOnStop = false;
+
   final List<int> kept = [];
   var starts = 0;
   var stops = 0;
@@ -37,7 +41,10 @@ class FakeFaceTracker implements FaceTracker {
   }
 
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() {
+    stops++;
+    return hangOnStop ? Completer<void>().future : Future.value();
+  }
 
   @override
   Future<void> dispose() async {
@@ -73,6 +80,7 @@ void main() {
         tracker: tracker,
         documentImage: Uint8List.fromList([1, 2, 3]),
         clock: clock.call,
+        sendStepTimeout: const Duration(milliseconds: 50),
       );
 
   Future<void> settle() async {
@@ -294,6 +302,24 @@ void main() {
 
     expect(bloc.state.phase, LivenessPhase.positioning);
     expect(bloc.state.completedSteps, 0);
+  });
+
+  test('si la cámara no se detiene, termina en error y no se queda cargando',
+      () async {
+    tracker.hangOnStop = true;
+    final bloc = await framed();
+
+    await see(face(yaw: 0.25), times: 3);
+    await see(face(), times: 3);
+    await see(face(eyes: 0.05));
+    await see(face());
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await settle();
+
+    expect(bloc.state.phase, LivenessPhase.failed);
+    expect(bloc.state.error, LivenessError.generic);
+    tracker.hangOnStop = false;
+    await bloc.close();
   });
 
   test('cerrar el bloc libera la cámara', () async {

@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:fpdart/fpdart.dart' show Either;
 
 import '../../../feature/kyc/application/kyc_actions.dart';
 import '../../../feature/kyc/domain/face_observation.dart';
@@ -40,6 +41,8 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
     this.gestures = const LivenessGestures(),
     DateTime Function()? clock,
     this.slowAfter = const Duration(seconds: 8),
+    this.sendStepTimeout = const Duration(seconds: 5),
+    this.framesTimeout = const Duration(seconds: 20),
   })  : _actions = actions,
         _tracker = tracker,
         _documentImage = documentImage,
@@ -57,6 +60,12 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
 
   /// Tras cuánto sin completar un gesto se sugiere hacerlo más marcado.
   final Duration slowAfter;
+
+  /// Tope para detener la cámara antes del envío.
+  final Duration sendStepTimeout;
+
+  /// Tope para que terminen de codificarse los fotogramas clave.
+  final Duration framesTimeout;
 
   /// Fotogramas de frente seguidos que hacen falta para empezar el primer
   /// gesto (encuadre estable) y para retomar entre gestos.
@@ -235,25 +244,51 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
     await _send(emit);
   }
 
+  /// Envío final. NUNCA puede quedarse en `sending`: cada espera tiene tope y
+  /// cualquier error termina en `failed`, con el botón de empezar de nuevo.
+  /// Un error sin atrapar aquí dejaba la pantalla en "Confirmando tu
+  /// identidad…" para siempre, sin llegar a llamar al servidor.
   Future<void> _send(Emitter<LivenessState> emit) async {
-    await _tracker.stop();
     final challenge = _challenge;
     if (challenge == null) return;
+    final sw = Stopwatch()..start();
+    try {
+      await _tracker.stop().timeout(sendStepTimeout);
+      debugPrint('Liveness: cámara detenida (${sw.elapsedMilliseconds} ms)');
 
-    final segments = <LivenessStep, List<String>>{};
-    for (final entry in _segments.entries) {
-      final frames = await Future.wait(entry.value);
-      segments[entry.key] = frames.whereType<String>().toList();
+      final segments = <LivenessStep, List<String>>{};
+      for (final entry in _segments.entries) {
+        final frames =
+            await Future.wait(entry.value).timeout(framesTimeout);
+        segments[entry.key] = frames.whereType<String>().toList();
+      }
+      debugPrint('Liveness: fotogramas listos '
+          '${segments.map((k, v) => MapEntry(k.wireName, v.length))} '
+          '(${sw.elapsedMilliseconds} ms)');
+
+      final result = await _actions.verifyFull(
+        token: challenge.token,
+        documentImage: _documentImage,
+        segments: Map.unmodifiable(segments),
+      );
+      debugPrint('Liveness: verify-full respondió '
+          '(${sw.elapsedMilliseconds} ms)');
+      _emitResult(result, emit);
+    } catch (error, stackTrace) {
+      debugPrint('Liveness: el envío falló: $error\n$stackTrace');
+      emit(state.copyWith(
+          phase: LivenessPhase.failed, error: LivenessError.generic));
+    } finally {
+      // Los fotogramas son datos biométricos: se sueltan en cuanto dejan de
+      // hacer falta, en vez de quedarse vivos mientras dure la pantalla.
+      _reset();
     }
+  }
 
-    final result = await _actions.verifyFull(
-      token: challenge.token,
-      documentImage: _documentImage,
-      segments: Map.unmodifiable(segments),
-    );
-    // Los fotogramas son datos biométricos: se sueltan en cuanto dejan de
-    // hacer falta, en vez de quedarse vivos mientras dure la pantalla.
-    _reset();
+  void _emitResult(
+    Either<GlobalFailure<KycFailure>, KycVerification> result,
+    Emitter<LivenessState> emit,
+  ) {
     emit(result.match(
       (failure) => state.copyWith(
           phase: LivenessPhase.failed, error: _errorFor(failure)),
