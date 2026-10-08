@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cuycash/feature/otp/application/otp_actions.dart';
 import 'package:cuycash/feature/otp/domain/otp_policy.dart';
 import 'package:cuycash/feature/otp/infrastructure/memory_otp_repository.dart';
@@ -171,6 +173,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(verified, isTrue);
+  });
+
+  // El bloc emite cada segundo (cuenta regresiva del reenvío) y `verified`
+  // sigue en true: avisar en cada tic abría DOS sesiones con el mismo ticket
+  // (la segunda, 401). Visto en el ingreso con un teléfono nuevo.
+  testWidgets('verificado se avisa UNA vez aunque el reloj siga emitiendo',
+      (tester) async {
+    var avisos = 0;
+    final ticks = StreamController<void>();
+    addTearDown(ticks.close);
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final bloc = OtpBloc(
+      actions: OtpActions(repo),
+      identifier: 'juan.perez@gmail.com',
+      clock: clock.call,
+      ticks: ticks.stream,
+    )..add(const OtpEvent.started());
+    addTearDown(bloc.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: CuyCashTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => BlocProvider.value(
+            value: bloc,
+            child: OtpVerificationScreen(
+              config: OtpConfig.dispositivo(
+                  AppLocalizations.of(context), '12345678'),
+              onVerified: (_) => avisos++,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), OtpPolicy.validCode);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(PrimaryButton));
+    await tester.pumpAndSettle();
+    expect(avisos, 1);
+
+    // El reloj sigue: tres segundos más en la misma pantalla.
+    for (var i = 0; i < 3; i++) {
+      clock.advance(const Duration(seconds: 1));
+      ticks.add(null);
+      await tester.pumpAndSettle();
+    }
+
+    expect(avisos, 1);
   });
 
   testWidgets('el error nombra el flujo que se cancelará: recuperación',
