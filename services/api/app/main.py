@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.APP_NAME, version="0.1.0", lifespan=lifespan)
+app = FastAPI(title=settings.APP_NAME, version="0.2.0", lifespan=lifespan)
 
 # Cabeceras de seguridad en TODA respuesta. La app móvil no las necesita para
 # funcionar; existen para que nada que hable con esta API por un navegador
