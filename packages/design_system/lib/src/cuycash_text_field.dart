@@ -25,6 +25,7 @@ class CuyCashTextField extends StatelessWidget {
     this.textInputAction,
     this.inputFormatters,
     this.enabled = true,
+    this.focusNode,
     super.key,
   });
 
@@ -56,6 +57,9 @@ class CuyCashTextField extends StatelessWidget {
   /// `false` deja el campo de solo lectura (p. ej. una intención sellada).
   final bool enabled;
 
+  /// Permite encadenar campos (p. ej. pasar el foco al siguiente).
+  final FocusNode? focusNode;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -65,6 +69,7 @@ class CuyCashTextField extends StatelessWidget {
         const SizedBox(height: CuyCashSpacing.stackSm),
         TextField(
           controller: controller,
+          focusNode: focusNode,
           enabled: enabled,
           obscureText: obscure,
           keyboardType: keyboardType,

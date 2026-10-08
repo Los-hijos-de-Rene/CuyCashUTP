@@ -181,8 +181,11 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
                     ),
                     // Crear y confirmar el PIN avanzan con el sexto dígito: el
                     // botón solo aparece donde de verdad hay algo que pulsar.
-                    if (state.step != 3 ||
-                        state.securityStep == SecurityStep.biometria)
+                    // El paso 1 lleva su botón al final del formulario: un
+                    // footer fijo le quitaba espacio al teclado abierto.
+                    if (state.step != 0 &&
+                        (state.step != 3 ||
+                            state.securityStep == SecurityStep.biometria))
                       _Footer(state: state, dark: dark),
                   ],
                 ),
