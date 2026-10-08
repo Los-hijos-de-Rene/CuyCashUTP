@@ -144,7 +144,8 @@ Entorno local completo (Postgres + API + KYC) con Docker:
 `AUTH_BASE_URL` (`10.0.2.2:8001` en emulador).
 
 Documento (paso 2): cada foto se revisa al tomarla vía `/v1/kyc/document/validate`
-(frente: nitidez, luz, resolución, rostro) y `/v1/kyc/document/mrz` (reverso: se
+(frente: nitidez, luz, resolución, rostro y que lleve impreso el DNI escrito;
+sin eso, frente y reverso podían ser de dos DNI distintos) y `/v1/kyc/document/mrz` (reverso: se
 lee la MRZ TD1 con Tesseract y se coteja con el DNI escrito en el paso 1; el
 número vale solo si pasa su dígito verificador ICAO). `verify-full` recibe
 además el reverso y `expected_dni` y NO aprueba si no coinciden. La cámara del

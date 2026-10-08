@@ -150,9 +150,10 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   /// Revisa la foto del DNI en cuanto se toma, en vez de enterarse recién al
   /// final del registro, después de hacer los gestos del rostro.
   ///
-  /// El frente se revisa por calidad y rostro; el reverso, leyendo su MRZ y
-  /// cotejándola con el DNI escrito en el paso 1. Es una guía: el veredicto
-  /// que cuenta lo vuelve a dar el servidor en la verificación final.
+  /// Las dos caras se cotejan con el DNI escrito en el paso 1: el frente por
+  /// su número impreso (además de calidad y rostro) y el reverso por su MRZ.
+  /// Así frente y reverso quedan atados al mismo documento. Es una guía: el
+  /// veredicto que cuenta lo vuelve a dar el servidor en la verificación final.
   Future<void> _onCaptured(
     RegisterCaptured event,
     Emitter<RegisterState> emit,
@@ -163,7 +164,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     emit(_setSide(side, CaptureStatus.checking, image));
 
     final result = side == DocSide.front
-        ? await _kyc.checkDocumentFront(image)
+        ? await _kyc.checkDocumentFront(image, expectedDni: dni)
         : await _kyc.checkDocumentBack(image, expectedDni: dni);
 
     // Si mientras tanto el usuario tomó otra foto de ese lado, esta respuesta
@@ -181,9 +182,11 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
           ? _setSide(side, CaptureStatus.captured, image)
           : _setSide(side, CaptureStatus.unreadable, image, check.mainIssue),
     );
-    emit(side == DocSide.back
-        ? next.copyWith(draft: next.draft.copyWith(backCheckedDni: dni))
-        : next);
+    emit(next.copyWith(
+      draft: side == DocSide.front
+          ? next.draft.copyWith(frontCheckedDni: dni)
+          : next.draft.copyWith(backCheckedDni: dni),
+    ));
   }
 
   /// Escribe en el grupo activo. Al sexto dígito, cada subpaso decide solo:
@@ -364,12 +367,16 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     if (!state.canAdvance) return;
     if (state.step < 3) emit(state.copyWith(step: state.step + 1));
 
-    // Volvió al paso 1 y cambió el DNI con el reverso ya fotografiado: el
-    // cotejo anterior era contra otro número, así que se repite.
+    // Volvió al paso 1 y cambió el DNI con fotos ya tomadas: el cotejo
+    // anterior era contra otro número, así que se repite en cada cara.
+    if (state.step != 1) return;
+    final dni = state.draft.dni.trim();
+    final front = state.draft.dniFrontImage;
+    if (front != null && state.draft.frontCheckedDni != dni) {
+      add(RegisterEvent.captured(DocSide.front, front));
+    }
     final back = state.draft.dniBackImage;
-    if (state.step == 1 &&
-        back != null &&
-        state.draft.backCheckedDni != state.draft.dni.trim()) {
+    if (back != null && state.draft.backCheckedDni != dni) {
       add(RegisterEvent.captured(DocSide.back, back));
     }
   }

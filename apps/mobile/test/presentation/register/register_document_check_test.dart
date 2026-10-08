@@ -68,6 +68,19 @@ void main() {
     },
   );
 
+  test('un frente de OTRO DNI se rechaza aunque el reverso coincida', () async {
+    // El ataque: frente propio (su cara) + reverso del DNI de otra persona.
+    // El simulado imprime en ambas caras [documentDni].
+    final bloc = await conDni('12345678', documentDni: '87654321');
+    addTearDown(bloc.close);
+
+    bloc.add(RegisterEvent.captured(DocSide.front, foto));
+    await settle();
+
+    expect(bloc.state.draft.dniFront, CaptureStatus.unreadable);
+    expect(bloc.state.draft.dniFrontIssue, DocumentIssue.frontDniMismatch);
+  });
+
   test('una foto vacía del frente se rechaza como ilegible', () async {
     final bloc = await conDni('12345678');
     addTearDown(bloc.close);

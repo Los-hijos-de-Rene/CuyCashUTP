@@ -325,6 +325,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se ve tu foto. Fotografía el frente del DNI, donde está tu rostro.';
 
   @override
+  String get documentIssueFrontDniMismatch =>
+      'El número impreso en este DNI no es el que escribiste en el paso 1. Revisa el número o fotografía tu propio DNI.';
+
+  @override
+  String get documentIssueFrontDniUnreadable =>
+      'No pudimos leer el número de tu DNI en el frente. Encuádralo bien, sin reflejos.';
+
+  @override
   String get documentIssueBackUnreadable =>
       'No pudimos leer las 3 líneas de la parte inferior del reverso. Encuádralas bien, sin reflejos.';
 

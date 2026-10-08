@@ -15,8 +15,11 @@ class KycActions {
 
   final KycRepository _repo;
 
-  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(Uint8List image) =>
-      _repo.checkDocumentFront(image);
+  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
+    Uint8List image, {
+    required String expectedDni,
+  }) =>
+      _repo.checkDocumentFront(image, expectedDni: expectedDni);
 
   FutureResult<KycFailure, DocumentCheck> checkDocumentBack(
     Uint8List image, {
