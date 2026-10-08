@@ -25,6 +25,7 @@ class RawFrame {
     required this.bytesPerRow,
     required this.format,
     required this.rotationDegrees,
+    this.mirrored = false,
   });
 
   final Uint8List bytes;
@@ -35,6 +36,12 @@ class RawFrame {
 
   /// Giro horario para dejar la imagen vertical (la orientación del sensor).
   final int rotationDegrees;
+
+  /// El fotograma viene en espejo (cámara frontal de iOS). Se le quita al
+  /// codificar: el servidor mide el giro de cabeza con MediaPipe, que nombra
+  /// los puntos de la cara según el lado de la IMAGEN, así que en espejo
+  /// "derecha" se mide como "izquierda".
+  final bool mirrored;
 }
 
 /// JPEG vertical en base64, codificado en un isolate.
@@ -62,6 +69,9 @@ Uint8List encodeFrameJpeg(RawFrame frame, {int quality = 85}) {
   };
   if (frame.rotationDegrees % 360 != 0) {
     image = img.copyRotate(image, angle: frame.rotationDegrees);
+  }
+  if (frame.mirrored) {
+    image = img.flipHorizontal(image);
   }
   return img.encodeJpg(image, quality: quality);
 }

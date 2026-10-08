@@ -150,7 +150,7 @@ class MlKitFaceTracker implements FaceTracker {
           id,
           faces,
           uprightSize(raw),
-          mirrored: Platform.isIOS,
+          mirrored: streamMirrored(isIOS: Platform.isIOS),
         ));
       }
     } catch (error) {
@@ -166,6 +166,7 @@ class MlKitFaceTracker implements FaceTracker {
       isIOS: Platform.isIOS,
       sensorOrientation: _controller.description.sensorOrientation,
     );
+    final mirrored = streamMirrored(isIOS: Platform.isIOS);
     final group = image.format.group;
 
     if (group == ImageFormatGroup.bgra8888 && image.planes.length == 1) {
@@ -177,6 +178,7 @@ class MlKitFaceTracker implements FaceTracker {
         bytesPerRow: plane.bytesPerRow,
         format: RawFrameFormat.bgra8888,
         rotationDegrees: rotation,
+        mirrored: mirrored,
       );
     }
     if (group == ImageFormatGroup.nv21 && image.planes.length == 1) {
@@ -188,6 +190,7 @@ class MlKitFaceTracker implements FaceTracker {
         bytesPerRow: plane.bytesPerRow,
         format: RawFrameFormat.nv21,
         rotationDegrees: rotation,
+        mirrored: mirrored,
       );
     }
     if (image.planes.length == 3) {
@@ -200,6 +203,7 @@ class MlKitFaceTracker implements FaceTracker {
         bytesPerRow: image.width,
         format: RawFrameFormat.nv21,
         rotationDegrees: rotation,
+        mirrored: mirrored,
       );
     }
     return null;
@@ -240,6 +244,14 @@ class MlKitFaceTracker implements FaceTracker {
   ///   y la comparación con el DNI daba distancias de ~1.0. ML Kit en iOS
   ///   ignora la rotación que se le pasa y aun así detectaba la cara: por eso
   ///   los gestos pasaban y solo fallaba el servidor.
+  /// Si el stream de la cámara frontal llega en espejo: en iOS sí, en Android
+  /// no. Verificado en un iPhone (2026-10-08): sin tenerlo en cuenta, el
+  /// teléfono veía los giros al revés y el servidor también, que midió
+  /// "derecha" con signo positivo en 4 de 4 intentos. Se usa para el giro que
+  /// ve ML Kit y para quitar el espejo a los fotogramas que se envían.
+  @visibleForTesting
+  static bool streamMirrored({required bool isIOS}) => isIOS;
+
   @visibleForTesting
   static int frameRotation({
     required bool isIOS,

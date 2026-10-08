@@ -64,4 +64,36 @@ void main() {
     expect(pixel.b, greaterThan(200));
     expect(pixel.r, lessThan(60));
   });
+
+  test('un fotograma en espejo (iOS) se envía sin espejo', () {
+    // Mitad izquierda azul, mitad derecha roja (BGRA).
+    const w = 16, h = 8;
+    final bytes = Uint8List(w * h * 4);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        final i = (y * w + x) * 4;
+        final azul = x < w ~/ 2;
+        bytes
+          ..[i] = azul ? 255 : 0
+          ..[i + 2] = azul ? 0 : 255
+          ..[i + 3] = 255;
+      }
+    }
+    RawFrame frame({required bool mirrored}) => RawFrame(
+          bytes: bytes,
+          width: w,
+          height: h,
+          bytesPerRow: w * 4,
+          format: RawFrameFormat.bgra8888,
+          rotationDegrees: 0,
+          mirrored: mirrored,
+        );
+
+    final tal = img.decodeJpg(encodeFrameJpeg(frame(mirrored: false)))!;
+    final sinEspejo = img.decodeJpg(encodeFrameJpeg(frame(mirrored: true)))!;
+
+    expect(tal.getPixel(2, 4).b, greaterThan(200));
+    expect(sinEspejo.getPixel(2, 4).r, greaterThan(200),
+        reason: 'lo que estaba a la derecha pasa a la izquierda');
+  });
 }
