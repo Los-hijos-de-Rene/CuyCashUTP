@@ -91,3 +91,55 @@ async def test_el_paso_del_documento_se_reenvia(client, kyc_configurado, upstrea
     r = await client.post(ruta)
     assert r.status_code == 200
     assert recibido["url"] == destino
+
+
+@pytest.fixture
+def kyc_dormido(monkeypatch, kyc_configurado):
+    """
+    El KYC del plan gratuito despertando: responde 502 las primeras veces.
+    Devuelve cuántos 502 dar antes de responder bien, y cuántas llamadas hubo.
+    """
+    monkeypatch.setattr(settings, "KYC_RETRY_DELAY_SECONDS", 0)
+    monkeypatch.setattr(settings, "KYC_WAKE_TIMEOUT_SECONDS", 1)
+    estado = {"502": 2, "llamadas": 0, "cuerpos": []}
+
+    async def manejar(request: httpx.Request) -> httpx.Response:
+        estado["llamadas"] += 1
+        estado["cuerpos"].append(request.content)
+        if estado["502"] > 0:
+            estado["502"] -= 1
+            return httpx.Response(502, text="Bad Gateway")
+        return httpx.Response(200, json={"token": "t", "steps": ["izquierda"], "expires_in": 180})
+
+    real = httpx.AsyncClient
+
+    def falso(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(manejar)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(httpx, "AsyncClient", falso)
+    return estado
+
+
+async def test_si_el_kyc_esta_despertando_se_reintenta(client, kyc_dormido):
+    r = await client.post("/v1/kyc/liveness/challenge")
+
+    assert r.status_code == 200
+    assert r.json()["token"] == "t"
+    assert kyc_dormido["llamadas"] == 3
+
+
+async def test_el_reintento_reenvia_el_mismo_cuerpo(client, kyc_dormido):
+    await client.post("/v1/kyc/document/mrz", content=b"cuerpo-de-prueba")
+
+    assert kyc_dormido["cuerpos"] == [b"cuerpo-de-prueba"] * 3
+
+
+async def test_si_no_despierta_a_tiempo_responde_503(client, kyc_dormido, monkeypatch):
+    kyc_dormido["502"] = 10_000
+    monkeypatch.setattr(settings, "KYC_WAKE_TIMEOUT_SECONDS", 0)
+
+    r = await client.post("/v1/kyc/liveness/challenge")
+
+    assert r.status_code == 503
+    assert r.json()["code"] == "SERVICE_UNAVAILABLE"
