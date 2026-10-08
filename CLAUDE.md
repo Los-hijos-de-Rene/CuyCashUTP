@@ -132,10 +132,11 @@ medir cada segmento y es el único que aprueba. El servidor elige los gestos
 (por defecto 2 de izquierda/derecha/parpadeo) y su orden (anti-replay). El
 giro usa la misma fórmula que el servicio (`FaceObservation.yaw`).
 
-Config en `config.local.json`: `KYC_ENABLED` (`"true"`/`"false"`). En
-`production` el KYC SIEMPRE se simula (`MemoryKycRepository`), diga lo que diga
-la config, hasta desplegar el microservicio en Render: lo decide
-`usesRealKyc` en `shared_backend_dependencies.dart`, único sitio a cambiar.
+Config en `config.<env>.json`: `KYC_ENABLED` (`"true"`/`"false"`), en `local` y en
+`production` (`usesRealKyc`). El KYC está desplegado en Render como `cuycash-kyc`
+(plan Free: se duerme tras 15 min y tarda ~1 min en despertar); el APK de
+producción va con `"true"` (`build-apk.yml`). `KYC_REQUIRED` en el backend sigue
+en `false` hasta que los APK viejos (KYC simulado, sin ticket) dejen de usarse.
 
 Entorno local completo (Postgres + API + KYC) con Docker:
 `cd services/api && docker compose --profile kyc up --build`; espera el repo

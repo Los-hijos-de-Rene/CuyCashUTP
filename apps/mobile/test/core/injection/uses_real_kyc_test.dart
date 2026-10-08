@@ -7,12 +7,16 @@ void main() {
     expect(usesRealKyc(AppFlavor.local, enabled: true), isTrue);
   });
 
-  test('local sin la bandera simula', () {
-    expect(usesRealKyc(AppFlavor.local, enabled: false), isFalse);
+  test('production con la bandera usa el KYC real (ya está en Render)', () {
+    expect(usesRealKyc(AppFlavor.production, enabled: true), isTrue);
   });
 
-  test('production simula aunque la config lo pida: el KYC no está en Render',
-      () {
-    expect(usesRealKyc(AppFlavor.production, enabled: true), isFalse);
+  test('sin la bandera se simula, en cualquier flavor', () {
+    expect(usesRealKyc(AppFlavor.local, enabled: false), isFalse);
+    expect(usesRealKyc(AppFlavor.production, enabled: false), isFalse);
+  });
+
+  test('mock nunca usa el KYC real', () {
+    expect(usesRealKyc(AppFlavor.mock, enabled: true), isFalse);
   });
 }
