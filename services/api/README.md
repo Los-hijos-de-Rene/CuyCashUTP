@@ -57,6 +57,65 @@ Documentación interactiva: `http://localhost:8001/docs`.
 Desde el emulador de Android la IP del host es `10.0.2.2`; desde un teléfono
 físico, la IP del PC en la red local.
 
+## Datos de prueba en local
+
+**Para qué sirve:** en local hay un solo teléfono y un solo DNI real. Sin otros
+usuarios no hay a quién enviar dinero, y para volver a probar el registro
+(con KYC) hay que vaciar la base. Estas herramientas hacen las dos cosas sin
+tocar SQL.
+
+**Qué crea:** dos usuarios ficticios con cuenta de ahorros en soles y
+**S/ 1,000.00** de saldo (entra por el libro mayor, como una recarga). No pasan
+por el KYC.
+
+| Nombre | DNI | Alias | PIN |
+|---|---|---|---|
+| Ana Prueba | `11111111` | `@ana` | `258036` |
+| Luis Prueba | `22222222` | `@luis` | `258036` |
+
+### Desde la terminal
+
+En `services/api`, con `docker compose` levantado (igual en PowerShell y Git Bash):
+
+```sh
+docker compose exec auth python -m scripts.dev reset-y-seed   # base vacía + usuarios de prueba
+docker compose exec auth python -m scripts.dev seed           # solo agrega los que falten (no borra)
+docker compose exec auth python -m scripts.dev reset          # solo vacía la base
+```
+
+Después de `reset-y-seed` te registras de nuevo con tu DNI real desde la app.
+
+### Desde la app (botón DEV)
+
+En el flavor `local` aparece un botón **DEV** flotante en todas las pantallas:
+
+- **Reiniciar todo**: lo mismo que `reset-y-seed`, y además borra la sesión y el
+  usuario recordado del teléfono (si no, la app abriría el acceso rápido de un
+  DNI que ya no existe y el servidor respondería 401).
+- **Crear usuarios de prueba**: lo mismo que `seed`.
+- **Ver últimos códigos OTP**: para entrar como Ana o Luis desde tu teléfono
+  (es un teléfono nuevo para ellos, así que piden el código) sin leer los logs.
+
+Configuración, **una sola vez**: la misma clave en los dos archivos (ninguno
+se sube a git).
+
+1. `services/api/.env` → `DEV_TOOLS_KEY=<clave>` (genérala con `openssl rand -hex 16`).
+2. `apps/mobile/config.local.json` → `"DEV_TOOLS_KEY": "<clave>"`.
+3. `docker compose up -d auth` y vuelve a compilar la app `local`.
+
+### Por qué no puede borrar producción
+
+Todo es destructivo, así que hay un cerrojo de lista de **permitidos**
+(`app/services/dev_tools.py`):
+
+- el comando de terminal solo corre con una base **local** (SQLite, `localhost`,
+  `127.0.0.1` o `db`, el Postgres de compose) y sin `ENV=production`;
+- las rutas `/v1/dev/*` además exigen `DEV_TOOLS=true` (solo en
+  `docker-compose.yml`, nunca en `render.yaml`) y la clave en `X-Dev-Key`. Si
+  falta algo, responden **404** como si no existieran;
+- en la app, el botón solo se arma en el flavor `local` con la clave; en
+  `production` y `mock` no existe.
+
 ## Tests
 
 ```sh
@@ -79,6 +138,7 @@ pruebas de seguridad web (`test_seguridad_web.py`) y de consistencia del DDL
 | `scripts/monitoreo.sql` | Consultas de monitoreo e integridad del libro para la consola SQL de Neon. |
 | `scripts/dump_schema.py > schema.sql` | Regenera el DDL desde los modelos. |
 | `scripts/reset_schema.py` | Recrea el esquema (**borra los datos**; con cerrojo contra hosts remotos). |
+| `scripts/dev.py` | Datos de prueba en local: vaciar la base y sembrar usuarios ficticios (ver arriba). |
 
 ## El código del OTP durante el desarrollo
 

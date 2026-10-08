@@ -213,6 +213,11 @@ flutter run --flavor mock -t lib/main_mock.dart --dart-define-from-file=config.m
 .venv/bin/python -m pytest -q         # suite sobre SQLite en memoria
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" .venv/bin/python -m uvicorn app.main:app --port 8001
 
+# Datos de prueba en LOCAL (base vacía + Ana 11111111 y Luis 22222222, PIN
+# 258036, S/ 1,000): en services/api con compose, o botón DEV en la app local.
+# Detalle y cerrojo: services/api/README.md, "Datos de prueba en local".
+docker compose exec auth python -m scripts.dev reset-y-seed
+
 # Recrear el esquema (DESTRUCTIVO: borra todas las tablas y las vuelve a crear)
 .venv/bin/python scripts/reset_schema.py
 ```

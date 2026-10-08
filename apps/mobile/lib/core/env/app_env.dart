@@ -18,4 +18,10 @@ abstract final class AppEnv {
   /// el backend, que es quien lo llama. Todo lo compilado en el binario es
   /// extraíble, así que una clave aquí sería pública.
   static const kycEnabled = bool.fromEnvironment('KYC_ENABLED');
+
+  /// Clave del menú de desarrollo (flavor `local`): la MISMA que
+  /// `DEV_TOOLS_KEY` en `services/api/.env`. Vacía = sin menú. Es una clave
+  /// de desarrollo para que nadie más en tu Wi-Fi vacíe tu base local; nunca
+  /// va en `config.production.json`.
+  static const devToolsKey = String.fromEnvironment('DEV_TOOLS_KEY');
 }

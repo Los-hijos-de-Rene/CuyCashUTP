@@ -1,3 +1,4 @@
+import '../../feature/dev_tools/domain/dev_tools_repository.dart';
 import '../../feature/account/application/account_actions.dart';
 import '../../feature/account/domain/account_repository.dart';
 import '../../feature/auth/domain/auth_repository.dart';
@@ -35,6 +36,7 @@ class AppDependencies {
     required this.profileRepository,
     required this.securityRepository,
     required this.biometricGate,
+    this.devToolsRepository,
     this.lockoutPolicy = const LockoutPolicy(),
   });
 
@@ -78,6 +80,9 @@ class AppDependencies {
 
   /// Huella o rostro del sistema: solo responde "¿es el dueño?".
   final BiometricGate biometricGate;
+
+  /// Menú de desarrollo: solo en `local` con `DEV_TOOLS_KEY`; null en el resto.
+  final DevToolsRepository? devToolsRepository;
 
   final LockoutPolicy lockoutPolicy;
 }

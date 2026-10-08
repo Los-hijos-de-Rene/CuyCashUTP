@@ -170,6 +170,12 @@ async def test_toda_ruta_privada_exige_sesion(client):
         if r.status_code != 401:
             abiertas.add((metodo, plantilla))
     # Lo que responde sin sesión debe ser EXACTAMENTE lo declarado público
-    # (más el proxy del KYC, que responde 503 si no está configurado).
-    sin_kyc = {a for a in abiertas if not a[1].startswith("/v1/kyc/")}
+    # (más el proxy del KYC, que responde 503 si no está configurado, y las
+    # rutas de desarrollo, que fuera de local responden 404: ver
+    # test_dev_tools.py).
+    sin_kyc = {
+        a
+        for a in abiertas
+        if not a[1].startswith("/v1/kyc/") and not a[1].startswith("/v1/dev/")
+    }
     assert sin_kyc == RUTAS_PUBLICAS

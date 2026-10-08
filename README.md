@@ -112,6 +112,17 @@ cd services/api && .venv/bin/python -m pytest             # tests del backend
 services/api/scripts/smoke_prod.sh                         # humo contra producción (solo lectura)
 ```
 
+**Datos de prueba en local** (vaciar la base, crear usuarios ficticios a quienes
+enviar dinero, ver el último OTP): botón **DEV** en la app `local`, o en
+`services/api`:
+
+```sh
+docker compose exec auth python -m scripts.dev reset-y-seed
+```
+
+Qué crea, cómo configurarlo y por qué no puede tocar producción:
+[`services/api/README.md` → Datos de prueba en local](services/api/README.md#datos-de-prueba-en-local).
+
 Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
 con `TEST_POSTGRES_URL`; la base debe terminar en `_test`) y se omiten sin él.
 En GitHub Actions corren solos contra un Postgres 16 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).

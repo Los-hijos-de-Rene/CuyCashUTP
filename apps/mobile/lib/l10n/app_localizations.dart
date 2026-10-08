@@ -3001,6 +3001,102 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu cuenta pudo haberse abierto. Revisa tus cuentas en el inicio antes de intentarlo otra vez.'**
   String get openAccountLeaveBody;
+
+  /// No description provided for @devToolsButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Menú de desarrollo'**
+  String get devToolsButton;
+
+  /// No description provided for @devToolsBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'DEV'**
+  String get devToolsBadge;
+
+  /// No description provided for @devToolsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Menú de desarrollo (solo local)'**
+  String get devToolsTitle;
+
+  /// No description provided for @devToolsReset.
+  ///
+  /// In es, this message translates to:
+  /// **'Reiniciar todo'**
+  String get devToolsReset;
+
+  /// No description provided for @devToolsResetHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Vacía la base local, crea los usuarios de prueba y cierra la sesión en este teléfono.'**
+  String get devToolsResetHint;
+
+  /// No description provided for @devToolsResetConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Vaciar la base local? Se borran todas las cuentas, incluida la tuya.'**
+  String get devToolsResetConfirm;
+
+  /// No description provided for @devToolsConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, reiniciar'**
+  String get devToolsConfirm;
+
+  /// No description provided for @devToolsCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get devToolsCancel;
+
+  /// No description provided for @devToolsSeed.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear usuarios de prueba'**
+  String get devToolsSeed;
+
+  /// No description provided for @devToolsSeedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Los agrega sin borrar nada.'**
+  String get devToolsSeedHint;
+
+  /// No description provided for @devToolsOtp.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver últimos códigos OTP'**
+  String get devToolsOtp;
+
+  /// No description provided for @devToolsOtpEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no se envió ningún código.'**
+  String get devToolsOtpEmpty;
+
+  /// No description provided for @devToolsUsers.
+  ///
+  /// In es, this message translates to:
+  /// **'Usuarios de prueba · PIN {pin}'**
+  String devToolsUsers(String pin);
+
+  /// No description provided for @devToolsUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'El backend no tiene las herramientas de desarrollo. ¿Está corriendo en local con DEV_TOOLS y la clave en services/api/.env?'**
+  String get devToolsUnavailable;
+
+  /// No description provided for @devToolsWrongKey.
+  ///
+  /// In es, this message translates to:
+  /// **'La clave DEV_TOOLS_KEY de config.local.json no es la de services/api/.env.'**
+  String get devToolsWrongKey;
+
+  /// No description provided for @devToolsCommandHint.
+  ///
+  /// In es, this message translates to:
+  /// **'También por terminal, en services/api:\ndocker compose exec auth python -m scripts.dev reset-y-seed'**
+  String get devToolsCommandHint;
 }
 
 class _AppLocalizationsDelegate
