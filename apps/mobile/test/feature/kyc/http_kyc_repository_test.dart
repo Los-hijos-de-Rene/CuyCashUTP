@@ -195,10 +195,28 @@ void main() {
 
     final check = (await repo.checkDocumentFront(
       Uint8List.fromList([1]),
+      expectedDni: '12345678',
     )).getRight().toNullable()!;
 
     expect(adapter.lastRequest?.path, '/v1/kyc/document/validate');
     expect(check.issues, [DocumentIssue.blurry, DocumentIssue.tooDark]);
+    // El DNI escrito viaja: el servidor comprueba que esté impreso en el frente.
+    final form = adapter.lastRequest?.data as FormData;
+    expect(Map.fromEntries(form.fields)['expected_dni'], '12345678');
+  });
+
+  test('un frente de otro DNI trae su propio motivo', () async {
+    adapter.body = {
+      'is_valid': false,
+      'codes': ['front_dni_mismatch'],
+    };
+
+    final check = (await repo.checkDocumentFront(
+      Uint8List.fromList([1]),
+      expectedDni: '12345678',
+    )).getRight().toNullable()!;
+
+    expect(check.mainIssue, DocumentIssue.frontDniMismatch);
   });
 
   test(

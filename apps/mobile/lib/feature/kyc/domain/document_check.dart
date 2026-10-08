@@ -8,6 +8,13 @@ enum DocumentIssue {
   /// En el frente no se ve el rostro del titular.
   noFace,
 
+  /// El número impreso en el frente no es el DNI que escribió el usuario:
+  /// frente y reverso podrían ser de dos documentos distintos.
+  frontDniMismatch,
+
+  /// No se pudo leer el número impreso en el frente.
+  frontDniUnreadable,
+
   /// No se pudieron leer las 3 líneas de la parte inferior del reverso (MRZ).
   backUnreadable,
 
@@ -22,6 +29,8 @@ enum DocumentIssue {
         'too_dark' => tooDark,
         'too_bright' => tooBright,
         'no_face' => noFace,
+        'front_dni_mismatch' => frontDniMismatch,
+        'front_dni_unreadable' => frontDniUnreadable,
         _ => null,
       };
 }

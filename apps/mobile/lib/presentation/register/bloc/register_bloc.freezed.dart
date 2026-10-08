@@ -939,9 +939,9 @@ mixin _$RegisterDraft {
  String get dni; String get nombres; String get apellidos; String get email; CaptureStatus get dniFront; CaptureStatus get dniBack;/// Bytes de las capturas. Viven en memoria hasta la verificación y se
 /// sueltan ahí: son datos de identidad, no van a disco.
  Uint8List? get dniFrontImage; Uint8List? get dniBackImage;/// Por qué no sirve cada foto (null si sirve o no se revisó).
- DocumentIssue? get dniFrontIssue; DocumentIssue? get dniBackIssue;/// DNI contra el que se cotejó el reverso: si el usuario lo cambia
+ DocumentIssue? get dniFrontIssue; DocumentIssue? get dniBackIssue;/// DNI contra el que se cotejó cada cara: si el usuario lo cambia
 /// después, hay que volver a cotejar.
- String? get backCheckedDni;/// Ticket del KYC aprobado: `/register` lo exige al servidor. Vence pronto
+ String? get frontCheckedDni; String? get backCheckedDni;/// Ticket del KYC aprobado: `/register` lo exige al servidor. Vence pronto
 /// y es de un solo uso, así que no se guarda fuera de este borrador.
  String? get kycTicket; FaceScanStatus get faceStatus; String get pin;/// Segunda escritura del PIN. Sin ella, un error de tecleo deja al usuario
 /// fuera de la cuenta que acaba de abrir.
@@ -956,16 +956,16 @@ $RegisterDraftCopyWith<RegisterDraft> get copyWith => _$RegisterDraftCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterDraft&&(identical(other.dni, dni) || other.dni == dni)&&(identical(other.nombres, nombres) || other.nombres == nombres)&&(identical(other.apellidos, apellidos) || other.apellidos == apellidos)&&(identical(other.email, email) || other.email == email)&&(identical(other.dniFront, dniFront) || other.dniFront == dniFront)&&(identical(other.dniBack, dniBack) || other.dniBack == dniBack)&&const DeepCollectionEquality().equals(other.dniFrontImage, dniFrontImage)&&const DeepCollectionEquality().equals(other.dniBackImage, dniBackImage)&&(identical(other.dniFrontIssue, dniFrontIssue) || other.dniFrontIssue == dniFrontIssue)&&(identical(other.dniBackIssue, dniBackIssue) || other.dniBackIssue == dniBackIssue)&&(identical(other.backCheckedDni, backCheckedDni) || other.backCheckedDni == backCheckedDni)&&(identical(other.kycTicket, kycTicket) || other.kycTicket == kycTicket)&&(identical(other.faceStatus, faceStatus) || other.faceStatus == faceStatus)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.confirmPin, confirmPin) || other.confirmPin == confirmPin)&&(identical(other.biometricEnabled, biometricEnabled) || other.biometricEnabled == biometricEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterDraft&&(identical(other.dni, dni) || other.dni == dni)&&(identical(other.nombres, nombres) || other.nombres == nombres)&&(identical(other.apellidos, apellidos) || other.apellidos == apellidos)&&(identical(other.email, email) || other.email == email)&&(identical(other.dniFront, dniFront) || other.dniFront == dniFront)&&(identical(other.dniBack, dniBack) || other.dniBack == dniBack)&&const DeepCollectionEquality().equals(other.dniFrontImage, dniFrontImage)&&const DeepCollectionEquality().equals(other.dniBackImage, dniBackImage)&&(identical(other.dniFrontIssue, dniFrontIssue) || other.dniFrontIssue == dniFrontIssue)&&(identical(other.dniBackIssue, dniBackIssue) || other.dniBackIssue == dniBackIssue)&&(identical(other.frontCheckedDni, frontCheckedDni) || other.frontCheckedDni == frontCheckedDni)&&(identical(other.backCheckedDni, backCheckedDni) || other.backCheckedDni == backCheckedDni)&&(identical(other.kycTicket, kycTicket) || other.kycTicket == kycTicket)&&(identical(other.faceStatus, faceStatus) || other.faceStatus == faceStatus)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.confirmPin, confirmPin) || other.confirmPin == confirmPin)&&(identical(other.biometricEnabled, biometricEnabled) || other.biometricEnabled == biometricEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dni,nombres,apellidos,email,dniFront,dniBack,const DeepCollectionEquality().hash(dniFrontImage),const DeepCollectionEquality().hash(dniBackImage),dniFrontIssue,dniBackIssue,backCheckedDni,kycTicket,faceStatus,pin,confirmPin,biometricEnabled);
+int get hashCode => Object.hash(runtimeType,dni,nombres,apellidos,email,dniFront,dniBack,const DeepCollectionEquality().hash(dniFrontImage),const DeepCollectionEquality().hash(dniBackImage),dniFrontIssue,dniBackIssue,frontCheckedDni,backCheckedDni,kycTicket,faceStatus,pin,confirmPin,biometricEnabled);
 
 @override
 String toString() {
-  return 'RegisterDraft(dni: $dni, nombres: $nombres, apellidos: $apellidos, email: $email, dniFront: $dniFront, dniBack: $dniBack, dniFrontImage: $dniFrontImage, dniBackImage: $dniBackImage, dniFrontIssue: $dniFrontIssue, dniBackIssue: $dniBackIssue, backCheckedDni: $backCheckedDni, kycTicket: $kycTicket, faceStatus: $faceStatus, pin: $pin, confirmPin: $confirmPin, biometricEnabled: $biometricEnabled)';
+  return 'RegisterDraft(dni: $dni, nombres: $nombres, apellidos: $apellidos, email: $email, dniFront: $dniFront, dniBack: $dniBack, dniFrontImage: $dniFrontImage, dniBackImage: $dniBackImage, dniFrontIssue: $dniFrontIssue, dniBackIssue: $dniBackIssue, frontCheckedDni: $frontCheckedDni, backCheckedDni: $backCheckedDni, kycTicket: $kycTicket, faceStatus: $faceStatus, pin: $pin, confirmPin: $confirmPin, biometricEnabled: $biometricEnabled)';
 }
 
 
@@ -976,7 +976,7 @@ abstract mixin class $RegisterDraftCopyWith<$Res>  {
   factory $RegisterDraftCopyWith(RegisterDraft value, $Res Function(RegisterDraft) _then) = _$RegisterDraftCopyWithImpl;
 @useResult
 $Res call({
- String dni, String nombres, String apellidos, String email, CaptureStatus dniFront, CaptureStatus dniBack, Uint8List? dniFrontImage, Uint8List? dniBackImage, DocumentIssue? dniFrontIssue, DocumentIssue? dniBackIssue, String? backCheckedDni, String? kycTicket, FaceScanStatus faceStatus, String pin, String confirmPin, bool biometricEnabled
+ String dni, String nombres, String apellidos, String email, CaptureStatus dniFront, CaptureStatus dniBack, Uint8List? dniFrontImage, Uint8List? dniBackImage, DocumentIssue? dniFrontIssue, DocumentIssue? dniBackIssue, String? frontCheckedDni, String? backCheckedDni, String? kycTicket, FaceScanStatus faceStatus, String pin, String confirmPin, bool biometricEnabled
 });
 
 
@@ -993,7 +993,7 @@ class _$RegisterDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterDraft
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dni = null,Object? nombres = null,Object? apellidos = null,Object? email = null,Object? dniFront = null,Object? dniBack = null,Object? dniFrontImage = freezed,Object? dniBackImage = freezed,Object? dniFrontIssue = freezed,Object? dniBackIssue = freezed,Object? backCheckedDni = freezed,Object? kycTicket = freezed,Object? faceStatus = null,Object? pin = null,Object? confirmPin = null,Object? biometricEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dni = null,Object? nombres = null,Object? apellidos = null,Object? email = null,Object? dniFront = null,Object? dniBack = null,Object? dniFrontImage = freezed,Object? dniBackImage = freezed,Object? dniFrontIssue = freezed,Object? dniBackIssue = freezed,Object? frontCheckedDni = freezed,Object? backCheckedDni = freezed,Object? kycTicket = freezed,Object? faceStatus = null,Object? pin = null,Object? confirmPin = null,Object? biometricEnabled = null,}) {
   return _then(_self.copyWith(
 dni: null == dni ? _self.dni : dni // ignore: cast_nullable_to_non_nullable
 as String,nombres: null == nombres ? _self.nombres : nombres // ignore: cast_nullable_to_non_nullable
@@ -1005,7 +1005,8 @@ as CaptureStatus,dniFrontImage: freezed == dniFrontImage ? _self.dniFrontImage :
 as Uint8List?,dniBackImage: freezed == dniBackImage ? _self.dniBackImage : dniBackImage // ignore: cast_nullable_to_non_nullable
 as Uint8List?,dniFrontIssue: freezed == dniFrontIssue ? _self.dniFrontIssue : dniFrontIssue // ignore: cast_nullable_to_non_nullable
 as DocumentIssue?,dniBackIssue: freezed == dniBackIssue ? _self.dniBackIssue : dniBackIssue // ignore: cast_nullable_to_non_nullable
-as DocumentIssue?,backCheckedDni: freezed == backCheckedDni ? _self.backCheckedDni : backCheckedDni // ignore: cast_nullable_to_non_nullable
+as DocumentIssue?,frontCheckedDni: freezed == frontCheckedDni ? _self.frontCheckedDni : frontCheckedDni // ignore: cast_nullable_to_non_nullable
+as String?,backCheckedDni: freezed == backCheckedDni ? _self.backCheckedDni : backCheckedDni // ignore: cast_nullable_to_non_nullable
 as String?,kycTicket: freezed == kycTicket ? _self.kycTicket : kycTicket // ignore: cast_nullable_to_non_nullable
 as String?,faceStatus: null == faceStatus ? _self.faceStatus : faceStatus // ignore: cast_nullable_to_non_nullable
 as FaceScanStatus,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable
@@ -1096,10 +1097,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? frontCheckedDni,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterDraft() when $default != null:
-return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
+return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.frontCheckedDni,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
   return orElse();
 
 }
@@ -1117,10 +1118,10 @@ return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFro
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? frontCheckedDni,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterDraft():
-return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
+return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.frontCheckedDni,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1137,10 +1138,10 @@ return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFro
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String dni,  String nombres,  String apellidos,  String email,  CaptureStatus dniFront,  CaptureStatus dniBack,  Uint8List? dniFrontImage,  Uint8List? dniBackImage,  DocumentIssue? dniFrontIssue,  DocumentIssue? dniBackIssue,  String? frontCheckedDni,  String? backCheckedDni,  String? kycTicket,  FaceScanStatus faceStatus,  String pin,  String confirmPin,  bool biometricEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterDraft() when $default != null:
-return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
+return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFront,_that.dniBack,_that.dniFrontImage,_that.dniBackImage,_that.dniFrontIssue,_that.dniBackIssue,_that.frontCheckedDni,_that.backCheckedDni,_that.kycTicket,_that.faceStatus,_that.pin,_that.confirmPin,_that.biometricEnabled);case _:
   return null;
 
 }
@@ -1152,7 +1153,7 @@ return $default(_that.dni,_that.nombres,_that.apellidos,_that.email,_that.dniFro
 
 
 class _RegisterDraft implements RegisterDraft {
-  const _RegisterDraft({this.dni = '', this.nombres = '', this.apellidos = '', this.email = '', this.dniFront = CaptureStatus.empty, this.dniBack = CaptureStatus.empty, this.dniFrontImage, this.dniBackImage, this.dniFrontIssue, this.dniBackIssue, this.backCheckedDni, this.kycTicket, this.faceStatus = FaceScanStatus.idle, this.pin = '', this.confirmPin = '', this.biometricEnabled = true});
+  const _RegisterDraft({this.dni = '', this.nombres = '', this.apellidos = '', this.email = '', this.dniFront = CaptureStatus.empty, this.dniBack = CaptureStatus.empty, this.dniFrontImage, this.dniBackImage, this.dniFrontIssue, this.dniBackIssue, this.frontCheckedDni, this.backCheckedDni, this.kycTicket, this.faceStatus = FaceScanStatus.idle, this.pin = '', this.confirmPin = '', this.biometricEnabled = true});
   
 
 @override@JsonKey() final  String dni;
@@ -1168,8 +1169,9 @@ class _RegisterDraft implements RegisterDraft {
 /// Por qué no sirve cada foto (null si sirve o no se revisó).
 @override final  DocumentIssue? dniFrontIssue;
 @override final  DocumentIssue? dniBackIssue;
-/// DNI contra el que se cotejó el reverso: si el usuario lo cambia
+/// DNI contra el que se cotejó cada cara: si el usuario lo cambia
 /// después, hay que volver a cotejar.
+@override final  String? frontCheckedDni;
 @override final  String? backCheckedDni;
 /// Ticket del KYC aprobado: `/register` lo exige al servidor. Vence pronto
 /// y es de un solo uso, así que no se guarda fuera de este borrador.
@@ -1191,16 +1193,16 @@ _$RegisterDraftCopyWith<_RegisterDraft> get copyWith => __$RegisterDraftCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterDraft&&(identical(other.dni, dni) || other.dni == dni)&&(identical(other.nombres, nombres) || other.nombres == nombres)&&(identical(other.apellidos, apellidos) || other.apellidos == apellidos)&&(identical(other.email, email) || other.email == email)&&(identical(other.dniFront, dniFront) || other.dniFront == dniFront)&&(identical(other.dniBack, dniBack) || other.dniBack == dniBack)&&const DeepCollectionEquality().equals(other.dniFrontImage, dniFrontImage)&&const DeepCollectionEquality().equals(other.dniBackImage, dniBackImage)&&(identical(other.dniFrontIssue, dniFrontIssue) || other.dniFrontIssue == dniFrontIssue)&&(identical(other.dniBackIssue, dniBackIssue) || other.dniBackIssue == dniBackIssue)&&(identical(other.backCheckedDni, backCheckedDni) || other.backCheckedDni == backCheckedDni)&&(identical(other.kycTicket, kycTicket) || other.kycTicket == kycTicket)&&(identical(other.faceStatus, faceStatus) || other.faceStatus == faceStatus)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.confirmPin, confirmPin) || other.confirmPin == confirmPin)&&(identical(other.biometricEnabled, biometricEnabled) || other.biometricEnabled == biometricEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterDraft&&(identical(other.dni, dni) || other.dni == dni)&&(identical(other.nombres, nombres) || other.nombres == nombres)&&(identical(other.apellidos, apellidos) || other.apellidos == apellidos)&&(identical(other.email, email) || other.email == email)&&(identical(other.dniFront, dniFront) || other.dniFront == dniFront)&&(identical(other.dniBack, dniBack) || other.dniBack == dniBack)&&const DeepCollectionEquality().equals(other.dniFrontImage, dniFrontImage)&&const DeepCollectionEquality().equals(other.dniBackImage, dniBackImage)&&(identical(other.dniFrontIssue, dniFrontIssue) || other.dniFrontIssue == dniFrontIssue)&&(identical(other.dniBackIssue, dniBackIssue) || other.dniBackIssue == dniBackIssue)&&(identical(other.frontCheckedDni, frontCheckedDni) || other.frontCheckedDni == frontCheckedDni)&&(identical(other.backCheckedDni, backCheckedDni) || other.backCheckedDni == backCheckedDni)&&(identical(other.kycTicket, kycTicket) || other.kycTicket == kycTicket)&&(identical(other.faceStatus, faceStatus) || other.faceStatus == faceStatus)&&(identical(other.pin, pin) || other.pin == pin)&&(identical(other.confirmPin, confirmPin) || other.confirmPin == confirmPin)&&(identical(other.biometricEnabled, biometricEnabled) || other.biometricEnabled == biometricEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dni,nombres,apellidos,email,dniFront,dniBack,const DeepCollectionEquality().hash(dniFrontImage),const DeepCollectionEquality().hash(dniBackImage),dniFrontIssue,dniBackIssue,backCheckedDni,kycTicket,faceStatus,pin,confirmPin,biometricEnabled);
+int get hashCode => Object.hash(runtimeType,dni,nombres,apellidos,email,dniFront,dniBack,const DeepCollectionEquality().hash(dniFrontImage),const DeepCollectionEquality().hash(dniBackImage),dniFrontIssue,dniBackIssue,frontCheckedDni,backCheckedDni,kycTicket,faceStatus,pin,confirmPin,biometricEnabled);
 
 @override
 String toString() {
-  return 'RegisterDraft(dni: $dni, nombres: $nombres, apellidos: $apellidos, email: $email, dniFront: $dniFront, dniBack: $dniBack, dniFrontImage: $dniFrontImage, dniBackImage: $dniBackImage, dniFrontIssue: $dniFrontIssue, dniBackIssue: $dniBackIssue, backCheckedDni: $backCheckedDni, kycTicket: $kycTicket, faceStatus: $faceStatus, pin: $pin, confirmPin: $confirmPin, biometricEnabled: $biometricEnabled)';
+  return 'RegisterDraft(dni: $dni, nombres: $nombres, apellidos: $apellidos, email: $email, dniFront: $dniFront, dniBack: $dniBack, dniFrontImage: $dniFrontImage, dniBackImage: $dniBackImage, dniFrontIssue: $dniFrontIssue, dniBackIssue: $dniBackIssue, frontCheckedDni: $frontCheckedDni, backCheckedDni: $backCheckedDni, kycTicket: $kycTicket, faceStatus: $faceStatus, pin: $pin, confirmPin: $confirmPin, biometricEnabled: $biometricEnabled)';
 }
 
 
@@ -1211,7 +1213,7 @@ abstract mixin class _$RegisterDraftCopyWith<$Res> implements $RegisterDraftCopy
   factory _$RegisterDraftCopyWith(_RegisterDraft value, $Res Function(_RegisterDraft) _then) = __$RegisterDraftCopyWithImpl;
 @override @useResult
 $Res call({
- String dni, String nombres, String apellidos, String email, CaptureStatus dniFront, CaptureStatus dniBack, Uint8List? dniFrontImage, Uint8List? dniBackImage, DocumentIssue? dniFrontIssue, DocumentIssue? dniBackIssue, String? backCheckedDni, String? kycTicket, FaceScanStatus faceStatus, String pin, String confirmPin, bool biometricEnabled
+ String dni, String nombres, String apellidos, String email, CaptureStatus dniFront, CaptureStatus dniBack, Uint8List? dniFrontImage, Uint8List? dniBackImage, DocumentIssue? dniFrontIssue, DocumentIssue? dniBackIssue, String? frontCheckedDni, String? backCheckedDni, String? kycTicket, FaceScanStatus faceStatus, String pin, String confirmPin, bool biometricEnabled
 });
 
 
@@ -1228,7 +1230,7 @@ class __$RegisterDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterDraft
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dni = null,Object? nombres = null,Object? apellidos = null,Object? email = null,Object? dniFront = null,Object? dniBack = null,Object? dniFrontImage = freezed,Object? dniBackImage = freezed,Object? dniFrontIssue = freezed,Object? dniBackIssue = freezed,Object? backCheckedDni = freezed,Object? kycTicket = freezed,Object? faceStatus = null,Object? pin = null,Object? confirmPin = null,Object? biometricEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dni = null,Object? nombres = null,Object? apellidos = null,Object? email = null,Object? dniFront = null,Object? dniBack = null,Object? dniFrontImage = freezed,Object? dniBackImage = freezed,Object? dniFrontIssue = freezed,Object? dniBackIssue = freezed,Object? frontCheckedDni = freezed,Object? backCheckedDni = freezed,Object? kycTicket = freezed,Object? faceStatus = null,Object? pin = null,Object? confirmPin = null,Object? biometricEnabled = null,}) {
   return _then(_RegisterDraft(
 dni: null == dni ? _self.dni : dni // ignore: cast_nullable_to_non_nullable
 as String,nombres: null == nombres ? _self.nombres : nombres // ignore: cast_nullable_to_non_nullable
@@ -1240,7 +1242,8 @@ as CaptureStatus,dniFrontImage: freezed == dniFrontImage ? _self.dniFrontImage :
 as Uint8List?,dniBackImage: freezed == dniBackImage ? _self.dniBackImage : dniBackImage // ignore: cast_nullable_to_non_nullable
 as Uint8List?,dniFrontIssue: freezed == dniFrontIssue ? _self.dniFrontIssue : dniFrontIssue // ignore: cast_nullable_to_non_nullable
 as DocumentIssue?,dniBackIssue: freezed == dniBackIssue ? _self.dniBackIssue : dniBackIssue // ignore: cast_nullable_to_non_nullable
-as DocumentIssue?,backCheckedDni: freezed == backCheckedDni ? _self.backCheckedDni : backCheckedDni // ignore: cast_nullable_to_non_nullable
+as DocumentIssue?,frontCheckedDni: freezed == frontCheckedDni ? _self.frontCheckedDni : frontCheckedDni // ignore: cast_nullable_to_non_nullable
+as String?,backCheckedDni: freezed == backCheckedDni ? _self.backCheckedDni : backCheckedDni // ignore: cast_nullable_to_non_nullable
 as String?,kycTicket: freezed == kycTicket ? _self.kycTicket : kycTicket // ignore: cast_nullable_to_non_nullable
 as String?,faceStatus: null == faceStatus ? _self.faceStatus : faceStatus // ignore: cast_nullable_to_non_nullable
 as FaceScanStatus,pin: null == pin ? _self.pin : pin // ignore: cast_nullable_to_non_nullable

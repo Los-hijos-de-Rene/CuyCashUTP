@@ -207,6 +207,8 @@ String documentIssueText(AppLocalizations l10n, DocumentIssue issue) =>
       DocumentIssue.tooDark => l10n.documentIssueTooDark,
       DocumentIssue.tooBright => l10n.documentIssueTooBright,
       DocumentIssue.noFace => l10n.documentIssueNoFace,
+      DocumentIssue.frontDniMismatch => l10n.documentIssueFrontDniMismatch,
+      DocumentIssue.frontDniUnreadable => l10n.documentIssueFrontDniUnreadable,
       DocumentIssue.backUnreadable => l10n.documentIssueBackUnreadable,
       DocumentIssue.dniMismatch => l10n.documentIssueDniMismatch,
     };

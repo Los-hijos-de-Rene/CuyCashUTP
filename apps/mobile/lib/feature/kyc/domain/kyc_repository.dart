@@ -14,9 +14,13 @@ import 'liveness_step.dart';
 /// análisis que cuenta (documento, pose, parpadeo, match facial) corre en el
 /// servidor, que además impone qué gestos se piden y en qué orden.
 abstract interface class KycRepository {
-  /// Revisa el FRENTE del DNI recién fotografiado: nitidez, luz, resolución y
-  /// que se vea el rostro.
-  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(Uint8List image);
+  /// Revisa el FRENTE del DNI recién fotografiado: nitidez, luz, resolución,
+  /// que se vea el rostro y que lleve impreso [expectedDni]. Eso último ata el
+  /// frente (la cara que se compara) con el reverso (el número que se coteja).
+  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
+    Uint8List image, {
+    required String expectedDni,
+  });
 
   /// Lee el REVERSO del DNI (MRZ) y lo coteja con el DNI que escribió el
   /// usuario.

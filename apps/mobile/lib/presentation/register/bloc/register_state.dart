@@ -38,8 +38,9 @@ abstract class RegisterDraft with _$RegisterDraft {
     DocumentIssue? dniFrontIssue,
     DocumentIssue? dniBackIssue,
 
-    /// DNI contra el que se cotejó el reverso: si el usuario lo cambia
+    /// DNI contra el que se cotejó cada cara: si el usuario lo cambia
     /// después, hay que volver a cotejar.
+    String? frontCheckedDni,
     String? backCheckedDni,
 
     /// Ticket del KYC aprobado: `/register` lo exige al servidor. Vence pronto

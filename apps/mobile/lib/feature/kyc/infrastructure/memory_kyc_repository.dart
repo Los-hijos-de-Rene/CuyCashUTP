@@ -46,11 +46,18 @@ class MemoryKycRepository implements KycRepository {
 
   @override
   FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
-    Uint8List image,
-  ) async =>
-      right(image.isEmpty
-          ? const DocumentCheck(issues: [DocumentIssue.blurry])
-          : const DocumentCheck.ok());
+    Uint8List image, {
+    required String expectedDni,
+  }) async {
+    if (image.isEmpty) {
+      return right(const DocumentCheck(issues: [DocumentIssue.blurry]));
+    }
+    // El simulado lleva impreso el mismo DNI que su reverso ([documentDni]).
+    final impreso = documentDni ?? expectedDni;
+    return right(impreso == expectedDni
+        ? const DocumentCheck.ok()
+        : const DocumentCheck(issues: [DocumentIssue.frontDniMismatch]));
+  }
 
   @override
   FutureResult<KycFailure, DocumentCheck> checkDocumentBack(

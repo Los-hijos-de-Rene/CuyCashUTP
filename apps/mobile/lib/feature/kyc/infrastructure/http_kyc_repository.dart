@@ -36,12 +36,16 @@ class HttpKycRepository implements KycRepository {
   static const _verifyFullPath = '/v1/kyc/identity/verify-full';
 
   @override
-  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(Uint8List image) =>
+  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
+    Uint8List image, {
+    required String expectedDni,
+  }) =>
       _guard(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           _frontPath,
           data: FormData.fromMap({
             'file': MultipartFile.fromBytes(image, filename: 'front.jpg'),
+            'expected_dni': expectedDni,
           }),
           options: Options(receiveTimeout: verifyTimeout),
         );

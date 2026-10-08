@@ -652,6 +652,18 @@ abstract class AppLocalizations {
   /// **'No se ve tu foto. Fotografía el frente del DNI, donde está tu rostro.'**
   String get documentIssueNoFace;
 
+  /// No description provided for @documentIssueFrontDniMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'El número impreso en este DNI no es el que escribiste en el paso 1. Revisa el número o fotografía tu propio DNI.'**
+  String get documentIssueFrontDniMismatch;
+
+  /// No description provided for @documentIssueFrontDniUnreadable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos leer el número de tu DNI en el frente. Encuádralo bien, sin reflejos.'**
+  String get documentIssueFrontDniUnreadable;
+
   /// No description provided for @documentIssueBackUnreadable.
   ///
   /// In es, this message translates to:
