@@ -37,6 +37,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
 
+  /// Si ya se avisó del código verificado o del flujo cancelado.
+  ///
+  /// El bloc emite un estado nuevo cada segundo (la cuenta regresiva del
+  /// reenvío), y `verified`/`cancelled` siguen en true en todos ellos. Sin
+  /// esto, `onVerified` se llamaba en cada tic hasta salir de la pantalla: dos
+  /// `POST /v1/auth/sessions` con el mismo ticket, y el segundo daba 401
+  /// porque el ticket ya se había usado (visto en el ingreso con un teléfono
+  /// nuevo).
+  bool _verifiedNotified = false;
+  bool _cancelHandled = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -65,10 +76,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       listener: (context, state) {
         _syncField(state);
         if (state.cancelled) {
-          context.go(config.cancelledRoute);
+          if (!_cancelHandled) {
+            _cancelHandled = true;
+            context.go(config.cancelledRoute);
+          }
           return;
         }
-        if (state.verified) widget.onVerified(state.otpTicket ?? '');
+        if (state.verified && !_verifiedNotified) {
+          _verifiedNotified = true;
+          widget.onVerified(state.otpTicket ?? '');
+        }
       },
       builder: (context, state) {
         final bloc = context.read<OtpBloc>();
