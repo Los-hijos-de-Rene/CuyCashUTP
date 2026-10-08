@@ -38,17 +38,21 @@ android {
         }
     }
 
+    // Cada flavor se instala aparte (applicationIdSuffix) y se distingue en el
+    // teléfono por su nombre (`app_name`, que usa el AndroidManifest) y su ícono
+    // (`src/<flavor>/res`, ver flutter_launcher_icons-<flavor>.yaml). Lo distinto
+    // va PRIMERO en el nombre: el lanzador recorta los largos.
     flavorDimensions += "env"
     productFlavors {
         create("mock") {
             dimension = "env"
             applicationIdSuffix = ".mock"
-            resValue("string", "app_name", "CuyCash Mock")
+            resValue("string", "app_name", "Mock · CuyCash")
         }
         create("local") {
             dimension = "env"
             applicationIdSuffix = ".local"
-            resValue("string", "app_name", "CuyCash Local")
+            resValue("string", "app_name", "Local · CuyCash")
         }
         create("production") {
             dimension = "env"
