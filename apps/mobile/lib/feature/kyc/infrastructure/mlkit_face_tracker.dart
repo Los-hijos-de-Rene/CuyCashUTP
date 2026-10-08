@@ -78,12 +78,20 @@ class MlKitFaceTracker implements FaceTracker {
     _recent.clear();
     if (_controller.value.isStreamingImages) {
       try {
-        await _controller.stopImageStream();
+        // Con tope: si `stopImageStream` no vuelve, quien espera aquí es el
+        // envío de la verificación, y el usuario se queda en "Confirmando…"
+        // para siempre. Pasado el tope el stream ya no entrega nada a este
+        // tracker (`_running` es false) y se sigue.
+        await _controller.stopImageStream().timeout(_stopTimeout);
+      } on TimeoutException {
+        debugPrint('Liveness: stopImageStream no respondió en $_stopTimeout');
       } on CameraException catch (_) {
         // La cámara ya se estaba cerrando: no hay nada que detener.
       }
     }
   }
+
+  static const _stopTimeout = Duration(seconds: 2);
 
   @override
   Future<void> dispose() async {
@@ -96,7 +104,14 @@ class MlKitFaceTracker implements FaceTracker {
   Future<String?> keepFrame(int frameId) async {
     final raw = _recent[frameId];
     if (raw == null) return null;
-    return encodeFrameAsBase64Jpeg(raw);
+    try {
+      return await encodeFrameAsBase64Jpeg(raw);
+    } catch (error) {
+      // Un fotograma que no se pudo codificar no tumba el envío: el servidor
+      // juzgará el segmento con los que sí llegaron.
+      debugPrint('Liveness: no se pudo codificar el fotograma $frameId ($error)');
+      return null;
+    }
   }
 
   void _onImage(CameraImage image) {
@@ -236,15 +251,22 @@ class MlKitFaceTracker implements FaceTracker {
     );
   }
 
-  /// Misma fórmula que `_estimate_head_pose` del servicio: nariz respecto al
-  /// centro de las mejillas, sobre el ancho entre mejillas CON signo. ML Kit
-  /// nombra las mejillas desde el usuario (su izquierda, su derecha).
+  /// Giro lateral: nariz respecto al centro de las mejillas, sobre el ancho
+  /// entre mejillas. Positivo = el usuario gira a SU izquierda.
+  ///
+  /// El denominador es `rightCheek - leftCheek`, y el signo está VERIFICADO EN
+  /// UN TELÉFONO (Android, cámara frontal, 2026-10-07): con
+  /// `leftCheek - rightCheek` —leyendo los nombres de ML Kit como "la mejilla
+  /// izquierda del usuario"— "gira a tu derecha" solo pasaba girando a la
+  /// izquierda. En las coordenadas que devuelve ML Kit, `leftCheek` queda a la
+  /// izquierda de la IMAGEN. No volver a "corregirlo" por la documentación sin
+  /// probar en un dispositivo; lo fija `mlkit_face_tracker_test.dart`.
   static double _yaw(Face face) {
     final nose = face.landmarks[FaceLandmarkType.noseBase]?.position;
     final left = face.landmarks[FaceLandmarkType.leftCheek]?.position;
     final right = face.landmarks[FaceLandmarkType.rightCheek]?.position;
     if (nose == null || left == null || right == null) return 0;
-    final width = (left.x - right.x).toDouble();
+    final width = (right.x - left.x).toDouble();
     if (width.abs() < 1) return 0;
     final mid = (left.x + right.x) / 2;
     return (nose.x - mid) / width;

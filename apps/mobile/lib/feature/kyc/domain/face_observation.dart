@@ -34,12 +34,10 @@ class FaceObservation {
   /// Ancho del rostro sobre el ancho de la imagen: mide la distancia.
   final double widthRatio;
 
-  /// Giro lateral normalizado, con la MISMA fórmula que el servidor:
-  /// `(nariz.x - centroMejillas.x) / (mejillaIzq.x - mejillaDer.x)`, con
-  /// izquierda y derecha del propio usuario. Positivo = gira a SU izquierda.
-  ///
-  /// Dividir entre un ancho con signo la hace independiente del espejado de la
-  /// cámara frontal: espejar invierte numerador y denominador a la vez.
+  /// Giro lateral normalizado: desplazamiento de la nariz respecto al centro
+  /// de las mejillas, sobre el ancho entre ellas. Positivo = el usuario gira a
+  /// SU izquierda, que es lo que el servidor espera para `izquierda`. El signo
+  /// se fijó probando en un teléfono (ver `MlKitFaceTracker._yaw`).
   final double yaw;
 
   /// Inclinación vertical en grados. Positivo = mira hacia arriba.
