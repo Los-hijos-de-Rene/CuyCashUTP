@@ -39,4 +39,56 @@ void main() {
     expect(find.textContaining('Revisa'), findsOneWidget);
     expect(find.text('El DNI debe tener 8 dígitos numéricos.'), findsOneWidget);
   });
+
+  testWidgets('siguiente del teclado pasa al campo siguiente', (tester) async {
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_wrap(bloc));
+    final fields = find.byType(TextField);
+    await tester.tap(fields.at(1));
+    await tester.enterText(fields.at(1), 'Ana');
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+    expect(tester.widget<TextField>(fields.at(2)).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('el DNI completo salta a Nombres', (tester) async {
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_wrap(bloc));
+    final fields = find.byType(TextField);
+    await tester.tap(fields.at(0));
+    await tester.enterText(fields.at(0), '70123456');
+    await tester.pump();
+    expect(tester.widget<TextField>(fields.at(1)).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('listo en Email con datos inválidos muestra los errores',
+      (tester) async {
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_wrap(bloc));
+    final fields = find.byType(TextField);
+    await tester.tap(fields.at(3));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Revisa'), findsOneWidget);
+  });
+
+  testWidgets('el botón Continuar está al final del formulario',
+      (tester) async {
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_wrap(bloc));
+    await tester.scrollUntilVisible(find.byType(PrimaryButton), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(
+      find.descendant(
+          of: find.byType(ListView), matching: find.byType(PrimaryButton)),
+      findsOneWidget,
+    );
+    await tester.tap(find.byType(PrimaryButton));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Revisa'), findsOneWidget);
+  });
 }
