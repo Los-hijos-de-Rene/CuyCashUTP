@@ -81,13 +81,11 @@ Future<AppDependencies> buildSharedBackendDependencies(AppFlavor flavor) async {
 
 /// Si el registro llama al KYC facial real (proxy `/v1/kyc` del backend).
 ///
-/// Solo en `local`, y solo con `KYC_ENABLED`. En `production` SIEMPRE se
-/// simula, diga lo que diga la config: el microservicio aún no está desplegado
-/// en Render, y un `config.production.json` con la bandera encendida dejaría
-/// el registro en producción sin poder terminar. Cuando se despliegue, este
-/// es el único sitio que hay que cambiar.
+/// En `local` y en `production`, con `KYC_ENABLED`. El microservicio ya está
+/// desplegado en Render (`cuycash-kyc`) y el backend lo llama con su clave;
+/// la bandera decide por build (ver `build-apk.yml` y `config.<env>.json`).
 ///
-/// Sin la bandera, `local` también simula en vez de romper el arranque: el
-/// resto de la app no depende del KYC.
+/// Sin la bandera se simula en vez de romper el arranque: el resto de la app
+/// no depende del KYC. `mock` nunca pasa por aquí (usa sus repos en memoria).
 bool usesRealKyc(AppFlavor flavor, {required bool enabled}) =>
-    flavor == AppFlavor.local && enabled;
+    flavor != AppFlavor.mock && enabled;

@@ -4,6 +4,6 @@
   "//AUTH_BASE_URL": "Backend (services/api). Si se omite se asume el PC anfitrión: 10.0.2.2 en emulador Android, 127.0.0.1 en simulador iOS. En un TELÉFONO FÍSICO hay que ponerlo con la IP del PC en la red local.",
   "AUTH_BASE_URL": "http://10.0.2.2:8001",
 
-  "//KYC_ENABLED": "Solo en el flavor local: \"true\" usa el KYC facial real a través del proxy del backend (/v1/kyc). En production siempre se simula hasta desplegar el KYC. La URL y la clave del microservicio viven en el backend, nunca aquí. \"false\" simula el reconocimiento con MemoryKycRepository.",
+  "//KYC_ENABLED": "En local y production: \"true\" usa el KYC facial real a través del proxy del backend (/v1/kyc). La URL y la clave del microservicio viven en el backend, nunca aquí. \"false\" simula el reconocimiento con MemoryKycRepository.",
   "KYC_ENABLED": "false"
 }
