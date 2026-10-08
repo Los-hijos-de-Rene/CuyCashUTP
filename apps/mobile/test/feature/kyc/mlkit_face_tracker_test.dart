@@ -35,6 +35,19 @@ void main() {
   const gestures = LivenessGestures();
   final frente = MlKitFaceTracker.observe(0, [face(150)], size);
 
+  // Visto en un iPhone: girar el stream de iOS lo dejaba acostado y el
+  // servidor no reconocía la cara contra el DNI.
+  test('iOS no gira el stream (ya llega derecho); Android sí', () {
+    expect(
+      MlKitFaceTracker.frameRotation(isIOS: true, sensorOrientation: 90),
+      0,
+    );
+    expect(
+      MlKitFaceTracker.frameRotation(isIOS: false, sensorOrientation: 270),
+      270,
+    );
+  });
+
   test('de frente, el giro es cero', () {
     expect(frente.yaw, 0);
   });
@@ -48,6 +61,15 @@ void main() {
     expect(giro.yaw, greaterThan(0));
     expect(gestures.reachesPose(LivenessStep.izquierda, giro, frente), isTrue);
     expect(gestures.reachesPose(LivenessStep.derecha, giro, frente), isFalse);
+  });
+
+  test('en espejo (iOS) el mismo desplazamiento es el giro contrario', () {
+    final giro =
+        MlKitFaceTracker.observe(3, [face(180)], size, mirrored: true);
+
+    expect(giro.yaw, lessThan(0));
+    expect(gestures.reachesPose(LivenessStep.derecha, giro, frente), isTrue);
+    expect(gestures.reachesPose(LivenessStep.izquierda, giro, frente), isFalse);
   });
 
   test('nariz hacia leftCheek = gira a su derecha', () {

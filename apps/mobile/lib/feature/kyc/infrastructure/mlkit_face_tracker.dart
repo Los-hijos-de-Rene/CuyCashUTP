@@ -146,7 +146,12 @@ class MlKitFaceTracker implements FaceTracker {
     try {
       final faces = await _detector.processImage(input);
       if (_running && !_observations.isClosed) {
-        _observations.add(observe(id, faces, uprightSize(raw)));
+        _observations.add(observe(
+          id,
+          faces,
+          uprightSize(raw),
+          mirrored: Platform.isIOS,
+        ));
       }
     } catch (error) {
       // Un fotograma que ML Kit no pudo leer no corta el flujo: llega el
@@ -157,9 +162,10 @@ class MlKitFaceTracker implements FaceTracker {
 
   /// Copia el fotograma a un buffer propio (el del plugin se recicla).
   RawFrame? _copy(CameraImage image) {
-    // Con la app fija en vertical, el giro necesario es la orientación del
-    // sensor (270° en casi todas las frontales Android).
-    final rotation = _controller.description.sensorOrientation;
+    final rotation = frameRotation(
+      isIOS: Platform.isIOS,
+      sensorOrientation: _controller.description.sensorOrientation,
+    );
     final group = image.format.group;
 
     if (group == ImageFormatGroup.bgra8888 && image.planes.length == 1) {
@@ -223,6 +229,24 @@ class MlKitFaceTracker implements FaceTracker {
     return out;
   }
 
+  /// Giro horario que deja vertical un fotograma del stream.
+  ///
+  /// - Android: los fotogramas llegan como los da el sensor ("acostados");
+  ///   con la app fija en vertical, el giro es la orientación del sensor
+  ///   (270° en casi todas las frontales).
+  /// - iOS: el stream ya llega DERECHO. Girarlo por la orientación del sensor
+  ///   lo acostaba: visto en un iPhone (2026-10-08), el servidor medía giros
+  ///   de cabeza de -52 (lo normal es entre -1 y 1, señal de una cara de lado)
+  ///   y la comparación con el DNI daba distancias de ~1.0. ML Kit en iOS
+  ///   ignora la rotación que se le pasa y aun así detectaba la cara: por eso
+  ///   los gestos pasaban y solo fallaba el servidor.
+  @visibleForTesting
+  static int frameRotation({
+    required bool isIOS,
+    required int sensorOrientation,
+  }) =>
+      isIOS ? 0 : sensorOrientation;
+
   /// Tamaño de la imagen ya girada a vertical: es el espacio de coordenadas
   /// en que ML Kit devuelve los rostros.
   @visibleForTesting
@@ -232,8 +256,18 @@ class MlKitFaceTracker implements FaceTracker {
 
   /// Resume lo que vio ML Kit. Con varios rostros, las medidas son las del más
   /// grande, pero [FaceObservation.faceCount] deja ver que hay más de uno.
+  ///
+  /// [mirrored]: el stream llega en espejo (cámara frontal de iOS). Espejar
+  /// intercambia el lado de la imagen en que cae cada mejilla, así que el
+  /// giro cambia de signo; sin esto, en iOS "gira a tu derecha" solo pasaba
+  /// girando a la izquierda.
   @visibleForTesting
-  static FaceObservation observe(int frameId, List<Face> faces, Size size) {
+  static FaceObservation observe(
+    int frameId,
+    List<Face> faces,
+    Size size, {
+    bool mirrored = false,
+  }) {
     if (faces.isEmpty) return FaceObservation.empty(frameId);
     final face = faces.reduce((a, b) =>
         a.boundingBox.width >= b.boundingBox.width ? a : b);
@@ -244,7 +278,7 @@ class MlKitFaceTracker implements FaceTracker {
       centerX: box.center.dx / size.width,
       centerY: box.center.dy / size.height,
       widthRatio: box.width / size.width,
-      yaw: _yaw(face),
+      yaw: mirrored ? -_yaw(face) : _yaw(face),
       pitchDegrees: face.headEulerAngleX ?? 0,
       leftEyeOpen: face.leftEyeOpenProbability,
       rightEyeOpen: face.rightEyeOpenProbability,
