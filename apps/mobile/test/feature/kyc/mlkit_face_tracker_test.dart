@@ -63,6 +63,15 @@ void main() {
     expect(gestures.reachesPose(LivenessStep.derecha, giro, frente), isFalse);
   });
 
+  test('en espejo (iOS) el mismo desplazamiento es el giro contrario', () {
+    final giro =
+        MlKitFaceTracker.observe(3, [face(180)], size, mirrored: true);
+
+    expect(giro.yaw, lessThan(0));
+    expect(gestures.reachesPose(LivenessStep.derecha, giro, frente), isTrue);
+    expect(gestures.reachesPose(LivenessStep.izquierda, giro, frente), isFalse);
+  });
+
   test('nariz hacia leftCheek = gira a su derecha', () {
     final giro = MlKitFaceTracker.observe(2, [face(120)], size);
 

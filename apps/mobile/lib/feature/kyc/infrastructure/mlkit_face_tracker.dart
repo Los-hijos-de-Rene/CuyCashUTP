@@ -146,7 +146,12 @@ class MlKitFaceTracker implements FaceTracker {
     try {
       final faces = await _detector.processImage(input);
       if (_running && !_observations.isClosed) {
-        _observations.add(observe(id, faces, uprightSize(raw)));
+        _observations.add(observe(
+          id,
+          faces,
+          uprightSize(raw),
+          mirrored: Platform.isIOS,
+        ));
       }
     } catch (error) {
       // Un fotograma que ML Kit no pudo leer no corta el flujo: llega el
@@ -251,8 +256,18 @@ class MlKitFaceTracker implements FaceTracker {
 
   /// Resume lo que vio ML Kit. Con varios rostros, las medidas son las del más
   /// grande, pero [FaceObservation.faceCount] deja ver que hay más de uno.
+  ///
+  /// [mirrored]: el stream llega en espejo (cámara frontal de iOS). Espejar
+  /// intercambia el lado de la imagen en que cae cada mejilla, así que el
+  /// giro cambia de signo; sin esto, en iOS "gira a tu derecha" solo pasaba
+  /// girando a la izquierda.
   @visibleForTesting
-  static FaceObservation observe(int frameId, List<Face> faces, Size size) {
+  static FaceObservation observe(
+    int frameId,
+    List<Face> faces,
+    Size size, {
+    bool mirrored = false,
+  }) {
     if (faces.isEmpty) return FaceObservation.empty(frameId);
     final face = faces.reduce((a, b) =>
         a.boundingBox.width >= b.boundingBox.width ? a : b);
@@ -263,7 +278,7 @@ class MlKitFaceTracker implements FaceTracker {
       centerX: box.center.dx / size.width,
       centerY: box.center.dy / size.height,
       widthRatio: box.width / size.width,
-      yaw: _yaw(face),
+      yaw: mirrored ? -_yaw(face) : _yaw(face),
       pitchDegrees: face.headEulerAngleX ?? 0,
       leftEyeOpen: face.leftEyeOpenProbability,
       rightEyeOpen: face.rightEyeOpenProbability,
