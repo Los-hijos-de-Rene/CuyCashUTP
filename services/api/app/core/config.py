@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # día que el KYC esté arriba. Un ticket que SÍ se envía se valida siempre.
     KYC_REQUIRED: bool = False
     KYC_TICKET_TTL_SECONDS: int = 900
+    # El KYC del plan gratuito se duerme y tarda ~30 s en despertar; mientras,
+    # Render responde 502. El proxy reintenta durante este tiempo antes de
+    # rendirse. Debe quedar por debajo del timeout de la app (70 s).
+    KYC_WAKE_TIMEOUT_SECONDS: float = 60
+    KYC_RETRY_DELAY_SECONDS: float = 5
 
     # Respuestas de duración uniforme: sin esto, que un DNI inexistente
     # responda más rápido reabre la enumeración de cuentas que la app cerró

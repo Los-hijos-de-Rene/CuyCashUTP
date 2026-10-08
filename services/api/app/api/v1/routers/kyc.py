@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import time
 from typing import Optional
 
 import httpx
@@ -75,8 +77,10 @@ async def _reenviar(path: str, request: Request) -> Response:
     podía usar con nuestra clave las rutas sueltas del servicio (`/verify`,
     `/liveness/evaluate`), que la app no necesita.
 
-    El cuerpo se reenvía como STREAM. `verify-full` sube decenas de fotogramas;
-    acumularlos en memoria tumba el servicio con pocos usuarios simultáneos.
+    Si el KYC está DESPERTANDO, se reintenta (ver `_pedir_con_reintento`). Para
+    poder reenviar, el cuerpo se guarda en memoria en vez de pasarlo como
+    stream: un `verify-full` son ~1-2 MB (fotogramas clave, no video), que la
+    API aguanta sin problema a esta escala.
     """
     if not settings.KYC_BASE_URL or not settings.KYC_API_KEY:
         raise ApiError(
@@ -90,19 +94,7 @@ async def _reenviar(path: str, request: Request) -> Response:
         "X-API-Key": settings.KYC_API_KEY,
         "content-type": request.headers.get("content-type", "application/json"),
     }
-
-    try:
-        async with httpx.AsyncClient(timeout=120) as client:
-            upstream = await client.request(
-                request.method, url, headers=headers, content=request.stream()
-            )
-    except httpx.HTTPError as error:
-        logger.error("KYC no alcanzable: %s", error)
-        raise ApiError(
-            ErrorCode.SERVICE_UNAVAILABLE,
-            "No pudimos contactar la verificación de identidad.",
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+    upstream = await _pedir_con_reintento(request.method, url, headers, await request.body())
 
     # Un 401/403 del servicio es NUESTRA clave mal configurada, no algo que el
     # usuario pueda corregir: para la app es "no disponible".
@@ -119,3 +111,60 @@ async def _reenviar(path: str, request: Request) -> Response:
         status_code=upstream.status_code,
         media_type=upstream.headers.get("content-type"),
     )
+
+
+# Lo que responde el borde de Render mientras el servicio arranca o se
+# reinicia: la petición NO llegó a procesarse en el KYC, así que repetirla es
+# seguro (no se consume un token de desafío dos veces).
+_DESPERTANDO = {
+    status.HTTP_502_BAD_GATEWAY,
+    status.HTTP_503_SERVICE_UNAVAILABLE,
+    status.HTTP_504_GATEWAY_TIMEOUT,
+}
+
+
+async def _pedir_con_reintento(
+    method: str, url: str, headers: dict, body: bytes
+) -> httpx.Response:
+    """
+    Llama al KYC y, si está despertando, reintenta hasta KYC_WAKE_TIMEOUT_SECONDS.
+
+    En el plan gratuito de Render el KYC se duerme tras ~15 min sin tráfico;
+    la primera petición lo despierta (~30 s) y mientras tanto el borde de
+    Render responde 502. Sin reintento, ese 502 le llegaba al usuario como "no
+    pudimos conectar", en medio del registro.
+
+    Solo se reintenta lo que NO llegó al KYC (502/503/504 del borde, conexión
+    rechazada). Un timeout de lectura no: el KYC pudo haber procesado la
+    petición, y repetirla gastaría el token de desafío dos veces.
+    """
+    limite = time.monotonic() + settings.KYC_WAKE_TIMEOUT_SECONDS
+    intento = 0
+    async with httpx.AsyncClient(timeout=120) as client:
+        while True:
+            intento += 1
+            try:
+                upstream = await client.request(method, url, headers=headers, content=body)
+                if upstream.status_code not in _DESPERTANDO:
+                    return upstream
+                motivo = f"HTTP {upstream.status_code}"
+            except (httpx.ConnectError, httpx.ConnectTimeout) as error:
+                upstream = None
+                motivo = type(error).__name__
+            except httpx.HTTPError as error:
+                logger.error("KYC no alcanzable: %s", error)
+                raise ApiError(
+                    ErrorCode.SERVICE_UNAVAILABLE,
+                    "No pudimos contactar la verificación de identidad.",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+            if time.monotonic() + settings.KYC_RETRY_DELAY_SECONDS > limite:
+                logger.error("KYC sigue sin responder tras %d intentos (%s)", intento, motivo)
+                raise ApiError(
+                    ErrorCode.SERVICE_UNAVAILABLE,
+                    "La verificación de identidad está iniciando. Inténtalo en un momento.",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            logger.warning("KYC despertando (%s); reintento %d", motivo, intento)
+            await asyncio.sleep(settings.KYC_RETRY_DELAY_SECONDS)
