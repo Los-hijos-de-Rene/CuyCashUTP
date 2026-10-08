@@ -40,17 +40,20 @@ void main() {
   Future<LivenessChallenge> open() async =>
       (await repo.requestChallenge()).getRight().toNullable()!;
 
-  Map<LivenessStep, List<String>> todos(LivenessChallenge challenge) =>
-      {for (final step in challenge.steps) step: segment()};
+  Map<LivenessStep, List<String>> todos(LivenessChallenge challenge) => {
+    for (final step in challenge.steps) step: segment(),
+  };
 
-  test('el desafío trae dos gestos y su vencimiento, como el servicio',
-      () async {
-    final challenge = await open();
+  test(
+    'el desafío trae dos gestos y su vencimiento, como el servicio',
+    () async {
+      final challenge = await open();
 
-    expect(challenge.steps, hasLength(2));
-    expect(challenge.expiresAt, clock.now.add(repo.ttl));
-    expect(challenge.isExpired(clock.now), isFalse);
-  });
+      expect(challenge.steps, hasLength(2));
+      expect(challenge.expiresAt, clock.now.add(repo.ttl));
+      expect(challenge.isExpired(clock.now), isFalse);
+    },
+  );
 
   test('con un segmento suficiente por gesto, aprueba', () async {
     final challenge = await open();
@@ -84,9 +87,7 @@ void main() {
     final result = await repo.verifyFull(
       token: challenge.token,
       documentImage: documento,
-      segments: {
-        for (final step in challenge.steps) step: segment(2),
-      },
+      segments: {for (final step in challenge.steps) step: segment(2)},
     );
 
     expect(result.getRight().toNullable()!.approved, isFalse);
@@ -105,21 +106,43 @@ void main() {
     expect(failureOf(result), isA<ChallengeExpired>());
   });
 
-  test('el token es de un solo uso, aunque la primera vez se rechace',
-      () async {
-    final challenge = await open();
-    await repo.verifyFull(
-      token: challenge.token,
-      documentImage: documento,
-      segments: const {},
-    );
+  test(
+    'con el reverso de un DNI ajeno, no aprueba aunque todo lo demás pase',
+    () async {
+      repo = MemoryKycRepository(clock: clock.call, documentDni: '87654321');
+      final challenge = await open();
 
-    final segunda = await repo.verifyFull(
-      token: challenge.token,
-      documentImage: documento,
-      segments: todos(challenge),
-    );
+      final result = await repo.verifyFull(
+        token: challenge.token,
+        documentImage: documento,
+        documentBackImage: documento,
+        expectedDni: '12345678',
+        segments: todos(challenge),
+      );
 
-    expect(failureOf(segunda), isA<ChallengeExpired>());
-  });
+      final veredicto = result.getRight().toNullable()!;
+      expect(veredicto.approved, isFalse);
+      expect(veredicto.dniMatches, isFalse);
+    },
+  );
+
+  test(
+    'el token es de un solo uso, aunque la primera vez se rechace',
+    () async {
+      final challenge = await open();
+      await repo.verifyFull(
+        token: challenge.token,
+        documentImage: documento,
+        segments: const {},
+      );
+
+      final segunda = await repo.verifyFull(
+        token: challenge.token,
+        documentImage: documento,
+        segments: todos(challenge),
+      );
+
+      expect(failureOf(segunda), isA<ChallengeExpired>());
+    },
+  );
 }

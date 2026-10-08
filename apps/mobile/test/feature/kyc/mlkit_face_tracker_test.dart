@@ -10,19 +10,25 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 /// Un rostro como lo devuelve ML Kit: mejillas en x=100 (`leftCheek`) y x=200
 /// (`rightCheek`), nariz en [noseX].
 Face face(int noseX) => Face(
-      boundingBox: const Rect.fromLTWH(80, 100, 140, 180),
-      landmarks: {
-        FaceLandmarkType.leftCheek: FaceLandmark(
-            type: FaceLandmarkType.leftCheek, position: const Point(100, 200)),
-        FaceLandmarkType.rightCheek: FaceLandmark(
-            type: FaceLandmarkType.rightCheek, position: const Point(200, 200)),
-        FaceLandmarkType.noseBase: FaceLandmark(
-            type: FaceLandmarkType.noseBase, position: Point(noseX, 190)),
-      },
-      contours: const {},
-      leftEyeOpenProbability: 0.9,
-      rightEyeOpenProbability: 0.9,
-    );
+  boundingBox: const Rect.fromLTWH(80, 100, 140, 180),
+  landmarks: {
+    FaceLandmarkType.leftCheek: FaceLandmark(
+      type: FaceLandmarkType.leftCheek,
+      position: const Point(100, 200),
+    ),
+    FaceLandmarkType.rightCheek: FaceLandmark(
+      type: FaceLandmarkType.rightCheek,
+      position: const Point(200, 200),
+    ),
+    FaceLandmarkType.noseBase: FaceLandmark(
+      type: FaceLandmarkType.noseBase,
+      position: Point(noseX, 190),
+    ),
+  },
+  contours: const {},
+  leftEyeOpenProbability: 0.9,
+  rightEyeOpenProbability: 0.9,
+);
 
 void main() {
   const size = Size(300, 400);

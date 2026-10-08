@@ -11,7 +11,7 @@ from app.core.deps import bearer_token, current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.core.security import ahash_pin, averify_pin, new_token, pin_is_valid, token_digest
 from app.db.base import get_session
-from app.db.models import Device, OtpTicket, User, utcnow
+from app.db.models import Device, KycVerification, OtpTicket, User, utcnow
 from app.db.models import Session as SessionRow
 from app.schemas import (
     AuthenticateIn,
@@ -24,7 +24,7 @@ from app.schemas import (
     SessionIn,
 )
 from app.services import alias as alias_svc
-from app.services import accounts, biometric, devices, lockout, otp, pin_check, sessions
+from app.services import accounts, biometric, devices, kyc_tickets, lockout, otp, pin_check, sessions
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
@@ -85,6 +85,21 @@ async def register(
     if existing.scalars().first() is not None:
         raise ApiError(ErrorCode.IDENTIFIER_TAKEN, "Este DNI ya está registrado.")
 
+    # El KYC lo decide el SERVIDOR, no la app: sin un ticket de aprobación de
+    # este mismo DNI y este mismo teléfono, no hay alta (con KYC_REQUIRED).
+    # Un ticket que llega se valida siempre, esté o no encendido el requisito.
+    kyc_ticket = None
+    if payload.kyc_ticket:
+        kyc_ticket = await kyc_tickets.find_valid(
+            session, payload.kyc_ticket, payload.dni, x_device_id
+        )
+    elif settings.KYC_REQUIRED:
+        raise ApiError(
+            ErrorCode.KYC_REQUIRED,
+            "Verifica tu identidad antes de crear la cuenta.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
     nombres = _nombre_normalizado(payload.nombres)
     apellidos = _nombre_normalizado(payload.apellidos)
     pin_hash = await ahash_pin(payload.pin)
@@ -120,6 +135,22 @@ async def register(
             ErrorCode.SERVICE_UNAVAILABLE,
             "No pudimos completar el registro. Inténtalo de nuevo.",
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    if kyc_ticket is not None:
+        # Después del bucle del alias, que puede deshacer la transacción: si
+        # el ticket se consumiera antes, un reintento lo perdería. En la misma
+        # transacción que el alta: o quedan las dos cosas, o ninguna.
+        await kyc_tickets.consume(session, kyc_ticket.id)
+        user.kyc_status = "verified"
+        session.add(
+            KycVerification(
+                user_id=user.id,
+                verdict="approved",
+                document_valid=kyc_ticket.document_valid,
+                is_live=kyc_ticket.is_live,
+                face_match=kyc_ticket.face_match,
+                face_distance=kyc_ticket.face_distance,
+            )
         )
     # Antes del commit a propósito: si la apertura falla, el alta entera
     # revierte. Una identidad sin cuenta no tendría quién la repare.

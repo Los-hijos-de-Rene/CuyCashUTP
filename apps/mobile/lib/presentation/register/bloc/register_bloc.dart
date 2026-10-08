@@ -9,6 +9,8 @@ import '../../../feature/auth/application/auth_actions.dart';
 import '../../../feature/auth/domain/auth_failure.dart';
 import '../../../feature/auth/domain/auth_session.dart';
 import '../../../feature/auth/domain/pin_rules.dart';
+import '../../../feature/kyc/application/kyc_actions.dart';
+import '../../../feature/kyc/domain/document_check.dart';
 import '../../../feature/security/application/enable_biometric_use_case.dart';
 import '../../auth/bloc/auth_bloc.dart' show AuthError;
 
@@ -48,15 +50,16 @@ abstract final class RegisterValidators {
 /// submit final NO navega: la sesión llega por el stream de auth y el gate del
 /// router lleva a /home.
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
-  RegisterBloc(AuthActions actions, {required EnableBiometricUseCase biometric})
-    : _actions = actions,
+  RegisterBloc(
+    AuthActions actions, {
+    required EnableBiometricUseCase biometric,
+    required KycActions kyc,
+  }) : _actions = actions,
       _biometric = biometric,
+      _kyc = kyc,
       super(const RegisterState()) {
     on<RegisterFieldChanged>(_onFieldChanged);
-    on<RegisterCaptured>(
-      (event, emit) =>
-          emit(_setSide(event.side, CaptureStatus.captured, event.image)),
-    );
+    on<RegisterCaptured>(_onCaptured);
     on<RegisterCaptureFailed>(
       (event, emit) => emit(_setSide(event.side, CaptureStatus.unreadable)),
     );
@@ -70,7 +73,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<RegisterFaceScanCompleted>(
       (event, emit) => emit(
         state.copyWith(
-          draft: state.draft.copyWith(faceStatus: FaceScanStatus.success),
+          draft: state.draft.copyWith(faceStatus: FaceScanStatus.success, kycTicket: event.kycTicket),
         ),
       ),
     );
@@ -142,6 +145,46 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
   final EnableBiometricUseCase _biometric;
   final AuthActions _actions;
+  final KycActions _kyc;
+
+  /// Revisa la foto del DNI en cuanto se toma, en vez de enterarse recién al
+  /// final del registro, después de hacer los gestos del rostro.
+  ///
+  /// El frente se revisa por calidad y rostro; el reverso, leyendo su MRZ y
+  /// cotejándola con el DNI escrito en el paso 1. Es una guía: el veredicto
+  /// que cuenta lo vuelve a dar el servidor en la verificación final.
+  Future<void> _onCaptured(
+    RegisterCaptured event,
+    Emitter<RegisterState> emit,
+  ) async {
+    final side = event.side;
+    final image = event.image;
+    final dni = state.draft.dni.trim();
+    emit(_setSide(side, CaptureStatus.checking, image));
+
+    final result = side == DocSide.front
+        ? await _kyc.checkDocumentFront(image)
+        : await _kyc.checkDocumentBack(image, expectedDni: dni);
+
+    // Si mientras tanto el usuario tomó otra foto de ese lado, esta respuesta
+    // ya no aplica.
+    final current = side == DocSide.front
+        ? state.draft.dniFrontImage
+        : state.draft.dniBackImage;
+    if (!identical(current, image)) return;
+
+    final next = result.match(
+      // Sin servicio no se bloquea el paso: la verificación final vuelve a
+      // revisar el documento y ahí sí decide.
+      (_) => _setSide(side, CaptureStatus.captured, image),
+      (check) => check.isOk
+          ? _setSide(side, CaptureStatus.captured, image)
+          : _setSide(side, CaptureStatus.unreadable, image, check.mainIssue),
+    );
+    emit(side == DocSide.back
+        ? next.copyWith(draft: next.draft.copyWith(backCheckedDni: dni))
+        : next);
+  }
 
   /// Escribe en el grupo activo. Al sexto dígito, cada subpaso decide solo:
   /// crear valida las reglas y pasa a confirmar; confirmar compara y pasa a
@@ -258,10 +301,19 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     DocSide side,
     CaptureStatus status, [
     Uint8List? image,
+    DocumentIssue? issue,
   ]) => state.copyWith(
     draft: side == DocSide.front
-        ? state.draft.copyWith(dniFront: status, dniFrontImage: image)
-        : state.draft.copyWith(dniBack: status, dniBackImage: image),
+        ? state.draft.copyWith(
+            dniFront: status,
+            dniFrontImage: image,
+            dniFrontIssue: issue,
+          )
+        : state.draft.copyWith(
+            dniBack: status,
+            dniBackImage: image,
+            dniBackIssue: issue,
+          ),
   );
 
   void _onFieldChanged(
@@ -311,6 +363,15 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     }
     if (!state.canAdvance) return;
     if (state.step < 3) emit(state.copyWith(step: state.step + 1));
+
+    // Volvió al paso 1 y cambió el DNI con el reverso ya fotografiado: el
+    // cotejo anterior era contra otro número, así que se repite.
+    final back = state.draft.dniBackImage;
+    if (state.step == 1 &&
+        back != null &&
+        state.draft.backCheckedDni != state.draft.dni.trim()) {
+      add(RegisterEvent.captured(DocSide.back, back));
+    }
   }
 
   Future<void> _onSubmitted(
@@ -325,14 +386,27 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       apellidos: state.draft.apellidos,
       email: state.draft.email,
       pin: state.draft.pin,
+      kycTicket: state.draft.kycTicket,
     );
     result.match(
-      (failure) => emit(
-        state.copyWith(
+      (failure) => emit(switch (_errorFor(failure)) {
+        // El servidor no aceptó la verificación (venció, ya se usó o nunca
+        // la hubo): se vuelve al rostro con el ticket descartado. Quedarse en
+        // el PIN dejaría al usuario reintentando algo que no puede pasar.
+        AuthError.identityNotVerified => state.copyWith(
           status: RegisterStatus.editing,
-          submitError: _errorFor(failure),
+          submitError: AuthError.identityNotVerified,
+          step: 2,
+          draft: state.draft.copyWith(
+            faceStatus: FaceScanStatus.idle,
+            kycTicket: null,
+          ),
         ),
-      ),
+        final error => state.copyWith(
+          status: RegisterStatus.editing,
+          submitError: error,
+        ),
+      }),
       (session) => emit(
         state.copyWith(status: RegisterStatus.editing, createdSession: session),
       ), // éxito → pantalla de éxito (aún sin login)
@@ -342,6 +416,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   AuthError _errorFor(GlobalFailure<AuthFailure> failure) => switch (failure) {
     ServerFailure(failure: IdentifierTaken()) => AuthError.identifierTaken,
     ServerFailure(failure: WeakPin()) => AuthError.weakPin,
+    ServerFailure(failure: IdentityNotVerified()) => AuthError.identityNotVerified,
     _ => AuthError.generic,
   };
 }

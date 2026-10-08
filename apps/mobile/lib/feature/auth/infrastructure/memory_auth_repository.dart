@@ -19,6 +19,7 @@ class MemoryAuthRepository implements AuthRepository {
     List<String> otherDeviceTokens = const [],
     MemorySecurityState? security,
     this.deviceTrusted = true,
+    this.kycRequired = false,
   }) : _session = initial,
        _security =
            security ??
@@ -33,6 +34,10 @@ class MemoryAuthRepository implements AuthRepository {
   /// desde otro): el PIN correcto no abre sesión y `signIn` pide el OTP de
   /// dispositivo, como el backend real. Solo para simularlo en tests.
   bool deviceTrusted;
+
+  /// Como el backend con `KYC_REQUIRED`: el alta exige un ticket de KYC.
+  /// Apagado por defecto, igual que en producción hoy.
+  final bool kycRequired;
 
   /// PIN aceptado por `signIn`. Cambia con `resetPin` y con el cambio de PIN
   /// del perfil (estado compartido).
@@ -122,12 +127,17 @@ class MemoryAuthRepository implements AuthRepository {
     required String apellidos,
     required String email,
     required String pin,
+    String? kycTicket,
   }) async {
     if (!_pinFormat.hasMatch(pin)) {
       return left(const GlobalFailure.server(AuthFailure.weakPin()));
     }
     if (_registered.contains(dni)) {
       return left(const GlobalFailure.server(AuthFailure.identifierTaken()));
+    }
+    // Como el servidor con KYC_REQUIRED: sin ticket de KYC aprobado, no hay alta.
+    if (kycRequired && (kycTicket == null || kycTicket.isEmpty)) {
+      return left(const GlobalFailure.server(AuthFailure.identityNotVerified()));
     }
     _registered.add(dni);
     final titular = AuthSession(

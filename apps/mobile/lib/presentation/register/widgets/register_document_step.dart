@@ -9,9 +9,9 @@ import 'document_capture_card.dart';
 
 /// Paso 2 · Documento. Captura real de frente y reverso del DNI.
 ///
-/// Al servicio de verificación se le manda el FRENTE: es la cara que lleva la
-/// foto, y el match biométrico compara ese rostro con el del liveness. El
-/// reverso se conserva para el expediente.
+/// Cada foto se revisa en cuanto se toma: el frente por calidad y rostro (es
+/// la cara contra la que se compara el liveness), y el reverso leyendo su MRZ
+/// para comprobar que el DNI escrito en el paso 1 es el de este documento.
 class RegisterDocumentStep extends StatelessWidget {
   const RegisterDocumentStep({super.key});
 
@@ -53,6 +53,7 @@ class RegisterDocumentStep extends StatelessWidget {
               hint: l10n.dniFrontHint,
               status: draft.dniFront,
               image: draft.dniFrontImage,
+              issue: draft.dniFrontIssue,
               onCapture: () => _capture(context, bloc, DocSide.front),
               onRetake: () => _capture(context, bloc, DocSide.front),
             ),
@@ -62,6 +63,7 @@ class RegisterDocumentStep extends StatelessWidget {
               hint: l10n.dniBackHint,
               status: draft.dniBack,
               image: draft.dniBackImage,
+              issue: draft.dniBackIssue,
               onCapture: () => _capture(context, bloc, DocSide.back),
               onRetake: () => _capture(context, bloc, DocSide.back),
             ),

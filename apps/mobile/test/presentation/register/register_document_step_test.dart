@@ -45,7 +45,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
+    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
     addTearDown(bloc.close);
     await tester.pumpWidget(_wrap(bloc, flavor: flavor));
     await tester.pumpAndSettle();

@@ -48,6 +48,8 @@ class KycVerification {
     required this.documentValid,
     required this.isLive,
     required this.faceMatch,
+    this.dniMatches,
+    this.ticket,
   });
 
   final bool approved;
@@ -55,4 +57,13 @@ class KycVerification {
   final bool documentValid;
   final bool isLive;
   final bool faceMatch;
+
+  /// Si el DNI leído del reverso es el declarado. Null si no se envió el
+  /// reverso o no se pudo leer.
+  final bool? dniMatches;
+
+  /// Ticket que el backend emite solo si aprobó TODO. `/register` lo exige:
+  /// es lo que convierte el veredicto en algo que el servidor recuerda, en vez
+  /// de algo que la app "dice".
+  final String? ticket;
 }

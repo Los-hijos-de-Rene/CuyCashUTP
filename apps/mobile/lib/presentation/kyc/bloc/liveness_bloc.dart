@@ -38,6 +38,8 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
     required KycActions actions,
     required FaceTracker tracker,
     required Uint8List documentImage,
+    Uint8List? documentBackImage,
+    String? expectedDni,
     this.gestures = const LivenessGestures(),
     DateTime Function()? clock,
     this.slowAfter = const Duration(seconds: 8),
@@ -46,6 +48,8 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
   })  : _actions = actions,
         _tracker = tracker,
         _documentImage = documentImage,
+        _documentBackImage = documentBackImage,
+        _expectedDni = expectedDni,
         _now = clock ?? DateTime.now,
         super(const LivenessState()) {
     on<LivenessStarted>(_onStarted);
@@ -55,6 +59,11 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
   final KycActions _actions;
   final FaceTracker _tracker;
   final Uint8List _documentImage;
+
+  /// Reverso del DNI y número declarado: el servidor lee la MRZ y exige que
+  /// coincidan para aprobar.
+  final Uint8List? _documentBackImage;
+  final String? _expectedDni;
   final LivenessGestures gestures;
   final DateTime Function() _now;
 
@@ -269,6 +278,8 @@ class LivenessBloc extends Bloc<LivenessEvent, LivenessState> {
       final result = await _actions.verifyFull(
         token: challenge.token,
         documentImage: _documentImage,
+        documentBackImage: _documentBackImage,
+        expectedDni: _expectedDni,
         segments: Map.unmodifiable(segments),
       );
       debugPrint('Liveness: verify-full respondió '

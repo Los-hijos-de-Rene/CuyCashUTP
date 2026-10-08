@@ -19,7 +19,7 @@ void main() {
   late RegisterBloc bloc;
 
   Future<void> pumpStep(WidgetTester tester, {required bool active}) async {
-    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
+    bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
     addTearDown(bloc.close);
 
     await tester.pumpWidget(

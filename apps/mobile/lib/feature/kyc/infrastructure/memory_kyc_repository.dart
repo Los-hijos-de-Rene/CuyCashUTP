@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:core_kernel/core_kernel.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../domain/document_check.dart';
 import '../domain/kyc_failure.dart';
 import '../domain/kyc_repository.dart';
 import '../domain/liveness_challenge.dart';
@@ -23,6 +24,7 @@ class MemoryKycRepository implements KycRepository {
     List<LivenessStep>? steps,
     this.ttl = const Duration(seconds: 180),
     this.minFramesPerStep = 5,
+    this.documentDni,
   })  : _now = clock,
         // Como el servicio: dos gestos del pool de giros laterales y parpadeo.
         _steps = steps ?? const [LivenessStep.izquierda, LivenessStep.parpadeo];
@@ -34,8 +36,37 @@ class MemoryKycRepository implements KycRepository {
   /// El servicio real descarta segmentos con muy pocos frames.
   final int minFramesPerStep;
 
+  /// DNI "impreso" en el reverso simulado. Null = el que declare el usuario,
+  /// para que el flavor `mock` se recorra sin tropiezos; las pruebas lo fijan
+  /// para simular un DNI ajeno.
+  final String? documentDni;
+
   final Map<String, LivenessChallenge> _challenges = {};
   var _seq = 0;
+
+  @override
+  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
+    Uint8List image,
+  ) async =>
+      right(image.isEmpty
+          ? const DocumentCheck(issues: [DocumentIssue.blurry])
+          : const DocumentCheck.ok());
+
+  @override
+  FutureResult<KycFailure, DocumentCheck> checkDocumentBack(
+    Uint8List image, {
+    required String expectedDni,
+  }) async {
+    if (image.isEmpty) {
+      return right(
+          const DocumentCheck(issues: [DocumentIssue.backUnreadable]));
+    }
+    final leido = documentDni ?? expectedDni;
+    return right(leido == expectedDni
+        ? DocumentCheck.ok(dniRead: leido)
+        : DocumentCheck(
+            issues: const [DocumentIssue.dniMismatch], dniRead: leido));
+  }
 
   @override
   FutureResult<KycFailure, LivenessChallenge> requestChallenge() async {
@@ -52,6 +83,8 @@ class MemoryKycRepository implements KycRepository {
   FutureResult<KycFailure, KycVerification> verifyFull({
     required String token,
     required Uint8List documentImage,
+    Uint8List? documentBackImage,
+    String? expectedDni,
     required Map<LivenessStep, List<String>> segments,
   }) async {
     // Un solo uso: se consume aunque la verificación no apruebe.
@@ -63,14 +96,24 @@ class MemoryKycRepository implements KycRepository {
     final completos = challenge.steps.every(
       (step) => (segments[step]?.length ?? 0) >= minFramesPerStep,
     );
+    // Como el servicio: con reverso y DNI declarado, deben coincidir.
+    final dniMatches = documentBackImage == null || expectedDni == null
+        ? null
+        : (documentDni ?? expectedDni) == expectedDni;
+    final approved =
+        completos && documentImage.isNotEmpty && dniMatches != false;
     return right(KycVerification(
-      approved: completos && documentImage.isNotEmpty,
-      reason: completos
+      approved: approved,
+      reason: approved
           ? 'Verificación de identidad exitosa'
-          : 'Falló: liveness no superado',
+          : dniMatches == false
+              ? 'Falló: el DNI no coincide con el documento'
+              : 'Falló: liveness no superado',
       documentValid: documentImage.isNotEmpty,
       isLive: completos,
       faceMatch: completos,
+      dniMatches: dniMatches,
+      ticket: approved ? 'memory-kyc-ticket-$token' : null,
     ));
   }
 }

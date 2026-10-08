@@ -36,6 +36,10 @@ services:
       # proxy responde 503 y la app lo muestra como servicio no disponible.
       KYC_BASE_URL: ${KYC_BASE_URL:-http://kyc:8000}
       KYC_API_KEY: ${KYC_API_KEY:-cuycash-local-kyc}
+      # En local el alta EXIGE un KYC aprobado (ticket del proxy). Si levantas
+      # sin el perfil `kyc`, o con la app en KYC simulado, pon KYC_REQUIRED=false
+      # en `.env` o el registro responderá KYC_REQUIRED.
+      KYC_REQUIRED: ${KYC_REQUIRED:-true}
     depends_on:
       db:
         condition: service_healthy

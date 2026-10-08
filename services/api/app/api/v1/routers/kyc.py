@@ -1,10 +1,16 @@
+import json
 import logging
+from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.errors import ApiError, ErrorCode
+from app.db.base import get_session
+from app.services import kyc_tickets
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +23,45 @@ async def challenge(request: Request):
     return await _reenviar("liveness/challenge", request)
 
 
+@router.post("/document/validate")
+async def validate_document(request: Request):
+    """Calidad del frente del DNI, al momento de fotografiarlo (paso 2)."""
+    return await _reenviar("document/validate", request)
+
+
+@router.post("/document/mrz")
+async def read_document_back(request: Request):
+    """Lee el reverso del DNI y lo coteja con el número declarado (paso 2)."""
+    return await _reenviar("document/mrz", request)
+
+
 @router.post("/identity/verify-full")
-async def verify_full(request: Request):
-    """Verificación completa: documento + todos los segmentos del liveness."""
-    return await _reenviar("identity/verify-full", request)
+async def verify_full(
+    request: Request,
+    x_device_id: Optional[str] = Header(None, alias="X-Device-Id", max_length=128),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Verificación completa: documento + todos los segmentos del liveness.
+
+    Si el servicio aprueba TODO, aquí se emite el `kyc_ticket` que exige
+    `/register`: el veredicto deja de ser algo que la app "dice" y pasa a ser
+    algo que el backend recuerda.
+    """
+    response = await _reenviar("identity/verify-full", request)
+    if response.status_code != status.HTTP_200_OK:
+        return response
+    try:
+        verdict = json.loads(response.body)
+    except ValueError:
+        return response
+    if not isinstance(verdict, dict):
+        return response
+
+    ticket = await kyc_tickets.issue(session, verdict, x_device_id or "")
+    if ticket is not None:
+        verdict["kyc_ticket"] = ticket
+    return JSONResponse(content=verdict)
 
 
 async def _reenviar(path: str, request: Request) -> Response:
@@ -30,9 +71,9 @@ async def _reenviar(path: str, request: Request) -> Response:
     Es lo que cierra el R1 del ADR-0001: la app deja de llevar la clave, que en
     un binario es extraíble con `strings` o con un proxy mirando el tráfico.
 
-    Solo las dos rutas que usa la app, no un comodín: con `/{path}` cualquiera
+    Solo las rutas que usa el registro, no un comodín: con `/{path}` cualquiera
     podía usar con nuestra clave las rutas sueltas del servicio (`/verify`,
-    `/document/validate`), que no forman parte del registro.
+    `/liveness/evaluate`), que la app no necesita.
 
     El cuerpo se reenvía como STREAM. `verify-full` sube decenas de fotogramas;
     acumularlos en memoria tumba el servicio con pocos usuarios simultáneos.

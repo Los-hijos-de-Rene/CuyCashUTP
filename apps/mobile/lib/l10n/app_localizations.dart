@@ -616,6 +616,54 @@ abstract class AppLocalizations {
   /// **'No pudimos leer tu DNI'**
   String get documentError;
 
+  /// No description provided for @documentChecking.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisando…'**
+  String get documentChecking;
+
+  /// No description provided for @documentIssueLowResolution.
+  ///
+  /// In es, this message translates to:
+  /// **'La foto salió con poca resolución. Acerca un poco el teléfono al DNI.'**
+  String get documentIssueLowResolution;
+
+  /// No description provided for @documentIssueBlurry.
+  ///
+  /// In es, this message translates to:
+  /// **'La foto salió borrosa. Apoya el DNI y mantén el teléfono quieto.'**
+  String get documentIssueBlurry;
+
+  /// No description provided for @documentIssueTooDark.
+  ///
+  /// In es, this message translates to:
+  /// **'Está muy oscura. Busca un lugar con más luz.'**
+  String get documentIssueTooDark;
+
+  /// No description provided for @documentIssueTooBright.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiene demasiado brillo o un reflejo. Inclina un poco el DNI.'**
+  String get documentIssueTooBright;
+
+  /// No description provided for @documentIssueNoFace.
+  ///
+  /// In es, this message translates to:
+  /// **'No se ve tu foto. Fotografía el frente del DNI, donde está tu rostro.'**
+  String get documentIssueNoFace;
+
+  /// No description provided for @documentIssueBackUnreadable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos leer las 3 líneas de la parte inferior del reverso. Encuádralas bien, sin reflejos.'**
+  String get documentIssueBackUnreadable;
+
+  /// No description provided for @documentIssueDniMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'El número de este DNI no es el que escribiste en el paso 1. Revisa el número o fotografía tu propio DNI.'**
+  String get documentIssueDniMismatch;
+
   /// No description provided for @documentTip1.
   ///
   /// In es, this message translates to:
@@ -1101,6 +1149,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Tu nuevo PIN debe ser distinto al anterior.'**
   String get errorPinUnchanged;
+
+  /// No description provided for @errorIdentityNotVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu verificación de identidad venció o no fue aceptada. Vuelve a verificar tu rostro para crear la cuenta.'**
+  String get errorIdentityNotVerified;
 
   /// No description provided for @otpSubmit.
   ///

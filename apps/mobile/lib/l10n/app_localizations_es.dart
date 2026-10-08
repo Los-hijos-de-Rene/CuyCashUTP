@@ -302,6 +302,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get documentError => 'No pudimos leer tu DNI';
 
   @override
+  String get documentChecking => 'Revisando…';
+
+  @override
+  String get documentIssueLowResolution =>
+      'La foto salió con poca resolución. Acerca un poco el teléfono al DNI.';
+
+  @override
+  String get documentIssueBlurry =>
+      'La foto salió borrosa. Apoya el DNI y mantén el teléfono quieto.';
+
+  @override
+  String get documentIssueTooDark =>
+      'Está muy oscura. Busca un lugar con más luz.';
+
+  @override
+  String get documentIssueTooBright =>
+      'Tiene demasiado brillo o un reflejo. Inclina un poco el DNI.';
+
+  @override
+  String get documentIssueNoFace =>
+      'No se ve tu foto. Fotografía el frente del DNI, donde está tu rostro.';
+
+  @override
+  String get documentIssueBackUnreadable =>
+      'No pudimos leer las 3 líneas de la parte inferior del reverso. Encuádralas bien, sin reflejos.';
+
+  @override
+  String get documentIssueDniMismatch =>
+      'El número de este DNI no es el que escribiste en el paso 1. Revisa el número o fotografía tu propio DNI.';
+
+  @override
   String get documentTip1 => 'Evita reflejos y sombras sobre el documento.';
 
   @override
@@ -599,6 +630,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorPinUnchanged => 'Tu nuevo PIN debe ser distinto al anterior.';
+
+  @override
+  String get errorIdentityNotVerified =>
+      'Tu verificación de identidad venció o no fue aceptada. Vuelve a verificar tu rostro para crear la cuenta.';
 
   @override
   String get otpSubmit => 'Verificar';

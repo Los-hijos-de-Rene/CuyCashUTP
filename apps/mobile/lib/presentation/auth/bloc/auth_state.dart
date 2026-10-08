@@ -10,6 +10,7 @@ enum AuthError {
   identifierTaken,
   weakPin,
   pinUnchanged,
+  identityNotVerified,
   generic
 }
 

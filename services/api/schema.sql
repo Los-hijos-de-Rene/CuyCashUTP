@@ -7,6 +7,26 @@
 -- Diseño y justificación de cada decisión: docs/modelo-datos.md
 
 
+CREATE TABLE kyc_tickets (
+	id VARCHAR(36) NOT NULL, 
+	token_hash VARCHAR(64) NOT NULL, 
+	dni VARCHAR(8) NOT NULL, 
+	device_id VARCHAR(128) NOT NULL, 
+	document_valid BOOLEAN NOT NULL, 
+	is_live BOOLEAN NOT NULL, 
+	face_match BOOLEAN NOT NULL, 
+	face_distance FLOAT, 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	expires_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	used_at TIMESTAMP WITH TIME ZONE, 
+	PRIMARY KEY (id)
+)
+
+;
+CREATE INDEX ix_kyc_tickets_dni ON kyc_tickets (dni);
+CREATE UNIQUE INDEX ix_kyc_tickets_token_hash ON kyc_tickets (token_hash);
+
+
 CREATE TABLE lockouts (
 	id VARCHAR(36) NOT NULL, 
 	subject_type VARCHAR(10) NOT NULL, 

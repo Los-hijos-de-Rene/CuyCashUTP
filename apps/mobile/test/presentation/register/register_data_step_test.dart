@@ -21,7 +21,7 @@ Widget _wrap(RegisterBloc bloc) => BlocProvider.value(
 
 void main() {
   testWidgets('muestra el encabezado y los 4 campos', (tester) async {
-    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
     addTearDown(bloc.close);
     await tester.pumpWidget(_wrap(bloc));
     await tester.pumpAndSettle();
@@ -31,7 +31,7 @@ void main() {
 
   testWidgets('avanzar con datos inválidos muestra el banner y errores',
       (tester) async {
-    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests());
+    final bloc = RegisterBloc(AuthActions(MemoryAuthRepository()), biometric: biometricParaTests(), kyc: kycParaTests());
     addTearDown(bloc.close);
     await tester.pumpWidget(_wrap(bloc));
     bloc.add(const RegisterEvent.stepAdvanced());

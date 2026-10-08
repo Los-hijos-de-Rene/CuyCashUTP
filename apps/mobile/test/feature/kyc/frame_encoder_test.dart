@@ -45,15 +45,20 @@ void main() {
   test('BGRA respeta el orden de canales', () {
     // Un píxel azul puro en BGRA es [255, 0, 0, 255].
     final bytes = Uint8List.fromList(
-        List.generate(8 * 8, (_) => [255, 0, 0, 255]).expand((p) => p).toList());
-    final jpg = img.decodeJpg(encodeFrameJpeg(RawFrame(
-      bytes: bytes,
-      width: 8,
-      height: 8,
-      bytesPerRow: 8 * 4,
-      format: RawFrameFormat.bgra8888,
-      rotationDegrees: 0,
-    )))!;
+      List.generate(8 * 8, (_) => [255, 0, 0, 255]).expand((p) => p).toList(),
+    );
+    final jpg = img.decodeJpg(
+      encodeFrameJpeg(
+        RawFrame(
+          bytes: bytes,
+          width: 8,
+          height: 8,
+          bytesPerRow: 8 * 4,
+          format: RawFrameFormat.bgra8888,
+          rotationDegrees: 0,
+        ),
+      ),
+    )!;
     final pixel = jpg.getPixel(4, 4);
 
     expect(pixel.b, greaterThan(200));

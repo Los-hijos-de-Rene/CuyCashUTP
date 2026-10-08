@@ -7,5 +7,6 @@ String authErrorText(AppLocalizations l10n, AuthError error) => switch (error) {
       AuthError.identifierTaken => l10n.errorIdentifierTaken,
       AuthError.weakPin => l10n.errorWeakPin,
       AuthError.pinUnchanged => l10n.errorPinUnchanged,
+      AuthError.identityNotVerified => l10n.errorIdentityNotVerified,
       AuthError.generic => l10n.errorGeneric,
     };

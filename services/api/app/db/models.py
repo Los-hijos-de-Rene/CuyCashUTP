@@ -184,6 +184,34 @@ class KycVerification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class KycTicket(Base):
+    """
+    Prueba de que el KYC APROBÓ a un DNI en un teléfono, antes de que exista
+    la cuenta. La emite el proxy de `verify-full` y la consume `/register`.
+
+    Sin esto, el veredicto llegaba a la app y era la app la que decidía seguir:
+    cualquiera podía llamar a `/register` directo, con cualquier DNI, sin
+    pasar por la cámara. Un solo uso y vida corta, como `OtpTicket`.
+
+    El `dni` es el que el servicio LEYÓ del reverso del documento (MRZ), no el
+    que escribió el usuario: es lo que se puede creer.
+    """
+
+    __tablename__ = "kyc_tickets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    dni: Mapped[str] = mapped_column(String(8), index=True)
+    device_id: Mapped[str] = mapped_column(String(128))
+    document_valid: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_live: Mapped[bool] = mapped_column(Boolean, default=False)
+    face_match: Mapped[bool] = mapped_column(Boolean, default=False)
+    face_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 # ---------------------------------------------------------------------------
 # Épica 2 · Cuentas y libro mayor (HU05, HU17, HU18)
 #
