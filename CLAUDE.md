@@ -150,6 +150,11 @@ además el reverso y `expected_dni` y NO aprueba si no coinciden. La cámara del
 documento usa un marco con la proporción ID-1 y recorta la foto a ese marco.
 El lector de MRZ solo se probó con una MRZ sintética, no con un DNI real.
 
+Motor facial del KYC: YuNet + SFace (ONNX en OpenCV), sin TensorFlow, para caber
+en el plan gratuito de Render (512 MB). La distancia es 1 - similitud coseno
+con umbral 0.637; NO es la escala de ArcFace (0.68). El `docker-compose` le pone
+al KYC el mismo tope de 512 MB que Render.
+
 **Sin probar en un teléfono:** la orientación de los fotogramas (rotación por
 `sensorOrientation`), los umbrales de `LivenessGestures` y el flujo en iOS.
 

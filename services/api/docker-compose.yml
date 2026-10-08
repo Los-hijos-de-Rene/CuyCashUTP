@@ -54,13 +54,14 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       API_KEY: ${KYC_API_KEY:-cuycash-local-kyc}
-      FACE_MATCH_THRESHOLD: ${FACE_MATCH_THRESHOLD:-0.68}
+      # Escala de SFace (1 - similitud coseno), el motor ONNX del KYC. No usar
+      # el 0.68 de ArcFace: con SFace sería más permisivo de lo debido.
+      FACE_MATCH_THRESHOLD: ${FACE_MATCH_THRESHOLD:-0.637}
       BLUR_LAPLACIAN_THRESHOLD: ${BLUR_LAPLACIAN_THRESHOLD:-80.0}
-    volumes:
-      # Pesos de los modelos entre reinicios y rebuilds.
-      - kyc_models:/app/.deepface
+    # El plan gratuito de Render da 512 MB: con este tope, lo que pase en
+    # local es lo que pasará allá.
+    mem_limit: 512m
     restart: unless-stopped
 
 volumes:
   cuycash_pgdata:
-  kyc_models:
