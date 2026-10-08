@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
+import '../../../feature/kyc/domain/document_check.dart';
 import '../../../l10n/app_localizations.dart';
 import '../bloc/register_bloc.dart';
 
@@ -22,6 +23,7 @@ class DocumentCaptureCard extends StatelessWidget {
     required this.hint,
     required this.status,
     this.image,
+    this.issue,
     required this.onCapture,
     required this.onRetake,
     super.key,
@@ -33,6 +35,9 @@ class DocumentCaptureCard extends StatelessWidget {
 
   /// Bytes de la foto tomada, si ya hay una.
   final Uint8List? image;
+
+  /// Por qué el servicio rechazó la foto, si la rechazó.
+  final DocumentIssue? issue;
   final VoidCallback onCapture;
   final VoidCallback onRetake;
 
@@ -41,6 +46,7 @@ class DocumentCaptureCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final unreadable = status == CaptureStatus.unreadable;
     final captured = status == CaptureStatus.captured;
+    final checking = status == CaptureStatus.checking;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -91,7 +97,12 @@ class DocumentCaptureCard extends StatelessWidget {
                         : Alignment.bottomRight,
                     child: Padding(
                       padding: const EdgeInsets.all(CuyCashSpacing.stackSm),
-                      child: captured
+                      child: checking
+                          ? _Pill(
+                              label: l10n.documentChecking,
+                              color: CuyCashColors.secondaryText,
+                              icon: Icons.hourglass_top)
+                          : captured
                           ? _Pill(
                               label: l10n.captured,
                               color: CuyCashColors.primaryContainer,
@@ -112,7 +123,11 @@ class DocumentCaptureCard extends StatelessWidget {
           ),
           if (unreadable) ...[
             const SizedBox(height: CuyCashSpacing.stackMd),
-            Text(l10n.documentError,
+            Text(
+                switch (issue) {
+                  null => l10n.documentError,
+                  final issue => documentIssueText(l10n, issue),
+                },
                 style: CuyCashTypography.bodyMd.copyWith(
                     color: CuyCashColors.error, fontWeight: FontWeight.w600)),
             const SizedBox(height: CuyCashSpacing.stackSm),
@@ -123,7 +138,13 @@ class DocumentCaptureCard extends StatelessWidget {
           const SizedBox(height: CuyCashSpacing.stackMd),
           SecondaryButton(
             label: (captured || unreadable) ? l10n.retakePhoto : l10n.takePhoto,
-            onPressed: (captured || unreadable) ? onRetake : onCapture,
+            // Mientras se revisa no se retoma: la respuesta llegaría tarde para
+            // una foto que ya no está.
+            onPressed: checking
+                ? null
+                : (captured || unreadable)
+                    ? onRetake
+                    : onCapture,
           ),
         ],
       ),
@@ -177,3 +198,15 @@ class _Pill extends StatelessWidget {
     );
   }
 }
+
+/// Qué decirle al usuario según por qué no sirvió la foto.
+String documentIssueText(AppLocalizations l10n, DocumentIssue issue) =>
+    switch (issue) {
+      DocumentIssue.lowResolution => l10n.documentIssueLowResolution,
+      DocumentIssue.blurry => l10n.documentIssueBlurry,
+      DocumentIssue.tooDark => l10n.documentIssueTooDark,
+      DocumentIssue.tooBright => l10n.documentIssueTooBright,
+      DocumentIssue.noFace => l10n.documentIssueNoFace,
+      DocumentIssue.backUnreadable => l10n.documentIssueBackUnreadable,
+      DocumentIssue.dniMismatch => l10n.documentIssueDniMismatch,
+    };

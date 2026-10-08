@@ -52,9 +52,16 @@ class AuthActions {
     required String apellidos,
     required String email,
     required String pin,
+    String? kycTicket,
   }) =>
       _repo.register(
-        dni: dni, nombres: nombres, apellidos: apellidos, email: email, pin: pin);
+        dni: dni,
+        nombres: nombres,
+        apellidos: apellidos,
+        email: email,
+        pin: pin,
+        kycTicket: kycTicket,
+      );
 
   /// Activa (inicia sesión) una sesión creada por `register`.
   FutureResult<AuthFailure, Unit> activate(AuthSession session,

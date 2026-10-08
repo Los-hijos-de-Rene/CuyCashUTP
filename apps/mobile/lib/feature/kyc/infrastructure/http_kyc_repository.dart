@@ -5,6 +5,7 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
+import '../domain/document_check.dart';
 import '../domain/kyc_failure.dart';
 import '../domain/kyc_repository.dart';
 import '../domain/liveness_challenge.dart';
@@ -29,8 +30,73 @@ class HttpKycRepository implements KycRepository {
   /// espera es la de esa llamada, no la general del cliente.
   final Duration verifyTimeout;
 
+  static const _frontPath = '/v1/kyc/document/validate';
+  static const _backPath = '/v1/kyc/document/mrz';
   static const _challengePath = '/v1/kyc/liveness/challenge';
   static const _verifyFullPath = '/v1/kyc/identity/verify-full';
+
+  @override
+  FutureResult<KycFailure, DocumentCheck> checkDocumentFront(Uint8List image) =>
+      _guard(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          _frontPath,
+          data: FormData.fromMap({
+            'file': MultipartFile.fromBytes(image, filename: 'front.jpg'),
+          }),
+          options: Options(receiveTimeout: verifyTimeout),
+        );
+        final failure = _failureFor(response);
+        if (failure != null) return left(GlobalFailure.server(failure));
+
+        final data = response.data;
+        final valid = data?['is_valid'];
+        if (valid is! bool) {
+          return left(const GlobalFailure.server(KycFailure.invalidResponse()));
+        }
+        final codes = data?['codes'];
+        final issues = [
+          if (codes is List)
+            for (final code in codes)
+              if (code is String) ?DocumentIssue.fromWire(code),
+        ];
+        // Un rechazo con un código que esta versión no conoce igual es un
+        // rechazo: se muestra como foto ilegible en vez de dejarla pasar.
+        if (!valid && issues.isEmpty) issues.add(DocumentIssue.blurry);
+        return right(DocumentCheck(issues: valid ? const [] : issues));
+      });
+
+  @override
+  FutureResult<KycFailure, DocumentCheck> checkDocumentBack(
+    Uint8List image, {
+    required String expectedDni,
+  }) =>
+      _guard(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          _backPath,
+          data: FormData.fromMap({
+            'file': MultipartFile.fromBytes(image, filename: 'back.jpg'),
+            'expected_dni': expectedDni,
+          }),
+          options: Options(receiveTimeout: verifyTimeout),
+        );
+        final failure = _failureFor(response);
+        if (failure != null) return left(GlobalFailure.server(failure));
+
+        final data = response.data;
+        final valid = data?['valid'];
+        if (valid is! bool) {
+          return left(const GlobalFailure.server(KycFailure.invalidResponse()));
+        }
+        if (!valid) {
+          return right(const DocumentCheck(
+              issues: [DocumentIssue.backUnreadable]));
+        }
+        final dni = data?['dni'] as String?;
+        return right(data?['matches_expected'] == true
+            ? DocumentCheck.ok(dniRead: dni)
+            : DocumentCheck(
+                issues: const [DocumentIssue.dniMismatch], dniRead: dni));
+      });
 
   @override
   FutureResult<KycFailure, LivenessChallenge> requestChallenge() =>
@@ -70,6 +136,8 @@ class HttpKycRepository implements KycRepository {
   FutureResult<KycFailure, KycVerification> verifyFull({
     required String token,
     required Uint8List documentImage,
+    Uint8List? documentBackImage,
+    String? expectedDni,
     required Map<LivenessStep, List<String>> segments,
   }) =>
       _guard(() async {
@@ -86,6 +154,12 @@ class HttpKycRepository implements KycRepository {
             filename: 'document.jpg',
           ),
           'liveness_frames': payload,
+          if (documentBackImage != null)
+            'document_back_image': MultipartFile.fromBytes(
+              documentBackImage,
+              filename: 'document_back.jpg',
+            ),
+          'expected_dni': ?expectedDni,
         });
 
         final response = await _dio.post<Map<String, dynamic>>(
@@ -111,6 +185,8 @@ class HttpKycRepository implements KycRepository {
               _boolAt(data, 'document_validation', 'is_valid') ?? false,
           isLive: _boolAt(data, 'liveness', 'is_live') ?? false,
           faceMatch: _boolAt(data, 'face_match', 'is_match') ?? false,
+          dniMatches: _boolAt(data, 'document_data', 'matches_expected'),
+          ticket: data?['kyc_ticket'] as String?,
         ));
       });
 

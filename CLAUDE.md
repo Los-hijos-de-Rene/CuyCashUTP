@@ -62,9 +62,9 @@ pantalla marcados como inferidos del código.
 El diálogo real de `local_auth` (Android/iOS) no se ha probado en un teléfono;
 los tests usan `MemoryBiometricGate`.
 
-**Brecha conocida: `kyc_status`.** Nada en el backend lo escribe: queda en
-`pending`. La pantalla de datos personales muestra el sello "Identidad
-verificada" solo si el servidor dice `verified`, así que hoy nunca aparece.
+**`kyc_status`:** lo escribe `/register` (`verified`) solo al consumir un
+`kyc_ticket` válido. En producción hoy queda en `pending`: el KYC no está
+desplegado y la app lo simula, así que no hay ticket (ver "KYC facial").
 
 **Concurrencia: probada en CI.** Los tests marcados `postgres` (envíos
 cruzados, misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`,
@@ -142,6 +142,14 @@ Entorno local completo (Postgres + API + KYC) con Docker:
 `CuyCashKYC` junto a este (o `KYC_REPO_DIR`). La app local apunta a
 `AUTH_BASE_URL` (`10.0.2.2:8001` en emulador).
 
+Documento (paso 2): cada foto se revisa al tomarla vía `/v1/kyc/document/validate`
+(frente: nitidez, luz, resolución, rostro) y `/v1/kyc/document/mrz` (reverso: se
+lee la MRZ TD1 con Tesseract y se coteja con el DNI escrito en el paso 1; el
+número vale solo si pasa su dígito verificador ICAO). `verify-full` recibe
+además el reverso y `expected_dni` y NO aprueba si no coinciden. La cámara del
+documento usa un marco con la proporción ID-1 y recorta la foto a ese marco.
+El lector de MRZ solo se probó con una MRZ sintética, no con un DNI real.
+
 **Sin probar en un teléfono:** la orientación de los fotogramas (rotación por
 `sensorOrientation`), los umbrales de `LivenessGestures` y el flujo en iOS.
 
@@ -150,9 +158,16 @@ Diseño del backend propio de auth: `docs/adr/0002-backend-de-autenticacion.md`.
 Diseño de cuentas, envío y recarga: `docs/superpowers/specs/2026-10-05-cuentas-y-transferencias-design.md`.
 Modelo de datos (tablas reales y las diseñadas): `docs/modelo-datos.md`.
 
-**Brecha conocida:** `/v1/auth/register` todavía NO exige un KYC aprobado: el
-veredicto llega a la app y es la app la que sigue. Ligarlo en el servidor (un
-`verification_id` de un solo uso que el registro consuma) está pendiente.
+**El alta la decide el servidor:** cuando `verify-full` aprueba TODO (incluido
+el cotejo del DNI con el reverso), el proxy emite un `kyc_ticket` (tabla
+`kyc_tickets`, `app/services/kyc_tickets.py`): un solo uso, 15 min, atado al DNI
+LEÍDO del documento y al `X-Device-Id`. `/register` lo exige si
+`KYC_REQUIRED` (encendido en `docker-compose.yml`, APAGADO en `render.yaml`
+hasta desplegar el KYC), lo valida siempre que llega, lo consume en la misma
+transacción del alta y escribe `kyc_verifications` + `kyc_status=verified`.
+Sin ticket con el requisito encendido: 403 `KYC_REQUIRED`; ticket malo: 403
+`KYC_INVALID`; la app vuelve al paso del rostro. Al desplegar el KYC en
+Render: encender `KYC_REQUIRED` ahí y `usesRealKyc` en la app, a la vez.
 
 ## SLA comprometidos que condicionan el código
 Números que no son adorno: si un cambio los pone en riesgo, dilo. Tabla

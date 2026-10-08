@@ -68,10 +68,26 @@ async def test_clave_rechazada_por_el_kyc_es_503_no_401(client, kyc_configurado,
 
 
 @pytest.mark.parametrize(
-    "ruta", ["/v1/kyc/identity/verify", "/v1/kyc/document/validate", "/v1/kyc/liveness/evaluate"]
+    "ruta", ["/v1/kyc/identity/verify", "/v1/kyc/liveness/evaluate", "/v1/kyc/liveness/verify"]
 )
 async def test_las_demas_rutas_del_servicio_no_se_exponen(client, kyc_configurado, upstream, ruta):
     recibido, _ = upstream
     r = await client.post(ruta)
     assert r.status_code in (404, 405)
     assert recibido == {}
+
+
+@pytest.mark.parametrize(
+    "ruta, destino",
+    [
+        ("/v1/kyc/document/validate", "http://kyc.test/api/v1/document/validate"),
+        ("/v1/kyc/document/mrz", "http://kyc.test/api/v1/document/mrz"),
+    ],
+)
+async def test_el_paso_del_documento_se_reenvia(client, kyc_configurado, upstream, ruta, destino):
+    """Validar el DNI al fotografiarlo, no recién al final del registro."""
+    recibido, respuesta = upstream
+    respuesta.update(json={"is_valid": True})
+    r = await client.post(ruta)
+    assert r.status_code == 200
+    assert recibido["url"] == destino

@@ -1,3 +1,4 @@
+import 'register_test_support.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/feature/biometric/infrastructure/memory_biometric_gate.dart';
@@ -32,6 +33,7 @@ void main() {
         gate: MemoryBiometricGate(),
         store: store,
       ),
+      kyc: kycParaTests(),
     );
     addTearDown(bloc.close);
 

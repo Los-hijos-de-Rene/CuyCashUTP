@@ -1,3 +1,4 @@
+import 'register_test_support.dart';
 import 'dart:typed_data';
 
 import 'package:bloc_test/bloc_test.dart';
@@ -29,10 +30,11 @@ EnableBiometricUseCase _biometric() => EnableBiometricUseCase(
 RegisterBloc build([MemoryAuthRepository? repo]) => RegisterBloc(
   AuthActions(repo ?? MemoryAuthRepository()),
   biometric: _biometric(),
+  kyc: kycParaTests(),
 );
 
 RegisterBloc construirBloc() =>
-    RegisterBloc(AuthActions(auth), biometric: _biometric());
+    RegisterBloc(AuthActions(auth), biometric: _biometric(), kyc: kycParaTests());
 
 /// Datos, PIN y envío: deja la cuenta creada pero sin activar.
 Future<void> recorrerHastaCrearCuenta(
@@ -142,7 +144,7 @@ void main() {
     'submit con PIN válido crea la cuenta (createdSession) sin autenticar aún',
     build: () {
       final repo = MemoryAuthRepository();
-      return RegisterBloc(AuthActions(repo), biometric: _biometric());
+      return RegisterBloc(AuthActions(repo), biometric: _biometric(), kyc: kycParaTests());
     },
     seed: () => const RegisterState(
       step: 3,
@@ -164,7 +166,7 @@ void main() {
 
   test('accountOpened activa la sesión creada (repo.currentSession)', () async {
     final repo = MemoryAuthRepository();
-    final bloc = RegisterBloc(AuthActions(repo), biometric: _biometric());
+    final bloc = RegisterBloc(AuthActions(repo), biometric: _biometric(), kyc: kycParaTests());
     addTearDown(bloc.close);
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.dni, '87654321'));
     bloc.add(const RegisterEvent.fieldChanged(RegisterField.nombres, 'Juan'));
@@ -195,7 +197,7 @@ void main() {
         email: 'a@b.pe',
         pin: '024689',
       );
-      return RegisterBloc(AuthActions(repo), biometric: _biometric());
+      return RegisterBloc(AuthActions(repo), biometric: _biometric(), kyc: kycParaTests());
     },
     seed: () => const RegisterState(
       step: 3,

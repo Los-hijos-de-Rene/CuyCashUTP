@@ -52,6 +52,7 @@ class HttpAuthRepository implements AuthRepository {
     required String apellidos,
     required String email,
     required String pin,
+    String? kycTicket,
   }) => _guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/v1/auth/register',
@@ -61,6 +62,7 @@ class HttpAuthRepository implements AuthRepository {
         'apellidos': apellidos,
         'email': email,
         'pin': pin,
+        'kyc_ticket': ?kycTicket,
       },
     );
     final failure = _failureFor(response);
@@ -286,6 +288,7 @@ class HttpAuthRepository implements AuthRepository {
       'WEAK_PIN' => const AuthFailure.weakPin(),
       'PIN_UNCHANGED' => const AuthFailure.pinUnchanged(),
       'BIOMETRIC_REVOKED' => const AuthFailure.biometricRevoked(),
+      'KYC_REQUIRED' || 'KYC_INVALID' => const AuthFailure.identityNotVerified(),
       _ => const AuthFailure.authUnavailable(),
     };
   }

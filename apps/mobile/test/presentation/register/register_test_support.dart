@@ -1,3 +1,5 @@
+import 'package:cuycash/feature/kyc/application/kyc_actions.dart';
+import 'package:cuycash/feature/kyc/infrastructure/memory_kyc_repository.dart';
 import 'package:cuycash/feature/biometric/infrastructure/memory_biometric_gate.dart';
 import 'package:cuycash/feature/device/infrastructure/memory_device_store.dart';
 import 'package:cuycash/feature/security/application/enable_biometric_use_case.dart';
@@ -14,3 +16,9 @@ EnableBiometricUseCase biometricParaTests() => EnableBiometricUseCase(
   gate: MemoryBiometricGate(),
   store: MemoryDeviceStore(),
 );
+
+/// KYC en memoria para el wizard. [documentDni] simula el DNI impreso en el
+/// reverso; null = el que declare el usuario (el cotejo pasa).
+KycActions kycParaTests({String? documentDni}) => KycActions(
+      MemoryKycRepository(clock: DateTime.now, documentDni: documentDni),
+    );

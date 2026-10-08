@@ -9,7 +9,9 @@ sealed class RegisterEvent with _$RegisterEvent {
   const factory RegisterEvent.captureFailed(DocSide side) =
       RegisterCaptureFailed;
   const factory RegisterEvent.faceScanStarted() = RegisterFaceScanStarted;
-  const factory RegisterEvent.faceScanCompleted() = RegisterFaceScanCompleted;
+  /// El KYC aprobó. [kycTicket] es lo que `/register` exige al servidor.
+  const factory RegisterEvent.faceScanCompleted({String? kycTicket}) =
+      RegisterFaceScanCompleted;
   const factory RegisterEvent.pinDigitPressed(int digit) =
       RegisterPinDigitPressed;
   const factory RegisterEvent.pinBackspace() = RegisterPinBackspace;

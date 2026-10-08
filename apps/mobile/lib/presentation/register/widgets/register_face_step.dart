@@ -115,15 +115,22 @@ class _Liveness extends StatelessWidget {
   Widget build(BuildContext context) {
     final registerBloc = context.read<RegisterBloc>();
     return BlocProvider(
-      create: (_) => LivenessBloc(
-        actions: context.read<KycActions>(),
-        tracker: createTracker(),
-        documentImage: documento,
-      )..add(const LivenessEvent.started()),
+      create: (_) {
+        // El reverso y el DNI escrito viajan en la verificación final: el
+        // servidor los coteja aunque el paso 2 ya los haya revisado.
+        final draft = registerBloc.state.draft;
+        return LivenessBloc(
+          actions: context.read<KycActions>(),
+          tracker: createTracker(),
+          documentImage: documento,
+          documentBackImage: draft.dniBackImage,
+          expectedDni: draft.dni.trim(),
+        )..add(const LivenessEvent.started());
+      },
       child: LivenessView(
         preview: preview,
-        onVerified: () =>
-            registerBloc.add(const RegisterEvent.faceScanCompleted()),
+        onVerified: (ticket) => registerBloc
+            .add(RegisterEvent.faceScanCompleted(kycTicket: ticket)),
       ),
     );
   }

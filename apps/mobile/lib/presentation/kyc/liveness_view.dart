@@ -26,8 +26,9 @@ class LivenessView extends StatelessWidget {
   /// corre sin cámara.
   final Widget preview;
 
-  /// Se llama cuando el servicio aprueba la identidad.
-  final VoidCallback onVerified;
+  /// Se llama cuando el servicio aprueba la identidad, con el ticket que el
+  /// backend emitió (null en el KYC simulado de producción).
+  final ValueChanged<String?> onVerified;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +39,7 @@ class LivenessView extends StatelessWidget {
           current.currentIndex > previous.currentIndex,
       listener: (context, state) {
         if (state.isApproved) {
-          onVerified();
+          onVerified(state.verification?.ticket);
         } else {
           // Un gesto recién completado se "siente": confirma sin tener que
           // leer la pantalla mientras se gira la cabeza.

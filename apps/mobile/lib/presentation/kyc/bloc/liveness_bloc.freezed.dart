@@ -12,11 +12,17 @@ part of 'liveness_bloc.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$LivenessEvent {
+mixin _$LivenessEvent implements DiagnosticableTreeMixin {
 
 
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'LivenessEvent'))
+    ;
+}
 
 @override
 bool operator ==(Object other) {
@@ -28,7 +34,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'LivenessEvent()';
 }
 
@@ -174,7 +180,7 @@ return observed(_that.observation);case _:
 /// @nodoc
 
 
-class LivenessStarted implements LivenessEvent {
+class LivenessStarted with DiagnosticableTreeMixin implements LivenessEvent {
   const LivenessStarted();
   
 
@@ -182,6 +188,12 @@ class LivenessStarted implements LivenessEvent {
 
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'LivenessEvent.started'))
+    ;
+}
 
 @override
 bool operator ==(Object other) {
@@ -193,7 +205,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'LivenessEvent.started()';
 }
 
@@ -206,7 +218,7 @@ String toString() {
 /// @nodoc
 
 
-class LivenessObserved implements LivenessEvent {
+class LivenessObserved with DiagnosticableTreeMixin implements LivenessEvent {
   const LivenessObserved(this.observation);
   
 
@@ -219,6 +231,12 @@ class LivenessObserved implements LivenessEvent {
 $LivenessObservedCopyWith<LivenessObserved> get copyWith => _$LivenessObservedCopyWithImpl<LivenessObserved>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'LivenessEvent.observed'))
+    ..add(DiagnosticsProperty('observation', observation));
+}
 
 @override
 bool operator ==(Object other) {
@@ -230,7 +248,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,observation);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'LivenessEvent.observed(observation: $observation)';
 }
 
@@ -270,7 +288,7 @@ as FaceObservation,
 }
 
 /// @nodoc
-mixin _$LivenessState {
+mixin _$LivenessState implements DiagnosticableTreeMixin {
 
  LivenessPhase get phase;/// Tareas en el orden que impuso el servidor.
  List<LivenessStep> get steps;/// Índice de la tarea pendiente.
@@ -284,6 +302,12 @@ mixin _$LivenessState {
 $LivenessStateCopyWith<LivenessState> get copyWith => _$LivenessStateCopyWithImpl<LivenessState>(this as LivenessState, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'LivenessState'))
+    ..add(DiagnosticsProperty('phase', phase))..add(DiagnosticsProperty('steps', steps))..add(DiagnosticsProperty('currentIndex', currentIndex))..add(DiagnosticsProperty('framing', framing))..add(DiagnosticsProperty('slow', slow))..add(DiagnosticsProperty('error', error))..add(DiagnosticsProperty('verification', verification));
+}
 
 @override
 bool operator ==(Object other) {
@@ -295,7 +319,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,phase,const DeepCollectionEquality().hash(steps),currentIndex,framing,slow,error,verification);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'LivenessState(phase: $phase, steps: $steps, currentIndex: $currentIndex, framing: $framing, slow: $slow, error: $error, verification: $verification)';
 }
 
@@ -473,7 +497,7 @@ return $default(_that.phase,_that.steps,_that.currentIndex,_that.framing,_that.s
 /// @nodoc
 
 
-class _LivenessState extends LivenessState {
+class _LivenessState extends LivenessState with DiagnosticableTreeMixin {
   const _LivenessState({this.phase = LivenessPhase.preparing, final  List<LivenessStep> steps = const <LivenessStep>[], this.currentIndex = 0, this.framing, this.slow = false, this.error, this.verification}): _steps = steps,super._();
   
 
@@ -503,6 +527,12 @@ class _LivenessState extends LivenessState {
 _$LivenessStateCopyWith<_LivenessState> get copyWith => __$LivenessStateCopyWithImpl<_LivenessState>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'LivenessState'))
+    ..add(DiagnosticsProperty('phase', phase))..add(DiagnosticsProperty('steps', steps))..add(DiagnosticsProperty('currentIndex', currentIndex))..add(DiagnosticsProperty('framing', framing))..add(DiagnosticsProperty('slow', slow))..add(DiagnosticsProperty('error', error))..add(DiagnosticsProperty('verification', verification));
+}
 
 @override
 bool operator ==(Object other) {
@@ -514,7 +544,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,phase,const DeepCollectionEquality().hash(_steps),currentIndex,framing,slow,error,verification);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'LivenessState(phase: $phase, steps: $steps, currentIndex: $currentIndex, framing: $framing, slow: $slow, error: $error, verification: $verification)';
 }
 

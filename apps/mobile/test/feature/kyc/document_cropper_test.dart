@@ -64,11 +64,13 @@ void main() {
   test('recorta la foto a la región pedida y limita el ancho', () {
     final photo = img.encodeJpg(img.Image(width: 4000, height: 3000));
 
-    final out = img.decodeJpg(cropDocumentSync(
-      photo,
-      const Rect.fromLTWH(0.1, 0.2, 0.8, 0.5),
-      maxWidth: 1600,
-    ))!;
+    final out = img.decodeJpg(
+      cropDocumentSync(
+        photo,
+        const Rect.fromLTWH(0.1, 0.2, 0.8, 0.5),
+        maxWidth: 1600,
+      ),
+    )!;
 
     expect(out.width, 1600);
     expect(out.height, closeTo(1500 * 1600 / 3200, 1));

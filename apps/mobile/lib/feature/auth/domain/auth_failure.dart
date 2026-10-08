@@ -13,6 +13,9 @@ sealed class AuthFailure {
   const factory AuthFailure.biometricRevoked() = BiometricRevoked;
   const factory AuthFailure.deviceVerificationRequired() =
       DeviceVerificationRequired;
+
+  /// El servidor no aceptó el alta sin un KYC aprobado (o el ticket venció).
+  const factory AuthFailure.identityNotVerified() = IdentityNotVerified;
 }
 
 /// DNI o PIN incorrectos.
@@ -67,4 +70,10 @@ final class BiometricRevoked extends AuthFailure {
 /// errado y no debe sumar intentos.
 final class DeviceVerificationRequired extends AuthFailure {
   const DeviceVerificationRequired();
+}
+
+/// El alta exige un KYC aprobado por el servidor y no lo hubo, o el ticket
+/// venció, ya se usó o es de otro DNI o teléfono. Se rehace el rostro.
+final class IdentityNotVerified extends AuthFailure {
+  const IdentityNotVerified();
 }

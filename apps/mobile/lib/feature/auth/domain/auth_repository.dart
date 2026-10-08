@@ -36,6 +36,7 @@ abstract interface class AuthRepository {
     required String apellidos,
     required String email,
     required String pin,
+    String? kycTicket,
   });
 
   /// Activa (inicia sesión) una sesión ya creada por [register] o validada por

@@ -1,6 +1,8 @@
 part of 'register_bloc.dart';
 
-enum CaptureStatus { empty, captured, unreadable }
+/// Estado de una foto del DNI. `checking`: el servicio la está revisando;
+/// `unreadable`: no sirve, y el motivo va en `dniFrontIssue`/`dniBackIssue`.
+enum CaptureStatus { empty, checking, captured, unreadable }
 
 enum FaceScanStatus { idle, scanning, success }
 
@@ -31,6 +33,18 @@ abstract class RegisterDraft with _$RegisterDraft {
     /// sueltan ahí: son datos de identidad, no van a disco.
     Uint8List? dniFrontImage,
     Uint8List? dniBackImage,
+
+    /// Por qué no sirve cada foto (null si sirve o no se revisó).
+    DocumentIssue? dniFrontIssue,
+    DocumentIssue? dniBackIssue,
+
+    /// DNI contra el que se cotejó el reverso: si el usuario lo cambia
+    /// después, hay que volver a cotejar.
+    String? backCheckedDni,
+
+    /// Ticket del KYC aprobado: `/register` lo exige al servidor. Vence pronto
+    /// y es de un solo uso, así que no se guarda fuera de este borrador.
+    String? kycTicket,
     @Default(FaceScanStatus.idle) FaceScanStatus faceStatus,
     @Default('') String pin,
 

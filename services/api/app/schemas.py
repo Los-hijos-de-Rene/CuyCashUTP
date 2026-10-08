@@ -10,6 +10,9 @@ class RegisterIn(BaseModel):
     apellidos: str = Field(min_length=1, max_length=120)
     email: EmailStr
     pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    # Lo emite el proxy de `verify-full` cuando el KYC aprueba. Obligatorio si
+    # `KYC_REQUIRED`; si llega, se valida siempre.
+    kyc_ticket: Optional[str] = Field(default=None, max_length=128)
 
 
 class AuthenticateIn(BaseModel):

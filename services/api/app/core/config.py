@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     # extraíble (R1 del ADR-0001).
     KYC_BASE_URL: Optional[str] = None
     KYC_API_KEY: Optional[str] = None
+    # Si `/register` EXIGE un ticket de KYC aprobado. Apagado por defecto
+    # porque en Render el microservicio aún no está desplegado y la app de
+    # producción simula el KYC: encenderlo ahí dejaría a todos sin poder
+    # registrarse. Se enciende en local (docker compose) y en producción el
+    # día que el KYC esté arriba. Un ticket que SÍ se envía se valida siempre.
+    KYC_REQUIRED: bool = False
+    KYC_TICKET_TTL_SECONDS: int = 900
 
     # Respuestas de duración uniforme: sin esto, que un DNI inexistente
     # responda más rápido reabre la enumeración de cuentas que la app cerró
