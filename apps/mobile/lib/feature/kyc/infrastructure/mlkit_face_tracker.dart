@@ -157,9 +157,10 @@ class MlKitFaceTracker implements FaceTracker {
 
   /// Copia el fotograma a un buffer propio (el del plugin se recicla).
   RawFrame? _copy(CameraImage image) {
-    // Con la app fija en vertical, el giro necesario es la orientación del
-    // sensor (270° en casi todas las frontales Android).
-    final rotation = _controller.description.sensorOrientation;
+    final rotation = frameRotation(
+      isIOS: Platform.isIOS,
+      sensorOrientation: _controller.description.sensorOrientation,
+    );
     final group = image.format.group;
 
     if (group == ImageFormatGroup.bgra8888 && image.planes.length == 1) {
@@ -222,6 +223,24 @@ class MlKitFaceTracker implements FaceTracker {
     }
     return out;
   }
+
+  /// Giro horario que deja vertical un fotograma del stream.
+  ///
+  /// - Android: los fotogramas llegan como los da el sensor ("acostados");
+  ///   con la app fija en vertical, el giro es la orientación del sensor
+  ///   (270° en casi todas las frontales).
+  /// - iOS: el stream ya llega DERECHO. Girarlo por la orientación del sensor
+  ///   lo acostaba: visto en un iPhone (2026-10-08), el servidor medía giros
+  ///   de cabeza de -52 (lo normal es entre -1 y 1, señal de una cara de lado)
+  ///   y la comparación con el DNI daba distancias de ~1.0. ML Kit en iOS
+  ///   ignora la rotación que se le pasa y aun así detectaba la cara: por eso
+  ///   los gestos pasaban y solo fallaba el servidor.
+  @visibleForTesting
+  static int frameRotation({
+    required bool isIOS,
+    required int sensorOrientation,
+  }) =>
+      isIOS ? 0 : sensorOrientation;
 
   /// Tamaño de la imagen ya girada a vertical: es el espacio de coordenadas
   /// en que ML Kit devuelve los rostros.
