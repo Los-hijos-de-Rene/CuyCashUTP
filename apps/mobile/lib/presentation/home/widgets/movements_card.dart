@@ -150,24 +150,17 @@ class _MovementRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: CuyCashSpacing.stackSm),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  movementAmountLabel(movement),
-                  style: CuyCashTypography.bodyMd.copyWith(
-                    color: isIncome
-                        ? CuyCashColors.success
-                        : CuyCashColors.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                Text(
-                  l10n.homeMovementCompleted,
-                  style: CuyCashTypography.labelSm,
-                ),
-              ],
+            // Sin "Completada": la lista no trae el estado (vive en la ficha
+            // del movimiento), así que era un texto fijo en todas las filas.
+            Text(
+              movementAmountLabel(movement),
+              style: CuyCashTypography.bodyMd.copyWith(
+                color: isIncome
+                    ? CuyCashColors.success
+                    : CuyCashColors.onSurface,
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
         ),

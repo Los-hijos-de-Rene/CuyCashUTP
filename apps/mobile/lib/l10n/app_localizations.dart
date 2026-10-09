@@ -1498,12 +1498,6 @@ abstract class AppLocalizations {
   /// **'Ocultar saldo'**
   String get homeHideBalance;
 
-  /// No description provided for @homeWalletMask.
-  ///
-  /// In es, this message translates to:
-  /// **'Billetera {masked}'**
-  String homeWalletMask(String masked);
-
   /// No description provided for @accountTypeAhorroLong.
   ///
   /// In es, this message translates to:
@@ -1621,7 +1615,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeActionTopUp.
   ///
   /// In es, this message translates to:
-  /// **'Depósito simulado'**
+  /// **'Depositar'**
   String get homeActionTopUp;
 
   /// No description provided for @homeActionWithdraw.
@@ -1645,7 +1639,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeMovementsTitle.
   ///
   /// In es, this message translates to:
-  /// **'Últimos movimientos'**
+  /// **'Movimientos'**
   String get homeMovementsTitle;
 
   /// No description provided for @homeSeeAll.
@@ -1659,12 +1653,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver más'**
   String get homeSeeMore;
-
-  /// No description provided for @homeMovementsAllAccounts.
-  ///
-  /// In es, this message translates to:
-  /// **'De todas tus cuentas'**
-  String get homeMovementsAllAccounts;
 
   /// No description provided for @homeMenuTooltip.
   ///
@@ -1714,12 +1702,6 @@ abstract class AppLocalizations {
   /// **'{origen} → {destino}'**
   String movementOwnRoute(String origen, String destino);
 
-  /// No description provided for @homeMovementCompleted.
-  ///
-  /// In es, this message translates to:
-  /// **'Completada'**
-  String get homeMovementCompleted;
-
   /// No description provided for @homeToday.
   ///
   /// In es, this message translates to:
@@ -1753,13 +1735,13 @@ abstract class AppLocalizations {
   /// No description provided for @homeErrorGeneric.
   ///
   /// In es, this message translates to:
-  /// **'No pudimos cargar tu cuenta. Inténtalo de nuevo.'**
+  /// **'No pudimos cargar tu cuenta.'**
   String get homeErrorGeneric;
 
   /// No description provided for @homeRefreshFailed.
   ///
   /// In es, this message translates to:
-  /// **'No pudimos actualizar. Estás viendo datos anteriores.'**
+  /// **'No pudimos actualizar los datos.'**
   String get homeRefreshFailed;
 
   /// No description provided for @homeRetry.

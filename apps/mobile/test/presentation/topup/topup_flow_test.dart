@@ -65,7 +65,7 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Depósito simulado'));
+    await tester.tap(find.text('Depositar'));
     await tester.pumpAndSettle();
 
     expect(find.byType(TopUpScreen), findsOneWidget);
@@ -77,7 +77,7 @@ void main() {
     'recorrido completo: monto, Depositar, constancia y de vuelta al inicio',
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.text('Depósito simulado'));
+      await tester.tap(find.text('Depositar'));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), '100');
@@ -89,7 +89,7 @@ void main() {
       await tester.tap(find.text('Volver al inicio'));
       await tester.pumpAndSettle();
       expect(find.byType(TopUpScreen), findsNothing);
-      expect(find.text('Últimos movimientos'), findsOneWidget);
+      expect(find.text('Movimientos'), findsOneWidget);
       // El saldo sube sin tirar para refrescar: S/ 1,250.40 + S/ 100.00.
       expect(find.text('S/ 1,350.40'), findsOneWidget);
       expect(find.text('S/ 1,250.40'), findsNothing);
@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('US\$ 120.00'), findsOneWidget);
 
-    await tester.tap(find.text('Depósito simulado'));
+    await tester.tap(find.text('Depositar'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('US\$ 20.00'));
     await tester.pump();
@@ -131,6 +131,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TopUpScreen), findsNothing);
-    expect(find.text('Últimos movimientos'), findsOneWidget);
+    expect(find.text('Movimientos'), findsOneWidget);
   });
 }
