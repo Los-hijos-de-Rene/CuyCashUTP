@@ -146,6 +146,14 @@ class HttpAuthRepository implements AuthRepository {
     // Camino del login desde un teléfono desconocido: hace falta el
     // pendiente de `authenticate` y el ticket del OTP de dispositivo.
     final pending = _pendingToken;
+    if (pending != null && otpTicket == null) {
+      // PIN correcto, pero el servidor no reconoce este teléfono: falta el OTP.
+      // Se nombra para que quien llama mande a verificarlo en vez de mostrar
+      // un error.
+      return left(
+        const GlobalFailure.server(AuthFailure.deviceVerificationRequired()),
+      );
+    }
     if (pending == null || otpTicket == null) {
       // Antes esto era un `return` mudo, y el botón de la pantalla de
       // éxito moría sin decir nada. Ahora quien llama puede mostrarlo.

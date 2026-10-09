@@ -114,8 +114,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _lockout.reset(event.identifier);
         final remembered = await _device.readUser();
         if (remembered?.dni == session.identifier) {
-          // Teléfono ya vinculado → adentro (sessionChanged por el stream).
-          await _actions.activate(session);
+          // El teléfono RECUERDA este DNI, pero quien decide si es de confianza
+          // es el servidor: puede no reconocerlo (reinstalación, desvinculado
+          // desde otro teléfono, cuenta creada en otro). Antes el fallo de
+          // `activate` se ignoraba y la pantalla quedaba en "Verificando tu
+          // PIN" para siempre, también con otro DNI (el estado es global).
+          final activated = await _actions.activate(session);
+          activated.match(
+            (failure) => emit(switch (failure) {
+              ServerFailure(failure: DeviceVerificationRequired()) =>
+                AuthState.unauthenticated(pendingDeviceSession: session),
+              _ => AuthState.unauthenticated(error: _errorFor(failure)),
+            }),
+            // Adentro: la sesión llega por `sessionChanges`.
+            (_) {},
+          );
         } else {
           emit(AuthState.unauthenticated(pendingDeviceSession: session));
         }

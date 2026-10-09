@@ -147,16 +147,28 @@ class MemoryAuthRepository implements AuthRepository {
       fullName: '${nombres.trim()} ${apellidos.trim()}'.trim(),
     );
     _titulares[dni] = titular;
+    // Como el backend: el alta ya vincula este teléfono, así que activarla no
+    // pide OTP aunque el teléfono no fuera de confianza.
+    _altaVinculada = true;
     // Crea la cuenta pero NO inicia sesión: la sesión se activa cuando el
     // usuario toca "Ir a mi cuenta" en la pantalla de éxito.
     return right(titular);
   }
+
+  var _altaVinculada = false;
 
   @override
   FutureResult<AuthFailure, Unit> activate(
     AuthSession session, {
     String? otpTicket,
   }) async {
+    // Como el backend: con un teléfono que no es de confianza, sin el ticket
+    // del OTP no hay sesión.
+    if (!deviceTrusted && otpTicket == null && !_altaVinculada) {
+      return left(
+        const GlobalFailure.server(AuthFailure.deviceVerificationRequired()),
+      );
+    }
     _emit(session);
     return right(unit);
   }
