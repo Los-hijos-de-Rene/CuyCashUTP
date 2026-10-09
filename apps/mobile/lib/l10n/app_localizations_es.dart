@@ -72,16 +72,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loginTitle => 'Iniciar sesión';
 
   @override
-  String get loginHeadline => 'Bienvenido de vuelta';
-
-  @override
-  String get loginSubtitle => 'Ingresa tu número de DNI para continuar.';
+  String get loginHeadline => 'Hola de nuevo';
 
   @override
   String get loginPinHeadline => 'Ingresa tu PIN';
-
-  @override
-  String get loginPinSubtitle => 'PIN de 6 dígitos de tu cuenta.';
 
   @override
   String loginDniSummary(String dni) {
@@ -99,8 +93,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: 'Los datos no son correctos. Te quedan $n intentos.',
-      one: 'Los datos no son correctos. Te queda 1 intento.',
+      other: 'DNI o PIN incorrectos. Te quedan $n intentos.',
+      one: 'DNI o PIN incorrectos. Te queda 1 intento.',
     );
     return '$_temp0';
   }
@@ -551,7 +545,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String loginWrongHint(String duration) {
-    return 'Tras 3 intentos fallidos bloquearemos el ingreso por $duration.';
+    return 'Al agotarlos, el ingreso se bloquea por $duration.';
   }
 
   @override

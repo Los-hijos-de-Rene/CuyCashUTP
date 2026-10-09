@@ -24,8 +24,10 @@ void main() {
 
   /// Monta el login a tamaño de teléfono real: el rediseño en dos pasos existe
   /// porque los dos campos más el teclado no cabían en 390x844.
-  Future<void> pumpLogin(WidgetTester tester,
-      {MemoryAuthRepository? repository}) async {
+  Future<void> pumpLogin(
+    WidgetTester tester, {
+    MemoryAuthRepository? repository,
+  }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -34,8 +36,13 @@ void main() {
     repo = repository ?? MemoryAuthRepository();
     // Teléfono ya vinculado: el login entra directo, sin OTP de dispositivo.
     final store = MemoryDeviceStore();
-    await store.saveUser(const RememberedUser(
-        dni: '12345678', fullName: 'Juan Pérez', alias: '@juan'));
+    await store.saveUser(
+      const RememberedUser(
+        dni: '12345678',
+        fullName: 'Juan Pérez',
+        alias: '@juan',
+      ),
+    );
     bloc = AuthBloc(
       AuthActions(repo),
       DeviceActions(store),
@@ -70,13 +77,14 @@ void main() {
     }
   }
 
-  testWidgets('el paso 1 solo pide el DNI, con el teclado del sistema',
-      (tester) async {
+  testWidgets('el paso 1 solo pide el DNI, con el teclado del sistema', (
+    tester,
+  ) async {
     await pumpLogin(tester);
 
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
-    expect(
-        find.text('Ingresa tu número de DNI para continuar.'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
+    // Sin indicador de pasos: son solo dos y el título ya dice dónde estás.
+    expect(find.byType(StepSegments), findsNothing);
     // El PIN todavía no existe: ni casillas ni teclado propio.
     expect(find.byType(PinBoxes), findsNothing);
     expect(find.byType(PinKeypad), findsNothing);
@@ -85,8 +93,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('el octavo dígito del DNI avanza solo al paso del PIN',
-      (tester) async {
+  testWidgets('el octavo dígito del DNI avanza solo al paso del PIN', (
+    tester,
+  ) async {
     await pumpLogin(tester);
 
     await enterDni(tester);
@@ -111,8 +120,9 @@ void main() {
     expect(repo.currentSession, isNotNull);
   });
 
-  testWidgets('mientras se verifica el PIN avisa y apaga el teclado',
-      (tester) async {
+  testWidgets('mientras se verifica el PIN avisa y apaga el teclado', (
+    tester,
+  ) async {
     final lento = _AuthLento();
     await pumpLogin(tester, repository: lento);
     await enterDni(tester);
@@ -140,29 +150,38 @@ void main() {
     expect(find.byType(PinSubmittingNotice), findsNothing);
   });
 
-  testWidgets('el error NO distingue DNI inexistente de PIN equivocado',
-      (tester) async {
+  testWidgets('el error NO distingue DNI inexistente de PIN equivocado', (
+    tester,
+  ) async {
     await pumpLogin(tester);
     await enterDni(tester);
 
     await tapPin(tester, '999999');
 
     // Mensaje genérico: decir "PIN incorrecto" confirmaría que ese DNI existe.
-    expect(find.text('Los datos no son correctos. Te quedan 2 intentos.'),
-        findsOneWidget);
-    expect(find.textContaining('PIN incorrecto'), findsNothing);
+    expect(
+      find.text('DNI o PIN incorrectos. Te quedan 2 intentos.'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(RegExp(r'(?<!DNI o )PIN incorrecto')),
+      findsNothing,
+    );
   });
 
-  testWidgets('con un intento restante el mensaje va en singular',
-      (tester) async {
+  testWidgets('con un intento restante el mensaje va en singular', (
+    tester,
+  ) async {
     await pumpLogin(tester);
     await enterDni(tester);
 
     await tapPin(tester, '999999');
     await tapPin(tester, '999998');
 
-    expect(find.text('Los datos no son correctos. Te queda 1 intento.'),
-        findsOneWidget);
+    expect(
+      find.text('DNI o PIN incorrectos. Te queda 1 intento.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('"Cambiar" vuelve al paso 1 conservando el DNI', (tester) async {
@@ -172,7 +191,7 @@ void main() {
     await tester.tap(find.text('Cambiar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
     // El DNI sigue escrito: corregir un dígito no cuesta escribirlo entero.
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller?.text,
@@ -187,7 +206,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
     expect(find.byType(PinKeypad), findsNothing);
   });
 
@@ -199,11 +218,11 @@ void main() {
 
     // El campo ya trae 8 dígitos: quedarse en el paso 1 no puede depender de
     // que nadie vuelva a notificar ese mismo texto.
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
 
     // Borrar el último dígito deja editar, no salta.
     await enterDni(tester, '1234567');
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
     expect(find.byType(PinKeypad), findsNothing);
 
     // Y completar el octavo vuelve a avanzar, como en el primer intento.
@@ -212,8 +231,9 @@ void main() {
     expect(find.text('DNI 12345679'), findsOneWidget);
   });
 
-  testWidgets('la flecha atrás tampoco rebota con el DNI completo',
-      (tester) async {
+  testWidgets('la flecha atrás tampoco rebota con el DNI completo', (
+    tester,
+  ) async {
     await pumpLogin(tester);
     await enterDni(tester);
 
@@ -223,11 +243,12 @@ void main() {
     // reconecta, el momento en que antes se disparaba el salto.
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
   });
 
-  testWidgets('al retomar tras el bloqueo abre en el PIN con el DNI puesto',
-      (tester) async {
+  testWidgets('al retomar tras el bloqueo abre en el PIN con el DNI puesto', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -285,7 +306,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Bienvenido de vuelta'), findsOneWidget);
+    expect(find.text('Hola de nuevo'), findsOneWidget);
     expect(find.byType(PinKeypad), findsNothing);
   });
 }
