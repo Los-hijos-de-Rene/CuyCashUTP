@@ -214,13 +214,18 @@ async def authenticate(
     )
 
     if not user or not ok:
-        bloqueo = await lockout.register_failure(session, payload.identifier, x_device_id)
+        disparo = await lockout.register_failure_detail(
+            session, payload.identifier, x_device_id
+        )
         restantes = await lockout.attempts_left(session, payload.identifier)
         await session.commit()
         await _uniform_delay(started)
-        if bloqueo is not None:
+        if disparo is not None:
+            bloqueo, kind = disparo
+            # Si el bloqueado es el teléfono (10 fallos con cualquier DNI), se
+            # dice: antes salía como si fuera el DNI.
             raise ApiError(
-                ErrorCode.IDENTIFIER_LOCKED,
+                ErrorCode.IDENTIFIER_LOCKED if kind == "dni" else ErrorCode.DEVICE_LOCKED,
                 "El ingreso está bloqueado por ahora.",
                 status_code=status.HTTP_423_LOCKED,
                 extra={"locked_until": bloqueo.isoformat()},

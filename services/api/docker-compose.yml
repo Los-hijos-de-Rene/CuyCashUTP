@@ -40,6 +40,9 @@ services:
       # sin el perfil `kyc`, o con la app en KYC simulado, pon KYC_REQUIRED=false
       # en `.env` o el registro responderá KYC_REQUIRED.
       KYC_REQUIRED: ${KYC_REQUIRED:-true}
+      # Los PIN errados del DNI caducan a los 10 min (en prod, 24 h): probando
+      # en local no quieres arrastrar fallos de ayer.
+      IDENTIFIER_WINDOW_SECONDS: ${IDENTIFIER_WINDOW_SECONDS:-600}
       # Menú de desarrollo de la app y rutas /v1/dev (reiniciar base, usuarios de
       # prueba). Solo local: render.yaml nunca lo enciende. La clave va en
       # `.env` (DEV_TOOLS_KEY) y la misma en apps/mobile/config.local.json;
