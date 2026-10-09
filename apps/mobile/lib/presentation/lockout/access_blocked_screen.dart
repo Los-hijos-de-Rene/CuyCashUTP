@@ -110,7 +110,14 @@ class _AccessBlockedScreenState extends State<AccessBlockedScreen> {
                   textAlign: TextAlign.center,
                   style: CuyCashTypography.headlineSm),
               const SizedBox(height: CuyCashSpacing.stackSm),
-              Text(l10n.blockedSubtitle,
+              // Desde el login el contador es del servidor, por DNI: los
+              // fallos pudieron ser en otro teléfono o antes de reabrir la
+              // app, y sin decirlo el bloqueo parece llegar sin aviso. El del
+              // acceso rápido también es de este teléfono.
+              Text(
+                  widget.origin == BlockedOrigin.login
+                      ? l10n.blockedSubtitleLogin
+                      : l10n.blockedSubtitle,
                   textAlign: TextAlign.center,
                   style: CuyCashTypography.bodyLg
                       .copyWith(color: CuyCashColors.secondaryText)),

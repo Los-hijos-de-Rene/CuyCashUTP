@@ -1081,8 +1081,14 @@ abstract class AppLocalizations {
   /// No description provided for @blockedSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Por tu seguridad bloqueamos el ingreso tras 3 intentos fallidos.'**
+  /// **'Ingresaste un PIN incorrecto 3 veces. Por tu seguridad, pausamos el ingreso.'**
   String get blockedSubtitle;
+
+  /// No description provided for @blockedSubtitleLogin.
+  ///
+  /// In es, this message translates to:
+  /// **'Se ingresó un PIN incorrecto 3 veces con tu DNI, en este u otro teléfono. Por tu seguridad, pausamos el ingreso.'**
+  String get blockedSubtitleLogin;
 
   /// No description provided for @blockedCountdownLabel.
   ///

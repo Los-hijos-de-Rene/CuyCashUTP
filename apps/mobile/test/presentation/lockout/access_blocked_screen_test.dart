@@ -47,6 +47,36 @@ void main() {
     expect(find.textContaining(':'), findsWidgets); // countdown mm:ss / hh:mm
   });
 
+  // El contador del login es del servidor: el último intento pudo venir tras
+  // fallar en otro teléfono, y el bloqueo llega sin el aviso de "1 intento".
+  testWidgets('desde el login explica que los fallos pudieron ser en otro '
+      'teléfono', (tester) async {
+    await pumpScreen(
+      tester,
+      remaining: const Duration(minutes: 15),
+      origin: BlockedOrigin.login,
+    );
+
+    expect(find.textContaining('en este u otro teléfono'), findsOneWidget);
+  });
+
+  testWidgets('desde el acceso rápido no menciona otros teléfonos',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      remaining: const Duration(minutes: 15),
+      origin: BlockedOrigin.quickAccess,
+    );
+
+    expect(
+      find.text(
+        'Ingresaste un PIN incorrecto 3 veces. Por tu seguridad, pausamos '
+        'el ingreso.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('al llegar a 00:00 avisa con su origen: acceso rápido',
       (tester) async {
     BlockedOrigin? expired;
