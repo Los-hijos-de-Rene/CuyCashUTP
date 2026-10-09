@@ -1,4 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/auth/domain/auth_failure.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/domain/auth_session.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
@@ -78,6 +81,42 @@ void main() {
           .having((s) => s.error, 'error', AuthError.invalidCredentials),
     ],
   );
+
+  // Visto en producción: /authenticate respondía 200 pidiendo OTP (el servidor
+  // no reconocía el teléfono) y el teléfono recordaba ese DNI. El fallo de
+  // `activate` se ignoraba y la pantalla quedaba en "Verificando tu PIN" para
+  // siempre, incluso al volver y probar con otro DNI.
+  test(
+    'teléfono no reconocido por el servidor → va al OTP, no se queda cargando',
+    () async {
+      final bloc = buildBloc(MemoryAuthRepository(deviceTrusted: false));
+      addTearDown(bloc.close);
+
+      bloc.add(const AuthEvent.loginSubmitted(
+          identifier: '12345678', pin: '000000'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final state = bloc.state;
+      expect(state, isA<AuthUnauthenticated>());
+      state as AuthUnauthenticated;
+      expect(state.status, isNot(FormStatus.submitting));
+      expect(state.pendingDeviceSession?.identifier, '12345678');
+    },
+  );
+
+  test('si activar falla por otra razón, muestra el error en vez de cargar',
+      () async {
+    final bloc = buildBloc(_ActivarFalla());
+    addTearDown(bloc.close);
+
+    bloc.add(const AuthEvent.loginSubmitted(
+        identifier: '12345678', pin: '000000'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    final state = bloc.state as AuthUnauthenticated;
+    expect(state.status, isNot(FormStatus.submitting));
+    expect(state.error, AuthError.generic);
+  });
 
   blocTest<AuthBloc, AuthState>(
     'signOut → AuthUnauthenticated',
@@ -233,4 +272,14 @@ void main() {
           const Duration(hours: 24));
     });
   });
+}
+
+/// Un servidor que acepta el PIN pero no logra abrir la sesión (caída, 5xx).
+class _ActivarFalla extends MemoryAuthRepository {
+  @override
+  FutureResult<AuthFailure, Unit> activate(
+    AuthSession session, {
+    String? otpTicket,
+  }) async =>
+      left(const GlobalFailure.server(AuthFailure.authUnavailable()));
 }
