@@ -593,7 +593,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get blockedSubtitle =>
-      'Por tu seguridad bloqueamos el ingreso tras 3 intentos fallidos.';
+      'Ingresaste un PIN incorrecto 3 veces. Por tu seguridad, pausamos el ingreso.';
+
+  @override
+  String get blockedSubtitleLogin =>
+      'Se ingresó un PIN incorrecto 3 veces con tu DNI, en este u otro teléfono. Por tu seguridad, pausamos el ingreso.';
 
   @override
   String get blockedCountdownLabel => 'Podrás intentarlo de nuevo en';
