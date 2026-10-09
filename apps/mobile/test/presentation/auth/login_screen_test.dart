@@ -199,6 +199,26 @@ void main() {
     );
   });
 
+  // Visto en el teléfono: "Te quedan 2 intentos" seguía en pantalla después de
+  // volver al paso 1 y escribir otro DNI.
+  testWidgets('volver al DNI descarta el error del intento anterior',
+      (tester) async {
+    await pumpLogin(tester);
+    await enterDni(tester);
+    await tapPin(tester, '999999');
+    expect(find.textContaining('Te quedan 2 intentos'), findsOneWidget);
+
+    await tester.tap(find.text('Cambiar'));
+    await tester.pumpAndSettle();
+    // Como el usuario: borra y escribe otro; el octavo dígito avanza.
+    await enterDni(tester, '8765');
+    await enterDni(tester, '87654321');
+
+    expect(find.text('DNI 87654321'), findsOneWidget);
+    expect(find.textContaining('intento'), findsNothing);
+    expect(bloc.state, const AuthState.unauthenticated());
+  });
+
   testWidgets('la flecha atrás del paso 2 vuelve al paso 1', (tester) async {
     await pumpLogin(tester);
     await enterDni(tester);
