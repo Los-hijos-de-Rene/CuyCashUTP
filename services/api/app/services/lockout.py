@@ -28,6 +28,17 @@ def _aware(moment: Optional[datetime]) -> Optional[datetime]:
     return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
+def _identifier_window_start(entry: Optional[Lockout]) -> datetime:
+    """
+    Desde cuándo cuentan los fallos del DNI: el último ingreso correcto o
+    bloqueo (`updated_at`), pero nunca antes de `IDENTIFIER_WINDOW_SECONDS`.
+    Así un fallo suelto de hace días deja de restar intentos.
+    """
+    reset = (_aware(entry.updated_at) if entry else None) or EPOCH
+    ventana = utcnow() - timedelta(seconds=settings.IDENTIFIER_WINDOW_SECONDS)
+    return max(reset, ventana)
+
+
 async def locked_until(
     session: AsyncSession, kind: str, value: str
 ) -> Optional[datetime]:
@@ -87,7 +98,7 @@ async def _register_identifier_failure(
         session.add(entry)
         await session.flush()
 
-    window_start = _aware(entry.updated_at) or EPOCH
+    window_start = _identifier_window_start(entry)
     result = await session.execute(
         select(func.count())
         .select_from(LoginAttempt)
@@ -162,7 +173,7 @@ async def register_success(session: AsyncSession, dni: str, device_id: str) -> N
 
 async def attempts_left(session: AsyncSession, dni: str) -> int:
     entry = await _get(session, "dni", dni)
-    window_start = _aware(entry.updated_at) if entry else EPOCH
+    window_start = _identifier_window_start(entry)
     fallos = (
         await session.execute(
             select(func.count())

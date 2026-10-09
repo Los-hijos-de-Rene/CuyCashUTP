@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Protege UNA cuenta contra intentos desde muchos teléfonos.
     IDENTIFIER_MAX_ATTEMPTS: int = 3
     IDENTIFIER_LOCKOUT_LEVELS_SECONDS: str = "900,3600,86400"  # 15 min, 1 h, 24 h
+    # Los fallos caducan: solo cuentan los de esta ventana. Sin ella, un PIN
+    # errado de hace días seguía restando y el usuario quedaba con un intento
+    # sin saberlo. En local (docker-compose) se baja a 10 min para probar.
+    IDENTIFIER_WINDOW_SECONDS: int = 86400
 
     # ---- Bloqueo por dispositivo ----
     # Protege contra barrer MUCHAS cuentas desde un teléfono. Umbral más alto
