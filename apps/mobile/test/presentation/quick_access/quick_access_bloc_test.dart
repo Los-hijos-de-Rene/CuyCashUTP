@@ -1,4 +1,8 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/auth/domain/auth_failure.dart';
+import 'package:cuycash/feature/auth/domain/auth_session.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/feature/biometric/domain/biometric_gate.dart';
@@ -129,6 +133,65 @@ void main() {
     expect((await store.readLockout()).failedAttempts, 0);
   });
 
+  /// Teclea un PIN y espera la respuesta del repo.
+  Future<QuickAccessBloc> intentar(
+    GlobalFailure<AuthFailure> falla,
+    MemoryDeviceStore store,
+  ) async {
+    final b = build(auth: _SignInFalla(falla), device: store);
+    addTearDown(b.close);
+    for (final d in [9, 9, 9, 9, 9, 9]) {
+      b.add(QuickAccessEvent.digitPressed(d));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    return b;
+  }
+
+  // Antes cualquier fallo sumaba un intento local: sin red, se podía quedar
+  // bloqueado sin haberse equivocado.
+  test(
+    'sin red o con el servidor caído avisa y NO cuenta el intento',
+    () async {
+      final store = MemoryDeviceStore();
+      final b = await intentar(
+        const GlobalFailure.server(AuthFailure.authUnavailable()),
+        store,
+      );
+
+      expect(b.state.unavailable, isTrue);
+      expect(b.state.lastWrong, isFalse);
+      expect(b.state.pin, '');
+      expect(b.state.status, QuickAccessStatus.idle);
+      expect((await store.readLockout()).failedAttempts, 0);
+    },
+  );
+
+  test('si el servidor ya bloqueó el DNI, va al bloqueo con SU hora', () async {
+    final until = DateTime.utc(2026, 1, 1, 15);
+    final store = MemoryDeviceStore();
+    final b = await intentar(
+      GlobalFailure.server(AuthFailure.accessLocked(until)),
+      store,
+    );
+
+    expect(b.state.lockedUntil, until);
+    expect(b.state.lastWrong, isFalse);
+  });
+
+  test('los intentos restantes son los del servidor, no los locales', () async {
+    // Los fallos pudieron ser en otro teléfono: el servidor dice 1, aunque
+    // este teléfono no haya fallado nunca.
+    final store = MemoryDeviceStore();
+    final b = await intentar(
+      const GlobalFailure.server(AuthFailure.tooManyAttempts(1)),
+      store,
+    );
+
+    expect(b.state.lastWrong, isTrue);
+    expect(b.state.attemptsLeft, 1);
+    expect(b.state.lockedUntil, isNull);
+  });
+
   group('huella', () {
     late MemorySecurityState estado;
     late MemoryAuthRepository auth;
@@ -236,4 +299,17 @@ void main() {
       expect(auth.currentSession, isNull);
     });
   });
+}
+
+/// Un servidor que responde siempre con [falla] al PIN.
+class _SignInFalla extends MemoryAuthRepository {
+  _SignInFalla(this.falla);
+
+  final GlobalFailure<AuthFailure> falla;
+
+  @override
+  FutureResult<AuthFailure, AuthSession> signIn({
+    required String identifier,
+    required String pin,
+  }) async => left(falla);
 }

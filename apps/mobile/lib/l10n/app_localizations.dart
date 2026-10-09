@@ -1012,6 +1012,12 @@ abstract class AppLocalizations {
   /// **'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.'**
   String get quickAccessBiometricFailed;
 
+  /// No description provided for @quickAccessPinUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos comprobar tu PIN. Revisa tu conexión; no se contó como intento.'**
+  String get quickAccessPinUnavailable;
+
   /// No description provided for @notYou.
   ///
   /// In es, this message translates to:
@@ -1027,7 +1033,7 @@ abstract class AppLocalizations {
   /// No description provided for @pinWrongAttempts.
   ///
   /// In es, this message translates to:
-  /// **'PIN incorrecto. Te quedan {n} intentos.'**
+  /// **'{n, plural, =1{PIN incorrecto. Te queda 1 intento.} other{PIN incorrecto. Te quedan {n} intentos.}}'**
   String pinWrongAttempts(int n);
 
   /// No description provided for @pinWrongHint.

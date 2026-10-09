@@ -59,7 +59,14 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
       return;
     }
     final pin = '${state.pin}${event.digit}';
-    emit(state.copyWith(pin: pin, lastWrong: false, biometricFailed: false));
+    emit(
+      state.copyWith(
+        pin: pin,
+        lastWrong: false,
+        biometricFailed: false,
+        unavailable: false,
+      ),
+    );
     if (pin.length < 6) return;
 
     emit(state.copyWith(status: QuickAccessStatus.verifying));
@@ -74,6 +81,48 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
               status: QuickAccessStatus.idle,
               pin: '',
               needsDeviceVerification: true,
+            ),
+          );
+          return;
+        }
+        // Con backend, el contador y el bloqueo los decide ÉL (por DNI), como
+        // en el login: los fallos pudieron ser en otro teléfono.
+        if (failure case ServerFailure(failure: AccessLocked(:final until))) {
+          emit(
+            state.copyWith(
+              status: QuickAccessStatus.idle,
+              pin: '',
+              lockedUntil: until,
+            ),
+          );
+          return;
+        }
+        if (failure
+            case ServerFailure(failure: TooManyAttempts(:final attemptsLeft))) {
+          emit(
+            state.copyWith(
+              status: QuickAccessStatus.idle,
+              pin: '',
+              lastWrong: true,
+              attemptsLeft: attemptsLeft,
+              // La duración del próximo bloqueo la sabe el servidor; no se
+              // inventa una con el contador local.
+              nextLockout: null,
+            ),
+          );
+          return;
+        }
+        // Sin red o con el servidor caído el PIN no se llegó a comprobar: no
+        // es un intento fallido. Antes contaba, y se podía quedar bloqueado
+        // sin haberse equivocado.
+        if (failure case ServerFailure(failure: InvalidCredentials())) {
+          // Sigue: PIN errado sin conteo del servidor (flavor `mock`).
+        } else {
+          emit(
+            state.copyWith(
+              status: QuickAccessStatus.idle,
+              pin: '',
+              unavailable: true,
             ),
           );
           return;

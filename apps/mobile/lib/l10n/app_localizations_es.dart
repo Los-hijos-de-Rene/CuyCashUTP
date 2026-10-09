@@ -526,6 +526,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos entrar con tu huella. Inténtalo de nuevo o usa tu PIN.';
 
   @override
+  String get quickAccessPinUnavailable =>
+      'No pudimos comprobar tu PIN. Revisa tu conexión; no se contó como intento.';
+
+  @override
   String notYou(String name) {
     return '¿No eres $name?';
   }
@@ -535,7 +539,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String pinWrongAttempts(int n) {
-    return 'PIN incorrecto. Te quedan $n intentos.';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'PIN incorrecto. Te quedan $n intentos.',
+      one: 'PIN incorrecto. Te queda 1 intento.',
+    );
+    return '$_temp0';
   }
 
   @override

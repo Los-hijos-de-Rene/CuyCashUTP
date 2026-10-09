@@ -119,6 +119,16 @@ class QuickAccessScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                  if (state.unavailable)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: CuyCashSpacing.marginMobile,
+                      ),
+                      child: InfoStrip(
+                        icon: Icons.wifi_off,
+                        text: l10n.quickAccessPinUnavailable,
+                      ),
+                    ),
                   if (state.biometricRevoked)
                     Padding(
                       padding: const EdgeInsets.symmetric(
