@@ -81,11 +81,17 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Volver al paso 1 CONSERVA el DNI: corregir un dígito no debería costar
   /// escribirlo entero. Se sincroniza la longitud para que el DNI que ya está
   /// escrito no cuente como recién completado.
-  void _goToDni() => setState(() {
-        _step = _LoginStep.dni;
-        _pin = '';
-        _lastDniLength = _dni.text.length;
-      });
+  ///
+  /// El error del intento anterior se descarta: puede que el DNI cambie, y
+  /// sus intentos restantes no serían los del nuevo.
+  void _goToDni() {
+    context.read<AuthBloc>().add(const AuthEvent.formReset());
+    setState(() {
+      _step = _LoginStep.dni;
+      _pin = '';
+      _lastDniLength = _dni.text.length;
+    });
+  }
 
   void _onDigit(int digit) {
     if (_pin.length >= 6) return;

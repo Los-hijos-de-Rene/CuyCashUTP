@@ -43,6 +43,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginSubmitted>(_onLoginSubmitted);
     on<AuthDeviceVerified>(_onDeviceVerified);
     on<AuthSignedOut>((event, emit) => _actions.signOut());
+    // El estado es global: sin esto, "Te quedan 2 intentos" seguía en
+    // pantalla al volver al DNI y probar con otro.
+    on<AuthFormReset>((event, emit) {
+      if (state case AuthUnauthenticated(status: FormStatus.idle)) {
+        emit(const AuthState.unauthenticated());
+      }
+    });
     on<_AuthSessionChanged>((event, emit) => emit(_resolve(event.session)));
     _sub = _actions.sessionChanges().listen(
           (session) => add(AuthEvent.sessionChanged(session)),
