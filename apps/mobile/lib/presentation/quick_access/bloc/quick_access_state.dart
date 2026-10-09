@@ -21,6 +21,10 @@ abstract class QuickAccessState with _$QuickAccessState {
     /// avisa y se puede reintentar o usar el PIN.
     @Default(false) bool biometricFailed,
 
+    /// El PIN no se pudo comprobar (sin red, servidor caído): no cuenta como
+    /// intento fallido. Se avisa para reintentar.
+    @Default(false) bool unavailable,
+
     /// PIN correcto, pero este teléfono dejó de ser de confianza (lo
     /// desvincularon): la pantalla lleva al login, que corre el OTP.
     @Default(false) bool needsDeviceVerification,
