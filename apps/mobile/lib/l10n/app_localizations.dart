@@ -1486,6 +1486,12 @@ abstract class AppLocalizations {
   /// **'{simbolo} ••••••'**
   String homeBalanceHidden(String simbolo);
 
+  /// No description provided for @homeAccountNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Nro. de cuenta {masked}'**
+  String homeAccountNumber(String masked);
+
   /// No description provided for @homeShowBalance.
   ///
   /// In es, this message translates to:
@@ -1615,7 +1621,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeActionTopUp.
   ///
   /// In es, this message translates to:
-  /// **'Depositar'**
+  /// **'Depósito simulado'**
   String get homeActionTopUp;
 
   /// No description provided for @homeActionWithdraw.

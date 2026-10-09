@@ -68,14 +68,15 @@ class _MovementRow extends StatelessWidget {
     };
   }
 
-  /// De qué cuenta es: "Ahorros · ••••4521", o "Ahorros → Sueldo" entre
+  /// De qué cuenta es: "Ahorros" (o su nombre), o "Ahorros → Sueldo" entre
   /// propias. `null` en el historial de una cuenta (no trae la cuenta).
   String? _cuenta() => switch ((movement.cuenta, movement.cuentaDestino)) {
     (final origen?, final destino?) => l10n.movementOwnRoute(
       movementAccountName(l10n, origen),
       movementAccountName(l10n, destino),
     ),
-    (final c?, null) => movementAccountShort(l10n, c),
+    // Sin el número: se ve en el detalle del movimiento.
+    (final c?, null) => movementAccountName(l10n, c),
     (null, _) => null,
   };
 

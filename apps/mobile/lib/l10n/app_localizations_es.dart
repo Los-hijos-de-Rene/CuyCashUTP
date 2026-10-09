@@ -832,6 +832,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String homeAccountNumber(String masked) {
+    return 'Nro. de cuenta $masked';
+  }
+
+  @override
   String get homeShowBalance => 'Mostrar saldo';
 
   @override
@@ -898,7 +903,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeActionCharge => 'Cobrar';
 
   @override
-  String get homeActionTopUp => 'Depositar';
+  String get homeActionTopUp => 'Depósito simulado';
 
   @override
   String get homeActionWithdraw => 'Retirar';

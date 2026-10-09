@@ -45,8 +45,6 @@ class AccountCarousel extends StatefulWidget {
 class _AccountCarouselState extends State<AccountCarousel> {
   late final PageController _controller = PageController(
     initialPage: widget.seleccionada,
-    // La siguiente tarjeta asoma un poco: es la pista de que hay más.
-    viewportFraction: 0.92,
   );
   late int _pagina = widget.seleccionada;
 
@@ -91,42 +89,61 @@ class _AccountCarouselState extends State<AccountCarousel> {
     final l10n = AppLocalizations.of(context);
     final onOpenNew = widget.onOpenNew;
     final paginas = widget.cuentas.length + (onOpenNew == null ? 0 : 1);
-
-    Widget pagina(int i) => i < widget.cuentas.length
-        ? BalanceCard(
-            cuenta: widget.cuentas[i],
-            onRename: () => widget.onRename(widget.cuentas[i]),
-            onTap: () => widget.onOpen(widget.cuentas[i]),
-          )
-        : OpenAccountCard(onTap: onOpenNew ?? () {});
-
-    // Una sola tarjeta: a todo el ancho, no hay nada que deslizar.
-    if (paginas == 1) {
-      return SizedBox(height: AccountCarousel.height, child: pagina(0));
-    }
-
-    // Sin puntos de página: la siguiente tarjeta asoma por el borde y eso ya
-    // invita a deslizar. El lector de pantalla sí recibe en qué página está.
-    return Semantics(
-      label: l10n.homeAccountPage(_pagina.clamp(0, paginas - 1) + 1, paginas),
-      child: SizedBox(
-        height: AccountCarousel.height,
-        child: PageView.builder(
-          controller: _controller,
-          // Pegadas a la izquierda, alineadas con el resto de Inicio: lo que
-          // asoma queda a la derecha.
-          padEnds: false,
-          itemCount: paginas,
-          onPageChanged: (i) {
-            setState(() => _pagina = i);
-            if (!_animando && i < widget.cuentas.length) widget.onSelected(i);
-          },
-          itemBuilder: (context, i) => Padding(
-            padding: const EdgeInsets.only(right: CuyCashSpacing.stackSm),
-            child: pagina(i),
+    return Column(
+      children: [
+        SizedBox(
+          height: AccountCarousel.height,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: paginas,
+            onPageChanged: (i) {
+              setState(() => _pagina = i);
+              if (!_animando && i < widget.cuentas.length) widget.onSelected(i);
+            },
+            itemBuilder: (context, i) => Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: CuyCashSpacing.stackXs,
+              ),
+              child: i < widget.cuentas.length
+                  ? BalanceCard(
+                      cuenta: widget.cuentas[i],
+                      onRename: () => widget.onRename(widget.cuentas[i]),
+                      onTap: () => widget.onOpen(widget.cuentas[i]),
+                    )
+                  : OpenAccountCard(onTap: onOpenNew ?? () {}),
+            ),
           ),
         ),
-      ),
+        // Con una sola cuenta no hay a dónde deslizar: los puntos sobran.
+        if (paginas > 1) ...[
+          const SizedBox(height: CuyCashSpacing.stackSm),
+          Semantics(
+            label: l10n.homeAccountPage(
+              _pagina.clamp(0, paginas - 1) + 1,
+              paginas,
+            ),
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < paginas; i++)
+                    Container(
+                      width: i == _pagina ? 16 : 6,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: i == _pagina
+                            ? CuyCashColors.primary
+                            : CuyCashColors.outlineVariant,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

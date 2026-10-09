@@ -130,7 +130,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('S/ 1,250.40'), findsOneWidget);
-      expect(find.text('••••4521'), findsOneWidget);
+      expect(find.text('Nro. de cuenta ••••4521'), findsOneWidget);
       expect(find.text('B*** D*** A***'), findsOneWidget);
       // El signo lo pone la UI sobre el valor absoluto.
       expect(find.text('- S/ 45.00'), findsOneWidget);
@@ -145,12 +145,11 @@ void main() {
 
     expect(find.text('S/ 1,250.40'), findsOneWidget);
 
-    // `.first`: la tarjeta siguiente asoma por el borde y también se construye.
     await tester.tap(
       find.descendant(
         of: find.byType(BalanceCard),
         matching: find.byIcon(Icons.visibility),
-      ).first,
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -186,7 +185,7 @@ void main() {
 
     expect(find.text('Cobrar'), findsNothing);
     expect(find.text('Retirar'), findsNothing);
-    for (final label in ['Transferir', 'Depositar']) {
+    for (final label in ['Transferir', 'Depósito simulado']) {
       await tester.tap(find.text(label));
     }
 
@@ -209,7 +208,7 @@ void main() {
     // Lo que sí existe sigue ahí.
     expect(find.text('Transferir'), findsOneWidget);
     expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
-    expect(find.text('Depositar'), findsOneWidget);
+    expect(find.text('Depósito simulado'), findsOneWidget);
     expect(find.text('Movimientos'), findsOneWidget);
   });
 
@@ -280,7 +279,7 @@ void main() {
     await tester.pumpWidget(wrapWith(sinCuenta));
     await tester.pump();
 
-    await tester.tap(find.text('Depositar'));
+    await tester.tap(find.text('Depósito simulado'));
     await tester.pump();
 
     expect(
@@ -349,7 +348,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Depositar'));
+      await tester.tap(find.text('Depósito simulado'));
       await tester.pumpAndSettle();
       expect(find.text('RECARGA a'), findsOneWidget);
       expect(
@@ -431,7 +430,7 @@ void main() {
       expect(find.text('De todas tus cuentas'), findsNothing);
       // Ya no hay fila "Mis cuentas" con botón.
       expect(find.text('Mis cuentas'), findsNothing);
-      expect(find.textContaining('Ahorros · ••••4521'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'· Ahorros$')), findsOneWidget);
       expect(find.text('- S/ 45.00'), findsOneWidget);
       // Entre propias: una fila neutra, sin signo.
       expect(find.text('Entre tus cuentas'), findsOneWidget);
@@ -591,7 +590,7 @@ const _refAhorro = MovementAccountRef(
   id: 'a',
   tipo: AccountType.ahorro,
   moneda: Currency.pen,
-  numeroMasked: '••••4521',
+  numeroMasked: 'Nro. de cuenta ••••4521',
 );
 
 const _refSueldo = MovementAccountRef(

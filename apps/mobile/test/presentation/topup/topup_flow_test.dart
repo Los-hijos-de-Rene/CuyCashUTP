@@ -65,7 +65,7 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Depositar'));
+    await tester.tap(find.text('Depósito simulado'));
     await tester.pumpAndSettle();
 
     expect(find.byType(TopUpScreen), findsOneWidget);
@@ -77,7 +77,7 @@ void main() {
     'recorrido completo: monto, Depositar, constancia y de vuelta al inicio',
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.text('Depositar'));
+      await tester.tap(find.text('Depósito simulado'));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), '100');
@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('US\$ 120.00'), findsOneWidget);
 
-    await tester.tap(find.text('Depositar'));
+    await tester.tap(find.text('Depósito simulado'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('US\$ 20.00'));
     await tester.pump();
