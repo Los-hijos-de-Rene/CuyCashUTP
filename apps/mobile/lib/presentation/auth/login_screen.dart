@@ -176,10 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
               icon: const Icon(Icons.arrow_back),
               onPressed: _onBack,
             ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(4),
-              child: StepSegments(total: 2, current: enPin ? 2 : 1),
-            ),
           ),
           body: SafeArea(
             child: BlocConsumer<AuthBloc, AuthState>(
@@ -255,12 +251,7 @@ class _DniStep extends StatelessWidget {
       padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
       children: [
         Text(l10n.loginHeadline, style: CuyCashTypography.headlineSm),
-        const SizedBox(height: CuyCashSpacing.stackXs),
-        Text(
-          l10n.loginSubtitle,
-          style: CuyCashTypography.bodyLg
-              .copyWith(color: CuyCashColors.secondaryText),
-        ),
+        // Sin subtítulo: la etiqueta del campo ya dice qué escribir.
         const SizedBox(height: CuyCashSpacing.stackXl),
         CuyCashTextField(
           label: l10n.dniFieldLabel,
@@ -300,12 +291,7 @@ class _PinStep extends StatelessWidget {
       padding: const EdgeInsets.all(CuyCashSpacing.containerPadding),
       children: [
         Text(l10n.loginPinHeadline, style: CuyCashTypography.headlineSm),
-        const SizedBox(height: CuyCashSpacing.stackXs),
-        Text(
-          l10n.loginPinSubtitle,
-          style: CuyCashTypography.bodyLg
-              .copyWith(color: CuyCashColors.secondaryText),
-        ),
+        // Sin subtítulo: las seis casillas ya dicen cuántos dígitos son.
         const SizedBox(height: CuyCashSpacing.stackMd),
         // El DNI a la vista con su atajo para corregirlo: como el mensaje de
         // error es genérico a propósito, el usuario honesto necesita poder

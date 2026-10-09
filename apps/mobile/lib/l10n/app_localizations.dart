@@ -211,26 +211,14 @@ abstract class AppLocalizations {
   /// No description provided for @loginHeadline.
   ///
   /// In es, this message translates to:
-  /// **'Bienvenido de vuelta'**
+  /// **'Hola de nuevo'**
   String get loginHeadline;
-
-  /// No description provided for @loginSubtitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Ingresa tu número de DNI para continuar.'**
-  String get loginSubtitle;
 
   /// No description provided for @loginPinHeadline.
   ///
   /// In es, this message translates to:
   /// **'Ingresa tu PIN'**
   String get loginPinHeadline;
-
-  /// No description provided for @loginPinSubtitle.
-  ///
-  /// In es, this message translates to:
-  /// **'PIN de 6 dígitos de tu cuenta.'**
-  String get loginPinSubtitle;
 
   /// No description provided for @loginDniSummary.
   ///
@@ -253,7 +241,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginWrongCredentials.
   ///
   /// In es, this message translates to:
-  /// **'{n, plural, =1{Los datos no son correctos. Te queda 1 intento.} other{Los datos no son correctos. Te quedan {n} intentos.}}'**
+  /// **'{n, plural, =1{DNI o PIN incorrectos. Te queda 1 intento.} other{DNI o PIN incorrectos. Te quedan {n} intentos.}}'**
   String loginWrongCredentials(int n);
 
   /// No description provided for @identifierLabel.
@@ -1051,7 +1039,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginWrongHint.
   ///
   /// In es, this message translates to:
-  /// **'Tras 3 intentos fallidos bloquearemos el ingreso por {duration}.'**
+  /// **'Al agotarlos, el ingreso se bloquea por {duration}.'**
   String loginWrongHint(String duration);
 
   /// No description provided for @pinVerifying.
