@@ -130,7 +130,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('S/ 1,250.40'), findsOneWidget);
-      expect(find.text('S/ · Billetera ••••4521'), findsOneWidget);
+      expect(find.text('Nro. de cuenta ••••4521'), findsOneWidget);
       expect(find.text('B*** D*** A***'), findsOneWidget);
       // El signo lo pone la UI sobre el valor absoluto.
       expect(find.text('- S/ 45.00'), findsOneWidget);
@@ -209,7 +209,7 @@ void main() {
     expect(find.text('Transferir'), findsOneWidget);
     expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
     expect(find.text('Depósito simulado'), findsOneWidget);
-    expect(find.text('Últimos movimientos'), findsOneWidget);
+    expect(find.text('Movimientos'), findsOneWidget);
   });
 
   Widget wrapRouter(AccountBloc b, GoRouter router) {
@@ -283,7 +283,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('No pudimos cargar tu cuenta. Inténtalo de nuevo.'),
+      find.text('No pudimos cargar tu cuenta.'),
       findsOneWidget,
     );
     expect(find.text('Disponible en una próxima versión.'), findsNothing);
@@ -425,11 +425,12 @@ void main() {
       await tester.pumpWidget(wrapWith(b));
       await tester.pump();
 
-      expect(find.text('Últimos movimientos'), findsOneWidget);
-      expect(find.text('De todas tus cuentas'), findsOneWidget);
+      expect(find.text('Movimientos'), findsOneWidget);
+      // Sin subtítulo: cada fila ya dice de qué cuenta es.
+      expect(find.text('De todas tus cuentas'), findsNothing);
       // Ya no hay fila "Mis cuentas" con botón.
       expect(find.text('Mis cuentas'), findsNothing);
-      expect(find.textContaining('Ahorros · ••••4521'), findsOneWidget);
+      expect(find.textContaining(RegExp(r'· Ahorros$')), findsOneWidget);
       expect(find.text('- S/ 45.00'), findsOneWidget);
       // Entre propias: una fila neutra, sin signo.
       expect(find.text('Entre tus cuentas'), findsOneWidget);
@@ -568,7 +569,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('No pudimos actualizar. Estás viendo datos anteriores.'),
+      find.text('No pudimos actualizar los datos.'),
       findsOneWidget,
     );
     expect(find.text('S/ 1,250.40'), findsOneWidget);
@@ -589,7 +590,7 @@ const _refAhorro = MovementAccountRef(
   id: 'a',
   tipo: AccountType.ahorro,
   moneda: Currency.pen,
-  numeroMasked: '••••4521',
+  numeroMasked: 'Nro. de cuenta ••••4521',
 );
 
 const _refSueldo = MovementAccountRef(

@@ -112,9 +112,9 @@ class _BalanceCardState extends State<BalanceCard> {
               ),
               const SizedBox(width: CuyCashSpacing.stackSm),
               Expanded(
+                // Sin la moneda: ya va en el saldo.
                 child: Text(
-                  '${widget.cuenta.moneda.symbol} · '
-                  '${l10n.homeWalletMask(widget.cuenta.numeroMasked)}',
+                  l10n.homeAccountNumber(widget.cuenta.numeroMasked),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: CuyCashTypography.bodyMd.copyWith(

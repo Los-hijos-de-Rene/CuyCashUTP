@@ -68,14 +68,15 @@ class _MovementRow extends StatelessWidget {
     };
   }
 
-  /// De qué cuenta es: "Ahorros · ••••4521", o "Ahorros → Sueldo" entre
+  /// De qué cuenta es: "Ahorros" (o su nombre), o "Ahorros → Sueldo" entre
   /// propias. `null` en el historial de una cuenta (no trae la cuenta).
   String? _cuenta() => switch ((movement.cuenta, movement.cuentaDestino)) {
     (final origen?, final destino?) => l10n.movementOwnRoute(
       movementAccountName(l10n, origen),
       movementAccountName(l10n, destino),
     ),
-    (final c?, null) => movementAccountShort(l10n, c),
+    // Sin el número: se ve en el detalle del movimiento.
+    (final c?, null) => movementAccountName(l10n, c),
     (null, _) => null,
   };
 
@@ -150,24 +151,17 @@ class _MovementRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: CuyCashSpacing.stackSm),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  movementAmountLabel(movement),
-                  style: CuyCashTypography.bodyMd.copyWith(
-                    color: isIncome
-                        ? CuyCashColors.success
-                        : CuyCashColors.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                Text(
-                  l10n.homeMovementCompleted,
-                  style: CuyCashTypography.labelSm,
-                ),
-              ],
+            // Sin "Completada": la lista no trae el estado (vive en la ficha
+            // del movimiento), así que era un texto fijo en todas las filas.
+            Text(
+              movementAmountLabel(movement),
+              style: CuyCashTypography.bodyMd.copyWith(
+                color: isIncome
+                    ? CuyCashColors.success
+                    : CuyCashColors.onSurface,
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
         ),

@@ -31,10 +31,6 @@ String recipientAccountShort(AppLocalizations l10n, RecipientAccount c) =>
 String accountShort(AppLocalizations l10n, Account c) =>
     '${c.nombre ?? accountTypeShort(l10n, c.tipo)} · ${c.numeroMasked}';
 
-/// "Ahorros · ••••4521" para la cuenta de una fila del historial combinado.
-String movementAccountShort(AppLocalizations l10n, MovementAccountRef c) =>
-    '${movementAccountName(l10n, c)} · ${c.numeroMasked}';
-
 /// "Ahorros" (o su nombre), sin número: para "Ahorros → Sueldo".
 String movementAccountName(AppLocalizations l10n, MovementAccountRef c) =>
     c.nombre ?? accountTypeShort(l10n, c.tipo);

@@ -826,15 +826,15 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String homeAccountNumber(String masked) {
+    return 'Nro. de cuenta $masked';
+  }
+
+  @override
   String get homeShowBalance => 'Mostrar saldo';
 
   @override
   String get homeHideBalance => 'Ocultar saldo';
-
-  @override
-  String homeWalletMask(String masked) {
-    return 'Billetera $masked';
-  }
 
   @override
   String get accountTypeAhorroLong => 'Cuenta de ahorros';
@@ -910,16 +910,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Este mes llevas S/ 340.00 en gastos, 12 % menos que en agosto.';
 
   @override
-  String get homeMovementsTitle => 'Últimos movimientos';
+  String get homeMovementsTitle => 'Movimientos';
 
   @override
   String get homeSeeAll => 'Ver todo';
 
   @override
   String get homeSeeMore => 'Ver más';
-
-  @override
-  String get homeMovementsAllAccounts => 'De todas tus cuentas';
 
   @override
   String get homeMenuTooltip => 'Más opciones';
@@ -951,9 +948,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get homeMovementCompleted => 'Completada';
-
-  @override
   String get homeToday => 'Hoy';
 
   @override
@@ -972,12 +966,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.';
 
   @override
-  String get homeErrorGeneric =>
-      'No pudimos cargar tu cuenta. Inténtalo de nuevo.';
+  String get homeErrorGeneric => 'No pudimos cargar tu cuenta.';
 
   @override
-  String get homeRefreshFailed =>
-      'No pudimos actualizar. Estás viendo datos anteriores.';
+  String get homeRefreshFailed => 'No pudimos actualizar los datos.';
 
   @override
   String get homeRetry => 'Reintentar';

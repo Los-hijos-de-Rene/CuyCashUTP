@@ -211,22 +211,12 @@ class _ReadyView extends StatelessWidget {
         const SizedBox(height: CuyCashSpacing.stackLg),
         Row(
           children: [
+            // Son de todas las cuentas: cada fila ya dice de cuál, no hace
+            // falta un subtítulo que lo repita.
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.homeMovementsTitle,
-                    style: CuyCashTypography.titleMd,
-                  ),
-                  // Son de todas: cada fila dice de cuál.
-                  Text(
-                    l10n.homeMovementsAllAccounts,
-                    style: CuyCashTypography.bodyMd.copyWith(
-                      color: CuyCashColors.secondaryText,
-                    ),
-                  ),
-                ],
+              child: Text(
+                l10n.homeMovementsTitle,
+                style: CuyCashTypography.titleMd,
               ),
             ),
             if (state.hayMasMovimientos)

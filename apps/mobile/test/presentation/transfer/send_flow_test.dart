@@ -87,7 +87,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(RecipientScreen), findsNothing);
-    expect(find.text('Últimos movimientos'), findsOneWidget);
+    expect(find.text('Movimientos'), findsOneWidget);
   });
 
   testWidgets('recorrido completo: DNI, monto, PIN y constancia', (
@@ -124,7 +124,7 @@ void main() {
 
     await tester.tap(find.text('Volver al inicio'));
     await tester.pumpAndSettle();
-    expect(find.text('Últimos movimientos'), findsOneWidget);
+    expect(find.text('Movimientos'), findsOneWidget);
     // El inicio se refresca solo: S/ 1,250.40 - S/ 50.00.
     expect(find.text('S/ 1,200.40'), findsOneWidget);
     expect(find.text('S/ 1,250.40'), findsNothing);

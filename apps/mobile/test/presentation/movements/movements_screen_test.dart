@@ -86,7 +86,9 @@ void main() {
 
     expect(find.text('Movimientos'), findsOneWidget);
     expect(find.byType(BalanceCard), findsNothing);
-    expect(find.textContaining('Ahorros · ••••4521'), findsNWidgets(3));
+    expect(find.textContaining(RegExp(r'· Ahorros$')), findsNWidgets(3));
+    // El número de cuenta queda para el detalle.
+    expect(find.textContaining('••••4521'), findsNothing);
   });
 
   testWidgets(
@@ -97,7 +99,7 @@ void main() {
 
       expect(find.byType(BalanceCard), findsOneWidget);
       expect(find.text('B*** D*** A***'), findsOneWidget);
-      expect(find.textContaining('Ahorros · ••••4521'), findsNothing);
+      expect(find.textContaining(RegExp(r'· Ahorros$')), findsNothing);
     },
   );
 
