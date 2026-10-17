@@ -8,6 +8,7 @@ garantías dejan de valer y nadie se entera: por eso el motor es uno solo.
 
 import asyncio
 import os
+import uuid
 
 import pytest
 from sqlalchemy import func, select, update
@@ -60,6 +61,40 @@ async def test_una_transferencia_mueve_el_saldo_y_cuadra(db):
     debitos = (await db.execute(total("debito"))).scalar_one()
     creditos = (await db.execute(total("credito"))).scalar_one()
     assert debitos == creditos == 15_000
+
+
+@pytest.mark.asyncio
+async def test_cada_asiento_y_su_transaccion_llevan_un_uuid_propio(db):
+    """HU18 CA2: un identificador único universal por asiento contable."""
+    origen = await _cuenta(db, "20000011", "19100000000011", 50_000)
+    destino = await _cuenta(db, "20000012", "19100000000012", 0)
+
+    ids_de_transaccion = []
+    for n in range(2):
+        tx, _ = await post(
+            db,
+            tipo="transferencia",
+            asientos=[
+                Asiento(origen.id, "debito", 1_000),
+                Asiento(destino.id, "credito", 1_000),
+            ],
+            idempotency_key=f"k-uuid-{n}",
+            fingerprint=f"f-uuid-{n}",
+        )
+        ids_de_transaccion.append(tx.id)
+    await db.commit()
+
+    asientos = (
+        await db.execute(
+            select(LedgerEntry.id).where(LedgerEntry.transaction_id.in_(ids_de_transaccion))
+        )
+    ).scalars().all()
+
+    assert len(asientos) == 4
+    ids = asientos + ids_de_transaccion
+    assert len(set(ids)) == len(ids)
+    for i in ids:
+        assert str(uuid.UUID(i)) == i
 
 
 @pytest.mark.asyncio
