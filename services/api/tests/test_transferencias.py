@@ -276,6 +276,55 @@ async def test_el_monto_maximo_exacto_se_acepta(client, otp_codes, registrado, o
     assert r.status_code == 201
 
 
+# El dinero viaja en céntimos enteros (StrictInt). Sin la validación estricta,
+# Pydantic convertiría "1000" en 1000 y 1000.0 en 1000, y un cliente que manda
+# soles con decimales (10.5) movería otro monto del que escribió el usuario.
+MONTOS_QUE_NO_SON_CENTIMOS = [10.5, 1000.0, 0.1 + 0.2, "1000", "10.50", True, None]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("monto", MONTOS_QUE_NO_SON_CENTIMOS)
+async def test_un_monto_que_no_es_entero_de_centimos_no_mueve_dinero(
+    client, otp_codes, registrado, otro_registrado, monto
+):
+    origen = await _con_saldo(client, registrado, 100_000)
+    destino = await _cuenta_id(client, otro_registrado)
+
+    r = await client.post(
+        "/v1/transfers",
+        json=_envio(origen, destino, monto, f"envio-no-entero-{monto!r}", pin=PIN_MALO),
+        headers=registrado.auth,
+    )
+
+    assert r.status_code == 422
+    assert await _saldo(client, registrado) == 100_000
+    assert await _saldo(client, otro_registrado) == 0
+    # Se rechaza antes de mirar el PIN: el PIN errado no cuenta como intento.
+    r = await client.post(
+        "/v1/transfers", json=_envio(origen, destino, 1_000, "envio-no-entero-ok"),
+        headers=registrado.auth,
+    )
+    assert r.status_code == 201
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("monto", MONTOS_QUE_NO_SON_CENTIMOS)
+async def test_una_recarga_que_no_es_entera_de_centimos_es_rechazada(
+    client, otp_codes, registrado, monto
+):
+    cuenta = await _cuenta_id(client, registrado)
+
+    r = await client.post(
+        "/v1/topups",
+        json={"cuenta_id": cuenta, "monto_centimos": monto, "pin": PIN,
+              "idempotency_key": f"recarga-no-entera-{monto!r}"},
+        headers=registrado.auth,
+    )
+
+    assert r.status_code == 422
+    assert await _saldo(client, registrado) == 0
+
+
 @pytest.mark.asyncio
 async def test_un_pin_errado_no_mueve_dinero_y_descuenta_intentos(
     client, otp_codes, registrado, otro_registrado

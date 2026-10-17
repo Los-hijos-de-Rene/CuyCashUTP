@@ -5,6 +5,7 @@ import 'package:cuycash/presentation/movement/widgets/share_receipt_button.dart'
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 ReceiptCard _card({
   String estado = 'confirmada',
@@ -34,7 +35,7 @@ Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(
 );
 
 void main() {
-  testWidgets('muestra monto, contraparte, motivo, estado y operación', (
+  testWidgets('muestra monto, contraparte, motivo, estado, fecha y operación', (
     tester,
   ) async {
     await _pump(tester, _card(saldoPosterior: const Money.soles(1000)));
@@ -48,6 +49,12 @@ void main() {
     expect(find.text('Confirmada'), findsOneWidget);
     expect(find.text('Saldo posterior'), findsOneWidget);
     expect(find.text('tx-demo-1'), findsOneWidget);
+    // La fecha se guarda en UTC y se muestra en la hora del teléfono: el
+    // esperado se calcula igual para no depender de la zona de quien corre.
+    final fechaLocal = DateFormat(
+      'dd/MM/yyyy HH:mm',
+    ).format(DateTime.utc(2026, 10, 5, 19, 30).toLocal());
+    expect(find.text(fechaLocal), findsOneWidget);
   });
 
   testWidgets('lo que no se sabe, no se pinta', (tester) async {

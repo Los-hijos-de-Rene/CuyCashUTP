@@ -84,6 +84,11 @@ APF2 (criterios 1–3): matriz en `docs/apf2-cumplimiento.md`, que enlaza
 esquema, actualiza el documento que corresponda. Humo contra producción:
 `services/api/scripts/smoke_prod.sh` (solo lectura).
 
+Idoneidad funcional (ISO 25010/25023): `docs/idoneidad-funcional.md`, RTM por
+criterio de aceptación contra la línea base de **26 HU** del informe APF2 (no
+las 22 de `sla-kpi.md`). Un CA cuenta como cumplido solo si tiene prueba
+automatizada. Si cierras un CA, actualiza su fila y el conteo de §5.
+
 **Despliegue: solo por GitHub Actions.** Render tiene `autoDeployTrigger: "off"`;
 el workflow `cd-backend.yml` despliega el commit probado tras aprobación en el
 environment `production`, y `rollback-backend.yml` vuelve a un commit de

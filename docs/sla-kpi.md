@@ -94,6 +94,12 @@ el docente.
 
 ## Backlog y plan de sprints
 
+> **Línea base vigente: 26 HU.** El informe APF2 consolidó el Excel corregido:
+> 26 historias en 7 épicas, 173 SP, MVP de 24 HU y 160 SP, y renumeró desde
+> HU02 (activación OTP; la autenticación pasa a HU03). Las cifras de esta
+> sección son las del libro original de 22 HU y se conservan como historial. La
+> auditoría de completitud usa la de 26: [`idoneidad-funcional.md`](idoneidad-funcional.md).
+
 | Dato | Valor |
 |---|---|
 | Historias de usuario totales | 22 |
