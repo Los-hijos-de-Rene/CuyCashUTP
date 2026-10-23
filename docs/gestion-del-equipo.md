@@ -15,8 +15,8 @@ El Sprint 5 empezó el 19/10 **sin el plan cargado**: hasta hoy ningún ítem te
 dueño, prioridad ni sprint. Desde hoy el tablero tiene el plan completo (§6),
 pero el sprint ya consumió una semana de sus dos. Acciones:
 
-1. **Sprint Planning corto (30 min) cuanto antes** para confirmar dueños y
-   asignar. Sin eso, el plan sigue siendo una propuesta.
+1. **Reparto asignado el 23/10** (§4, carga equitativa). Falta un Sprint
+   Planning corto (30 min) para que cada uno confirme o cambie su parte.
 2. Si al cierre del Sprint 5 (01/11) quedan P0 abiertos, pasan al Sprint 6 y
    se suelta en el orden de §4: panel admin → asistente IA → desembolso.
 3. Registrar esta semana perdida en la Retrospectiva: es el primer
@@ -51,9 +51,10 @@ repositorio y el proyecto no dependa de una sola persona.
 3. **Delegar según la especialidad, con un par que aprende.** Cada ítem
    técnico tiene un dueño de la especialidad y un revisor de otra. Así el
    conocimiento se reparte y el factor bus sube.
-4. **El que más sabe revisa, no implementa.** Jair (Scrum Master, autor de
-   casi todo el código) deja de ser el implementador por defecto: revisa la
-   arquitectura y desbloquea a los demás.
+4. **Carga equitativa, medida en días.** Cada tamaño vale un número de días
+   (XS ½ · S 1 · M 2½ · L 5) y el reparto se cuadra para que nadie cargue mucho
+   más que el promedio. Jair C. (Scrum Master, autor de casi todo el código)
+   implementa su parte **como uno más, no más**, y revisa como los demás.
 5. **Nadie empieza un ítem que no está listo** (*Definition of Ready*, §5) ni
    lo cierra sin cumplir la *Definition of Done*.
 6. **Límite de trabajo en curso (WIP).** Máximo **2 ítems *In progress* por
@@ -72,7 +73,7 @@ repositorio y el proyecto no dependa de una sola persona.
 | Pruebas, CA, métrica de completitud | I | R | R | R | **A** | R |
 | Seguridad (controles, ZAP, auditoría) | C | R | I | C | **A/R** | — |
 | Asistente IA (API y chat) | C | C | C | I | C | **A/R** |
-| Panel admin (consultas y web) | R | C | I | **A/R** | C | — |
+| Panel admin (consultas y web) | C | C | I | **A/R** | C | R |
 | Despliegue y CI/CD | **A** | R | I | C | C | — |
 | Ceremonias, impedimentos, informe APF | **A/R** | I | I | I | C | R |
 
@@ -80,9 +81,9 @@ repositorio y el proyecto no dependa de una sola persona.
 > Propuesta: un integrante que no sea el SM (Scrum separa ambos roles), con
 > autoridad para ordenar el backlog y aceptar cada incremento.
 >
-> **Jair Abdel Linares:** se le propone ser dueño del **asistente IA**, un
-> frente acotado y de punta a punta (API y pantalla), con Jair C. de revisor.
-> Confirmar en el Planning según su experiencia.
+> **Jair Abdel Linares:** dueño del **asistente IA** (API y pantalla) y de la
+> **web del panel admin**, con Jair C. y Jheampierre de revisores. Confirmar en
+> el Planning según su experiencia.
 
 ### Niveles de delegación por decisión
 
@@ -119,9 +120,9 @@ en paralelo.
 | Frente | Dueño del frente | Versión mínima que se compromete |
 |---|---|---|
 | Pago con QR | Jeremy (API) + Jheampierre (app) | Cobrar con QR firmado (monto, concepto, caducidad) y pagarlo leyendo la cámara. El pago es un envío más por `ledger.post`, con idempotencia |
-| Préstamos | Jeremy (API) + Andersson (cálculo) | Simular, solicitar con evaluación automática por score interno y desembolsar con cronograma |
+| Préstamos | Jeremy (API) + Andersson (cálculo y desembolso) | Simular, solicitar con evaluación automática por score interno y desembolsar con cronograma |
 | Asistente IA | Jair L. | Chat dentro de la app que responde dudas de uso y consulta **en solo lectura** los saldos y movimientos del titular. **Nunca mueve dinero** |
-| Panel admin | Andersson (datos) + Jair C. (web) | Web de solo lectura con rol `admin`: altas y estado KYC, operaciones del día, cuadre del libro mayor y bloqueos activos |
+| Panel admin | Andersson (datos) + Jair L. (web) | Web de solo lectura con rol `admin`: altas y estado KYC, operaciones del día, cuadre del libro mayor y bloqueos activos |
 
 Prioridad: **P0** sin esto no hay entrega · **P1** sube la completitud ·
 **P2** solo si sobra capacidad. Tamaño: XS < ½ día · S 1 día · M 2–3 días ·
@@ -131,29 +132,29 @@ L 1 semana · XL partir.
 
 | Ítem | Dueño | Revisor | Prio. | Tamaño | Cierra |
 |---|---|---|---|---|---|
-| #76 Cierre de sesión por inactividad | Jheampierre | Gian Piero | P0 | S | HU03 CA4 |
+| #76 Cierre de sesión por inactividad | Gian Piero | Jair L. | P0 | S | HU03 CA4 |
 | #78 QR en la app: generar cobro y leer para pagar | Jheampierre | Jair L. | P0 | L | HU14 CA1–CA2, HU15 CA1 |
 | #36 KYC exigido por el servidor | Jeremy | Gian Piero | P0 | M | HU01 CA2 · riesgo R01 |
-| #37 OTP por correo, sin códigos en logs | Jeremy | Gian Piero | P0 | M | Riesgo R06 |
+| #37 OTP por correo, sin códigos en logs | Jair C. | Jeremy | P0 | M | Riesgo R06 |
 | #77 API de QR: emitir firmado con caducidad, validar y pagar vía `ledger.post`; huella sobre el límite base | Jeremy | Andersson | P0 | M | HU14 CA1–CA2, HU15 CA2–CA4 |
 | #40 Migraciones con Alembic | Andersson | Jeremy | P0 | M | Riesgo R05; necesario para las tablas nuevas |
 | #79 Cuota, TCEA y cronograma en céntimos con regla de redondeo y casos borde | Andersson | Gian Piero | P0 | M | Base de HU09 y HU12 |
-| #80 Modelo y migración: solicitud, préstamo, cuotas | Andersson | Jeremy | P0 | S | Base de HU10–HU12 |
+| #80 Modelo y migración: solicitud, préstamo, cuotas | Jair C. | Andersson | P0 | S | Base de HU10–HU12 |
 | #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Gian Piero | Jeremy | P0 | M | Control AC-15 |
-| #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | PO | P0 | S | Oráculos de ambos sprints |
+| #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | Jair C. | P0 | S | Oráculos de ambos sprints |
 | #83 API del asistente: proxy al modelo con la clave solo en el backend, herramientas de solo lectura y límite de uso | Jair L. | Jair C. | P1 | M | HU27 (propuesta) |
-| #51 Levantar observaciones del APF1 | Jair C. | PO | P0 | S | — |
+| #51 Levantar observaciones del APF1 | Jair C. | Jheampierre | P0 | S | — |
 
 ### Sprint 6 · préstamos, asistente, panel y entrega (#47 se parte en sub-issues)
 
 | Ítem | Dueño | Revisor | Prio. | Tamaño | Cierra |
 |---|---|---|---|---|---|
 | #84 API simulador, solicitud con consentimiento y evaluación por score interno | Jeremy | Andersson | P0 | L | HU09 CA1–CA2, HU10 CA1, CA2, CA4 |
-| #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Jeremy | Andersson | P0 | M | HU12 CA1–CA2 |
+| #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Andersson | Jeremy | P0 | M | HU12 CA1–CA2 |
 | #86 Pantallas: simulador, solicitud, resultado, cronograma; compartir simulación | Jheampierre | Jair L. | P0 | L | HU09 CA4 |
-| #87 Cierre contable diario que verifica el cuadre | Andersson | Jeremy | P1 | M | HU18 CA4 |
+| #87 Cierre contable diario que verifica el cuadre | Jair C. | Andersson | P1 | M | HU18 CA4 |
 | #88 Consultas del panel: altas, KYC, operaciones del día, cuadre y bloqueos | Andersson | Gian Piero | P1 | M | HU28 (propuesta) |
-| #89 Panel admin web (Flutter web con `design_system`), solo lectura | Jair C. | Andersson | P1 | M | HU28 (propuesta) |
+| #89 Panel admin web (Flutter web con `design_system`), solo lectura | Jair L. | Jheampierre | P1 | M | HU28 (propuesta) |
 | #90 Pantalla de chat del asistente | Jair L. | Jheampierre | P1 | M | HU27 (propuesta) |
 | #91 Pruebas de aceptación de QR y préstamos sobre la API y la app | Gian Piero | Jair C. | P0 | M | Oráculos de todo lo anterior |
 | #50 Verificación E2E en Android y biometría real | Gian Piero | Jheampierre | P0 | M | Riesgo R07 |
@@ -200,20 +201,36 @@ Reglas que no se negocian en ambos frentes:
 
 Decir que no por escrito también es gestión: protege lo que sí se compromete.
 
-### Carga por persona
+### Carga por persona (reparto equitativo del 23/10)
 
-| Integrante | Sprint 5 | Sprint 6 |
+Días de trabajo según el tamaño (XS ½ · S 1 · M 2½ · L 5). Total: 56.5 días
+en 22 tareas, **9.4 días por persona** en promedio.
+
+| Integrante | Sprint 5 | Sprint 6 | Total | Revisa |
+|---|---|---|---|---|
+| Jeremy | 5 (#36, #77) | 5 (#84) | **10** | 4 |
+| Jheampierre | 5 (#78) | 5 (#86) | **10** | 4 |
+| Andersson | 5 (#40, #79) | 5 (#85, #88) | **10** | 4 |
+| Gian Piero | 4.5 (#76, #81, #82) | 5 (#91, #50) | **9.5** | 4 |
+| Jair C. | 4.5 (#51, #37, #80) | 5 (#87, #92) | **9.5** | 3 |
+| Jair L. | 2.5 (#83) | 5 (#89, #90) | **7.5** | 3 |
+
+**Qué se movió respecto de la primera propuesta** (que tenía a Jeremy con 15
+días y a Jair L. con 5):
+
+| Tarea | De → a | Por qué encaja |
 |---|---|---|
-| Jeremy | 3 M | L + M |
-| Jheampierre | S + L | L |
-| Andersson | 2 M + S | 2 M |
-| Gian Piero | M + S | 2 M |
-| Jair L. | M (entra al repositorio) | M + revisiones |
-| Jair C. | S + revisiones | 2 M |
+| #37 OTP por correo, sin códigos en logs | Jeremy → Jair C. | Jair C. escribió el módulo de OTP |
+| #85 Desembolso | Jeremy → Andersson | Es un asiento del libro mayor, su especialidad |
+| #87 Cierre contable diario | Andersson → Jair C. | Conoce `ledger.py` y libera a Andersson para el desembolso |
+| #80 Modelo de préstamos | Andersson → Jair C. | Pequeño y acotado; lo revisa Andersson |
+| #76 Cierre por inactividad | Jheampierre → Gian Piero | Es un control de seguridad; Jheampierre ya carga dos L |
+| #89 Panel admin web | Jair C. → Jair L. | Jair L. debe tener carga real, no solo revisiones |
 
-Con los tres frentes nuevos **todos quedan llenos**: no hay holgura. Jair C.
-pasa a tener dos ítems en el Sprint 6; sigue siendo menos que el resto, pero
-ya no es solo revisión.
+**Jair L.** tiene menos en el Sprint 5 porque aún no tiene acceso al
+repositorio. Sus tres tareas (#83, #89, #90) quedan sin asignar hasta que
+acepte la invitación; **si no entra antes del 02/11, pasan a Jair C.** Mientras
+tanto, sus revisiones las cubren Jheampierre (#76) y Jair C. (#78, #86).
 
 **Camino crítico:** Jeremy (QR y préstamos dependen de su API) y Jheampierre
 (una L en cada sprint). Si uno se atrasa, el orden para soltar es: panel admin
@@ -266,19 +283,18 @@ presentar X real, lo que quedó fuera y por qué.
 | Sub-issues: #46 ← #77, #78 · #47 ← #79, #80, #84, #85, #86 · #74 ← #83, #90 · #75 ← #81, #88, #89 | Ver el avance de cada épica en *Sub-issues progress* |
 | Etiqueta `fuera-de-alcance` en #44, #45, #48, #49 · `propuesta-po` en #74, #75 | El backlog muestra solo lo comprometido |
 | Gian Piero (`pierog30`) colaborador del repositorio y editor del tablero | Puede ser dueño y revisor |
+| **19 tareas asignadas** con el reparto equitativo; dueño y revisor escritos en cada issue | Cada uno ve su trabajo en *My items* |
 
 **Pendiente:**
 
 | Cambio | Quién | Por qué no está |
 |---|---|---|
-| **Asignar** cada issue a su dueño propuesto | SM, tras el Planning | El equipo pidió revisar el reparto antes de asignar |
 | Invitar a Jair L. | SM | Falta su usuario correcto de GitHub |
 | Límites de WIP: *Ready* 12 · *In progress* 8 · *In review* 6 | SM, en la web | GitHub no los expone por API |
 | Vista **"Por persona"**: tabla agrupada por *Assignees*, filtrada a `sprint:@current` | SM, en la web | Ídem |
 | Vista *Roadmap* con *Start/Target date* y marcadores de sprint | SM, en la web | Ídem |
 
-Al asignar, un comando por persona basta, por ejemplo:
-`gh issue edit 76 78 86 --add-assignee JheampierreRaPe`.
+Cuando Jair L. acepte la invitación: `gh issue edit 83 89 90 --add-assignee <su-usuario>`.
 
 ## 7. Métricas de gestión
 
