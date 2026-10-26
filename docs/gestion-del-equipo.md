@@ -17,7 +17,7 @@ pero el sprint ya consumió una semana de sus dos. Acciones:
 
 1. **Reparto asignado el 23/10** (§4, carga equitativa). Falta un Sprint
    Planning corto (30 min) para que cada uno confirme o cambie su parte.
-2. Si al cierre del Sprint 5 (01/11) quedan P0 abiertos, pasan al Sprint 6 y
+2. Si al cierre del Sprint 5 (01/11) quedan tareas 1–11 abiertas, pasan al Sprint 6 y
    se suelta en el orden de §4: panel admin → asistente IA → desembolso.
 3. Registrar esta semana perdida en la Retrospectiva: es el primer
    impedimento de gestión del proyecto, y explicarlo es parte de la nota.
@@ -124,41 +124,55 @@ en paralelo.
 | Asistente IA | Jair L. | Chat dentro de la app que responde dudas de uso y consulta **en solo lectura** los saldos y movimientos del titular. **Nunca mueve dinero** |
 | Panel admin | Andersson (datos) + Jair L. (web) | Web de solo lectura con rol `admin`: altas y estado KYC, operaciones del día, cuadre del libro mayor y bloqueos activos |
 
-Prioridad: **P0** sin esto no hay entrega · **P1** sube la completitud ·
-**P2** solo si sobra capacidad. Tamaño: XS < ½ día · S 1 día · M 2–3 días ·
-L 1 semana · XL partir.
+**Prioridad: un número único por tarea; 1 = se trabaja primero.** Es el orden
+del backlog: ante capacidad limitada, gana el número menor. Se calificó con
+estos criterios, en este orden de peso:
+
+1. **Compromiso de entrega:** lo indispensable (antes P0) va antes que lo que
+   sube la métrica (P1, 19–22) y que lo opcional (P2, 23–27).
+2. **Sprint:** lo del Sprint 5 antes que lo del 6.
+3. **Dependencias:** lo que desbloquea a otros va antes (#40 Alembic es la 1
+   porque sin migraciones no hay tablas nuevas).
+4. **Riesgo:** a más puntaje en la matriz del APF2, antes (#36, R01 = 20, es la 2).
+5. **Camino crítico:** las APIs de las que dependen las pantallas van antes.
+
+Las épicas (#46, #47) y las historias propuestas (#74, #75) no llevan número:
+se ordenan por sus tareas. Lo fuera de alcance tampoco. Si falta tiempo, se suelta
+desde el número mayor hacia abajo: 27, 26… y de los comprometidos, 22 → 19.
+
+Tamaño: XS < ½ día · S 1 día · M 2–3 días · L 1 semana · XL partir.
 
 ### Sprint 5 · parciales críticos, QR y bases
 
-| Ítem | Dueño | Revisor | Prio. | Tamaño | Cierra |
+| Ítem | Dueño | Revisor | Prioridad | Tamaño | Cierra |
 |---|---|---|---|---|---|
-| #76 Cierre de sesión por inactividad | Gian Piero | Jair L. | P0 | S | HU03 CA4 |
-| #78 QR en la app: generar cobro y leer para pagar | Jheampierre | Jair L. | P0 | L | HU14 CA1–CA2, HU15 CA1 |
-| #36 KYC exigido por el servidor | Jeremy | Gian Piero | P0 | M | HU01 CA2 · riesgo R01 |
-| #37 OTP por correo, sin códigos en logs | Jair C. | Jeremy | P0 | M | Riesgo R06 |
-| #77 API de QR: emitir firmado con caducidad, validar y pagar vía `ledger.post`; huella sobre el límite base | Jeremy | Andersson | P0 | M | HU14 CA1–CA2, HU15 CA2–CA4 |
-| #40 Migraciones con Alembic | Andersson | Jeremy | P0 | M | Riesgo R05; necesario para las tablas nuevas |
-| #79 Cuota, TCEA y cronograma en céntimos con regla de redondeo y casos borde | Andersson | Gian Piero | P0 | M | Base de HU09 y HU12 |
-| #80 Modelo y migración: solicitud, préstamo, cuotas | Jair C. | Andersson | P0 | S | Base de HU10–HU12 |
-| #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Gian Piero | Jeremy | P0 | M | Control AC-15 |
-| #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | Jair C. | P0 | S | Oráculos de ambos sprints |
-| #83 API del asistente: proxy al modelo con la clave solo en el backend, herramientas de solo lectura y límite de uso | Jair L. | Jair C. | P1 | M | HU27 (propuesta) |
-| #51 Levantar observaciones del APF1 | Jair C. | Jheampierre | P0 | S | — |
+| #40 Migraciones con Alembic | Andersson | Jeremy | 1 | M | Riesgo R05; necesario para las tablas nuevas |
+| #36 KYC exigido por el servidor | Jeremy | Gian Piero | 2 | M | HU01 CA2 · riesgo R01 |
+| #77 API de QR: emitir firmado con caducidad, validar y pagar vía `ledger.post`; huella sobre el límite base | Jeremy | Andersson | 3 | M | HU14 CA1–CA2, HU15 CA2–CA4 |
+| #78 QR en la app: generar cobro y leer para pagar | Jheampierre | Jair L. | 4 | L | HU14 CA1–CA2, HU15 CA1 |
+| #79 Cuota, TCEA y cronograma en céntimos con regla de redondeo y casos borde | Andersson | Gian Piero | 5 | M | Base de HU09 y HU12 |
+| #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | Jair C. | 6 | S | Oráculos de ambos sprints |
+| #80 Modelo y migración: solicitud, préstamo, cuotas | Jair C. | Andersson | 7 | S | Base de HU10–HU12 |
+| #37 OTP por correo, sin códigos en logs | Jair C. | Jeremy | 8 | M | Riesgo R06 |
+| #51 Levantar observaciones del APF1 | Jair C. | Jheampierre | 9 | S | — |
+| #76 Cierre de sesión por inactividad | Gian Piero | Jair L. | 10 | S | HU03 CA4 |
+| #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Gian Piero | Jeremy | 11 | M | Control AC-15 |
+| #83 API del asistente: proxy al modelo con la clave solo en el backend, herramientas de solo lectura y límite de uso | Jair L. | Jair C. | 12 | M | HU27 (propuesta) |
 
 ### Sprint 6 · préstamos, asistente, panel y entrega (#47 se parte en sub-issues)
 
-| Ítem | Dueño | Revisor | Prio. | Tamaño | Cierra |
+| Ítem | Dueño | Revisor | Prioridad | Tamaño | Cierra |
 |---|---|---|---|---|---|
-| #84 API simulador, solicitud con consentimiento y evaluación por score interno | Jeremy | Andersson | P0 | L | HU09 CA1–CA2, HU10 CA1, CA2, CA4 |
-| #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Andersson | Jeremy | P0 | M | HU12 CA1–CA2 |
-| #86 Pantallas: simulador, solicitud, resultado, cronograma; compartir simulación | Jheampierre | Jair L. | P0 | L | HU09 CA4 |
-| #87 Cierre contable diario que verifica el cuadre | Jair C. | Andersson | P1 | M | HU18 CA4 |
-| #88 Consultas del panel: altas, KYC, operaciones del día, cuadre y bloqueos | Andersson | Gian Piero | P1 | M | HU28 (propuesta) |
-| #89 Panel admin web (Flutter web con `design_system`), solo lectura | Jair L. | Jheampierre | P1 | M | HU28 (propuesta) |
-| #90 Pantalla de chat del asistente | Jair L. | Jheampierre | P1 | M | HU27 (propuesta) |
-| #91 Pruebas de aceptación de QR y préstamos sobre la API y la app | Gian Piero | Jair C. | P0 | M | Oráculos de todo lo anterior |
-| #50 Verificación E2E en Android y biometría real | Gian Piero | Jheampierre | P0 | M | Riesgo R07 |
-| #92 Informe final y recálculo de la métrica X | Jair C. | Gian Piero | P0 | M | — |
+| #84 API simulador, solicitud con consentimiento y evaluación por score interno | Jeremy | Andersson | 13 | L | HU09 CA1–CA2, HU10 CA1, CA2, CA4 |
+| #86 Pantallas: simulador, solicitud, resultado, cronograma; compartir simulación | Jheampierre | Jair L. | 14 | L | HU09 CA4 |
+| #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Andersson | Jeremy | 15 | M | HU12 CA1–CA2 |
+| #91 Pruebas de aceptación de QR y préstamos sobre la API y la app | Gian Piero | Jair C. | 16 | M | Oráculos de todo lo anterior |
+| #50 Verificación E2E en Android y biometría real | Gian Piero | Jheampierre | 17 | M | Riesgo R07 |
+| #92 Informe final y recálculo de la métrica X | Jair C. | Gian Piero | 18 | M | — |
+| #87 Cierre contable diario que verifica el cuadre | Jair C. | Andersson | 19 | M | HU18 CA4 |
+| #90 Pantalla de chat del asistente | Jair L. | Jheampierre | 20 | M | HU27 (propuesta) |
+| #88 Consultas del panel: altas, KYC, operaciones del día, cuadre y bloqueos | Andersson | Gian Piero | 21 | M | HU28 (propuesta) |
+| #89 Panel admin web (Flutter web con `design_system`), solo lectura | Jair L. | Jheampierre | 22 | M | HU28 (propuesta) |
 
 ### Alcance nuevo fuera de la línea base
 
@@ -189,15 +203,15 @@ Reglas que no se negocian en ambos frentes:
 | Ítem | Motivo |
 |---|---|
 | HU11 Contrato y firma | Sale para dar lugar al asistente; sin firma certificada quedaba en 1 CA de 4 |
-| Activación del alta por OTP (HU02) | P2: el OTP existe; conectarlo al alta queda si sobra tiempo |
-| Frecuentes visibles y editables (HU07) | P2 |
-| #43 Prueba de carga (200 ms), #39 CSP | P2: siguen como riesgo declarado |
+| Activación del alta por OTP (HU02) | Sin número: el OTP existe; conectarlo al alta queda si sobra tiempo |
+| Frecuentes visibles y editables (HU07) | Sin número: solo si sobra tiempo |
+| #43 Prueba de carga (200 ms), #39 CSP | Prioridad 23 y 24: siguen como riesgo declarado |
 | HU14 CA3–CA4, HU13, HU16 | Interoperabilidad con otras billeteras y push al comercio necesitan redes y proveedores externos |
 | #45 CCI interbancario | Necesita una red bancaria externa |
 | #48 Antifraude, conciliación y AML (HU19–HU21) | Tres historias de 8 SP sin datos ni proveedores reales |
 | #49 Notificaciones (HU22) | Necesita push y correo transaccional |
 | HU10 CA3, HU12 CA3–CA4, HU09 CA3 | Centrales de riesgo reales, débito automático, avisos de cuota y desgravamen |
-| #38, #41, #42, #44, HU25, HU26 | P2: solo si sobra capacidad |
+| #38, #41, #42 (prioridad 25–27); #44, HU25, HU26 | Solo si sobra capacidad |
 
 Decir que no por escrito también es gestión: protege lo que sí se compromete.
 
@@ -244,7 +258,7 @@ Sobre los 96 CA de la línea base (sin HU27 ni HU28):
 | Momento | CA cumplidos | X |
 |---|---|---|
 | Hoy | 12 | 0.125 |
-| Fin del Sprint 5 (P0 cerrados) | 20 | 0.208 |
+| Fin del Sprint 5 (prioridades 1–11 cerradas) | 20 | 0.208 |
 | Fin del Sprint 6 (préstamos + cierre diario) | 26 – 29 | 0.27 – 0.30 |
 
 El asistente y el panel no mueven esta X, porque no están en la línea base. Si
@@ -276,7 +290,7 @@ presentar X real, lo que quedó fuera y por qué.
 | Cambio | Para qué |
 |---|---|
 | Campo *Sprint* (iteración): Sprint 5 del 19/10 y Sprint 6 del 02/11, 14 días cada uno | Agrupar por sprint y medir la velocidad |
-| *Priority* (campo de la organización): **P0 = Urgent · P1 = High · P2 = Low** | Ordenar el backlog sin duplicar el campo |
+| Campo numérico *Prioridad* (1–27, único por tarea), a pedido del docente; se borró el *Priority* de texto (Urgent/High/Low) de todos los issues | Un backlog ordenado sin empates |
 | *Start date* y *Target date* = fechas del sprint de cada ítem | Que el *Roadmap* muestre barras |
 | *Size* en todos los ítems abiertos del plan | Detectar ítems XL (#46 y #47 son épicas: se trabajan por sus sub-issues) |
 | 19 issues nuevos (#74–#92): dos historias propuestas y 17 tareas, cada una con "Se acepta cuando", dueño propuesto y revisor | Que cada pieza tenga un solo dueño |
