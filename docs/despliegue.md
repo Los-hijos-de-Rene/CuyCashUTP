@@ -1,5 +1,13 @@
 # Manual de despliegue en la nube
 
+**Actualización técnica propuesta en #79 (30/10/2026):** la imagen y los
+workflows de backend/seguridad pasan a Python 3.12. La auditoría del PR #94
+detectó CVE-2026-114605 en `dnspython 2.8.0`; la versión corregida requiere
+Python >=3.11, por lo que `requirements.txt` exige `dnspython>=2.9.0,<3`.
+Se comprobó el build y la importación de la API en la imagen local nueva.
+Este cambio de configuración no significa que se haya desplegado: producción
+conserva su versión hasta una ejecución aprobada del CD.
+
 **APF2 · criterio 3.2 (Manual de despliegue, CI/CD y rollback) y 3.3
 (Evidencia de pruebas de despliegue).** El monitoreo de la base (3.4) está en
 [`administracion-bd.md`](administracion-bd.md#5-monitoreo-en-producción-criterio-34)
