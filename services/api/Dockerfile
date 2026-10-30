@@ -6,6 +6,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY alembic.ini ./alembic.ini
+COPY migrations ./migrations
 # Los scripts de operación van en la imagen para correrlos con
 # `docker compose exec auth python -m scripts.<nombre>` (p. ej. scripts/dev.py,
 # datos de prueba en local). Los destructivos tienen su propio cerrojo.

@@ -227,12 +227,11 @@ docker compose exec auth python -m scripts.dev reset-y-seed
 .venv/bin/python scripts/reset_schema.py
 ```
 
-**Por qué recrear el esquema:** el servicio crea tablas con `create_all`, que
-no altera las que ya existen; un `CHECK` cambiado no llega a una base ya
-creada. Mientras no haya datos reales se recrea en vez de migrar.
-`scripts/reset_schema.py` lleva un cerrojo: sin `ALLOW_DESTRUCTIVE_RESET=1` solo
-acepta SQLite y los hosts `localhost`/`127.0.0.1` (y rechaza `ENV=production`).
-Contra una base remota hay que pasar esa variable a propósito.
+**Esquema versionado:** el arranque exige la revisión Alembic actual. Antes de
+levantar la API, ejecutar `python -m alembic upgrade head` desde `services/api`.
+Para bases existentes, seguir `docs/migraciones.md`: respaldo, adopción verificada
+y migración. No recrear una base persistente para actualizar su esquema.
+Desembolso y consultas admin: `docs/backend-pendientes-andersson.md`.
 
 **Tests que exigen Postgres** (el bloqueo de fila y la concurrencia no se
 pueden probar en SQLite; sin esta variable se omiten. En CI corren solos
