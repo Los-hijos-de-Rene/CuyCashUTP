@@ -38,7 +38,7 @@ def main() -> None:
     # `sorted_tables` las ordena por dependencia: ninguna llave foránea
     # apunta a una tabla que todavía no exista.
     for tabla in Base.metadata.sorted_tables:
-        print(f"{CreateTable(tabla).compile(dialect=dialecto)};")
+        print("\n".join(line.rstrip() for line in f"{CreateTable(tabla).compile(dialect=dialecto)};".splitlines()))
         # `indexes` es un set: sin ordenar, el orden cambia entre ejecuciones
         # y el diff contra schema.sql falla al azar.
         for indice in sorted(tabla.indexes, key=lambda i: i.name):

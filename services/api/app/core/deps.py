@@ -68,3 +68,9 @@ async def current_user(
     if user is None:
         raise _unauthenticated()
     return user
+
+
+async def current_admin(user: User = Depends(current_user)) -> User:
+    if user.rol != "admin":
+        raise ApiError("FORBIDDEN", "No tienes acceso a esta consulta.", status_code=403)
+    return user

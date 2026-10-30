@@ -186,7 +186,8 @@ diseño: **el dinero nunca es un número de coma flotante**.
 
 Contrato propuesto para revisión, sin endpoint ni escritura de dinero:
 `app.services.loan_schedule.calcular_cronograma`. No acredita HU09/HU12 como
-completas: faltan integración, persistencia y desembolso (#80, #84, #85).
+completas: falta integración de solicitud/evaluación/contrato; ver el
+contrato de implementación de #85 en `backend-pendientes-andersson.md`.
 
 - Principal y resultados monetarios: `int` de céntimos; nunca `float`.
   Las tasas se reciben y publican como `Decimal`, con contexto local de al
@@ -312,3 +313,18 @@ HU18 13·¾ = 27.25 SP.
 4. **HU02** · usar el OTP existente para la activación del alta: CA1–CA3.
 5. **HU17 CA4** · medir latencia con carga y publicar el resultado.
 6. Recalcular X al cierre de cada sprint con esta misma tabla.
+
+
+## Integración backend de #40, #85 y #88
+
+Esquema versionado con Alembic: [procedimiento de migración](migraciones.md).
+Se añade `users.rol` (`titular` por defecto, `admin` solo por operación
+administrativa) y las tablas `loan_applications` (condiciones y aprobación),
+`loans` (solicitud/transacción únicas) y `loan_installments` (capital/interés/saldo
+en BIGINT y número único por préstamo). TEA/TCEA se conservan como texto decimal.
+Contrato HTTP, límites y dependencias: [integración de tareas](backend-pendientes-andersson.md).
+Pruebas: `test_migrations.py`, `test_loan_disbursement.py`, `test_admin_queries.py`.
+Las pruebas del desembolso parten de condiciones aprobadas sembradas por fixture;
+no acreditan el flujo completo de solicitud/evaluación/contrato de HU10–HU12.
+El conteo histórico de completitud de la línea base no se modifica: faltan esa
+integración y las pruebas integrales; HU28 sigue fuera de la línea base.

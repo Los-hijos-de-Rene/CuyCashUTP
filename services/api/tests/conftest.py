@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # no
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.pool import NullPool, StaticPool  # noqa: E402
 
-from app.db.base import Base, get_session  # noqa: E402
+from app.db.base import Base, get_session, configure_sqlite_transactions  # noqa: E402
 from app.main import app  # noqa: E402
 
 
@@ -50,7 +50,7 @@ def _url_postgres_de_pruebas():
     return url
 
 
-async def _motor_limpio():
+async def _motor_limpio(*, transactions=False):
     """
     Motor con el esquema recién creado: Postgres real si hay
     `TEST_POSTGRES_URL` (el CI, mismo motor que producción), SQLite en memoria
@@ -69,6 +69,11 @@ async def _motor_limpio():
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
+    # El cliente SQLite usa una conexión compartida entre sesiones del fixture:
+    # no sirve para probar aislamiento. El fixture directo sí usa BEGIN real;
+    # HTTP y concurrencia se validan íntegramente en PostgreSQL.
+    if transactions:
+        configure_sqlite_transactions(engine)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -140,7 +145,7 @@ async def db_engine():
     Postgres real con `TEST_POSTGRES_URL` (desechable, debe terminar en
     `_test`: se BORRA TODO al entrar y al salir), SQLite en memoria si no.
     """
-    engine, es_postgres = await _motor_limpio()
+    engine, es_postgres = await _motor_limpio(transactions=True)
     yield engine
     await _desechar(engine, es_postgres)
 

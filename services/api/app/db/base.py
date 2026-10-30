@@ -64,3 +64,25 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 async def get_session() -> AsyncSession:
     async with SessionLocal() as session:
         yield session
+
+
+def configure_sqlite_transactions(motor):
+    """SQLite legacy no inicia BEGIN en SELECT/SAVEPOINT: forzar atomicidad.
+
+    Sin esto, liberar el primer savepoint confirma filas aunque después el
+    llamador haga rollback. PostgreSQL ya tiene transacciones reales.
+    """
+    if motor.dialect.name != "sqlite":
+        return
+    from sqlalchemy import event
+
+    @event.listens_for(motor.sync_engine, "connect")
+    def connect(dbapi_connection, _):
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(motor.sync_engine, "begin")
+    def begin(connection):
+        connection.exec_driver_sql("BEGIN")
+
+
+configure_sqlite_transactions(engine)

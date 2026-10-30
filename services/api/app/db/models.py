@@ -30,6 +30,13 @@ def utcnow() -> datetime:
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("rol IN ('titular','admin')", name="ck_users_rol"),
+    )
+    # Solo una operación administrativa fuera de la API puede otorgar este rol.
+    rol: Mapped[str] = mapped_column(
+        String(10), default="titular", server_default="titular"
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     dni: Mapped[str] = mapped_column(String(8), unique=True, index=True)
@@ -40,9 +47,13 @@ class User(Base):
     alias: Mapped[str] = mapped_column(String(60), unique=True, index=True)
     # El PIN nunca se guarda en claro ni aparece en logs.
     pin_hash: Mapped[str] = mapped_column(String(255))
-    pin_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    pin_updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
     kyc_status: Mapped[str] = mapped_column(String(20), default="pending")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
 
 class Device(Base):
@@ -54,8 +65,12 @@ class Device(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     device_id: Mapped[str] = mapped_column(String(128), index=True)
-    trusted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    trusted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
     # Lo que el teléfono declara de sí mismo (`X-Device-Name`). Solo para
     # mostrar en "Dispositivos vinculados": nada de seguridad se decide con él.
     nombre: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
@@ -74,9 +89,13 @@ class Session(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     device_id: Mapped[str] = mapped_column(String(128))
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class BiometricCredential(Base):
@@ -94,8 +113,12 @@ class BiometricCredential(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     device_id: Mapped[str] = mapped_column(String(128), index=True)
     secret_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class Lockout(Base):
@@ -112,8 +135,12 @@ class Lockout(Base):
     subject_type: Mapped[str] = mapped_column(String(10), index=True)
     subject_value: Mapped[str] = mapped_column(String(128), index=True)
     level: Mapped[int] = mapped_column(Integer, default=0)
-    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    locked_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
 
 class LoginAttempt(Base):
@@ -129,7 +156,9 @@ class LoginAttempt(Base):
     dni: Mapped[str] = mapped_column(String(8), index=True)
     device_id: Mapped[str] = mapped_column(String(128), index=True)
     succeeded: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
 
 
 class OtpChallenge(Base):
@@ -145,9 +174,13 @@ class OtpChallenge(Base):
     cooldown_until: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     attempts_left: Mapped[int] = mapped_column(Integer)
     resends_left: Mapped[int] = mapped_column(Integer)
-    consumed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    consumed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     cancelled_reason: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
 
 class OtpTicket(Base):
@@ -164,7 +197,9 @@ class OtpTicket(Base):
     identifier: Mapped[str] = mapped_column(String(255))
     user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Limita `pin/check-current`, que sin tope sería un oráculo del PIN.
     checks_left: Mapped[int] = mapped_column(Integer, default=5)
 
@@ -181,7 +216,9 @@ class KycVerification(Base):
     is_live: Mapped[bool] = mapped_column(Boolean, default=False)
     face_match: Mapped[bool] = mapped_column(Boolean, default=False)
     face_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
 
 class KycTicket(Base):
@@ -207,9 +244,13 @@ class KycTicket(Base):
     is_live: Mapped[bool] = mapped_column(Boolean, default=False)
     face_match: Mapped[bool] = mapped_column(Boolean, default=False)
     face_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +294,9 @@ class Account(Base):
     # Céntimos. El disponible descuenta lo retenido; el contable no.
     saldo_disponible: Mapped[int] = mapped_column(BigInteger, default=0)
     saldo_contable: Mapped[int] = mapped_column(BigInteger, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -274,7 +317,9 @@ class Account(Base):
             postgresql_where=text("tipo = 'sueldo'"),
         ),
         # La clave de apertura es única POR TITULAR: la de otro no debe chocar.
-        UniqueConstraint("user_id", "idempotency_key", name="uq_accounts_clave_apertura"),
+        UniqueConstraint(
+            "user_id", "idempotency_key", name="uq_accounts_clave_apertura"
+        ),
         CheckConstraint("moneda IN ('PEN','USD')", name="ck_accounts_moneda"),
         CheckConstraint(
             "estado IN ('activa','bloqueada','cerrada')", name="ck_accounts_estado"
@@ -391,15 +436,21 @@ class Beneficiary(Base):
 
     __tablename__ = "beneficiaries"
     __table_args__ = (
-        UniqueConstraint("user_id", "cuenta_destino_id", name="uq_beneficiaries_user_cuenta"),
+        UniqueConstraint(
+            "user_id", "cuenta_destino_id", name="uq_beneficiaries_user_cuenta"
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     beneficiario_dni: Mapped[str] = mapped_column(String(8), index=True)
-    cuenta_destino_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    cuenta_destino_id: Mapped[str] = mapped_column(
+        ForeignKey("accounts.id"), index=True
+    )
     apodo: Mapped[str] = mapped_column(String(40))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
 
 
 class Transfer(Base):
@@ -422,3 +473,77 @@ class Transfer(Base):
     monto: Mapped[int] = mapped_column(BigInteger)
     motivo: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     estado: Mapped[str] = mapped_column(String(12), default="confirmada")
+
+
+class LoanApplication(Base):
+    """Contrato de integración #80/#84: solo el evaluador aprueba condiciones.
+
+    No existe ruta pública que escriba estado, tasa o aprobación. El desembolso
+    exige aprobación y aceptación contractual registradas por esos flujos.
+    """
+
+    __tablename__ = "loan_applications"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    estado: Mapped[str] = mapped_column(String(20), default="pendiente")
+    principal: Mapped[int] = mapped_column(BigInteger)
+    moneda: Mapped[str] = mapped_column(String(3), default="PEN")
+    meses: Mapped[int] = mapped_column(Integer)
+    # Decimal exacto serializado, sin pérdida de escala ni conversión a float.
+    tea: Mapped[str] = mapped_column(String(128))
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    contrato_aceptado_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True)
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('pendiente','aprobado','rechazado','en_revision')",
+            name="ck_loan_application_estado",
+        ),
+        CheckConstraint(
+            "principal > 0 AND principal <= 1000000000000",
+            name="ck_loan_application_principal",
+        ),
+        CheckConstraint(
+            "meses >= 1 AND meses <= 360", name="ck_loan_application_meses"
+        ),
+        CheckConstraint("moneda IN ('PEN','USD')", name="ck_loan_application_moneda"),
+    )
+
+
+class Loan(Base):
+    __tablename__ = "loans"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    application_id: Mapped[str] = mapped_column(
+        ForeignKey("loan_applications.id"), unique=True
+    )
+    account_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    transaction_id: Mapped[str] = mapped_column(
+        ForeignKey("transactions.id"), unique=True
+    )
+    fecha_desembolso: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    # Instantánea de la tasa efectiva calculada sobre pagos redondeados.
+    tcea: Mapped[str] = mapped_column(String(128))
+
+
+class LoanInstallment(Base):
+    __tablename__ = "loan_installments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    loan_id: Mapped[str] = mapped_column(ForeignKey("loans.id"), index=True)
+    numero: Mapped[int] = mapped_column(Integer)
+    vencimiento: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    capital: Mapped[int] = mapped_column(BigInteger)
+    interes: Mapped[int] = mapped_column(BigInteger)
+    saldo_pendiente: Mapped[int] = mapped_column(BigInteger)
+    __table_args__ = (
+        UniqueConstraint("loan_id", "numero", name="uq_loan_installment_numero"),
+        CheckConstraint(
+            "numero > 0 AND capital >= 0 AND interes >= 0 AND saldo_pendiente >= 0",
+            name="ck_loan_installment_importes",
+        ),
+    )

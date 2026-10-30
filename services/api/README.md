@@ -177,3 +177,18 @@ caen en el mismo chat, cualquier asistente ve el de cualquiera.
 - Proveedor SMTP real (Mailtrap para QA).
 - El proxy del KYC devuelve la respuesta completa; para respuestas grandes
   convendría también transmitirla en stream.
+
+
+## Integración backend de #40, #85 y #88
+
+Esquema versionado con Alembic: [procedimiento de migración](../../docs/migraciones.md).
+Se añade `users.rol` (`titular` por defecto, `admin` solo por operación
+administrativa) y las tablas `loan_applications` (condiciones y aprobación),
+`loans` (solicitud/transacción únicas) y `loan_installments` (capital/interés/saldo
+en BIGINT y número único por préstamo). TEA/TCEA se conservan como texto decimal.
+Contrato HTTP, límites y dependencias: [integración de tareas](../../docs/backend-pendientes-andersson.md).
+Pruebas: `test_migrations.py`, `test_loan_disbursement.py`, `test_admin_queries.py`.
+Las pruebas del desembolso parten de condiciones aprobadas sembradas por fixture;
+no acreditan el flujo completo de solicitud/evaluación/contrato de HU10–HU12.
+El conteo histórico de completitud de la línea base no se modifica: faltan esa
+integración y las pruebas integrales; HU28 sigue fuera de la línea base.
