@@ -144,7 +144,8 @@ async def test_adoption_refuses_unknown_column(db_engine):
         await cleanup(db_engine)
 
 
-async def test_adoption_refuses_changed_partial_index(db_engine):
+@pytest.mark.parametrize("predicate", ["ahorro", "SUELDO", "suel do"])
+async def test_adoption_refuses_changed_partial_index(db_engine, predicate):
     try:
         await prepare(db_engine)
         async with db_engine.begin() as c:
@@ -152,7 +153,7 @@ async def test_adoption_refuses_changed_partial_index(db_engine):
             await c.execute(text("DROP INDEX ux_accounts_un_sueldo"))
             await c.execute(
                 text(
-                    "CREATE UNIQUE INDEX ux_accounts_un_sueldo ON accounts (user_id) WHERE tipo = 'ahorro'"
+                    f"CREATE UNIQUE INDEX ux_accounts_un_sueldo ON accounts (user_id) WHERE tipo = '{predicate}'"
                 )
             )
             with pytest.raises(RuntimeError, match="difiere"):

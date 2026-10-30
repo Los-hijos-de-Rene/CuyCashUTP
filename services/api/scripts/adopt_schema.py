@@ -51,15 +51,70 @@ def baseline_metadata(cfg):
 
 
 def normalized(sql):
-    # PostgreSQL deparsea IN como = ANY(ARRAY[...]) y añade casts/paréntesis.
-    sql = re.sub(
-        r"::(?:character varying|text|bigint|integer|boolean)(?:\[\])?",
-        "",
-        str(sql),
-        flags=re.I,
+    # Conserva literales y agrupación: cambiar 'USD' a 'usd' o los paréntesis
+    # de una condición no debe pasar por una diferencia de formato.
+    parts = re.split(r"('(?:''|[^'])*')", str(sql))
+    return "".join(
+        part if index % 2 else re.sub(r"\s", "", part).lower()
+        for index, part in enumerate(parts)
     )
-    sql = re.sub(r"=\s*ANY\s*\(\s*ARRAY\[", " IN (", sql, flags=re.I).replace("]", ")")
-    return re.sub(r"[\s()]", "", sql).lower()
+
+
+def expected_constraints(connection, table):
+    checks = [c for c in table.constraints if isinstance(c, sa.CheckConstraint)]
+    dialect = connection.dialect.name
+    predicates = {
+        i.name: i.dialect_options[dialect].get("where") for i in table.indexes
+    }
+    if (
+        dialect != "postgresql"
+        or not checks
+        and not any(v is not None for v in predicates.values())
+    ):
+        return {(c.name, normalized(c.sqltext)) for c in checks}, predicates
+    # PostgreSQL transforma IN en ANY y añade casts. Su propio parser produce
+    # una forma canónica, sin eliminar agrupaciones ni alterar los literales.
+    # Solo tablas TEMPORARY de esta conexión; jamás altera tablas existentes.
+    import uuid
+
+    temporary = sa.Table(
+        "adopt_" + uuid.uuid4().hex,
+        sa.MetaData(),
+        *(sa.Column(c.name, c.type) for c in table.columns),
+        *(sa.CheckConstraint(c.sqltext, name=c.name) for c in checks),
+        prefixes=["TEMPORARY"],
+        postgresql_on_commit="DROP"
+    )
+    temporary.create(connection)
+    try:
+        names = {}
+        for name, predicate in predicates.items():
+            if predicate is not None:
+                index_name = "adopt_" + uuid.uuid4().hex
+                sa.Index(
+                    index_name,
+                    *(
+                        temporary.c[c.name]
+                        for c in next(
+                            i for i in table.indexes if i.name == name
+                        ).columns
+                    ),
+                    postgresql_where=predicate
+                ).create(connection)
+                names[index_name] = name
+        inspector = sa.inspect(connection)
+        canonical = {
+            (c["name"], normalized(c["sqltext"]))
+            for c in inspector.get_check_constraints(temporary.name)
+        }
+        for index in inspector.get_indexes(temporary.name):
+            if index["name"] in names:
+                predicates[names[index["name"]]] = index.get("dialect_options", {}).get(
+                    "postgresql_where"
+                )
+        return canonical, predicates
+    finally:
+        temporary.drop(connection)
 
 
 def adopt(connection):
@@ -76,11 +131,7 @@ def adopt(connection):
     for table in metadata.tables.values():
         if table.name not in names:
             continue
-        expected_checks = {
-            (c.name, normalized(c.sqltext))
-            for c in table.constraints
-            if isinstance(c, sa.CheckConstraint)
-        }
+        expected_checks, expected_predicates = expected_constraints(connection, table)
         actual_checks = {
             (c["name"], normalized(c["sqltext"]))
             for c in actual.get_check_constraints(table.name)
@@ -94,7 +145,7 @@ def adopt(connection):
         indexes = {i["name"]: i for i in actual.get_indexes(table.name)}
         dialect = connection.dialect.name
         for index in table.indexes:
-            expected_where = index.dialect_options[dialect].get("where")
+            expected_where = expected_predicates[index.name]
             actual_where = (
                 indexes.get(index.name, {})
                 .get("dialect_options", {})

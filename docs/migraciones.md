@@ -45,3 +45,7 @@ paso de adopción anterior antes de iniciar esta versión; no basta con aprobar 
 Referencia de configuración: [documentación oficial de Alembic](https://alembic.sqlalchemy.org/en/latest/cookbook.html#using-asyncio-with-alembic).
 SQLite usa BEGIN explícito para evitar confirmaciones accidentales al liberar
 savepoints; [patrón oficial de SQLAlchemy](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#enabling-non-legacy-sqlite-transactional-modes-with-the-sqlite3-or-aiosqlite-driver).
+
+La adopción PostgreSQL requiere permiso TEMP: usa tablas temporales vacías para
+comparar la representación canónica de CHECK e índices sin confundir cambios
+en literales o agrupaciones con diferencias de formato. Se eliminan al terminar.
