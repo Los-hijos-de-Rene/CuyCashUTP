@@ -182,11 +182,62 @@ diseño: **el dinero nunca es un número de coma flotante**.
 | Rangos | Monto > 0 y ≤ S/ 2,000.00; el máximo exacto se acepta | `test_un_monto_fuera_de_rango_es_rechazado`, `test_el_monto_maximo_exacto_se_acepta` |
 | Transiciones de estado | Una cuenta `bloqueada` no se debita ni recibe; un estado de transacción no previsto se rechaza | `test_una_cuenta_bloqueada_no_se_debita`, `test_un_estado_no_previsto_es_rechazado` |
 
-**Única conversión decimal:** `formatSoles`, solo al mostrar. No hay
-descuentos, intereses ni conversión de moneda, así que no existe redondeo que
-auditar. Cuando lleguen préstamos (HU09–HU12: TCEA, cuotas) y cambio de divisas
-(HU25), la regla de redondeo debe fijarse **antes** de codificar y probarse con
-casos de borde (medio céntimo, última cuota que absorbe la diferencia).
+### 4.1 Cálculo puro de préstamos (#79)
+
+Contrato propuesto para revisión, sin endpoint ni escritura de dinero:
+`app.services.loan_schedule.calcular_cronograma`. No acredita HU09/HU12 como
+completas: faltan integración, persistencia y desembolso (#80, #84, #85).
+
+- Principal y resultados monetarios: `int` de céntimos; nunca `float`.
+  Las tasas se reciben y publican como `Decimal`, con contexto local de al
+  menos 50 dígitos y 40 dígitos de guarda sobre la escala de entrada; no
+  dependen del contexto decimal del llamador. Para raíces mensuales decimales
+  exactas se comprueba la potencia 12 con aritmética racional (`Fraction`,
+  enteros) y se redondea la cuota/interés por cociente entero: evita perder
+  un empate exacto por aproximar la suma de descuentos. No usa `float`.
+- Entrada: **TEA efectiva anual en fracción** (`Decimal("0.12")` = 12 %),
+  principal, meses y fecha de desembolso explícita. No recibe TCEA como si
+  fuera una tasa de interés. Sistema francés, períodos mensuales iguales:
+  `i = (1 + TEA) ** (1/12) - 1`; cuota exacta = principal dividido entre
+  la suma de los factores de descuento mensuales. También funciona a tasa 0.
+- Redondeo monetario: `ROUND_HALF_UP` al céntimo, incluido medio céntimo.
+  Se redondea la cuota regular y el interés de cada período sobre el capital
+  pendiente. Capital = cuota regular − interés. La última cuota amortiza
+  exactamente el capital restante más su interés; puede diferir de la regular.
+- Dominio técnico de esta versión: 1–360 meses, principal positivo hasta
+  10^12 céntimos, TEA finita entre 0 y 10 (0–1000 %) con hasta 120 posiciones
+  decimales para tasas no nulas (incluidos ceros finales). No son límites comerciales
+  aprobados. Se rechazan planes cuya cuota redondeada no amortice capital o
+  extinga el préstamo antes del último mes: no se inventan cuotas vacías ni
+  capital negativo. La API futura debe traducir `ValueError` a su error de entrada.
+- Vencimientos: sumar cada mes a la **fecha original**, recortando el día al
+  último disponible. 31/01 → 28/02 → 31/03; no arrastrar el recorte de febrero.
+  Sin ajuste de feriados ni interés diario; la fecha es un `date`, no el reloj
+  del servidor. La capa de desembolso decidirá la fecha de negocio.
+- TCEA: tasa interna de retorno de los **pagos ya redondeados**, anualizada
+  como `(1 + i_real) ** 12 − 1`, con 16 decimales. En este alcance no existen
+  comisiones, seguros ni retenciones: el neto recibido es el principal. Si se
+  añaden, el contrato y los flujos para TCEA deben ampliarse; no basta usar TEA.
+- Oráculos: `tests/test_cronograma.py` (casos calculados a mano, medio céntimo,
+  tasa 0, última cuota, un mes, calendario, límites y conservación del capital).
+
+La elección del método, calendario y alcance sin cargos queda explícita para
+revisión por Gian Piero (#79) y la integración con Jeremy (#84). No representa
+una tarifa ni una política comercial aprobada.
+
+**Revisión del ZIP de #79.** El parche inicial aprobaba 57 casos, pero perdía
+dos fronteras de redondeo: principal 105 céntimos, 2 meses y TEA
+`2.138428376721` (10 % mensual) producía una cuota regular de 60 en lugar de
+61 (`60.5` exacto); una TEA de `1.01^12 - 1 - 1e-60`, a 150 céntimos y un
+mes, producía interés 2 en lugar de 1. Se conservan los oráculos originales
+y se añaden regresiones en el empate y a ambos lados. El límite de escala
+y la precisión de guarda son parte del contrato técnico propuesto.
+
+**Alcance de TCEA.** Este valor es una TIR mensual anualizada de flujos
+equidistantes sin cargos, no una certificación de cálculo regulatorio ni una
+TIR por días reales. La SBS define el costo incluyendo los gastos/comisiones
+aplicables ([fuente](https://www.sbs.gob.pe/usuarios/aprende-con-la-sbs/aprende-sobre-creditos));
+confirmar cargos, seguros y convención temporal antes de exponerlo comercialmente.
 
 ## 5. Métrica de completitud funcional (ISO/IEC 25023)
 
