@@ -152,11 +152,11 @@ Tamaño: XS < ½ día · S 1 día · M 2–3 días · L 1 semana · XL partir.
 | #78 QR en la app: generar cobro y leer para pagar | Jheampierre | Jair L. | 4 | L | HU14 CA1–CA2, HU15 CA1 |
 | #79 Cuota, TCEA y cronograma en céntimos con regla de redondeo y casos borde | Andersson | Gian Piero | 5 | M | Base de HU09 y HU12 |
 | #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | Jair C. | 6 | S | Oráculos de ambos sprints |
-| #80 Modelo y migración: solicitud, préstamo, cuotas | Jair C. | Andersson | 7 | S | Base de HU10–HU12 |
+| #80 Modelo y migración: solicitud, préstamo, cuotas | Andersson | Jeremy | 7 | S | Base de HU10–HU12 |
 | #37 OTP por correo, sin códigos en logs | Jair C. | Jeremy | 8 | M | Riesgo R06 |
-| #51 Levantar observaciones del APF1 | Jair C. | Jheampierre | 9 | S | — |
-| #76 Cierre de sesión por inactividad | Gian Piero | Jair L. | 10 | S | HU03 CA4 |
-| #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Gian Piero | Jeremy | 11 | M | Control AC-15 |
+| #51 Levantar observaciones del APF1 | Gian Piero | Jair C. | 9 | S | — |
+| #76 Cierre de sesión por inactividad | Jheampierre | Gian Piero | 10 | S | HU03 CA4 |
+| #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Andersson | Gian Piero | 11 | M | Control AC-15 |
 | #83 API del asistente: proxy al modelo con la clave solo en el backend, herramientas de solo lectura y límite de uso | Jair L. | Jair C. | 12 | M | HU27 (propuesta) |
 
 ### Sprint 6 · préstamos, asistente, panel y entrega (#47 se parte en sub-issues)
@@ -167,7 +167,133 @@ Tamaño: XS < ½ día · S 1 día · M 2–3 días · L 1 semana · XL partir.
 | #86 Pantallas: simulador, solicitud, resultado, cronograma; compartir simulación | Jheampierre | Jair L. | 14 | L | HU09 CA4 |
 | #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Andersson | Jeremy | 15 | M | HU12 CA1–CA2 |
 | #91 Pruebas de aceptación de QR y préstamos sobre la API y la app | Gian Piero | Jair C. | 16 | M | Oráculos de todo lo anterior |
-| #50 Verificación E2E en Android y biometría real | Gian Piero | Jheampierre | 17 | M | Riesgo R07 |
+| #50 Verificación E2E en Android y biometría real | Jair L. | Jheampierre | 17 | M | Riesgo R07 |
+| #92 Informe final y recálculo de la métrica X | Jair C. | Gian Piero | 18 | M | — |
+| #87 Cierre contable diario que verifica el cuadre | Jair C. | Andersson | 19 | M | HU18 CA4 |
+| #90 Pantalla de chat del asistente | Jair L. | Jheampierre | 20 | M | HU27 (propuesta) |
+| #88 Consultas del panel: altas, KYC, operaciones del día, cuadre y bloqueos | Andersson | Gian Piero | 21 | M | HU28 (propuesta) |
+| #89 Panel admin web (Flutter web con `design_system`), solo lectura | Jair L. | Jheampierre | 22 | M | HU28 (propuesta) |
+
+### Alcance nuevo fuera de la línea base
+
+El asistente IA y el panel admin **no están entre las 26 HU** del Excel
+corregido; el panel figuraba como "diferido" en los documentos del
+repositorio. Para que cuenten, el **PO** los agrega al backlog como historias
+con sus cuatro CA antes del Sprint Planning:
+
+| Propuesta | Esqueleto de CA |
+|---|---|
+| **HU27 · Asistente IA** (#74) | Responde dudas de uso en es-PE · consulta saldos y movimientos **solo del titular con sesión** · no ejecuta operaciones de dinero ni revela datos de terceros · si no sabe o el modelo falla, lo dice y deriva a soporte |
+| **HU28 · Panel administrativo** (#75) | Solo entra un usuario con rol `admin` · muestra altas y estado KYC · muestra operaciones del día y el cuadre del libro mayor · es de solo lectura y enmascara DNI y cuentas |
+
+Agregarlas cambia el denominador de la métrica: 26 HU → 28, y 96 CA del MVP →
+104 si el PO las marca MVP. El informe debe decir cuál de los dos se usa.
+
+Reglas que no se negocian en ambos frentes:
+
+- **Asistente:** la clave del modelo vive solo en el backend (igual que la del
+  KYC). Las herramientas que el modelo puede llamar son de lectura y van con
+  la sesión del titular; nunca recibe un PIN ni puede invocar `/transfers`.
+- **Panel:** un titular nunca entra a `/v1/admin/*` (prueba en
+  `test_sesion_requerida.py`). Al abrir CORS solo se admite el origen exacto
+  del panel; ningún comodín.
+
+### Fuera de alcance, declarado
+
+| Ítem | Motivo |
+|---|---|
+| HU11 Contrato y firma | Sale para dar lugar al asistente; sin firma certificada quedaba en 1 CA de 4 |
+| Activación del alta por OTP (HU02) | Sin número: el OTP existe; conectarlo al alta queda si sobra tiempo |
+| Frecuentes visibles y editables (HU07) | Sin número: solo si sobra tiempo |
+| #43 Prueba de carga (200 ms), #39 CSP | Prioridad 23 y 24: siguen como riesgo declarado |
+| HU14 CA3–CA4, HU13, HU16 | Interoperabilidad con otras billeteras y push al comercio necesitan redes y proveedores externos |
+| #45 CCI interbancario | Necesita una red bancaria externa |
+| #48 Antifraude, conciliación y AML (HU19–HU21) | Tres historias de 8 SP sin datos ni proveedores reales |
+| #49 Notificaciones (HU22) | Necesita push y correo transaccional |
+| HU10 CA3, HU12 CA3–CA4, HU09 CA3 | Centrales de riesgo reales, débito automático, avisos de cuota y desgravamen |
+| #38, #41, #42 (prioridad 25–27); #44, HU25, HU26 | Solo si sobra capacidad |
+
+Decir que no por escrito también es gestión: protege lo que sí se compromete.
+
+### Carga por persona (reparto por suma de prioridades, 30/10)
+
+A pedido del docente, cada integrante debe tener **casi la misma suma de
+prioridades**. Se igualan dos cosas a la vez: la **cantidad de tareas** (4 o
+5; Andersson 6 porque cinco ya están en curso en sus PR #94 y #95) y la **suma
+de los números de prioridad**. Si solo se igualara la suma, quien tiene las
+tareas más importantes (números bajos) tendría que recibir muchas más.
+
+Se incluyen las 27 tareas con número (1 + 2 + … + 27 = 378, **63 por persona**).
+
+| Integrante | Tareas (prioridad) | Cantidad | Suma | Días |
+|---|---|---|---|---|
+| Jair L. | #83 (12), #50 (17), #90 (20), #89 (22) | 4 | **71** | 10 |
+| Jair C. | #37 (8), #92 (18), #87 (19), #43 (23) | 4 | **68** | 10 |
+| Jeremy | #36 (2), #77 (3), #84 (13), #39 (24), #38 (25) | 5 | **67** | 12 |
+| Andersson | #40 (1), #79 (5), #80 (7), #81 (11), #85 (15), #88 (21) | 6 | **60** | 12 |
+| Gian Piero | #82 (6), #51 (9), #91 (16), #41 (26) | 4 | **57** | 5.5 |
+| Jheampierre | #78 (4), #76 (10), #86 (14), #42 (27) | 4 | **55** | 12 |
+
+**Diferencia máxima: 16 puntos (55–71) alrededor de 63.** Se buscaron todas las
+combinaciones posibles con un programa: ninguna baja de 16 sin pasar a alguien
+de 12.5 días de trabajo. Con 15 días para Jeremy se llega a 12 puntos, a costa
+de sobrecargarlo; no compensa. Bajar más exigiría quitarle a alguien una tarea
+grande de su especialidad o cambiar los números de prioridad para que cuadren,
+y eso falsearía la métrica.
+
+**Qué cambió y por qué**
+
+| Tarea | De → a | Motivo |
+|---|---|---|
+| #80 Tablas de préstamos | Jair C. → Andersson | Ya vienen en su PR #95 (migración 0002) |
+| #81 Rol admin | Gian Piero → Andersson | Su PR #95 ya agrega `users.rol` y protege `/v1/admin/*`; falta CORS, la prueba y el catálogo |
+| #51 Observaciones del APF1 | Jair C. → Gian Piero | Es revisión de evidencia, su rol |
+| #76 Cierre por inactividad | Gian Piero → Jheampierre | Es una pantalla, su especialidad |
+| #50 Verificación E2E en Android | Gian Piero → Jair L. | Seguir el guion en un teléfono es una buena primera tarea |
+| #39, #38 (CSP, límite por IP) | sin dueño → Jeremy | Configuración del backend |
+| #43 Prueba de carga | sin dueño → Jair C. | Conoce el motor de asientos |
+| #41 Ensayo PITR | sin dueño → Gian Piero | Es evidencia de recuperación para el informe |
+| #42 CI con PostgreSQL 18 | sin dueño → Jheampierre | Cambio acotado de CI |
+
+**Jair L.** sigue sin acceso: sus cuatro tareas quedan sin asignar en GitHub y
+su nombre está en cada una. Si no entra antes del 02/11, se reparten de nuevo
+con este mismo método. Mientras tanto, sus revisiones (#78, #86) las cubre
+Jair C.
+
+**Camino crítico:** las APIs de las que dependen las pantallas van antes.
+
+Las épicas (#46, #47) y las historias propuestas (#74, #75) no llevan número:
+se ordenan por sus tareas. Lo fuera de alcance tampoco. Si falta tiempo, se suelta
+desde el número mayor hacia abajo: 27, 26… y de los comprometidos, 22 → 19.
+
+Tamaño: XS < ½ día · S 1 día · M 2–3 días · L 1 semana · XL partir.
+
+### Sprint 5 · parciales críticos, QR y bases
+
+| Ítem | Dueño | Revisor | Prioridad | Tamaño | Cierra |
+|---|---|---|---|---|---|
+| #40 Migraciones con Alembic | Andersson | Jeremy | 1 | M | Riesgo R05; necesario para las tablas nuevas |
+| #36 KYC exigido por el servidor | Jeremy | Gian Piero | 2 | M | HU01 CA2 · riesgo R01 |
+| #77 API de QR: emitir firmado con caducidad, validar y pagar vía `ledger.post`; huella sobre el límite base | Jeremy | Andersson | 3 | M | HU14 CA1–CA2, HU15 CA2–CA4 |
+| #78 QR en la app: generar cobro y leer para pagar | Jheampierre | Jair L. | 4 | L | HU14 CA1–CA2, HU15 CA1 |
+| #79 Cuota, TCEA y cronograma en céntimos con regla de redondeo y casos borde | Andersson | Gian Piero | 5 | M | Base de HU09 y HU12 |
+| #82 Casos de aceptación de QR y préstamos escritos antes del código | Gian Piero | Jair C. | 6 | S | Oráculos de ambos sprints |
+| #80 Modelo y migración: solicitud, préstamo, cuotas | Andersson | Jeremy | 7 | S | Base de HU10–HU12 |
+| #37 OTP por correo, sin códigos en logs | Jair C. | Jeremy | 8 | M | Riesgo R06 |
+| #51 Levantar observaciones del APF1 | Gian Piero | Jair C. | 9 | S | — |
+| #76 Cierre de sesión por inactividad | Jheampierre | Gian Piero | 10 | S | HU03 CA4 |
+| #81 Rol `admin` (RBAC), rutas `/v1/admin/*` cerradas al titular y CORS con lista blanca exacta | Andersson | Gian Piero | 11 | M | Control AC-15 |
+| #83 API del asistente: proxy al modelo con la clave solo en el backend, herramientas de solo lectura y límite de uso | Jair L. | Jair C. | 12 | M | HU27 (propuesta) |
+
+### Sprint 6 · préstamos, asistente, panel y entrega (#47 se parte en sub-issues)
+
+| Ítem | Dueño | Revisor | Prioridad | Tamaño | Cierra |
+|---|---|---|---|---|---|
+| #84 API simulador, solicitud con consentimiento y evaluación por score interno | Jeremy | Andersson | 13 | L | HU09 CA1–CA2, HU10 CA1, CA2, CA4 |
+| #86 Pantallas: simulador, solicitud, resultado, cronograma; compartir simulación | Jheampierre | Jair L. | 14 | L | HU09 CA4 |
+| #85 Desembolso vía `ledger.post` con idempotencia y cronograma definitivo | Andersson | Jeremy | 15 | M | HU12 CA1–CA2 |
+| #91 Pruebas de aceptación de QR y préstamos sobre la API y la app | Gian Piero | Jair C. | 16 | M | Oráculos de todo lo anterior |
+| #50 Verificación E2E en Android y biometría real | Jair L. | Jheampierre | 17 | M | Riesgo R07 |
 | #92 Informe final y recálculo de la métrica X | Jair C. | Gian Piero | 18 | M | — |
 | #87 Cierre contable diario que verifica el cuadre | Jair C. | Andersson | 19 | M | HU18 CA4 |
 | #90 Pantalla de chat del asistente | Jair L. | Jheampierre | 20 | M | HU27 (propuesta) |
