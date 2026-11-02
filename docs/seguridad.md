@@ -1,5 +1,13 @@
 # Informe técnico de seguridad y cifrado
 
+**Dependencias (30/10/2026, PR #94):** la auditoría de CI encontró
+CVE-2026-114605 en `dnspython 2.8.0`, dependencia transitiva de la validación
+de correo. Se exige `dnspython>=2.9.0,<3` y se alinea la imagen y los workflows
+con Python 3.12, ya que la corrección no admite Python 3.10. No se desactiva
+`pip-audit` ni se ignora el aviso. Referencia del mantenedor:
+https://github.com/rthalley/dnspython/security/advisories/GHSA-45c3-73f7-pv4m.
+El ajuste se valida en local/CI; no afirma una actualización de producción.
+
 **APF2 · criterio 2: 2.1 Módulo de autenticación y autorización, 2.2 Informe
 técnico de seguridad y mecanismos de cifrado.** Las pruebas de seguridad web
 (2.3) están en [`plan-de-pruebas.md`](plan-de-pruebas.md#4-pruebas-de-seguridad-web)
