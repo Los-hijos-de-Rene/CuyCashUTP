@@ -39,5 +39,17 @@ runs:
           exit 1
         fi
         # -rs lista lo omitido: con Postgres no debería omitirse nada.
-        # Cobertura de líneas al final del log (config en .coveragerc).
-        python -m pytest -q -rs --cov --cov-report=term
+        # Cobertura de líneas al final del log (config en .coveragerc). Además
+        # deja reportes en reports/ (los sube el paso siguiente): resultado por
+        # caso (JUnit) y cobertura en XML y HTML, evidencia de APF3.
+        python -m pytest -q -rs --cov --cov-report=term \
+          --cov-report=xml:reports/coverage.xml --cov-report=html:reports/htmlcov \
+          --junitxml=reports/pytest.xml
+    - name: Subir reportes (resultados y cobertura del backend)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportes-backend
+        path: services/api/reports/
+        if-no-files-found: warn
+        retention-days: 90

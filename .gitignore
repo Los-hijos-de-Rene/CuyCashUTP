@@ -18,3 +18,7 @@ apps/mobile/config.production.json
 
 # Descarga cruda de fuentes (las usadas viven en packages/design_system/assets/fonts)
 Inter,Manrope/
+
+# Reportes de prueba generados (el CI los sube como artefactos)
+reports/
+htmlcov/
