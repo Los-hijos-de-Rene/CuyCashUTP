@@ -11,6 +11,9 @@ el docente.
 
 ## Responsables de seguimiento
 
+> Reparto del trabajo de los Sprints 5 y 6 (dueños, revisores, RACI y métricas
+> de gestión): [`gestion-del-equipo.md`](gestion-del-equipo.md).
+
 | Rol | Responsabilidad sobre SLA/KPI |
 |---|---|
 | Scrum Master — Jair Pool Conislla Bocangel | Velocity, cumplimiento del backlog, impedimentos y avance del cronograma |
