@@ -78,6 +78,11 @@ que se escriba en una columna de largo fijo. Siguen sin medir los 200 ms bajo ca
 Backlog, sprints, SLA y KPI: `docs/sla-kpi.md` (derivado de
 `SLA_KPI_Banca_Online_Integral.xlsx`).
 
+**Alineación con el curso (Integrador II, UTP):** las diapositivas 13–23 de
+`apf2/clases/*.pdf` están destiladas en `docs/clases/`. Lee primero
+`docs/clases/INDEX.md` y `requisitos-del-curso.md` (rúbrica APF2, entregables);
+abre solo la nota que aplique y **no leas los PDF** salvo que la nota no baste.
+
 APF2 (criterios 1–3): matriz en `docs/apf2-cumplimiento.md`, que enlaza
 `administracion-bd.md`, `seguridad.md`, `catalogo-controles.md`,
 `plan-de-pruebas.md` y `despliegue.md`. Si cambias seguridad, despliegue o el

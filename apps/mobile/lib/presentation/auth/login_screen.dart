@@ -180,6 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
             title: Text(l10n.loginTitle),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
+              tooltip: l10n.commonBack,
               onPressed: _onBack,
             ),
           ),
