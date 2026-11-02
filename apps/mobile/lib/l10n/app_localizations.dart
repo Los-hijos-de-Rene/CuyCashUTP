@@ -3085,6 +3085,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'También por terminal, en services/api:\ndocker compose exec auth python -m scripts.dev reset-y-seed'**
   String get devToolsCommandHint;
+
+  /// No description provided for @commonBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver'**
+  String get commonBack;
 }
 
 class _AppLocalizationsDelegate
