@@ -11,8 +11,10 @@ pruebas cubren solo la LECTURA.
 
 import base64
 import re
+import time
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from sqlalchemy import event, select
 from sqlalchemy.engine import Engine
 
@@ -454,11 +456,12 @@ def test_un_cursor_sin_zona_se_lee_como_utc_y_no_como_hora_local(monkeypatch):
     """La zona del proceso no debe cambiar qué página se devuelve."""
     from app.api.v1.routers.accounts import _decodificar_cursor
 
+    if not hasattr(time, "tzset"):
+        pytest.skip("time.tzset no está disponible en Windows")
+
     uuid_ok = "123e4567-e89b-42d3-a456-426614174000"
     for tz in ("UTC", "America/Lima", "Asia/Tokyo"):
         monkeypatch.setenv("TZ", tz)
-        import time
-
         time.tzset()
         fecha, _ = _decodificar_cursor(_cursor("2026-10-01T12:00:00", uuid_ok))
         assert fecha == datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc), tz

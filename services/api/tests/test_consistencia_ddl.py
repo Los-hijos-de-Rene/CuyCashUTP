@@ -30,7 +30,7 @@ def _ddl_generado() -> str:
 
 
 def test_schema_sql_es_exactamente_lo_que_generan_los_modelos():
-    versionado = (RAIZ / "schema.sql").read_text()
+    versionado = (RAIZ / "schema.sql").read_text(encoding="utf-8")
     assert versionado.strip() == _ddl_generado().strip(), (
         "schema.sql no coincide con app/db/models.py. Regenera con: "
         ".venv/bin/python scripts/dump_schema.py > schema.sql"
@@ -38,14 +38,14 @@ def test_schema_sql_es_exactamente_lo_que_generan_los_modelos():
 
 
 def test_cada_tabla_del_modelo_esta_en_el_ddl_y_ninguna_sobra():
-    ddl = (RAIZ / "schema.sql").read_text()
+    ddl = (RAIZ / "schema.sql").read_text(encoding="utf-8")
     en_ddl = set(re.findall(r"CREATE TABLE (\w+)", ddl))
     assert en_ddl == set(Base.metadata.tables)
 
 
 def test_las_reglas_de_dinero_del_modelo_llegan_al_ddl():
     """Las garantías que el diseño promete viven en el motor, no solo en Python."""
-    ddl = (RAIZ / "schema.sql").read_text()
+    ddl = (RAIZ / "schema.sql").read_text(encoding="utf-8")
     # Dinero en céntimos enteros (BIGINT), nunca flotantes.
     columnas_de_dinero = re.findall(r"\t(monto|saldo_\w+) (\w+)", ddl)
     assert columnas_de_dinero
@@ -67,7 +67,10 @@ def test_el_script_de_volcado_se_ejecuta_solo():
         cwd=RAIZ,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
     assert r.returncode == 0, r.stderr
-    assert r.stdout.strip() == (RAIZ / "schema.sql").read_text().strip()
+    assert r.stdout.strip() == (RAIZ / "schema.sql").read_text(
+        encoding="utf-8"
+    ).strip()

@@ -1,0 +1,42 @@
+Ejecución APF3 - pruebas funcionales backend
+Fecha local: 2026-11-02 (America/Lima)
+Repositorio: Los-hijos-de-Rene/CuyCashUTP
+Commit probado: 44a9c36
+Sistema: Windows 11
+Python: 3.12.10
+pytest: 8.3.3
+Docker CLI: 29.6.1 (daemon no disponible durante la sesión)
+Flutter: 3.41.7 stable (Dart 3.11.5)
+
+Resultado final backend:
+- 428 aprobadas
+- 0 fallidas
+- 4 omitidas
+- 22 advertencias
+- duración 210.76 s
+- cobertura total 96 % (1916 sentencias, 72 sin ejecutar)
+
+Resultado final app Flutter:
+- flutter analyze: 0 problemas
+- 905 aprobadas
+- 0 fallidas
+- 2 omitidas
+- cobertura 76.97 % (6492/8434 líneas, 254 archivos)
+
+Paquetes compartidos:
+- core_kernel: 24 aprobadas, 0 fallidas
+- design_system: 12 aprobadas, 0 fallidas
+
+Archivos generados por la corrida:
+- pytest.xml
+- cobertura-backend.xml
+- pytest-resumen.txt
+- flutter-tests.json
+- cobertura-app.lcov
+- flutter-resumen.txt
+- ejecucion-backend.png
+- ejecucion-flutter.png
+
+Limitación: las pruebas Flutter de host no sustituyen el UAT visual en
+emulador ni los sensores reales. Las pruebas dependientes de PostgreSQL deben
+confirmarse en el job CI con PostgreSQL 16.
