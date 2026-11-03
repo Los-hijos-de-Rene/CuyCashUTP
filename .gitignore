@@ -22,3 +22,6 @@ Inter,Manrope/
 # Reportes de prueba generados (el CI los sube como artefactos)
 reports/
 htmlcov/
+
+# PDF de entrega generado (scripts/apf3/build_pdf.sh)
+build/

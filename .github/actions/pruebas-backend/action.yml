@@ -21,6 +21,13 @@ runs:
       shell: bash
       working-directory: services/api
       run: pip install -r requirements-dev.txt
+    - name: ruff (verificación estática, bloquea el merge)
+      shell: bash
+      working-directory: services/api
+      # Config en ruff.toml: sintaxis y pyflakes (imports sin usar, nombres sin definir).
+      run: |
+        pip install ruff==0.17.3
+        ruff check app tests scripts
     - name: pip-audit (dependencias con vulnerabilidades conocidas)
       shell: bash
       working-directory: services/api

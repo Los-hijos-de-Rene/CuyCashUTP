@@ -23,6 +23,14 @@ con todos sus artefactos numerados vale más que uno largo pero desordenado.
 - [ ] La v2 mostrada en la nube coincide con el commit del PDF.
 
 ## Cómo generar el PDF
-Redacta cada capítulo en Markdown en `docs/apf3/capitulos/` y une con pandoc
-(`brew install pandoc`; un motor LaTeX o `wkhtmltopdf`), o exporta desde Word.
-Prefiere el formato que el equipo domine; lo único obligatorio es el PDF final.
+Cada dueño redacta **su** capítulo en `docs/apf3/capitulos/` (ya están creados con
+la numeración exacta de la rúbrica: `01-A`, `02-B`, `03-C`, `04-D`, `05-E`,
+`06-anexos`) y reemplaza cada marca `PENDIENTE`. Las imágenes van en
+`docs/apf3/evidencias/<nombre>/` y se enlazan con ruta relativa
+(`![pytest](../evidencias/gian-piero/pytest.png)`).
+
+```sh
+scripts/apf3/build_pdf.sh            # genera build/APF3-CuyCash.pdf
+```
+Usa Python y Chrome sin cabeza (no hace falta LaTeX). El script informa cuántas
+marcas `PENDIENTE` quedan: **deben ser 0 antes de entregar**.

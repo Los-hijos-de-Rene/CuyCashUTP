@@ -17,6 +17,10 @@ Tablero: <https://github.com/orgs/Los-hijos-de-Rene/projects/1> · etiqueta `apf
 | 5. Validación en la nube (2) | E | pruebas funcionales y de integración **en Render/Neon** | #102 | Andersson |
 | 6. Sustentación (2) | — | aportes · orden · artefactos · demo v2 en la nube | #107 | todos |
 | Consolidación del PDF | — | unir A–E | #106 | Jair C. |
+| Evidencia automática (reportes en CI) | B, C, D | resultados y cobertura descargables | #110 | Jair C. |
+| Contrato app ↔ backend real | C | interoperabilidad app ↔ API | #111 | Jair C. |
+| E2E de interfaz contra la nube | E | validación en nube con automatización y usabilidad | #112 | Jair C. |
+| Verificación estática (plantilla de PR, ruff) | B | verificación del modelo en V | #113 | Jair C. |
 
 Specs: [Gian Piero](spec-gian-piero-funcionales.md) ·
 [Jheampierre](spec-jheampierre-usabilidad-ui.md) ·
@@ -25,6 +29,17 @@ Specs: [Gian Piero](spec-gian-piero-funcionales.md) ·
 [Jair L.](spec-jair-linares-informe-usabilidad.md) ·
 [Jair C.](capitulo-a-observaciones.md) ·
 [esqueleto del PDF](esqueleto-pdf.md) · [sustentación](guion-sustentacion.md).
+
+## Prioridad
+
+Las tarjetas APF3 usan una **banda 0.x** del campo *Prioridad* (un número único
+por tarjeta, menor = primero), por delante del backlog 1–27 de
+[`gestion-del-equipo.md`](../gestion-del-equipo.md): son entregables de la
+rúbrica. Orden: #96 (0.1) · #110 (0.15) · #98 (0.2) · #100 (0.3) · #111 (0.35) ·
+#102 (0.4) · #112 (0.45) · #104 (0.5) · #97 (0.6) · #105 (0.7) · #99, #101, #103
+(0.91–0.93) · #106 (0.95) · #107 (0.96) · #113 (0.97). Si el equipo prefiere
+que el backlog funcional vaya primero, se renumera con una sola edición.
+Donde los specs dicen P0/P1: P0 = prioridad 0.1–0.7 y 0.95–0.96; P1 = 0.91–0.93 y 0.97.
 
 ## Reglas para todos (no negociables)
 

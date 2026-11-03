@@ -85,9 +85,59 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/pruebas-app
 
+  contrato:
+    name: Contrato app ↔ API
+    needs: cambios
+    # La app y la API se prueban cada una contra su doble; aquí se prueban
+    # juntas: los repositorios `Http*` reales de la app contra `services/api`
+    # levantado (SQLite). Si el servidor cambia lo que responde, falla aquí.
+    if: needs.cambios.outputs.backend == 'true' || needs.cambios.outputs.app == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/api/requirements.txt
+      - name: Levantar la API (SQLite)
+        working-directory: services/api
+        run: |
+          pip install -r requirements.txt
+          DATABASE_URL="sqlite+aiosqlite:///${RUNNER_TEMP}/contrato.db" \
+            python -m uvicorn app.main:app --port 8001 > "${RUNNER_TEMP}/api.log" 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8001/health && exit 0
+            sleep 1
+          done
+          echo "::error::La API no levantó."; cat "${RUNNER_TEMP}/api.log"; exit 1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.7"
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Prueba de contrato (repositorios Http* reales contra la API)
+        working-directory: apps/mobile
+        run: |
+          mkdir -p reports
+          flutter test contract_test --dart-define=CONTRACT_API_URL=http://127.0.0.1:8001 \
+            --file-reporter=json:reports/contrato.json
+      - name: Log de la API si falló
+        if: failure()
+        run: cat "${RUNNER_TEMP}/api.log"
+      - name: Subir reporte del contrato
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-contrato
+          path: apps/mobile/reports/
+          if-no-files-found: warn
+          retention-days: 90
+
   listo:
     name: CI listo
-    needs: [cambios, backend, app]
+    needs: [cambios, backend, app, contrato]
     # Corre siempre: "omitido" (no cambió esa carpeta) cuenta como bien;
     # "fallido" o "cancelado", no.
     if: always()
@@ -98,9 +148,10 @@ jobs:
           CAMBIOS: ${{ needs.cambios.result }}
           BACKEND: ${{ needs.backend.result }}
           APP: ${{ needs.app.result }}
+          CONTRATO: ${{ needs.contrato.result }}
         run: |
-          echo "Qué cambió: $CAMBIOS · Backend: $BACKEND · App: $APP"
-          for r in "$CAMBIOS" "$BACKEND" "$APP"; do
+          echo "Qué cambió: $CAMBIOS · Backend: $BACKEND · App: $APP · Contrato: $CONTRATO"
+          for r in "$CAMBIOS" "$BACKEND" "$APP" "$CONTRATO"; do
             case "$r" in
               success|skipped) ;;
               *) echo "::error::Algún CI no pasó ($r)."; exit 1 ;;

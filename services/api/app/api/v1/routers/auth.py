@@ -11,7 +11,7 @@ from app.core.deps import bearer_token, current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.core.security import ahash_pin, averify_pin, new_token, pin_is_valid, token_digest
 from app.db.base import get_session
-from app.db.models import Device, KycVerification, OtpTicket, User, utcnow
+from app.db.models import Device, KycVerification, User, utcnow
 from app.db.models import Session as SessionRow
 from app.schemas import (
     AuthenticateIn,
