@@ -43,6 +43,11 @@ Rutas de prueba: `api/` = `services/api/tests/`, `app/` = `apps/mobile/test/`.
 
 ## 3. Matriz de trazabilidad (RTM) por criterio
 
+Los oráculos acordados antes del código para los CA comprometidos de préstamos
+y QR están en [`casos-aceptacion-qr-prestamos.md`](casos-aceptacion-qr-prestamos.md).
+Su definición no cambia el veredicto de esta RTM: solo contarán como cumplidos
+cuando #91 los ejecute contra una implementación real.
+
 Solo las 11 historias del MVP que tienen código. Las otras 13 (HU08–HU16,
 HU19–HU21, HU25) no tienen ninguna porción ejecutable: sus 52 CA son ❌.
 

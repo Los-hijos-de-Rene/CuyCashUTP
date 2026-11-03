@@ -33,6 +33,11 @@ CABECERA = """\
 
 
 def main() -> None:
+    # El DDL se versiona en UTF-8. En Windows, stdout usa CP-1252 por defecto;
+    # fijar la codificación evita que el mismo comando genere bytes distintos
+    # a los de Linux/CI. StringIO (usado por los tests) no expone reconfigure.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     dialecto = postgresql.dialect()
     print(CABECERA)
     # `sorted_tables` las ordena por dependencia: ninguna llave foránea
