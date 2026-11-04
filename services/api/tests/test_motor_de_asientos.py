@@ -15,7 +15,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.errors import ApiError
-from app.db.models import Account, LedgerEntry, Transaction, User
+from app.db.models import Account, LedgerEntry, User
 from app.services.ledger import Asiento, post
 
 

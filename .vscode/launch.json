@@ -44,6 +44,7 @@
       "request": "launch",
       "type": "dart",
       "cwd": "apps/mobile",
+      "flutterMode": "release",
       "program": "lib/main_local.dart",
       "args": ["--dart-define-from-file=config.local.json"]
     },

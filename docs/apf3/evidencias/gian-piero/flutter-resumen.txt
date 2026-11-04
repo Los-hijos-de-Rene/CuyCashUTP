@@ -1,0 +1,30 @@
+Ejecución Flutter APF3
+Fecha local: 2026-11-02 (America/Lima)
+Commit base probado: 44a9c36
+Flutter: 3.41.7 stable
+Dart: 3.11.5
+
+Comandos:
+- flutter pub get
+- flutter analyze
+- flutter test --coverage --coverage-path=reports/lcov.info --file-reporter=json:reports/flutter-tests.json
+- flutter test en packages/core_kernel
+- flutter test en packages/design_system
+
+Resultados:
+- flutter analyze: 0 problemas
+- app móvil: 905 aprobadas, 0 fallidas, 2 omitidas
+- core_kernel: 24 aprobadas, 0 fallidas
+- design_system: 12 aprobadas, 0 fallidas
+- cobertura app: 76.97 %
+- líneas ejecutadas: 6492
+- líneas medibles: 8434
+- archivos incluidos: 254
+
+Reportes fuente:
+- flutter-tests.json
+- cobertura-app.lcov
+
+Limitación:
+La suite corre en el host y utiliza dobles para cámara y biometría. No
+sustituye el UAT en emulador ni la verificación con sensores físicos.

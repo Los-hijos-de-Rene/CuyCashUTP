@@ -1796,4 +1796,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get devToolsCommandHint =>
       'También por terminal, en services/api:\ndocker compose exec auth python -m scripts.dev reset-y-seed';
+
+  @override
+  String get commonBack => 'Volver';
 }

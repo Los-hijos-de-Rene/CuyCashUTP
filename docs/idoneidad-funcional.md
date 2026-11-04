@@ -43,6 +43,11 @@ Rutas de prueba: `api/` = `services/api/tests/`, `app/` = `apps/mobile/test/`.
 
 ## 3. Matriz de trazabilidad (RTM) por criterio
 
+Los oráculos acordados antes del código para los CA comprometidos de préstamos
+y QR están en [`casos-aceptacion-qr-prestamos.md`](casos-aceptacion-qr-prestamos.md).
+Su definición no cambia el veredicto de esta RTM: solo contarán como cumplidos
+cuando #91 los ejecute contra una implementación real.
+
 Solo las 11 historias del MVP que tienen código. Las otras 13 (HU08–HU16,
 HU19–HU21, HU25) no tienen ninguna porción ejecutable: sus 52 CA son ❌.
 
@@ -303,7 +308,7 @@ HU18 13·¾ = 27.25 SP.
 | Bloqueo por intentos (HU03 CA3) | 5.º intento | 3.er intento, escalonado | Más estricto a propósito; acordar con el docente o ajustar `IDENTIFIER_MAX_ATTEMPTS` |
 | Cierre por inactividad (HU03 CA4) | Tras un período configurado | Sesión de 30 días | Brecha real de seguridad; es el CA más barato de cerrar |
 | 200 ms por transacción (HU17 CA4) | < 200 ms | Sin medir | Medir con carga sobre el despliegue antes de afirmarlo |
-| E2E app ↔ backend | — | `verificacion-manual.md` sin ejecutar | Es la V&V de la sesión 20 |
+| E2E app ↔ backend | — | `verificacion-manual.md` sin ejecutar | Es la V&V de la sesión 20: ver [`vyv.md`](vyv.md) |
 
 ## 9. Próximos pasos (por costo/beneficio)
 

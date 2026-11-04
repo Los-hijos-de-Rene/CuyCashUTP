@@ -1,0 +1,8 @@
+# Verificación estática del backend (APF3, docs/vyv.md §3). Solo errores reales:
+# sintaxis (E9) y pyflakes (F: imports sin usar, nombres no definidos). Se amplía
+# por reglas cuando el equipo lo acuerde; no se activa todo de golpe para que el
+# bloqueo del merge sea justo y no genere ruido.
+target-version = "py312"
+
+[lint]
+select = ["E9", "F"]

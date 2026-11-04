@@ -220,7 +220,7 @@ async def test_un_destinatario_con_la_cuenta_cerrada_no_se_resuelve(
 async def test_una_cuenta_bloqueada_no_aparece_pero_las_demas_si(
     client, registrado, otro_registrado, db_de_client
 ):
-    from sqlalchemy import select, update
+    from sqlalchemy import update
     from app.db.models import Account
 
     await client.post(

@@ -20,7 +20,16 @@ runs:
     - name: Tests de la app (flavor mock)
       shell: bash
       working-directory: apps/mobile
-      run: flutter test
+      # Resultado por caso (JSON) y cobertura (lcov) quedan en reports/ y se
+      # suben abajo: evidencia de APF3.
+      run: |
+        mkdir -p reports
+        flutter test --coverage --coverage-path=reports/lcov.info \
+          --file-reporter=json:reports/flutter-tests.json
+    - name: Tests de usabilidad (visibles como paso propio)
+      shell: bash
+      working-directory: apps/mobile
+      run: flutter test test/usabilidad --file-reporter=json:reports/usabilidad.json
     - name: Tests de core_kernel
       shell: bash
       working-directory: packages/core_kernel
@@ -29,3 +38,11 @@ runs:
       shell: bash
       working-directory: packages/design_system
       run: flutter test
+    - name: Subir reportes (resultados y cobertura de la app)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportes-app
+        path: apps/mobile/reports/
+        if-no-files-found: warn
+        retention-days: 90
