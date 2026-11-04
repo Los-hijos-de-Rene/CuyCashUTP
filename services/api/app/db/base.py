@@ -55,8 +55,17 @@ _url, _connect_args = _engine_config(settings.DATABASE_URL)
 # conexión muerta del pool y respondía 500 (visto en producción el
 # 2026-10-07 con scripts/smoke_prod.sh). El ping (`SELECT 1` al sacar una
 # conexión) la descarta y abre otra. Cuesta un viaje corto por petición.
+def pool_options(url):
+    if not url.startswith("postgresql+asyncpg://"):
+        return {}
+    return {"pool_size": settings.DB_POOL_SIZE,
+            "max_overflow": settings.DB_MAX_OVERFLOW,
+            "pool_timeout": settings.DB_POOL_TIMEOUT}
+
+
 engine = create_async_engine(
-    _url, future=True, connect_args=_connect_args, pool_pre_ping=True
+    _url, future=True, connect_args=_connect_args, pool_pre_ping=True,
+    **pool_options(_url)
 )
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 

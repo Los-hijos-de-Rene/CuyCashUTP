@@ -1,0 +1,31 @@
+{
+  "utc": "2026-11-04T01:38:08.753265+00:00",
+  "base_url": "https://cuycashutp.onrender.com",
+  "environment": "production",
+  "synthetic_dni": [
+    "00001021",
+    "00001022"
+  ],
+  "steps": [
+    {
+      "step": "health",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 251.51
+    },
+    {
+      "step": "register synthetic 1",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 403,
+      "latency_ms": 601.37,
+      "error_code": "KYC_REQUIRED"
+    }
+  ],
+  "status": "incomplete",
+  "deployed_version": "d74d66326ee264f7e68ef550b741d107916b6076",
+  "blocked_at": "register synthetic 1"
+}

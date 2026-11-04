@@ -95,7 +95,7 @@ reescribe historial ni se fusiona ningún PR desde esta sesión.
 | #85 Desembolso | Implementado y probado como componente; pendiente #84 para recorrido integral | Aprobación/contrato/PIN/titularidad, ledger.post atómico, UNIQUE y bloqueo de solicitud, cuotas persistidas; no existe API evaluadora #84 | Andersson / Jeremy | HTTP positivos/negativos, rollback y dos carreras PostgreSQL con claves iguales/distintas, clave de otra solicitud rechazada | #95; `test_loan_disbursement.py`, contrato arriba |
 | #88 Consultas admin | Implementado para revisión | Altas/KYC/operaciones/cuadre/bloqueos, enmascarado, solo GET; cuadre con totales y páginas acotadas sin ocultar errores | Andersson / Gian Piero | `test_admin_queries.py`; autorización, fechas, negativos, descuadres que se cancelan y paginación | #95 |
 | #102 Validación nube | Parcial y bloqueada para cierre | Humo, validación HTTP, captura, UAT seguro y capítulo E; faltan UAT nube con KYC válido, SQL Neon y Android | Andersson / Jeremy | Humo productivo 0 fallos; UAT productivo 403 KYC_REQUIRED; UAT local aprobado; sin Neon ni teléfono | `feat/102-validacion-cloud-apf3`, PR #122; `apf3/evidencias/andersson/` |
-| #103 Coexistencia | Implementado, CI verde; pendiente aprobación/integración | USER app, dockerignore, límite512MiB, pool configurable, script secuencial | Andersson / Jeremy | Imagen construida; uid999, health/db200, 4 pruebas pool; suite SQLite433 aprobadas/3 omitidas; no despliegue | `feat/103-coexistencia-contenedores`, #121; `apf3/evidencias/andersson/coexistencia/` |
+| #103 Coexistencia | Fusionado por fardcrex; issue abierta, sin review APPROVED registrada | USER app, dockerignore, límite512MiB, pool configurable, script secuencial | Andersson / Jeremy | Imagen construida; uid999, health/db200, 4 pruebas pool; suite SQLite433 aprobadas/3 omitidas; no despliegue | `feat/103-coexistencia-contenedores`, #121; `apf3/evidencias/andersson/coexistencia/` |
 
 ### Revisiones a cargo de Andersson
 
@@ -170,3 +170,31 @@ aprobado o ejecutado. Las credenciales Neon no están disponibles en los issues,
 PR,38 comentarios consultados ni secretos de GitHub: la documentación indica
 que DATABASE_URL se mantiene en Render. Las cuentas locales de demostración
 no se presentan como cuentas productivas con KYC aprobado.
+
+
+### Integración posterior de #121 y #122 (2026-11-04 UTC)
+
+Jair C. (`fardcrex`) fusionó #122 en main (`4347039`,03:23UTC) y #121
+(`a73f1a0`,03:48UTC). El CI de main41769399162 terminó SUCCESS. No hay reviews
+APPROVED registradas en #94/#95/#121/#122; se informa la integración realizada
+por otra persona sin inventar una revisión formal. Las issues conservan sus
+asignaciones; #102 no se cierra por haberse fusionado su evidencia parcial.
+
+Estas fusiones causaron dos conflictos reales en #95: `.env.example` y
+`app/core/config.py`. Se resolvieron conservando tanto ADMIN_CORS_ORIGINS y su
+validación exacta como DB_POOL_SIZE/DB_MAX_OVERFLOW/DB_POOL_TIMEOUT y sus rangos.
+El Dockerfile integrado conserva usuario app, exec uvicorn y las migraciones;
+la configuración de base conserva pool configurable y transacciones SQLite.
+
+Validación local de la integración:29 pruebas de configuración/sesión aprobadas,
+73 pruebas focales PostgreSQL aprobadas sin omisiones, ruff y diff correctos.
+Imagen construida, health/db200, Alembic0002 y check sin diferencias; pool
+real2+2, proceso app,512MiB y apagado exit0/OOM=false. Evidencias en
+`apf3/evidencias/andersson/backend/integracion-main/`. Se detuvieron únicamente
+los contenedores propios; no se borraron bases/volúmenes ni se tocó producción.
+El nuevo commit debe completar su propio CI antes de atribuirle un resultado.
+
+El despliegue de main continúa pendiente; `/health` productivo sigue sirviendo
+`d74d663`. No hubo respuestas nuevas de acceso Neon/KYC en #102 ni PR nuevos de
+#77/#84/#87. La rama remota nueva `feat/apf3-usabilidad-goldens` corresponde a
+trabajo del equipo y no se modificó.

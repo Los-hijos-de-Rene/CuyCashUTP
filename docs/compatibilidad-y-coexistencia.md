@@ -136,3 +136,42 @@ contrato) y endurecer el contenedor.
 Las acciones 1, 2, 4 y 8 son de esfuerzo bajo, no tocan la lógica de negocio y
 mejoran cinco filas de las tablas de arriba (S22 #3, #4, #5 y S21 #5, #6, esta
 última solo en parte).
+
+## 7. Correcciones de #103 (2026-11-04 UTC; pendientes de revisión)
+
+La imagen usa Python 3.12 y `USER app` (UID 999 verificado en la construcción
+local). `.dockerignore` excluye entornos, bases locales, secretos `.env`, pruebas
+y reportes del contexto. Compose limita `auth` a 512 MiB. No se desplegó.
+
+El pool PostgreSQL toma `DB_POOL_SIZE=2`, `DB_MAX_OVERFLOW=2` y
+`DB_POOL_TIMEOUT=30` por defecto; valores inválidos detienen el arranque.
+SQLite no recibe opciones de QueuePool. Se conserva `pool_pre_ping` y la
+normalización TLS de URLs Neon. Máximo por proceso: size + overflow; multiplicar
+por procesos e instancias y reservar conexiones de administración antes de
+ajustar al límite del plan. No se afirma haber conectado a Neon desde el laboratorio.
+
+Validación local reproducible: `scripts/validate_local.sh`, después de iniciar
+Compose con nombre aislado y definir `TEST_POSTGRES_URL` (base desechable
+terminada en `_test`). Usa `CUYCASH_PYTHON` para un venv fuera de este checkout.
+Ejecuta verificaciones en secuencia; sale 3 si falta Flutter, sin declarar esa
+prueba aprobada. No arranca ni detiene servicios ajenos. Para el arranque desde
+PR #95 aplicar Alembic según `migraciones.md`; esta rama parte de `main`, que
+actualmente conserva `create_all`.
+
+Evidencia: `apf3/evidencias/andersson/coexistencia/`. Las auditorías históricas de
+§1–§6 conservan su fecha y no representan el estado de esta propuesta.
+
+
+El apagado del contenedor inicial terminaba forzado (137): el shell del CMD
+no reenviaba SIGTERM. El CMD final usa `exec uvicorn`, verificado como proceso1,
+y `docker stop` termina con **exit0**, `OOMKilled=false`, registrando cierre
+completo de Uvicorn. Se reconstruyó la imagen y se repitieron health/db200
+contra PostgreSQL16; ver `container-final-shutdown.txt` y `container-final-log.txt`.
+No se borraron las bases ni los volúmenes y todos los servicios propios quedaron
+detenidos después del ensayo.
+
+El capítulo C.7 de APF3 enlaza las evidencias verificables y se exportó con el
+generador existente a `APF3-coexistencia.pdf` (borrador, no PDF oficial de #106).
+Los pendientes de otros responsables se conservan; la validación de nube y su
+capítulo E están en PR #122. La aprobación e integración de ambos siguen siendo
+externas a esta implementación.

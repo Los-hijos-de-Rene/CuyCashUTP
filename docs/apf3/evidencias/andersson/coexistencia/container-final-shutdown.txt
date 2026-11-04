@@ -1,0 +1,1 @@
+user=app memory_limit_bytes=536870912 exit_code=0 oom_killed=false

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from urllib.parse import urlsplit
 from pydantic_settings import BaseSettings
 
@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     @property
     def admin_cors_origins(self):
         return list(filter(None, self.ADMIN_CORS_ORIGINS.split(",")))
+
+    DB_POOL_SIZE: int = Field(default=2, ge=1, le=100)
+    DB_MAX_OVERFLOW: int = Field(default=2, ge=0, le=100)
+    DB_POOL_TIMEOUT: int = Field(default=30, ge=1, le=300)
 
     # ---- Sesiones ----
     # Token opaco con expiración deslizante: se renueva mientras haya
