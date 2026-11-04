@@ -1,7 +1,7 @@
 # Modelo físico de datos — CuyCash
 
 Diseño relacional de las 6 épicas de "Banca Online Integral". Motor:
-PostgreSQL 16 (Neon). El acceso a datos pasa por SQLAlchemy 2.0 en el backend y
+PostgreSQL (Neon; versión 18 reportada en #42, laboratorio/CI con 16). El acceso a datos pasa por SQLAlchemy 2.0 en el backend y
 por el patrón Repository en la app.
 
 **Estado de implementación.** El diagrama mezcla lo implementado y lo diseñado;
@@ -19,7 +19,7 @@ las demás escriben: definirlo sin saber quién lo va a usar obliga a rehacerlo.
 | 1 · Identidad y accesos | 1 | 8 | Implementada |
 | 2 · Cuentas y libro mayor | 2 | 3 | Implementada |
 | 3 · Transferencias y antifraude | 3 | 3 | Parcial |
-| 4 · Préstamos digitales | 4 | 4 | Diseñada |
+| 4 · Préstamos digitales | 4 | 3 implementadas de 4 diseñadas | Parcial: solicitud, préstamo y cuotas (#95); contrato pendiente |
 | 5 · Billetera y QR | 5 | 2 | Diseñada |
 | 6 · Conciliación y cumplimiento | 6 | 4 | Diseñada |
 
@@ -185,7 +185,9 @@ erDiagram
 > interbancaria) y un `cuenta_destino` nulo para destinos externos están
 > **diseñadas pero no existen**: llegan con la transferencia interbancaria. Hoy
 > `cuenta_destino` es obligatoria. `fraud_alerts`, `qr_codes`, `qr_payments`,
-> `loans` y `loan_installments` del diagrama tampoco existen todavía.
+> todavía no existen. Los campos de préstamos de este diagrama representan el
+> diseño original; las tres tablas reales de #95 se detallan en el diagrama
+> físico y la tabla de integración al final de este documento.
 >
 > El diagrama omite las tablas de soporte de identidad (`lockouts`,
 > `login_attempts`, `otp_challenges`, `otp_tickets`) y las de cumplimiento
@@ -293,8 +295,9 @@ son dinero.
 | `kyc_verifications` | Veredicto y distancias faciales. **Nunca las imágenes.** |
 
 Nota: `devices.nombre`, `devices.plataforma`, la tabla `biometric_credentials`
-y el índice único de `users.alias` son posteriores; `create_all` no altera tablas existentes, así que las bases
-creadas antes exigen `scripts/reset_schema.py`.
+y el índice único de `users.alias` son posteriores. Las bases anteriores requieren
+comparación del esquema y migraciones según [migraciones.md](migraciones.md);
+no se recrean ni se borran datos para adoptar una base persistente.
 
 ### Tablas implementadas de dinero (épicas 2 y 3)
 
@@ -320,8 +323,8 @@ sistema, una por moneda: `PEN` = `19100000000000` y `USD` = `19100000000001`;
 ningún titular recibe esos números, y la recarga sale de la caja de la moneda
 de la cuenta.
 
-Cambió un `CHECK` y una `UNIQUE`: hay que recrear el esquema con
-`scripts/reset_schema.py`.
+Los cambios de `CHECK` y `UNIQUE` se aplican mediante migraciones versionadas;
+para una base anterior, seguir [migraciones.md](migraciones.md).
 
 `transfers` no guarda el dinero —eso son los asientos—, guarda la intención: a
 quién, desde dónde y con qué motivo. Una recarga no tiene fila en `transfers`.
@@ -402,3 +405,35 @@ Las pruebas del desembolso parten de condiciones aprobadas sembradas por fixture
 no acreditan el flujo completo de solicitud/evaluación/contrato de HU10–HU12.
 El conteo histórico de completitud de la línea base no se modifica: faltan esa
 integración y las pruebas integrales; HU28 sigue fuera de la línea base.
+
+
+### Modelo físico de préstamos implementado (#80)
+
+Las tablas reales de #95 usan IDs `VARCHAR(36)` y fechas `TIMESTAMP WITH TIME ZONE`.
+No se crean tablas duplicadas respecto de la migración 0002.
+
+```mermaid
+erDiagram
+    users ||--o{ loan_applications : solicita
+    loan_applications ||--o| loans : origina
+    accounts ||--o{ loans : recibe
+    transactions ||--o| loans : acredita
+    loans ||--|{ loan_installments : conserva
+```
+
+| Tabla | Campos de integración | Integridad e índices |
+|---|---|---|
+| `loan_applications` | `id`, `user_id`, `estado`, `principal` (BIGINT de céntimos), `moneda`, `meses`, `tea` (VARCHAR128 decimal), `approved_at` y `contrato_aceptado_at` anulables, `created_at` | FK a users; índice user_id; CHECK principal entre1 y10^12, meses1–360, moneda PEN/USD y estado pendiente/aprobado/rechazado/en_revision |
+| `loans` | `id`, `application_id`, `account_id`, `transaction_id`, `fecha_desembolso`, `tcea` (VARCHAR128 decimal) | FK a solicitud/cuenta/transacción; solicitud única y transacción única; índice account_id. Una solicitud no puede originar dos préstamos |
+| `loan_installments` | `id`, `loan_id`, `numero`, `vencimiento`, `capital`, `interes`, `saldo_pendiente` | FK a loans e índice loan_id; UNIQUE(loan_id,numero); número positivo e importes BIGINT no negativos |
+
+La tasa finita/rango, titularidad, moneda de cuenta, aprobación y aceptación del
+contrato se verifican en el servicio de desembolso; no se atribuyen al CHECK de
+la base. #84 debe generar esas condiciones mediante su flujo verificado. El
+cliente del desembolso no escribe estado, principal ni tasa. `loan_contracts`,
+score crediticio y cobro automático de cuotas no están implementados aquí.
+
+`schema.sql` se regenera desde los modelos. Pruebas de consistencia DDL,
+migración con saldos previos y desembolso concurrente incluidas en las486 pruebas
+PostgreSQL aprobadas del código publicado en #95. La DoD sigue pendiente de
+revisión independiente e integración.

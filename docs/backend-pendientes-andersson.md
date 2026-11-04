@@ -57,12 +57,11 @@ la suma global coincida. No sustituye el cierre contable diario (#87).
 Los endpoints no cambian datos de negocio; la sesión conserva su renovación
 normal. Las respuestas tienen `Cache-Control: no-store`.
 
-**Contrato con #81:** esta rama añade la protección mínima del rol para no
-exponer consultas al titular. CORS continúa cerrado como el backend existente;
-no se añade un comodín. La configuración del origen del panel web y el resto
-del alcance de #81 requieren integrarse con su responsable. #89 (web) no se
-implementa aquí. HU28 sigue siendo propuesta pendiente del PO, fuera de la línea
-base de 26 HU; no se aumenta la métrica X por estas consultas.
+**Contrato con #81:** la protección por rol y CORS exacto ya están implementados.
+`ADMIN_CORS_ORIGINS` enumera orígenes HTTP(S) exactos separados por coma;
+vacío deniega todos. No hay comodines y solo se admiten GET/Authorization para
+el panel. El origen real del panel depende de #89 y no se inventa. Las rutas
+siguen exigiendo admin incluso para un origen permitido.
 
 
 ## Actualización de integración (2026-11-04 UTC)
@@ -120,7 +119,7 @@ No se descarga Flutter con el disco al 98%: no hay margen seguro para SDK,
 artefactos Android y build. La compilación y UI no se declaran probadas.
 El contrato app/API se ejecuta en CI; revisar el run de cada PR.
 
-Projects no accesible con la credencial inicial (falta scope project). El push
+Durante la auditoría inicial, Projects no era accesible con la credencial inicial (falta scope project). El push
 de #95 requiere scope workflow por actualizar el arranque del job de contrato.
 No se omite esa corrección ni se afirma CI verde para el último commit si no
 ha sido aceptado por GitHub. Los PR #102/#103 son independientes desde main.
@@ -142,24 +141,32 @@ ha sido aceptado por GitHub. Los PR #102/#103 son independientes desde main.
 - Imagen final #95 reconstruida; health/db200 contra la base local preservada.
 - CI #121: **SUCCESS**, run41755843542;436 pruebas PostgreSQL, cobertura96%,
   diez pruebas de contrato app/API. No sustituye Android ni aprueba #95.
-- #95 remoto conserva07d0afa, cuyo último CI terminó cancelado/fallido.
-  El código final local y los reportes están listos para publicar cuando la
-  credencial disponga de workflow. No se pretende que el PR remoto ya los tenga.
+- #95 fue publicado con head e63789e tras habilitar project/workflow.
+  CI41761171157 **SUCCESS**: backend, Flutter completo y contrato app/API.
+  Los reportes XML/logs ya están publicados en la rama del PR.
 
 Evidencia local versionada en `apf3/evidencias/andersson/backend/`.
 Las ramas #102/#103 están subidas con PR #122/#121; revisión Jeremy solicitada.
 
-### Continuación exacta tras habilitar permisos
+### Publicación y tablero tras habilitar permisos
 
-1. `gh auth refresh -h github.com -s project,workflow` en la terminal del dueño.
-2. Desde este checkout: `git -c credential.helper= -c
-   'credential.helper=!gh auth git-credential' push origin feat/40-85-88-backend`.
-   No hacer force push ni cambiar main.
-3. Esperar CI del nuevo head de #95 (incluye backend, Flutter y contrato);
-   comprobar el job de contrato con Alembic y corregir solo fallos reproducibles.
-4. Actualizar cuerpo de #95 quitando únicamente la advertencia de código local
-   cuando el SHA publicado lo confirme. Revisores Jeremy y Gian Piero.
-5. Consultar Projects1, contrastar WIP y mover las tareas cuyo PR está listo a
-   In review; #102 sigue parcial/bloqueada. No marcar Done sin aprobación.
-6. Resolver con Jeremy KYC de ensayo/Neon y revisión #84. No producir datos
-   biométricos ni desplegar sin autorización explícita.
+El push normal de #95 publicó los tres commits locales sin reescritura. Su base
+es main; la primera ejecución completa del código publicado terminó en verde:
+https://github.com/Los-hijos-de-Rene/CuyCashUTP/actions/runs/41761171157 .
+Las últimas correcciones de documentación tienen su propio CI de PR.
+
+Projects1 actualizado solo para las tarjetas propias: #40/#80/#81/#85/#88/#103 en
+**In review**; #79 en **In progress** para regularizar aprobación independiente;
+#102 en **In progress**, parcial por KYC/Neon/Android. WIP propio:2, sin cambios
+de asignaciones ni tareas marcadas Done. Hay7 tarjetas globales en revisión
+(6 propias y1 previa de otro responsable), frente al objetivo6 pendiente de
+configuración por el SM; se declara la saturación sin esconder tareas ni mover
+las ajenas. Revisiones Jeremy/Gian Piero solicitadas; no se aprueba trabajo propio.
+
+Pendientes para el cierre real: aprobación independiente de #95/#121/#122,
+regularización de #79 con Gian Piero, integración del flujo #84 y acceso de ensayo
+KYC/Neon más Android para #102. Ningún despliegue ni migración productiva fue
+aprobado o ejecutado. Las credenciales Neon no están disponibles en los issues,
+PR,38 comentarios consultados ni secretos de GitHub: la documentación indica
+que DATABASE_URL se mantiene en Render. Las cuentas locales de demostración
+no se presentan como cuentas productivas con KYC aprobado.
