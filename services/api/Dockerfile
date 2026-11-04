@@ -1,5 +1,7 @@
 FROM python:3.12-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app
 
 COPY requirements.txt .
@@ -14,5 +16,6 @@ COPY scripts ./scripts
 # El puerto lo decide quien despliega: Render y Cloud Run lo inyectan en $PORT.
 # Por eso la forma shell, que expande la variable; la forma exec la pasaría
 # como texto literal y el servicio nunca respondería.
+USER app
 EXPOSE 8001
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8001}"]

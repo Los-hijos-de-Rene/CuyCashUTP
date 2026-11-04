@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -12,6 +13,10 @@ class Settings(BaseSettings):
     # sin Postgres ni Docker. El esquema es el mismo; Postgres es lo que va a
     # producción.
     DATABASE_URL: str = "postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash"
+
+    DB_POOL_SIZE: int = Field(default=2, ge=1, le=100)
+    DB_MAX_OVERFLOW: int = Field(default=2, ge=0, le=100)
+    DB_POOL_TIMEOUT: int = Field(default=30, ge=1, le=300)
 
     # ---- Sesiones ----
     # Token opaco con expiración deslizante: se renueva mientras haya

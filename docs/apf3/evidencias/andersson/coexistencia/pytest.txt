@@ -1,0 +1,28 @@
+/home/andersson/Escritorio/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+..........................................................s............. [ 16%]
+........................................................................ [ 33%]
+........................................................................ [ 49%]
+.......................................................ss............... [ 66%]
+........................................................................ [ 82%]
+........................................................................ [ 99%]
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../../Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:291
+  /home/andersson/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:291: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.9/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_directorio_y_frecuentes.py: 5 warnings
+tests/test_perfil.py: 10 warnings
+tests/test_seguridad_web.py: 6 warnings
+  /home/andersson/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/fastapi/routing.py:360: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return await dependant.call(**values)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_concurrencia_multicuenta.py:25: Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.
+SKIPPED [1] tests/test_motor_de_asientos.py:380: Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.
+SKIPPED [1] tests/test_motor_de_asientos.py:415: Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.
+433 passed, 3 skipped, 22 warnings in 59.41s
