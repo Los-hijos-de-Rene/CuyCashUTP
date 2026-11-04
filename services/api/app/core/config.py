@@ -1,6 +1,7 @@
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
+from urllib.parse import urlsplit
 from pydantic_settings import BaseSettings
 
 
@@ -13,6 +14,27 @@ class Settings(BaseSettings):
     # sin Postgres ni Docker. El esquema es el mismo; Postgres es lo que va a
     # producción.
     DATABASE_URL: str = "postgresql+asyncpg://cuycash:cuycash@localhost:5432/cuycash"
+
+    # Orígenes exactos del panel, separados por coma; vacío deniega todos.
+    ADMIN_CORS_ORIGINS: str = ""
+
+    @field_validator("ADMIN_CORS_ORIGINS")
+    @classmethod
+    def validate_cors_origins(cls, value):
+        for origin in filter(None, value.split(",")):
+            parsed = urlsplit(origin)
+            if (origin != origin.strip() or "*" in origin
+                or parsed.scheme not in {"https", "http"} or not parsed.hostname
+                or parsed.username or parsed.password or parsed.path
+                or parsed.query or parsed.fragment):
+                raise ValueError("CORS requiere orígenes HTTP(S) exactos sin rutas ni comodines")
+            # Validar también el rango del puerto.
+            _ = parsed.port
+        return value
+
+    @property
+    def admin_cors_origins(self):
+        return list(filter(None, self.ADMIN_CORS_ORIGINS.split(",")))
 
     DB_POOL_SIZE: int = Field(default=2, ge=1, le=100)
     DB_MAX_OVERFLOW: int = Field(default=2, ge=0, le=100)

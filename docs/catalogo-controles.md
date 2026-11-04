@@ -25,7 +25,7 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | AC-12 | Desvincular un dispositivo cierra sus sesiones | C | R | `routers/profile.py · desvincular` | `test_dispositivos.py` | ✅ |
 | AC-13 | Acceso biométrico con credencial del servidor, revocable | C | P | `app/services/biometric.py`; app `feature/biometric` | `test_biometria.py` | ✅ |
 | AC-14 | KYC facial en el registro (documento + liveness) | C I | P | app `feature/kyc`; ADR-0001 | Tests de `feature/kyc` | ⚠️ simulado en producción (sin clave en el binario) |
-| AC-15 | Roles más allá del titular (RBAC) | C I | P | — | — | ⏳ con el dashboard |
+| AC-15 | RBAC administrativo y CORS exacto | C I | P | `current_admin` consulta rol por petición; registro no concede admin. `ADMIN_CORS_ORIGINS` exactos, solo GET; vacío deniega | `test_sesion_requerida.py`, `test_admin_queries.py`, `test_admin_cors.py` | Implementado PR #95; pendiente revisión/integración |
 
 ## Datos y dinero
 

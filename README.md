@@ -81,15 +81,20 @@ Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 cd services/api
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
+  .venv/bin/python -m alembic upgrade head
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
   .venv/bin/python -m uvicorn app.main:app --reload --port 8001
 ```
 
-Si cambiaste los modelos y ya tenías una base, el servicio no altera tablas
-existentes (`create_all` solo crea las que faltan): recrea el esquema, que
-**borra todos los datos**, con `.venv/bin/python scripts/reset_schema.py`. Sin
-`ALLOW_DESTRUCTIVE_RESET=1` solo acepta SQLite y `localhost`/`127.0.0.1`.
+El servicio exige la revisión Alembic actual al arrancar. Para una base nueva
+ejecuta `python -m alembic upgrade head`; para una base existente sigue
+[`docs/migraciones.md`](docs/migraciones.md), con respaldo y adopción verificada.
+No uses `reset_schema.py` para actualizar una base con datos persistentes.
 
-Con Postgres: `cp .env.example .env && docker compose up --build`.
+Con Postgres, desde `services/api`: copia `.env.example` a `.env`, inicia
+`docker compose up -d db`, ejecuta `docker compose run --rm --build auth python -m alembic upgrade head`
+y luego `docker compose up -d --build auth`. Para adoptar datos existentes,
+consulta el procedimiento de migraciones antes de ejecutar comandos.
 Docs interactivas en `http://localhost:8001/docs`. Detalle en
 [`services/api/README.md`](services/api/README.md).
 
@@ -266,3 +271,10 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 | Gian Piero Gonzales Flores | QA y Seguridad |
 
 Responsabilidad de cada rol sobre los SLA/KPI en [`docs/sla-kpi.md`](docs/sla-kpi.md).
+
+
+En la rama de PR #95 también están el cálculo puro de préstamos (#94 ya en
+main), desembolso backend de condiciones aprobadas y consultas administrativas.
+El recorrido integral de préstamos depende de #84 y de la app; no se declara
+implementado por disponer del componente de desembolso. CORS del panel se
+configura mediante `ADMIN_CORS_ORIGINS`, vacío por defecto; no otorga roles.

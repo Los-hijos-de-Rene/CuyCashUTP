@@ -1,0 +1,68 @@
+/home/andersson/Escritorio/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 14%]
+........................................................................ [ 29%]
+........................................................................ [ 44%]
+........................................................................ [ 59%]
+........................................................................ [ 74%]
+........................................................................ [ 88%]
+......................................................                   [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:291
+  /home/andersson/Escritorio/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:291: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.9/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_directorio_y_frecuentes.py: 5 warnings
+tests/test_perfil.py: 10 warnings
+tests/test_seguridad_web.py: 6 warnings
+  /home/andersson/Escritorio/Proyectos/CuyCashUTP/services/api/.venv/lib/python3.12/site-packages/fastapi/routing.py:360: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return await dependant.call(**values)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/cuycash-andersson-evidence/pytest-final.xml -----
+
+---------- coverage: platform linux, python 3.12.3-final-0 -----------
+Name                                Stmts   Miss  Cover
+-------------------------------------------------------
+app/api/v1/routers/accounts.py        175      7    96%
+app/api/v1/routers/admin.py            47      0   100%
+app/api/v1/routers/auth.py            208     11    95%
+app/api/v1/routers/dev.py              27      0   100%
+app/api/v1/routers/directory.py        61      0   100%
+app/api/v1/routers/kyc.py              72      9    88%
+app/api/v1/routers/loans.py            22      0   100%
+app/api/v1/routers/otp.py              30      0   100%
+app/api/v1/routers/profile.py          58      3    95%
+app/api/v1/routers/transfers.py        90      1    99%
+app/core/config.py                     52      1    98%
+app/core/deps.py                       35      1    97%
+app/core/errors.py                     42      0   100%
+app/core/security.py                   43      1    98%
+app/db/base.py                         36      0   100%
+app/db/migrations.py                   16      0   100%
+app/db/models.py                      198      0   100%
+app/main.py                            57      3    95%
+app/schemas.py                         49      0   100%
+app/services/accounts.py               41      2    95%
+app/services/alias.py                  35      1    97%
+app/services/autorizacion.py           23      0   100%
+app/services/biometric.py              29      0   100%
+app/services/dev_tools.py              73      0   100%
+app/services/devices.py                18      0   100%
+app/services/kyc_tickets.py            43      2    95%
+app/services/ledger.py                 73      1    99%
+app/services/loan_disbursement.py      47      1    98%
+app/services/loan_schedule.py         103      1    99%
+app/services/lockout.py                83      4    95%
+app/services/notifier.py               31     13    58%
+app/services/otp.py                    92      4    96%
+app/services/pin_check.py              25      1    96%
+app/services/rate_limit.py             42      6    86%
+app/services/sessions.py               43      2    95%
+-------------------------------------------------------
+TOTAL                                2119     75    96%
+Coverage XML written to file /tmp/cuycash-andersson-evidence/coverage-final.xml
+
+486 passed, 22 warnings in 403.43s (0:06:43)

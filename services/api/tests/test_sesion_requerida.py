@@ -179,3 +179,37 @@ async def test_toda_ruta_privada_exige_sesion(client):
         if not a[1].startswith("/v1/kyc/") and not a[1].startswith("/v1/dev/")
     }
     assert sin_kyc == RUTAS_PUBLICAS
+
+
+async def test_todas_las_rutas_admin_rechazan_titular(client, registrado):
+    rutas = [(m, p) for m, p in _rutas_v1() if p.startswith("/v1/admin/")]
+    assert rutas, "El control no debe aprobar por ausencia de rutas"
+    for metodo, ruta in rutas:
+        assert metodo == "GET", "El panel solo admite consultas"
+        response = await client.request(metodo, ruta, headers=registrado.auth)
+        assert response.status_code == 403, ruta
+
+
+async def test_cliente_no_puede_elevar_rol(client, registrado, db_de_client):
+    response = await client.get(
+        "/v1/admin/registrations?rol=admin",
+        headers={**registrado.auth, "X-Role": "admin"},
+    )
+    assert response.status_code == 403
+    user = await db_de_client.get(User, registrado.user_id)
+    assert user.rol == "titular"
+
+
+async def test_registro_ignora_rol_manipulado(client, db_de_client):
+    from conftest import PIN_DE_PRUEBA
+    response = await client.post(
+        "/v1/auth/register", headers={"X-Device-Id": "rbac-negative"},
+        json={"dni": "00009999", "nombres": "Prueba", "apellidos": "Sintetica",
+              "email": "rbac@example.org", "pin": PIN_DE_PRUEBA, "rol": "admin"},
+    )
+    assert response.status_code == 201
+    user = await db_de_client.get(User, response.json()["id"])
+    assert user.rol == "titular"
+    denied = await client.get("/v1/admin/registrations", headers={
+        "Authorization": "Bearer " + response.json()["session_token"]})
+    assert denied.status_code == 403
