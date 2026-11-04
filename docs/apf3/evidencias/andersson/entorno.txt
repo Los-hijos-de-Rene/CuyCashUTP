@@ -1,0 +1,15 @@
+Auditoría real 2026-11-04 UTC (03/11 Lima)
+Linux Mint 22.3 Zena; x86_64
+CPU AMD Ryzen5 5500U, 6 núcleos / 12 hilos
+RAM 5.6 GiB; al inicio disponible 935 MiB, swap usada 2.9 GiB
+Disco raíz: 3.1 GiB libres al inicio; 2.4 GiB tras pruebas e imágenes
+Git 2.43.0; gh 2.45.0; cuenta AnderssonEspinoza
+Docker29.1.3; Compose5.1.2; acceso funcional sin sudo
+Python3.12.3; venv existente reutilizado
+PostgreSQL16-alpine: contenedor aislado, localhost55432
+FastAPI validada en Docker/PostgreSQL; health y health/db200
+Flutter/Dart: no instalados/encontrados; doctor/analyze/test/build locales NO ejecutados
+Android SDK: incompleto (688KiB), sin emulador; adb34.0.4, ningún dispositivo conectado
+Sin descarga de SDK por falta de margen seguro en disco; sin cambios privilegiados
+Sin construcción ni datos biométricos del KYC
+UAT productivo detenido con403 KYC_REQUIRED; no se eludió el control
