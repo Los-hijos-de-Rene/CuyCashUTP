@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+import 'package:provider/provider.dart' show Provider;
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/feature/biometric/domain/biometric_gate.dart';
@@ -13,6 +15,7 @@ import 'package:cuycash/presentation/quick_access/bloc/quick_access_bloc.dart';
 import 'package:cuycash/presentation/quick_access/quick_access_screen.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:cuycash/presentation/session/session_lock.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +40,10 @@ void main() {
     );
   });
 
+  final sessionLock = SessionLock();
+  // Como en AppRoot: SessionLock se comparte con RepositoryProvider.
+  setUpAll(() => Provider.debugCheckInvalidValueType = null);
+
   Future<QuickAccessBloc> pumpQuickAccess(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -51,19 +58,35 @@ void main() {
     )..add(const QuickAccessEvent.started());
     addTearDown(bloc.close);
     await tester.pumpWidget(
-      BlocProvider.value(
-        value: bloc,
-        child: MaterialApp(
-          theme: CuyCashTheme.light(),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const QuickAccessScreen(),
+      RepositoryProvider<SessionLock>.value(
+        value: sessionLock,
+        child: BlocProvider.value(
+          value: bloc,
+          child: MaterialApp(
+            theme: CuyCashTheme.light(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const QuickAccessScreen(),
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
     return bloc;
   }
+
+  testWidgets('PIN correcto con la app bloqueada por inactividad la libera', (
+    tester,
+  ) async {
+    sessionLock.lock();
+    await pumpQuickAccess(tester);
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(find.text('0'));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(sessionLock.isLocked, isFalse);
+  });
 
   testWidgets('saluda y el keypad llena los dots', (tester) async {
     final bloc = await pumpQuickAccess(tester);

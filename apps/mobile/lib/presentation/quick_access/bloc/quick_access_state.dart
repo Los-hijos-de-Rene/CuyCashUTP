@@ -28,6 +28,11 @@ abstract class QuickAccessState with _$QuickAccessState {
     /// PIN correcto, pero este teléfono dejó de ser de confianza (lo
     /// desvincularon): la pantalla lleva al login, que corre el OTP.
     @Default(false) bool needsDeviceVerification,
+
+    /// PIN o huella correctos. La sesión pudo no cambiar (el bloqueo por
+    /// inactividad no la cierra), así que AuthBloc no emite nada y la pantalla
+    /// necesita esta señal para liberar el bloqueo.
+    @Default(false) bool unlocked,
     DateTime? lockedUntil,
 
     /// Cuánto durará el bloqueo si se agotan los intentos (escala por nivel).
