@@ -1,0 +1,69 @@
+[
+  {
+    "path": "/health",
+    "method": "GET",
+    "expected": 200,
+    "actual": 200,
+    "latency_ms": 295.53,
+    "headers": {
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY"
+    },
+    "body": {
+      "status": "ok",
+      "version": "d74d66326ee264f7e68ef550b741d107916b6076"
+    }
+  },
+  {
+    "path": "/health/db",
+    "method": "GET",
+    "expected": 200,
+    "actual": 200,
+    "latency_ms": 605.06,
+    "headers": {
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY"
+    },
+    "body": {
+      "status": "ok",
+      "database": "postgresql",
+      "latency_ms": 340.9
+    }
+  },
+  {
+    "path": "/v1/me",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "latency_ms": 295.31,
+    "headers": {
+      "Cache-Control": "no-store",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY"
+    },
+    "body": {
+      "code": "UNAUTHENTICATED",
+      "detail_count": 40
+    }
+  },
+  {
+    "path": "/v1/auth/authenticate",
+    "method": "POST",
+    "expected": 422,
+    "actual": 422,
+    "latency_ms": 276.54,
+    "headers": {
+      "Cache-Control": "no-store",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY"
+    },
+    "body": {
+      "code": null,
+      "detail_count": 1
+    }
+  }
+]
