@@ -97,8 +97,9 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
           );
           return;
         }
-        if (failure
-            case ServerFailure(failure: TooManyAttempts(:final attemptsLeft))) {
+        if (failure case ServerFailure(
+          failure: TooManyAttempts(:final attemptsLeft),
+        )) {
           emit(
             state.copyWith(
               status: QuickAccessStatus.idle,
@@ -150,7 +151,8 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
       },
       (_) async {
         await _device.resetLockout();
-      }, // éxito → sesión por el stream → home
+        emit(state.copyWith(status: QuickAccessStatus.idle, unlocked: true));
+      },
     );
   }
 
@@ -182,9 +184,8 @@ class QuickAccessBloc extends Bloc<QuickAccessEvent, QuickAccessState> {
     );
     switch (resultado) {
       case BiometricSignInSuccess():
-        // La sesión llega por el stream → home.
         await _device.resetLockout();
-        emit(state.copyWith(status: QuickAccessStatus.idle));
+        emit(state.copyWith(status: QuickAccessStatus.idle, unlocked: true));
       case BiometricSignInCancelled():
         emit(state.copyWith(status: QuickAccessStatus.idle));
       case BiometricSignInFailed():

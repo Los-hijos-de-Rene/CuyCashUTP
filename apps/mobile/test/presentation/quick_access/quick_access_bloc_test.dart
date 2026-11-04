@@ -80,6 +80,22 @@ void main() {
   );
 
   blocTest<QuickAccessBloc, QuickAccessState>(
+    'PIN correcto sale de verifying y avisa que se desbloqueó (la sesión ya '
+    'existía, así que AuthBloc no emite un estado nuevo)',
+    build: build,
+    act: (b) {
+      for (final d in [0, 0, 0, 0, 0, 0]) {
+        b.add(QuickAccessEvent.digitPressed(d));
+      }
+    },
+    wait: const Duration(milliseconds: 10),
+    verify: (b) {
+      expect(b.state.status, QuickAccessStatus.idle);
+      expect(b.state.unlocked, isTrue);
+    },
+  );
+
+  blocTest<QuickAccessBloc, QuickAccessState>(
     'PIN incorrecto baja attemptsLeft y limpia el pin',
     build: build,
     act: (b) {
