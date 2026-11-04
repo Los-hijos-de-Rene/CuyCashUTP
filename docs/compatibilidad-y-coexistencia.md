@@ -160,3 +160,12 @@ actualmente conserva `create_all`.
 
 Evidencia: `apf3/evidencias/andersson/coexistencia/`. Las auditorías históricas de
 §1–§6 conservan su fecha y no representan el estado de esta propuesta.
+
+
+El apagado del contenedor inicial terminaba forzado (137): el shell del CMD
+no reenviaba SIGTERM. El CMD final usa `exec uvicorn`, verificado como proceso1,
+y `docker stop` termina con **exit0**, `OOMKilled=false`, registrando cierre
+completo de Uvicorn. Se reconstruyó la imagen y se repitieron health/db200
+contra PostgreSQL16; ver `container-final-shutdown.txt` y `container-final-log.txt`.
+No se borraron las bases ni los volúmenes y todos los servicios propios quedaron
+detenidos después del ensayo.

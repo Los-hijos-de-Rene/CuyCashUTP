@@ -18,4 +18,4 @@ COPY scripts ./scripts
 # como texto literal y el servicio nunca respondería.
 USER app
 EXPOSE 8001
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8001}"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8001}"]
