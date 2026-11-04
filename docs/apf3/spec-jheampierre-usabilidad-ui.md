@@ -49,19 +49,25 @@ envío con PIN · Movimientos · Perfil. Cada una en `test/usabilidad/<pantalla>
 4. Regla del repo: nada de `when`/`!`, colores solo del `design_system`.
 
 ## Tabla de hallazgos (llénala)
-| ID | Pantalla | Qué falló | Gravedad | Corrección | PR |
+| ID | Pantalla | Qué falló | Gravedad | Corrección | Archivo |
 |---|---|---|---|---|---|
-| UX-02 | Login | «Volver» sin etiqueta | Media | `tooltip: commonBack` | (ya hecho) |
-| UX-03 | Inicio | Botones «Cambiar el nombre» y «Ocultar saldo» de 40×40 dp | Media | `constraints` mínimos de 48×48 | `feat/apf3-usabilidad-goldens` |
-| UX-04 | Inicio / Movimientos | A 200 % el monto de la fila desborda 17 px | Media | `Flexible` + `FittedBox(scaleDown)` | `feat/apf3-usabilidad-goldens` |
-| UX-05 | Inicio | El carrusel de cuentas desborda 0.79 px a 200 % por alto fijo | Baja | El alto escala con `textScaler` (tope 1.35) | `feat/apf3-usabilidad-goldens` |
-| UX-06 | Perfil | Etiquetas de sección con contraste 4.47:1 (< 4.5 WCAG AA) | Media | `secondaryText` #6B7268 → #697066 (4.61:1) | `feat/apf3-usabilidad-goldens` |
-| UX-07 | Perfil | Fila dato/valor desborda 69 px a 200 % con alias largo | Media | `Flexible` + `FittedBox(scaleDown)` | `feat/apf3-usabilidad-goldens` |
+| UX-02 | Login | «Volver» sin etiqueta | Media | `tooltip: commonBack` | `apps/mobile/lib/presentation/auth/login_screen.dart` |
+| UX-03 | Inicio | Botones «Cambiar el nombre» y «Ocultar saldo» de 40×40 dp | Media | `constraints` mínimos de 48×48 | `apps/mobile/lib/presentation/home/widgets/balance_card.dart` |
+| UX-04 | Inicio / Movimientos | A 200 % el monto de la fila desborda 17 px | Media | `Flexible` + `FittedBox(scaleDown)` | `apps/mobile/lib/presentation/home/widgets/movements_card.dart` |
+| UX-05 | Inicio | El carrusel de cuentas desborda 0.79 px a 200 % por alto fijo | Baja | El alto escala con `textScaler` (tope 1.35) | `apps/mobile/lib/presentation/home/widgets/account_carousel.dart` |
+| UX-06 | Perfil | Etiquetas de sección con contraste 4.47:1 (< 4.5 WCAG AA) | Media | `secondaryText` #6B7268 → #697066 (4.61:1) | `packages/design_system/lib/src/cuycash_colors.dart` |
+| UX-07 | Perfil | Fila dato/valor desborda 69 px a 200 % con alias largo | Media | `Flexible` + `FittedBox(scaleDown)` | `apps/mobile/lib/presentation/profile/widgets/profile_data_row.dart` |
+
+## Evidencia de la corrida (#99)
+- [Reporte con la tabla de los 39 casos](evidencias/jheampierre/reporte-usabilidad.md)
+- [Salida completa `--reporter expanded`](evidencias/jheampierre/usabilidad-expanded.txt)
+- [Reporte máquina `--machine`](evidencias/jheampierre/usabilidad.clean.json)
+- [16 capturas PNG (8 pantallas × 2 tamaños)](evidencias/jheampierre/capturas/)
 
 ## Hecho cuando
 - [x] ≥ 6 pantallas × ≥ 5 casos = **≥ 30 casos** automatizados, en verde.
 - [x] Hallazgos documentados con su corrección (aunque sean 2 o 3).
-- [ ] Capturas de la corrida y tabla de resultados (#99).
+- [x] Capturas de la corrida y tabla de resultados (#99).
 - [x] `flutter analyze` 0 issues y suite completa en verde.
 
 ## Te van a preguntar

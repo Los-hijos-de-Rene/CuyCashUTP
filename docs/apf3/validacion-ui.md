@@ -22,7 +22,7 @@ flutter test test/usabilidad          # corre en CI, sin emulador
 flutter test test/usabilidad --reporter expanded
 ```
 
-Cubre 7 pantallas (Login, Registro, Inicio, Destinatario, Monto, Confirmar,
+Cubre 8 pantallas (Login, Registro, Inicio, Destinatario, Monto, Confirmar,
 Movimientos, Perfil) con estos casos:
 
 | Código | Criterio ISO 25010 | Verificación |
