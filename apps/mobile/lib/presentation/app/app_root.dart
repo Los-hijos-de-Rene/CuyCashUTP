@@ -9,49 +9,72 @@ import '../../feature/auth/application/auth_actions.dart';
 import '../../feature/device/application/device_actions.dart';
 import '../../feature/device/domain/remembered_user.dart';
 import '../auth/bloc/auth_bloc.dart';
+import '../session/session_lock.dart';
 import 'cuycash_app.dart';
 
 /// Composición raíz: recibe el grafo resuelto (`AppDependencies`) y lo provee —
 /// flavor por RepositoryProvider, blocs por sus módulos.
-class AppRoot extends StatelessWidget {
+class AppRoot extends StatefulWidget {
   const AppRoot({required this.dependencies, super.key});
 
   final AppDependencies dependencies;
 
   @override
+  State<AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<AppRoot> {
+  /// Vive en la raíz porque lo comparten el router (gate) y el vigilante de
+  /// inactividad. Se libera al desmontar la app.
+  final _sessionLock = SessionLock();
+
+  @override
+  void dispose() {
+    _sessionLock.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<AppFlavor>.value(value: dependencies.flavor),
-        RepositoryProvider<AuthActions>.value(
-            value: AuthActions(dependencies.authRepository)),
-        RepositoryProvider<DeviceActions>.value(
-            value: DeviceModule.create(dependencies)),
-      ],
-      child: MultiBlocProvider(
+    final dependencies = widget.dependencies;
+    return RepositoryProvider<SessionLock>.value(
+      value: _sessionLock,
+      child: MultiRepositoryProvider(
         providers: [
-          ...AuthModule.blocProviders(dependencies),
+          RepositoryProvider<AppFlavor>.value(value: dependencies.flavor),
+          RepositoryProvider<AuthActions>.value(
+              value: AuthActions(dependencies.authRepository)),
+          RepositoryProvider<DeviceActions>.value(
+              value: DeviceModule.create(dependencies)),
         ],
-        child: BlocListener<AuthBloc, AuthState>(
-          listenWhen: (p, c) => c is AuthAuthenticated,
-          listener: (context, state) async {
-            if (state is! AuthAuthenticated) return;
-            final s = state.session;
-            final device = context.read<DeviceActions>();
-            final existing = await device.readUser();
-            final sameUser = existing != null && existing.dni == s.identifier;
-            final fullName = (s.fullName != null && s.fullName!.isNotEmpty)
-                ? s.fullName!
-                : (sameUser ? existing.fullName : '');
-            final alias =
-                s.alias ?? (sameUser ? existing.alias : '@${s.identifier}');
-            await device.saveUser(RememberedUser(
-              dni: s.identifier,
-              fullName: fullName,
-              alias: alias,
-            ));
-          },
-          child: CuyCashApp(dependencies: dependencies),
+        child: MultiBlocProvider(
+          providers: [
+            ...AuthModule.blocProviders(dependencies),
+          ],
+          child: BlocListener<AuthBloc, AuthState>(
+            listenWhen: (p, c) => c is AuthAuthenticated,
+            listener: (context, state) async {
+              if (state is! AuthAuthenticated) return;
+              // Un login o un acceso rápido correcto libera el bloqueo por
+              // inactividad; el router entonces sale de /acceso-rapido.
+              context.read<SessionLock>().unlock();
+              final s = state.session;
+              final device = context.read<DeviceActions>();
+              final existing = await device.readUser();
+              final sameUser = existing != null && existing.dni == s.identifier;
+              final fullName = (s.fullName != null && s.fullName!.isNotEmpty)
+                  ? s.fullName!
+                  : (sameUser ? existing.fullName : '');
+              final alias =
+                  s.alias ?? (sameUser ? existing.alias : '@${s.identifier}');
+              await device.saveUser(RememberedUser(
+                dni: s.identifier,
+                fullName: fullName,
+                alias: alias,
+              ));
+            },
+            child: CuyCashApp(dependencies: dependencies),
+          ),
         ),
       ),
     );
