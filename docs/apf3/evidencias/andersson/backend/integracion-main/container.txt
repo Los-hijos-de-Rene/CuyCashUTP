@@ -1,0 +1,1 @@
+user=app memory_limit=536870912 exit=0 oom=false

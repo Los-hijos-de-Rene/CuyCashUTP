@@ -28,6 +28,12 @@ cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
   cuentas propias, confirmado con PIN y con constancia compartible.
 - **Depósito simulado**: cash-in desde una cuenta de sistema, sin PIN. No es
   un medio de pago real.
+- **QR (app)**: generar un cobro con monto y concepto (QR firmado en memoria
+  con caducidad, compartible) y pagar escaneando con la cámara o pegando el
+  código; antes de confirmar se muestra el nombre enmascarado, el monto, el
+  concepto y el vencimiento, y el pago pide PIN. La API real de QR (#77) aún no
+  está desplegada: en `local`/`production` la app responde "no disponible" en
+  vez de mover dinero falso; el flujo completo corre en `mock`.
 - Frecuentes por cuenta: implementados y **ocultos** por ahora
   (`FeatureToggles.frecuentesEnEnvio`).
 
@@ -37,9 +43,10 @@ documentación en `/docs`) contra Postgres gestionado en Neon. Se despliega
 al fusionar en `main`, y un workflow de rollback a cualquier versión anterior.
 Ver [`docs/despliegue.md`](docs/despliegue.md).
 
-**No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
-antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el
-dashboard web.
+**No existe todavía:** transferencia interbancaria y CCI, pagos QR contra el
+backend (la app ya tiene el flujo contra `Memory*`; falta la API #77),
+préstamos, antifraude, conciliación, cumplimiento PLDFT, conversión entre
+monedas y el dashboard web.
 
 **Estado de la verificación.** 1 178 pruebas automatizadas en verde (305 del
 backend por HTTP, todas contra PostgreSQL en el CI, 838 de la app, 35 de los paquetes), incluidas pruebas de
@@ -81,15 +88,20 @@ Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 cd services/api
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
+  .venv/bin/python -m alembic upgrade head
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
   .venv/bin/python -m uvicorn app.main:app --reload --port 8001
 ```
 
-Si cambiaste los modelos y ya tenías una base, el servicio no altera tablas
-existentes (`create_all` solo crea las que faltan): recrea el esquema, que
-**borra todos los datos**, con `.venv/bin/python scripts/reset_schema.py`. Sin
-`ALLOW_DESTRUCTIVE_RESET=1` solo acepta SQLite y `localhost`/`127.0.0.1`.
+El servicio exige la revisión Alembic actual al arrancar. Para una base nueva
+ejecuta `python -m alembic upgrade head`; para una base existente sigue
+[`docs/migraciones.md`](docs/migraciones.md), con respaldo y adopción verificada.
+No uses `reset_schema.py` para actualizar una base con datos persistentes.
 
-Con Postgres: `cp .env.example .env && docker compose up --build`.
+Con Postgres, desde `services/api`: copia `.env.example` a `.env`, inicia
+`docker compose up -d db`, ejecuta `docker compose run --rm --build auth python -m alembic upgrade head`
+y luego `docker compose up -d --build auth`. Para adoptar datos existentes,
+consulta el procedimiento de migraciones antes de ejecutar comandos.
 Docs interactivas en `http://localhost:8001/docs`. Detalle en
 [`services/api/README.md`](services/api/README.md).
 
@@ -267,3 +279,10 @@ su entorno y se lo entrega a `AppRoot`. Navegación con go_router en
 | Gian Piero Gonzales Flores | QA y Seguridad |
 
 Responsabilidad de cada rol sobre los SLA/KPI en [`docs/sla-kpi.md`](docs/sla-kpi.md).
+
+
+En la rama de PR #95 también están el cálculo puro de préstamos (#94 ya en
+main), desembolso backend de condiciones aprobadas y consultas administrativas.
+El recorrido integral de préstamos depende de #84 y de la app; no se declara
+implementado por disponer del componente de desembolso. CORS del panel se
+configura mediante `ADMIN_CORS_ORIGINS`, vacío por defecto; no otorga roles.

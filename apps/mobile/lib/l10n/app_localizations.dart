@@ -3091,6 +3091,312 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Volver'**
   String get commonBack;
+
+  /// No description provided for @qrTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'QR'**
+  String get qrTitle;
+
+  /// No description provided for @qrHubHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobra o paga con QR'**
+  String get qrHubHeadline;
+
+  /// No description provided for @qrHubSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Genera un código para que te paguen o escanea el de otra persona.'**
+  String get qrHubSubtitle;
+
+  /// No description provided for @qrHubChargeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrar con QR'**
+  String get qrHubChargeTitle;
+
+  /// No description provided for @qrHubChargeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige monto y concepto, y comparte el código.'**
+  String get qrHubChargeBody;
+
+  /// No description provided for @qrHubPayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar con QR'**
+  String get qrHubPayTitle;
+
+  /// No description provided for @qrHubPayBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanea el código de quien cobra y confirma el pago.'**
+  String get qrHubPayBody;
+
+  /// No description provided for @qrChargeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobrar con QR'**
+  String get qrChargeTitle;
+
+  /// No description provided for @qrChargeHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto quieres cobrar?'**
+  String get qrChargeHeadline;
+
+  /// No description provided for @qrChargeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El código vence en 15 minutos y se puede pagar una sola vez.'**
+  String get qrChargeBody;
+
+  /// No description provided for @qrChargeAmountLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get qrChargeAmountLabel;
+
+  /// No description provided for @qrChargeConceptLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Concepto'**
+  String get qrChargeConceptLabel;
+
+  /// No description provided for @qrChargeConceptHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Almuerzo'**
+  String get qrChargeConceptHint;
+
+  /// No description provided for @qrChargeGenerate.
+  ///
+  /// In es, this message translates to:
+  /// **'Generar QR'**
+  String get qrChargeGenerate;
+
+  /// No description provided for @qrChargeReady.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu QR está listo'**
+  String get qrChargeReady;
+
+  /// No description provided for @qrChargeReadyBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Muéstralo o compártelo. Quien lo escanee verá tu nombre y el monto antes de pagar.'**
+  String get qrChargeReadyBody;
+
+  /// No description provided for @qrChargeExpires.
+  ///
+  /// In es, this message translates to:
+  /// **'Vence el {fecha}'**
+  String qrChargeExpires(String fecha);
+
+  /// No description provided for @qrChargeShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir'**
+  String get qrChargeShare;
+
+  /// No description provided for @qrChargeShareText.
+  ///
+  /// In es, this message translates to:
+  /// **'Cóbralo con CuyCash: {monto} por «{concepto}».\n{payload}'**
+  String qrChargeShareText(String monto, String concepto, String payload);
+
+  /// No description provided for @qrChargeDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get qrChargeDone;
+
+  /// No description provided for @qrChargeAmountInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un monto mayor a cero.'**
+  String get qrChargeAmountInvalid;
+
+  /// No description provided for @qrChargeConceptRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un concepto.'**
+  String get qrChargeConceptRequired;
+
+  /// No description provided for @qrPayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar con QR'**
+  String get qrPayTitle;
+
+  /// No description provided for @qrPayScanHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Apunta la cámara al QR o pega el código.'**
+  String get qrPayScanHint;
+
+  /// No description provided for @qrPayPasteLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Código del QR'**
+  String get qrPayPasteLabel;
+
+  /// No description provided for @qrPayRead.
+  ///
+  /// In es, this message translates to:
+  /// **'Leer código'**
+  String get qrPayRead;
+
+  /// No description provided for @qrPayPreviewHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa antes de pagar'**
+  String get qrPayPreviewHeadline;
+
+  /// No description provided for @qrPayPreviewBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que el nombre y el monto sean correctos.'**
+  String get qrPayPreviewBody;
+
+  /// No description provided for @qrPayTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Para'**
+  String get qrPayTo;
+
+  /// No description provided for @qrPayAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get qrPayAmount;
+
+  /// No description provided for @qrPayConcept.
+  ///
+  /// In es, this message translates to:
+  /// **'Concepto'**
+  String get qrPayConcept;
+
+  /// No description provided for @qrPayExpires.
+  ///
+  /// In es, this message translates to:
+  /// **'Vence'**
+  String get qrPayExpires;
+
+  /// No description provided for @qrPayContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar'**
+  String get qrPayContinue;
+
+  /// No description provided for @qrPayCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get qrPayCancel;
+
+  /// No description provided for @qrPayPinHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma con tu PIN'**
+  String get qrPayPinHeadline;
+
+  /// No description provided for @qrPayPinSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{nombre} · {monto}'**
+  String qrPayPinSubtitle(String nombre, String monto);
+
+  /// No description provided for @qrPayDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha'**
+  String get qrPayDate;
+
+  /// No description provided for @qrPayOperation.
+  ///
+  /// In es, this message translates to:
+  /// **'N.º de operación'**
+  String get qrPayOperation;
+
+  /// No description provided for @qrPayDoneHeadline.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Pago realizado!'**
+  String get qrPayDoneHeadline;
+
+  /// No description provided for @qrPayDoneBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagaste {monto} a {nombre}.'**
+  String qrPayDoneBody(String monto, String nombre);
+
+  /// No description provided for @qrPayDoneCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get qrPayDoneCta;
+
+  /// No description provided for @qrErrorExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Este QR ya venció. Pide uno nuevo.'**
+  String get qrErrorExpired;
+
+  /// No description provided for @qrErrorTampered.
+  ///
+  /// In es, this message translates to:
+  /// **'Este QR no es válido o fue alterado.'**
+  String get qrErrorTampered;
+
+  /// No description provided for @qrErrorInsufficientFunds.
+  ///
+  /// In es, this message translates to:
+  /// **'No te alcanza el saldo para pagar este QR.'**
+  String get qrErrorInsufficientFunds;
+
+  /// No description provided for @qrErrorWrongPin.
+  ///
+  /// In es, this message translates to:
+  /// **'PIN incorrecto. Te quedan {n} intentos.'**
+  String qrErrorWrongPin(int n);
+
+  /// No description provided for @qrErrorNetwork.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.'**
+  String get qrErrorNetwork;
+
+  /// No description provided for @qrErrorUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'El pago con QR estará disponible cuando se despliegue la API.'**
+  String get qrErrorUnavailable;
+
+  /// No description provided for @qrErrorUnexpected.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo salió mal. Inténtalo de nuevo.'**
+  String get qrErrorUnexpected;
+
+  /// No description provided for @qrRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get qrRetry;
+
+  /// No description provided for @qrBackHome.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get qrBackHome;
+
+  /// No description provided for @qrCameraUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos abrir la cámara. Pega el código del QR para continuar.'**
+  String get qrCameraUnavailable;
 }
 
 class _AppLocalizationsDelegate

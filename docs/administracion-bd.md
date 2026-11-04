@@ -51,7 +51,7 @@ negativo. Por diseño, la escritura es única y la escala se gana en lecturas.
 | **Snapshot manual.** | 1 en el plan Free. | [plataforma]; se recomienda uno antes de cada `reset_schema` o despliegue con cambios de modelo. |
 | **Ramas (branching).** Copia instantánea de la base para probar un cambio sin tocar producción. | 10 ramas por proyecto en Free. | [plataforma] |
 | **Recrear el esquema** (`scripts/reset_schema.py`). | Solo sin datos reales: borra y crea todas las tablas. Lleva cerrojo: sin `ALLOW_DESTRUCTIVE_RESET=1` rechaza cualquier host que no sea local y `ENV=production`. | [implementado] |
-| **Migraciones versionadas** (Alembic). | Cambios de esquema sin perder datos. | **[pendiente]**: hoy `create_all` crea lo que falta y no altera lo existente. |
+| **Migraciones versionadas** (Alembic). | Cambios de esquema sin perder datos. | [implementado en esta rama]: adopción verificada y revisiones Alembic; ver [migraciones.md](migraciones.md). |
 
 Procedimiento de recuperación ante un borrado accidental:
 
@@ -68,7 +68,7 @@ no se puede revertir. Para datos reales, el plan Launch (7 días) es el mínimo.
 
 | Tarea | Cómo | Estado |
 |---|---|---|
-| Crear/actualizar esquema | Al arrancar el servicio (`create_all` en `app/main.py`). | [implementado] |
+| Crear/actualizar esquema | Paso operativo previo con Alembic; el arranque solo verifica la revisión. | [implementado] |
 | DDL de referencia | `services/api/schema.sql`, generado de los modelos con `scripts/dump_schema.py`. Un test garantiza que coinciden (ver `docs/modelo-datos.md`). | [implementado] |
 | Integridad en el motor | `CHECK` de saldo no negativo (salvo la caja), `CHECK (monto > 0)` en asientos, `UNIQUE` en DNI, alias, número de cuenta y `idempotency_key`. | [implementado] |
 | Credenciales | Rol de Neon con contraseña en `DATABASE_URL` (secreto de Render). La app no tiene credenciales de base. | [implementado] |

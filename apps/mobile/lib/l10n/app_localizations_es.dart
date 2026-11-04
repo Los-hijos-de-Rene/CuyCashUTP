@@ -1799,4 +1799,176 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get commonBack => 'Volver';
+
+  @override
+  String get qrTitle => 'QR';
+
+  @override
+  String get qrHubHeadline => 'Cobra o paga con QR';
+
+  @override
+  String get qrHubSubtitle =>
+      'Genera un código para que te paguen o escanea el de otra persona.';
+
+  @override
+  String get qrHubChargeTitle => 'Cobrar con QR';
+
+  @override
+  String get qrHubChargeBody => 'Elige monto y concepto, y comparte el código.';
+
+  @override
+  String get qrHubPayTitle => 'Pagar con QR';
+
+  @override
+  String get qrHubPayBody =>
+      'Escanea el código de quien cobra y confirma el pago.';
+
+  @override
+  String get qrChargeTitle => 'Cobrar con QR';
+
+  @override
+  String get qrChargeHeadline => '¿Cuánto quieres cobrar?';
+
+  @override
+  String get qrChargeBody =>
+      'El código vence en 15 minutos y se puede pagar una sola vez.';
+
+  @override
+  String get qrChargeAmountLabel => 'Monto';
+
+  @override
+  String get qrChargeConceptLabel => 'Concepto';
+
+  @override
+  String get qrChargeConceptHint => 'Ej. Almuerzo';
+
+  @override
+  String get qrChargeGenerate => 'Generar QR';
+
+  @override
+  String get qrChargeReady => 'Tu QR está listo';
+
+  @override
+  String get qrChargeReadyBody =>
+      'Muéstralo o compártelo. Quien lo escanee verá tu nombre y el monto antes de pagar.';
+
+  @override
+  String qrChargeExpires(String fecha) {
+    return 'Vence el $fecha';
+  }
+
+  @override
+  String get qrChargeShare => 'Compartir';
+
+  @override
+  String qrChargeShareText(String monto, String concepto, String payload) {
+    return 'Cóbralo con CuyCash: $monto por «$concepto».\n$payload';
+  }
+
+  @override
+  String get qrChargeDone => 'Listo';
+
+  @override
+  String get qrChargeAmountInvalid => 'Escribe un monto mayor a cero.';
+
+  @override
+  String get qrChargeConceptRequired => 'Escribe un concepto.';
+
+  @override
+  String get qrPayTitle => 'Pagar con QR';
+
+  @override
+  String get qrPayScanHint => 'Apunta la cámara al QR o pega el código.';
+
+  @override
+  String get qrPayPasteLabel => 'Código del QR';
+
+  @override
+  String get qrPayRead => 'Leer código';
+
+  @override
+  String get qrPayPreviewHeadline => 'Revisa antes de pagar';
+
+  @override
+  String get qrPayPreviewBody =>
+      'Confirma que el nombre y el monto sean correctos.';
+
+  @override
+  String get qrPayTo => 'Para';
+
+  @override
+  String get qrPayAmount => 'Monto';
+
+  @override
+  String get qrPayConcept => 'Concepto';
+
+  @override
+  String get qrPayExpires => 'Vence';
+
+  @override
+  String get qrPayContinue => 'Pagar';
+
+  @override
+  String get qrPayCancel => 'Cancelar';
+
+  @override
+  String get qrPayPinHeadline => 'Confirma con tu PIN';
+
+  @override
+  String qrPayPinSubtitle(String nombre, String monto) {
+    return '$nombre · $monto';
+  }
+
+  @override
+  String get qrPayDate => 'Fecha';
+
+  @override
+  String get qrPayOperation => 'N.º de operación';
+
+  @override
+  String get qrPayDoneHeadline => '¡Pago realizado!';
+
+  @override
+  String qrPayDoneBody(String monto, String nombre) {
+    return 'Pagaste $monto a $nombre.';
+  }
+
+  @override
+  String get qrPayDoneCta => 'Volver al inicio';
+
+  @override
+  String get qrErrorExpired => 'Este QR ya venció. Pide uno nuevo.';
+
+  @override
+  String get qrErrorTampered => 'Este QR no es válido o fue alterado.';
+
+  @override
+  String get qrErrorInsufficientFunds =>
+      'No te alcanza el saldo para pagar este QR.';
+
+  @override
+  String qrErrorWrongPin(int n) {
+    return 'PIN incorrecto. Te quedan $n intentos.';
+  }
+
+  @override
+  String get qrErrorNetwork =>
+      'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get qrErrorUnavailable =>
+      'El pago con QR estará disponible cuando se despliegue la API.';
+
+  @override
+  String get qrErrorUnexpected => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get qrRetry => 'Reintentar';
+
+  @override
+  String get qrBackHome => 'Volver al inicio';
+
+  @override
+  String get qrCameraUnavailable =>
+      'No pudimos abrir la cámara. Pega el código del QR para continuar.';
 }

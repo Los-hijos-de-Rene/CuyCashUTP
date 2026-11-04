@@ -1,9 +1,8 @@
 """
 Borra y recrea el esquema completo.
 
-Existe porque el servicio crea tablas con `Base.metadata.create_all`, que NO
-altera las que ya existen: un CHECK modificado no llega nunca a una base ya
-desplegada. Mientras no haya datos reales, recrear es más barato que migrar.
+Herramienta para descartar datos locales de demostración. Para actualizar una
+base persistente use Alembic (docs/migraciones.md).
 
 Es DESTRUCTIVO. El cerrojo de abajo está puesto para el día en que sí haya
 datos y alguien lo ejecute por costumbre.
@@ -23,7 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings  # noqa: E402
 from app.db import models  # noqa: E402,F401  (registra las tablas en Base.metadata)
-from app.db.base import Base, _engine_config  # noqa: E402
+from app.db.base import Base, _engine_config, configure_sqlite_transactions  # noqa: E402
+from app.db.migrations import stamp_recreated_schema
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
 
@@ -56,9 +56,11 @@ async def main() -> None:
     # script pedía psycopg2 y moría antes de conectarse.
     url, connect_args = _engine_config(destino)
     engine = create_async_engine(url, connect_args=connect_args)
+    configure_sqlite_transactions(engine)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(stamp_recreated_schema)
     await engine.dispose()
     print(f"Esquema recreado en {destino.split('@')[-1]}")
 
