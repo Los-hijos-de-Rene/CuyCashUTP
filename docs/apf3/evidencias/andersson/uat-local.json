@@ -1,0 +1,227 @@
+{
+  "utc": "2026-11-04T01:39:01.373381+00:00",
+  "base_url": "http://127.0.0.1:8001",
+  "environment": "local",
+  "synthetic_dni": [
+    "00001021",
+    "00001022"
+  ],
+  "steps": [
+    {
+      "step": "health",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 3.5
+    },
+    {
+      "step": "register synthetic 1",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 201,
+      "latency_ms": 114.98
+    },
+    {
+      "step": "register synthetic 2",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 201,
+      "latency_ms": 76.03
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 24.29
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 7.3
+    },
+    {
+      "step": "initial synthetic balances zero",
+      "passed": true
+    },
+    {
+      "step": "topup uat2-topup",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 201,
+      "latency_ms": 33.07
+    },
+    {
+      "step": "transfer uat2-insufficient",
+      "expected_http": [
+        400,
+        409
+      ],
+      "actual_http": 400,
+      "latency_ms": 85.86
+    },
+    {
+      "step": "UAT-2 insufficient funds",
+      "passed": true
+    },
+    {
+      "step": "transfer uat2-insufficient",
+      "expected_http": [
+        400,
+        409
+      ],
+      "actual_http": 400,
+      "latency_ms": 74.37
+    },
+    {
+      "step": "UAT-2 insufficient funds",
+      "passed": true
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 10.66
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 9.57
+    },
+    {
+      "step": "UAT-2 unchanged balances",
+      "passed": true
+    },
+    {
+      "step": "movements",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 29.3
+    },
+    {
+      "step": "movements",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 15.83
+    },
+    {
+      "step": "UAT-2 no new movements",
+      "passed": true
+    },
+    {
+      "step": "topup uat1-topup",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 201,
+      "latency_ms": 12.1
+    },
+    {
+      "step": "UAT-1 resolve",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 13.05
+    },
+    {
+      "step": "UAT-1 masked name",
+      "passed": true
+    },
+    {
+      "step": "transfer uat1-transfer",
+      "expected_http": [
+        201
+      ],
+      "actual_http": 201,
+      "latency_ms": 80.1
+    },
+    {
+      "step": "transfer uat1-transfer",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 106.52
+    },
+    {
+      "step": "UAT-1 idempotent transaction",
+      "passed": true
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 5.11
+    },
+    {
+      "step": "accounts",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 4.71
+    },
+    {
+      "step": "UAT-1 balances",
+      "passed": true
+    },
+    {
+      "step": "movements",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 9.24
+    },
+    {
+      "step": "movements",
+      "expected_http": [
+        200
+      ],
+      "actual_http": 200,
+      "latency_ms": 10.48
+    },
+    {
+      "step": "UAT-1 debit and credit",
+      "passed": true
+    },
+    {
+      "step": "revoke UAT session",
+      "expected_http": [
+        204
+      ],
+      "actual_http": 204,
+      "latency_ms": 5.19
+    },
+    {
+      "step": "revoke UAT session",
+      "expected_http": [
+        204
+      ],
+      "actual_http": 204,
+      "latency_ms": 4.99
+    }
+  ],
+  "status": "passed",
+  "deployed_version": "local"
+}
