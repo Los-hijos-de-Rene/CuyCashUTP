@@ -169,3 +169,9 @@ completo de Uvicorn. Se reconstruyó la imagen y se repitieron health/db200
 contra PostgreSQL16; ver `container-final-shutdown.txt` y `container-final-log.txt`.
 No se borraron las bases ni los volúmenes y todos los servicios propios quedaron
 detenidos después del ensayo.
+
+El capítulo C.7 de APF3 enlaza las evidencias verificables y se exportó con el
+generador existente a `APF3-coexistencia.pdf` (borrador, no PDF oficial de #106).
+Los pendientes de otros responsables se conservan; la validación de nube y su
+capítulo E están en PR #122. La aprobación e integración de ambos siguen siendo
+externas a esta implementación.

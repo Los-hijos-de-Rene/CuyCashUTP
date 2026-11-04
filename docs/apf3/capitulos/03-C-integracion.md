@@ -22,3 +22,26 @@ Fuente: `docs/compatibilidad-y-coexistencia.md` §1.
 
 ## C.4 Capturas de ejecución · C.5 Reportes de resultados · C.6 Métricas y observaciones
 PENDIENTE — capturas de `pytest -v` y del job *Contrato app ↔ API*; `junit.xml`; tabla de casos y % de cumplimiento; límites (el KYC real no corre en CI).
+
+## C.7 Coexistencia de la API — Andersson #103
+
+Implementación propuesta en [PR #121](https://github.com/Los-hijos-de-Rene/CuyCashUTP/pull/121),
+pendiente de aprobación independiente e integración. No se desplegó.
+
+| Caso | Resultado real en laboratorio |
+|---|---|
+| COEX-01 Construir imagen y comprobar identidad | Imagen Python3.12 construida; proceso `app`, UID/GID999 |
+| COEX-02 Arranque API/PostgreSQL16 | `/health` y `/health/db` HTTP200 |
+| COEX-03 Memoria acotada | Límite Docker536870912 bytes (512MiB); medición puntual en recursos.txt, sin certificación de carga máxima |
+| COEX-04 Pool configurable y Neon | 4 pruebas: valores de pool/overflow/timeout, rechazo de rangos inválidos y normalización TLS de URL Neon; sin conexión directa a Neon |
+| COEX-05 Apagado | `exec uvicorn` como proceso1; `docker stop` termina exit0, OOMKilled=false y registro de cierre completo |
+| COEX-06 Regresión | CI del código a529dee:436 pruebas PostgreSQL aprobadas,96% cobertura y10 contratos app/API |
+
+Evidencias publicadas: [construcción](https://github.com/Los-hijos-de-Rene/CuyCashUTP/blob/feat/103-coexistencia-contenedores/docs/apf3/evidencias/andersson/coexistencia/build.txt),
+[identidad](https://github.com/Los-hijos-de-Rene/CuyCashUTP/blob/feat/103-coexistencia-contenedores/docs/apf3/evidencias/andersson/coexistencia/usuario.txt),
+[recursos](https://github.com/Los-hijos-de-Rene/CuyCashUTP/blob/feat/103-coexistencia-contenedores/docs/apf3/evidencias/andersson/coexistencia/recursos.txt),
+[apagado](https://github.com/Los-hijos-de-Rene/CuyCashUTP/blob/feat/103-coexistencia-contenedores/docs/apf3/evidencias/andersson/coexistencia/container-final-shutdown.txt)
+y [CI](https://github.com/Los-hijos-de-Rene/CuyCashUTP/actions/runs/41757142389).
+Procedimiento/configuración en `docs/compatibilidad-y-coexistencia.md` §7.
+No se infiere funcionamiento Android ni producción a partir de estas pruebas.
+Los servicios propios quedaron detenidos y los volúmenes se conservaron.
