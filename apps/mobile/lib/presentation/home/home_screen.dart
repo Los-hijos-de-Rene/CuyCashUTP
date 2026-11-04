@@ -53,8 +53,8 @@ const _showUnfinished = false;
 /// Abrir cuenta está en el menú ⋮ y en la última tarjeta del carrusel.
 ///
 /// WasiBot y notificaciones siguen siendo ganchos sin feature detrás y están
-/// ocultos ([_showUnfinished]). Cobrar y retirar están ocultos hasta que
-/// existan sus pantallas, y si se muestran avisan "próximamente".
+/// ocultos ([_showUnfinished]). Retirar sigue oculto hasta que exista su
+/// pantalla; si se muestra, avisa "próximamente".
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -94,6 +94,12 @@ class HomeScreen extends StatelessWidget {
           });
         }
       case HomeAction.charge:
+        final cuenta = context.read<AccountBloc>().state.cuenta;
+        if (cuenta == null) {
+          _showMessage(context, AppLocalizations.of(context).homeErrorGeneric);
+        } else {
+          context.push(AppRoutes.qr, extra: cuenta);
+        }
       case HomeAction.withdraw:
         _showComingSoon(context);
     }

@@ -5,7 +5,7 @@
 /// navegación sin que el compilador dijera nada.
 enum HomeAction {
   send(ready: true),
-  charge(ready: false),
+  charge(ready: true),
   topUp(ready: true),
   withdraw(ready: false);
 
