@@ -19,11 +19,20 @@ class ProfileDataRow extends StatelessWidget {
         children: [
           Expanded(child: Text(label, style: CuyCashTypography.bodyMd)),
           const SizedBox(width: CuyCashSpacing.stackSm),
-          Text(
-            value,
-            style: CuyCashTypography.bodyLg.copyWith(
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          // A 200 % el valor se encoge en vez de empujar la fila fuera de la
+          // tarjeta; el dato sigue completo y legible.
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: CuyCashTypography.bodyLg.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
           ),
         ],
