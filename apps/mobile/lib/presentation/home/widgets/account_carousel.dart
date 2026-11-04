@@ -89,10 +89,15 @@ class _AccountCarouselState extends State<AccountCarousel> {
     final l10n = AppLocalizations.of(context);
     final onOpenNew = widget.onOpenNew;
     final paginas = widget.cuentas.length + (onOpenNew == null ? 0 : 1);
+    // El alto fijo del PageView crece con el texto del sistema: a 200 % la
+    // tarjeta necesita más espacio y antes desbordaba por menos de 1 px.
+    final escalaTexto = MediaQuery.textScalerOf(
+      context,
+    ).scale(1).clamp(1.0, 1.35);
     return Column(
       children: [
         SizedBox(
-          height: AccountCarousel.height,
+          height: AccountCarousel.height * escalaTexto,
           child: PageView.builder(
             controller: _controller,
             itemCount: paginas,

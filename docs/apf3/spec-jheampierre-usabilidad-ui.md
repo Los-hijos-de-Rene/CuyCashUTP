@@ -52,12 +52,17 @@ envío con PIN · Movimientos · Perfil. Cada una en `test/usabilidad/<pantalla>
 | ID | Pantalla | Qué falló | Gravedad | Corrección | PR |
 |---|---|---|---|---|---|
 | UX-02 | Login | «Volver» sin etiqueta | Media | `tooltip: commonBack` | (ya hecho) |
+| UX-03 | Inicio | Botones «Cambiar el nombre» y «Ocultar saldo» de 40×40 dp | Media | `constraints` mínimos de 48×48 | `feat/apf3-usabilidad-goldens` |
+| UX-04 | Inicio / Movimientos | A 200 % el monto de la fila desborda 17 px | Media | `Flexible` + `FittedBox(scaleDown)` | `feat/apf3-usabilidad-goldens` |
+| UX-05 | Inicio | El carrusel de cuentas desborda 0.79 px a 200 % por alto fijo | Baja | El alto escala con `textScaler` (tope 1.35) | `feat/apf3-usabilidad-goldens` |
+| UX-06 | Perfil | Etiquetas de sección con contraste 4.47:1 (< 4.5 WCAG AA) | Media | `secondaryText` #6B7268 → #697066 (4.61:1) | `feat/apf3-usabilidad-goldens` |
+| UX-07 | Perfil | Fila dato/valor desborda 69 px a 200 % con alias largo | Media | `Flexible` + `FittedBox(scaleDown)` | `feat/apf3-usabilidad-goldens` |
 
 ## Hecho cuando
-- [ ] ≥ 6 pantallas × ≥ 5 casos = **≥ 30 casos** automatizados, en verde.
-- [ ] Hallazgos documentados con su corrección (aunque sean 2 o 3).
+- [x] ≥ 6 pantallas × ≥ 5 casos = **≥ 30 casos** automatizados, en verde.
+- [x] Hallazgos documentados con su corrección (aunque sean 2 o 3).
 - [ ] Capturas de la corrida y tabla de resultados (#99).
-- [ ] `flutter analyze` 0 issues y suite completa en verde.
+- [x] `flutter analyze` 0 issues y suite completa en verde.
 
 ## Te van a preguntar
 - ¿Por qué 48 dp? (guía de Material/WCAG para áreas táctiles)

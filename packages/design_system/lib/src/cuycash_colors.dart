@@ -24,7 +24,7 @@ abstract final class CuyCashColors {
 
   // Texto / bordes
   static const onSurface = Color(0xFF1B1C19);
-  static const secondaryText = Color(0xFF6B7268);   // Sage muted
+  static const secondaryText = Color(0xFF697066);   // Sage muted
   static const outline = Color(0xFF737873);
   static const outlineVariant = Color(0xFFC2C8C2);
   static const divider = Color(0xFFEBE8E0);

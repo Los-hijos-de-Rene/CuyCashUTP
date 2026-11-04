@@ -11,6 +11,13 @@
 - [ ] `ruff check` sin errores (si tocaste el backend)
 - [ ] Cada CA que cierra tiene prueba automatizada, positiva y negativa
 
+## Interfaz (obligatorio si tocaste pantallas)
+- [ ] Adjunté capturas **antes/después** de cada pantalla cambiada
+- [ ] El revisor comparó las capturas contra los tokens de `design_system`
+- [ ] Probé con texto al 200 % y en pantalla de 320×568: sin desbordes
+- [ ] Los estados vacío, carga y error tienen mensaje accionable (sin códigos técnicos)
+- [ ] `flutter test test/usabilidad` en verde (o actualicé la suite y sus hallazgos)
+
 ## Reglas duras de CLAUDE.md
 - [ ] Errores como valores (`Either` + `GlobalFailure`); ningún `throw` cruza capas
 - [ ] Estados sealed + `switch` exhaustivo; sin `when`/`maybeWhen`/`!`

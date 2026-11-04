@@ -67,7 +67,10 @@ class _BalanceCardState extends State<BalanceCard> {
                 IconButton(
                   onPressed: widget.onRename,
                   tooltip: l10n.homeRenameTooltip,
-                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
                   icon: const Icon(
                     Icons.edit_outlined,
                     size: 20,
@@ -77,7 +80,10 @@ class _BalanceCardState extends State<BalanceCard> {
               IconButton(
                 onPressed: () => setState(() => _hidden = !_hidden),
                 tooltip: _hidden ? l10n.homeShowBalance : l10n.homeHideBalance,
-                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
+                ),
                 icon: Icon(
                   _hidden ? Icons.visibility_off : Icons.visibility,
                   size: 20,
