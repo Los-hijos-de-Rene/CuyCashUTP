@@ -22,9 +22,13 @@ abstract final class AppRoutes {
   static const enviarConfirmar = '/enviar/confirmar';
   static const enviarConstancia = '/enviar/constancia';
 
+  // QR: hub, cobro y pago. La cuenta de origen viaja como `extra`.
+  static const qr = '/qr';
+  static const qrCobrar = '/qr/cobrar';
+  static const qrPagar = '/qr/pagar';
+
   // Historial completo: de la cuenta que viaja como `extra`, o de todas.
   static const movimientos = '/movimientos';
-
   // Detalle de un movimiento del historial.
   static const movimiento = '/movimientos/:id';
   static String movimientoDe(String transactionId) =>

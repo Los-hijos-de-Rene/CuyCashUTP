@@ -76,28 +76,20 @@ tiempo sin configurar respaldos.
    | `KYC_BASE_URL`, `KYC_API_KEY` | Solo si se usa el proxy del KYC |
 
 3. *Apply*. Render construye la imagen y la arranca. Al arrancar, el servicio
-   crea las tablas que falten (`create_all` en `app/main.py`).
+   verifica que el esquema esté migrado. Antes de arrancar esta versión, aplicar
+   el procedimiento de [migraciones](migraciones.md).
 4. Render → servicio → *Settings* → **Deploy Hook**: copiar la URL y guardarla
    en GitHub como secreto `RENDER_DEPLOY_HOOK_URL` (*Settings → Secrets and
    variables → Actions*). Es como una contraseña: quien la tiene, despliega.
 5. A partir de aquí **Render no despliega solo** (`autoDeployTrigger: "off"`
    en `render.yaml`): lo hace el pipeline de GitHub Actions (§4).
 
-### Paso 3 · Esquema limpio (solo si cambió un modelo)
+### Paso 3 · Migrar sin perder datos
 
-`create_all` no altera tablas existentes. Si un cambio de modelo lo exige y
-**no hay datos reales**, se recrea el esquema contra Neon desde una máquina con
-el repositorio:
-
-```sh
-cd services/api
-# 1) Snapshot o rama de respaldo en Neon antes de esto (ver administracion-bd.md)
-DATABASE_URL='<cadena de Neon>' ALLOW_DESTRUCTIVE_RESET=1 \
-  .venv/bin/python scripts/reset_schema.py
-```
-
-Sin `ALLOW_DESTRUCTIVE_RESET=1` el script se niega a tocar un host remoto.
-**Esto borra todos los datos.**
+Seguir [migraciones.md](migraciones.md): respaldo/restauración comprobados,
+adopción verificada de bases anteriores y `python -m alembic upgrade head`.
+El arranque verifica la revisión; no aplica migraciones automáticamente. La
+primera adopción debe completarse antes del despliegue de esta versión.
 
 ### Paso 4 · Verificar el despliegue
 

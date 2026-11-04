@@ -183,7 +183,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Cobrar'), findsNothing);
+    expect(find.text('Cobrar'), findsOneWidget);
     expect(find.text('Retirar'), findsNothing);
     for (final label in ['Transferir', 'Depósito simulado']) {
       await tester.tap(find.text(label));
@@ -198,7 +198,8 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
 
-    expect(find.text('Cobrar'), findsNothing);
+    // Cobrar ya tiene pantalla (QR); Retirar sigue oculta.
+    expect(find.text('Cobrar'), findsOneWidget);
     expect(find.text('Retirar'), findsNothing);
     expect(find.text('WasiBot'), findsNothing);
     expect(find.text('Ver todo'), findsNothing);

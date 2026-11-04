@@ -85,6 +85,8 @@ async def reiniciar(session: AsyncSession) -> None:
     conn = await session.connection()
     await conn.run_sync(Base.metadata.drop_all)
     await conn.run_sync(Base.metadata.create_all)
+    from app.db.migrations import stamp_recreated_schema
+    await conn.run_sync(stamp_recreated_schema)
     await session.commit()
     _otps.clear()
 

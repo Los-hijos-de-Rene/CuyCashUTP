@@ -12,6 +12,8 @@ import '../../feature/lockout/domain/lockout_policy.dart';
 import '../../feature/otp/domain/otp_repository.dart';
 import '../../feature/profile/application/profile_actions.dart';
 import '../../feature/profile/domain/profile_repository.dart';
+import '../../feature/qr/application/qr_actions.dart';
+import '../../feature/qr/domain/qr_repository.dart';
 import '../../feature/security/application/security_actions.dart';
 import '../../feature/security/domain/security_repository.dart';
 import '../../feature/transfer/application/transfer_actions.dart';
@@ -35,6 +37,7 @@ class AppDependencies {
     required this.beneficiaryRepository,
     required this.profileRepository,
     required this.securityRepository,
+    required this.qrRepository,
     required this.biometricGate,
     this.devToolsRepository,
     this.lockoutPolicy = const LockoutPolicy(),
@@ -77,6 +80,10 @@ class AppDependencies {
   /// [securityActions] o los use cases de `feature/security/application`.
   final SecurityRepository securityRepository;
   SecurityActions get securityActions => SecurityActions(securityRepository);
+
+  /// Cobro y pago con QR. Los blocs consumen [qrActions].
+  final QrRepository qrRepository;
+  QrActions get qrActions => QrActions(qrRepository);
 
   /// Huella o rostro del sistema: solo responde "¿es el dueño?".
   final BiometricGate biometricGate;

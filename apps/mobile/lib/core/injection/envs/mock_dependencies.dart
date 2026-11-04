@@ -11,8 +11,10 @@ import '../../../feature/lockout/domain/lockout_policy.dart';
 import '../../../feature/lockout/infrastructure/memory_identifier_lockout_store.dart';
 import '../../../feature/otp/infrastructure/memory_otp_repository.dart';
 import '../../../feature/profile/infrastructure/memory_profile_repository.dart';
+import '../../../feature/qr/infrastructure/memory_qr_repository.dart';
 import '../../../feature/security/infrastructure/memory_security_repository.dart';
 import '../../../feature/security/infrastructure/memory_security_state.dart';
+import '../../../feature/transfer/application/transfer_actions.dart';
 import '../../../feature/transfer/infrastructure/memory_pending_transfer_store.dart';
 import '../../../feature/transfer/infrastructure/memory_transfer_repository.dart';
 import '../../env/app_flavor.dart';
@@ -25,6 +27,10 @@ Future<AppDependencies> buildMockDependencies() async {
   final ledger = MemoryLedger(clock: DateTime.now);
   // El PIN y las huellas se comparten entre el login y el perfil.
   final security = MemorySecurityState.demo(clock: DateTime.now);
+  final transfer = MemoryTransferRepository(
+    clock: DateTime.now,
+    ledger: ledger,
+  );
   return AppDependencies(
     flavor: AppFlavor.mock,
     authRepository: MemoryAuthRepository(security: security),
@@ -38,10 +44,7 @@ Future<AppDependencies> buildMockDependencies() async {
       clock: DateTime.now,
       ledger: ledger,
     ),
-    transferRepository: MemoryTransferRepository(
-      clock: DateTime.now,
-      ledger: ledger,
-    ),
+    transferRepository: transfer,
     pendingTransferStore: MemoryPendingTransferStore(),
     beneficiaryRepository: MemoryBeneficiaryRepository(
       clock: DateTime.now,
@@ -49,6 +52,10 @@ Future<AppDependencies> buildMockDependencies() async {
     ),
     profileRepository: MemoryProfileRepository(),
     securityRepository: MemorySecurityRepository(security, clock: DateTime.now),
+    qrRepository: MemoryQrRepository(
+      transfer: TransferActions(transfer),
+      clock: DateTime.now,
+    ),
     biometricGate: MemoryBiometricGate(),
     // Bloqueo de 10/20/30 s para poder ver la pantalla completa al probar.
     lockoutPolicy: const LockoutPolicy.mock(),

@@ -5,22 +5,23 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api.v1.routers import accounts, auth, dev, directory, kyc, otp, profile, transfers
+from app.api.v1.routers import accounts, admin, auth, dev, directory, kyc, loans, otp, profile, transfers
 from app.core.config import settings
 from app.core.errors import ApiError
-from app.db.base import Base, engine
+from app.db.base import engine
 
 logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Para la demo el esquema se crea al arrancar. Con datos reales esto pasa
-    # a migraciones versionadas (Alembic).
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # El arranque verifica; las migraciones se aplican como paso operativo.
+    from app.db.migrations import require_current_schema
+    async with engine.connect() as conn:
+        await conn.run_sync(require_current_schema)
     yield
 
 
@@ -51,10 +52,15 @@ async def cabeceras_de_seguridad(request: Request, call_next):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
 
-# Sin CORSMiddleware A PROPÓSITO: el único cliente es la app nativa, que no
-# aplica CORS. Sin la cabecera Access-Control-Allow-Origin, un navegador
-# bloquea cualquier lectura desde otro origen. El día que exista el dashboard
-# web se añade con una lista blanca de orígenes exactos, nunca "*".
+# Solo el panel configurado recibe CORS; no sustituye la autorización RBAC.
+if settings.admin_cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.admin_cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
 
 @app.exception_handler(ApiError)
@@ -110,3 +116,6 @@ app.include_router(directory.router)
 app.include_router(profile.router)
 # Responde 404 salvo en local con DEV_TOOLS (ver routers/dev.py).
 app.include_router(dev.router)
+
+app.include_router(loans.router)
+app.include_router(admin.router)
