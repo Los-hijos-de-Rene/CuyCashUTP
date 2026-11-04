@@ -52,6 +52,7 @@ import '../lockout/access_blocked_screen.dart';
 import '../lockout/blocked_args.dart';
 import '../quick_access/bloc/quick_access_bloc.dart';
 import '../quick_access/quick_access_screen.dart';
+import '../session/session_lock.dart';
 import '../register/bloc/register_bloc.dart';
 import '../register/register_flow_screen.dart';
 import '../shell/app_shell.dart';
@@ -73,13 +74,29 @@ import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
 
 /// Router: gate de auth + shell de 2 tabs (Home, Perfil).
-GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
+///
+/// [sessionLock] lo comparte la app para tapar la interfaz tras un rato sin
+/// uso. Si no se pasa (tests que no prueban inactividad), el router crea uno
+/// propio que nunca se bloquea.
+GoRouter createAppRouter(
+  AppDependencies deps,
+  AuthBloc authBloc, {
+  SessionLock? sessionLock,
+}) {
+  final lock = sessionLock ?? SessionLock();
   return GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: GoRouterRefreshStream(authBloc.stream),
+    refreshListenable: Listenable.merge([
+      GoRouterRefreshStream(authBloc.stream),
+      lock,
+    ]),
     redirect: (context, state) {
       if (state.matchedLocation == AppRoutes.splash) return null;
-      return appRedirect(authBloc.state, state.matchedLocation);
+      return appRedirect(
+        authBloc.state,
+        state.matchedLocation,
+        sessionLocked: lock.isLocked,
+      );
     },
     routes: [
       GoRoute(

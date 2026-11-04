@@ -8,5 +8,8 @@
   "KYC_ENABLED": "false",
 
   "//DEV_TOOLS_KEY": "Solo en config.local.json: activa el botón DEV (reiniciar la base, usuarios de prueba). La MISMA que DEV_TOOLS_KEY en services/api/.env. Vacía = sin botón. NUNCA en config.production.json.",
-  "DEV_TOOLS_KEY": ""
+  "DEV_TOOLS_KEY": "",
+
+  "//SESSION_INACTIVITY_MINUTES": "Minutos sin uso antes de volver al acceso rápido y pedir PIN o huella. Por defecto 5.",
+  "SESSION_INACTIVITY_MINUTES": "5"
 }

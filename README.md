@@ -160,6 +160,7 @@ Se pasan con `--dart-define-from-file`. Plantilla en `apps/mobile/config.example
 |---|---|
 | `AUTH_BASE_URL` | Se asume el PC anfitrión: `10.0.2.2` en emulador Android, `127.0.0.1` en simulador iOS. |
 | `KYC_BASE_URL` / `KYC_API_KEY` | La app cae a `MemoryKycRepository` en vez de romper el arranque. |
+| `SESSION_INACTIVITY_MINUTES` | 5 minutos. Tras ese tiempo sin uso, la app vuelve al acceso rápido y pide PIN o huella (HU03 CA4). |
 
 En un teléfono **físico** ninguna de las dos se puede inferir: hay que poner la
 IP del PC en la red local.

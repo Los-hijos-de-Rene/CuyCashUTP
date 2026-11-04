@@ -82,7 +82,7 @@ Endpoints: `POST /v1/auth/sessions`, `/v1/auth/sessions/biometric`,
 | CA1 | Ingreso facial < 1.5 s como método principal | ❌ | El acceso biométrico es por huella; no hay login facial ni medición del 1.5 s |
 | CA2 | Huella o PIN como alternativa | ✅ | `api/test_biometria.py · test_activar_y_entrar_con_huella`, `api/test_registro_y_login.py`, `app/presentation/quick_access/` |
 | CA3 | Bloqueo tras 5 fallos **y notificar** | 🟡 | Bloquea al **3.er** fallo (más estricto, 15 min → 1 h → 24 h): `test_agotados_los_intentos_se_bloquea_y_ni_el_pin_correcto_pasa`. No se notifica al cliente |
-| CA4 | Cierre de sesión por inactividad | ❌ | La sesión dura 30 días (`SESSION_TTL_SECONDS`) y la app no tiene temporizador de inactividad |
+| CA4 | Cierre de sesión por inactividad | ✅ | 5 min sin uso por defecto (`SESSION_INACTIVITY_MINUTES`): la app vuelve al acceso rápido y pide PIN o huella. `app/presentation/session/inactivity_watcher_test.dart` (positiva, negativa y ciclo de vida) y `app/presentation/session/session_lock_test.dart` (gate del router) |
 
 ### HU04 · Recuperación (5 SP)
 
@@ -253,30 +253,30 @@ Conteo de los 96 CA del MVP:
 
 | Veredicto | CA | Dónde |
 |---|---|---|
-| ✅ Cumple | **12** | HU03 (1), HU04 (1), HU05 (2), HU06 (3), HU17 (2), HU18 (3) |
+| ✅ Cumple | **13** | HU03 (2), HU04 (1), HU05 (2), HU06 (3), HU17 (2), HU18 (3) |
 | 🟡 Parcial | 14 | HU01 (4), HU02 (2), HU03 (1), HU04 (1), HU05 (1), HU07 (2), HU17 (1), HU24 (2) |
-| ❌ No cumple | 70 | 18 en las HU con código + 52 de las 13 HU sin código |
+| ❌ No cumple | 69 | 18 en las HU con código + 51 de las 13 HU sin código |
 
 | Indicador | Cálculo | Valor |
 |---|---|---|
-| **X por CA (indicador oficial)** | 12 / 96 | **0.125** |
-| X por CA, contando parciales como ½ (referencia) | (12 + 7) / 96 | 0.198 |
+| **X por CA (indicador oficial)** | 13 / 96 | **0.135** |
+| X por CA, contando parciales como ½ (referencia) | (13 + 7) / 96 | 0.208 |
 | X por HU completa (todos sus CA ✅) | 0 / 24 | 0.000 |
-| X por puntos, ponderada por CA cumplidos | 27.25 / 160 SP | 0.170 |
-| Y = pruebas aprobadas / ejecutadas | backend 360 / 360 · app 901 / 901 · paquetes 35 / 35 | 1.00 |
+| X por puntos, ponderada por CA cumplidos | 28.5 / 160 SP | 0.178 |
+| Y = pruebas aprobadas / ejecutadas | backend 360 / 360 · app 914 / 914 · paquetes 35 / 35 | 1.00 |
 
-Ponderación por puntos: HU03 5·¼ + HU04 5·¼ + HU05 5·½ + HU06 8·¾ + HU17 13·½ +
-HU18 13·¾ = 27.25 SP.
+Ponderación por puntos: HU03 5·½ + HU04 5·¼ + HU05 5·½ + HU06 8·¾ + HU17 13·½ +
+HU18 13·¾ = 28.5 SP.
 
 **Lectura.**
 
-- La v1 está en **0.125** contra un alcance de fin de ciclo. Es la cifra
+- La v1 está en **0.135** contra un alcance de fin de ciclo. Es la cifra
   esperable a mitad del curso: las épicas de préstamos, QR, antifraude y
   conciliación aún no empiezan. La meta de 0.95 es para la entrega final.
 - **Y = 1.00 no es corrección funcional.** Que todas las pruebas pasen dice que
   lo que se probó funciona, no que se probó lo que se pidió. Por eso X se mide
   por CA y no por pruebas verdes.
-- Cuatro historias (HU05, HU06, HU17, HU18) concentran 10 de los 12 CA
+- Cuatro historias (HU05, HU06, HU17, HU18) concentran 10 de los 13 CA
   cumplidos: lo construido es el **núcleo
   transaccional**, que es donde un error cuesta dinero.
 - Ninguna HU está completa. Las más cercanas (HU06 y HU18, 3/4 cada una) solo
@@ -305,15 +305,14 @@ HU18 13·¾ = 27.25 SP.
 | Tema | Especificado | Implementado | Postura |
 |---|---|---|---|
 | Bloqueo por intentos (HU03 CA3) | 5.º intento | 3.er intento, escalonado | Más estricto a propósito; acordar con el docente o ajustar `IDENTIFIER_MAX_ATTEMPTS` |
-| Cierre por inactividad (HU03 CA4) | Tras un período configurado | Sesión de 30 días | Brecha real de seguridad; es el CA más barato de cerrar |
+| Cierre por inactividad (HU03 CA4) | Tras un período configurado | 5 min por defecto (`SESSION_INACTIVITY_MINUTES`), pide PIN o huella | Ya no es brecha; el valor por defecto es una decisión de producto |
 | 200 ms por transacción (HU17 CA4) | < 200 ms | Sin medir | Medir con carga sobre el despliegue antes de afirmarlo |
 | E2E app ↔ backend | — | `verificacion-manual.md` sin ejecutar | Es la V&V de la sesión 20: ver [`vyv.md`](vyv.md) |
 
 ## 9. Próximos pasos (por costo/beneficio)
 
-1. **HU03 CA4** · cierre por inactividad en la app: + 1 CA.
-2. **HU05 CA2** · mostrar el saldo contable junto al disponible: + ½ CA sin backend.
-3. **HU07** · encender los frecuentes y agregar editar: CA1 y CA4 a ✅.
-4. **HU02** · usar el OTP existente para la activación del alta: CA1–CA3.
-5. **HU17 CA4** · medir latencia con carga y publicar el resultado.
-6. Recalcular X al cierre de cada sprint con esta misma tabla.
+1. **HU05 CA2** · mostrar el saldo contable junto al disponible: + ½ CA sin backend.
+2. **HU07** · encender los frecuentes y agregar editar: CA1 y CA4 a ✅.
+3. **HU02** · usar el OTP existente para la activación del alta: CA1–CA3.
+4. **HU17 CA4** · medir latencia con carga y publicar el resultado.
+5. Recalcular X al cierre de cada sprint con esta misma tabla.
