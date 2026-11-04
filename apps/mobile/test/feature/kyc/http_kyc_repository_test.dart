@@ -72,6 +72,18 @@ void main() {
     expect(adapter.lastRequest?.headers.containsKey('X-API-Key'), isFalse);
   });
 
+  test('precalentar pega al proxy y nunca lanza aunque falle', () async {
+    await repo.warmUp();
+    expect(adapter.lastRequest?.method, 'POST');
+    expect(adapter.lastRequest?.path, '/v1/kyc/warmup');
+
+    adapter.throwIt = DioException(
+      requestOptions: RequestOptions(path: '/v1/kyc/warmup'),
+      type: DioExceptionType.connectionError,
+    );
+    await repo.warmUp(); // no debe lanzar
+  });
+
   test('el desafío se lee con sus tareas en el orden del servidor', () async {
     adapter.body = {
       'token': 'w9xQ',

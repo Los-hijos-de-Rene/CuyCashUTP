@@ -143,3 +143,31 @@ async def test_si_no_despierta_a_tiempo_responde_503(client, kyc_dormido, monkey
 
     assert r.status_code == 503
     assert r.json()["code"] == "SERVICE_UNAVAILABLE"
+
+
+async def test_warmup_responde_202_y_toca_el_health_del_kyc(client, kyc_configurado, upstream, monkeypatch):
+    from app.api.v1.routers import kyc
+
+    monkeypatch.setattr(kyc, "_ultimo_calentamiento", float("-inf"))
+    recibido, _ = upstream
+    r = await client.post("/v1/kyc/warmup")
+    assert r.status_code == 202
+    assert recibido["url"] == "http://kyc.test/health"
+
+
+async def test_warmup_no_repite_dentro_del_intervalo(client, kyc_configurado, upstream, monkeypatch):
+    from app.api.v1.routers import kyc
+
+    monkeypatch.setattr(kyc, "_ultimo_calentamiento", float("-inf"))
+    recibido, _ = upstream
+    await client.post("/v1/kyc/warmup")
+    recibido.clear()
+    r = await client.post("/v1/kyc/warmup")
+    assert r.status_code == 202
+    assert recibido == {}
+
+
+async def test_warmup_sin_kyc_configurado_no_falla(client, monkeypatch):
+    monkeypatch.setattr(settings, "KYC_BASE_URL", None)
+    r = await client.post("/v1/kyc/warmup")
+    assert r.status_code == 202

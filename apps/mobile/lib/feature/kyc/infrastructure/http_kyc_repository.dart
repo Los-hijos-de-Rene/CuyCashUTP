@@ -30,10 +30,21 @@ class HttpKycRepository implements KycRepository {
   /// espera es la de esa llamada, no la general del cliente.
   final Duration verifyTimeout;
 
+  static const _warmUpPath = '/v1/kyc/warmup';
   static const _frontPath = '/v1/kyc/document/validate';
   static const _backPath = '/v1/kyc/document/mrz';
   static const _challengePath = '/v1/kyc/liveness/challenge';
   static const _verifyFullPath = '/v1/kyc/identity/verify-full';
+
+  @override
+  Future<void> warmUp() async {
+    try {
+      // El servidor responde 202 al instante y despierta el KYC por su cuenta.
+      await _dio.post<void>(_warmUpPath);
+    } catch (_) {
+      // Precalentar es opcional: si falla, el reintento del proxy cubre.
+    }
+  }
 
   @override
   FutureResult<KycFailure, DocumentCheck> checkDocumentFront(

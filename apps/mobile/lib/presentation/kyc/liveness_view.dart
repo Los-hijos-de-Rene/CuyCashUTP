@@ -8,6 +8,7 @@ import '../../feature/kyc/domain/liveness_step.dart';
 import '../../l10n/app_localizations.dart';
 import 'bloc/liveness_bloc.dart';
 import 'widgets/face_oval_overlay.dart';
+import 'widgets/slow_wait_hint.dart';
 
 /// Pantalla del liveness: vista previa de la cámara frontal con un óvalo guía,
 /// la indicación de lo que toca y el avance de los gestos.
@@ -201,6 +202,14 @@ class _Instruction extends StatelessWidget {
             style: CuyCashTypography.labelSm.copyWith(
               color: CuyCashColors.immersiveOcre,
             ),
+          ),
+        ],
+        if (state.phase == LivenessPhase.preparing ||
+            state.phase == LivenessPhase.sending) ...[
+          const SizedBox(height: CuyCashSpacing.stackXs),
+          SlowWaitHint(
+            message: l10n.kycWakingUp,
+            color: CuyCashColors.immersiveMuted,
           ),
         ],
         if (state.phase == LivenessPhase.sending) ...[

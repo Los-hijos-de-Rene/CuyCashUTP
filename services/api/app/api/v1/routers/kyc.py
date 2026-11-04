@@ -5,7 +5,7 @@ import time
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,44 @@ from app.services import kyc_tickets
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/kyc", tags=["KYC"])
+
+
+# Último golpe de calentamiento (reloj monotónico). Evita que cada registro
+# abierto dispare una llamada al KYC si ya se le tocó hace poco.
+_ultimo_calentamiento: float = float("-inf")
+_CALENTAMIENTO_MIN_INTERVALO = 60.0
+
+
+@router.post("/warmup", status_code=status.HTTP_202_ACCEPTED)
+async def warmup(background: BackgroundTasks):
+    """
+    Despierta el KYC sin hacer esperar a la app.
+
+    La app lo llama al abrir el registro: mientras la persona llena sus datos y
+    fotografía el DNI (más de un minuto), el servicio arranca en frío. Responde
+    202 al instante y el toque al KYC corre en segundo plano. Sin KYC
+    configurado no hace nada: precalentar es una cortesía, nunca un error.
+    """
+    global _ultimo_calentamiento
+    ahora = time.monotonic()
+    if (
+        settings.KYC_BASE_URL
+        and ahora - _ultimo_calentamiento >= _CALENTAMIENTO_MIN_INTERVALO
+    ):
+        _ultimo_calentamiento = ahora
+        background.add_task(_despertar_kyc)
+    return {"status": "accepted"}
+
+
+async def _despertar_kyc() -> None:
+    """Un GET al `/health` del KYC. Cualquier respuesta, o ninguna, es válida:
+    lo que importa es que el borde de Render lo vea y lo arranque."""
+    url = f"{settings.KYC_BASE_URL.rstrip('/')}/health"
+    try:
+        async with httpx.AsyncClient(timeout=settings.KYC_WAKE_TIMEOUT_SECONDS) as client:
+            await client.get(url)
+    except httpx.HTTPError as error:
+        logger.info("Calentamiento del KYC sin respuesta (%s)", type(error).__name__)
 
 
 @router.post("/liveness/challenge")

@@ -610,6 +610,12 @@ abstract class AppLocalizations {
   /// **'Revisando…'**
   String get documentChecking;
 
+  /// No description provided for @kycWakingUp.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos despertando el servicio de verificación. Puede tardar hasta 1 minuto, no cierres la app.'**
+  String get kycWakingUp;
+
   /// No description provided for @documentIssueLowResolution.
   ///
   /// In es, this message translates to:

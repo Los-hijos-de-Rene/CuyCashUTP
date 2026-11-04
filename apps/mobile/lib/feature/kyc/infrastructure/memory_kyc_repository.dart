@@ -44,6 +44,12 @@ class MemoryKycRepository implements KycRepository {
   final Map<String, LivenessChallenge> _challenges = {};
   var _seq = 0;
 
+  /// Cuántas veces se pidió precalentar (para las pruebas).
+  int warmUpCalls = 0;
+
+  @override
+  Future<void> warmUp() async => warmUpCalls++;
+
   @override
   FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
     Uint8List image, {
