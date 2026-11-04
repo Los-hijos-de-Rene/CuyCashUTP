@@ -177,3 +177,52 @@ caen en el mismo chat, cualquier asistente ve el de cualquiera.
 - Proveedor SMTP real (Mailtrap para QA).
 - El proxy del KYC devuelve la respuesta completa; para respuestas grandes
   convendría también transmitirla en stream.
+
+## Contrato OpenAPI y política de versionado
+
+### Versión actual
+
+La API de CuyCash utiliza actualmente la versión 0.2.0.
+
+El contrato OpenAPI se encuentra versionado en el archivo
+`openapi.json`, ubicado en la raíz de `services/api`.
+
+### Política de compatibilidad
+
+- Las rutas `/v1` deben mantener compatibilidad con los clientes existentes.
+- Los cambios compatibles pueden incorporarse sin modificar la versión de las rutas.
+- Los cambios incompatibles deben implementarse en `/v2`.
+- Todo cambio de contrato debe revisarse y aprobarse mediante un Pull Request.
+
+### Generación del contrato
+
+Desde la carpeta `services/api`, ejecutar:
+
+```powershell
+python scripts/dump_openapi.py
+```
+
+Este comando genera el archivo `openapi.json` a partir de la aplicación FastAPI.
+
+### Pruebas automatizadas
+
+Para comprobar el contrato:
+
+```powershell
+python -m pytest tests/test_contrato_openapi.py -v
+```
+
+Se verifican dos condiciones:
+
+1. Que la versión OpenAPI sea la esperada.
+2. Que el contrato actual coincida con el archivo versionado.
+
+Si el contrato cambia inesperadamente, la prueba falla y solicita revisar el cambio antes de regenerar el archivo.
+
+### Evidencias APF3
+
+Las evidencias de ejecución se encuentran en:
+
+`docs/apf3/evidencias/jeremy/`
+
+Implementación correspondiente al issue #101 de APF3-C.
