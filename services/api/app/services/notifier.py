@@ -1,3 +1,4 @@
+
 import logging
 from typing import Optional, Protocol
 
@@ -17,62 +18,136 @@ class OtpNotifier(Protocol):
     ser configuración, no arquitectura.
     """
 
-    async def send(self, destination: str, code: str, purpose: str) -> None: ...
+    async def send(
+        self, destination: str, code: str, purpose: str
+    ) -> None:
+        ...
 
 
 class LogNotifier:
     """
-    Desarrollo: el código va al log del servidor. Sin cuentas, sin dominios y
-    sin riesgo de confundirlo con producción.
+    Notificador utilizado para desarrollo local.
+
+    El codigo OTP solo se registra cuando las
+    herramientas de desarrollo estan habilitadas.
+
+    Fuera de ese entorno, no se expone el codigo.
     """
 
-    async def send(self, destination: str, code: str, purpose: str) -> None:
-        logger.warning("[OTP:%s] %s -> %s", purpose, destination, code)
-        # Para el menú de desarrollo de la app ("Ver último código"). Solo se
-        # guarda si las rutas /v1/dev están habilitadas (local).
-        from app.services import dev_tools  # diferido: evita un ciclo de import
+    async def send(
+        self, destination: str, code: str, purpose: str
+    ) -> None:
 
-        dev_tools.registrar_otp(destination, code, purpose)
+        from app.services import dev_tools
+
+        if not dev_tools.rutas_habilitadas():
+            logger.warning(
+                "OTP generado, pero el registro del codigo "
+                "esta deshabilitado fuera del entorno local."
+            )
+            return
+
+        logger.warning(
+            "[OTP:%s] %s -> %s",
+            purpose,
+            destination,
+            code,
+        )
+
+        dev_tools.registrar_otp(
+            destination,
+            code,
+            purpose,
+        )
 
 
 class TelegramNotifier:
     """
-    Demostración en vivo: el código llega a un teléfono a la vista de todos,
-    sin depender de que el correo no caiga en spam durante la exposición.
+    Notificador de OTP mediante Telegram.
 
-    NO es equivalente al correo: cambia el factor de posesión (un chat no es la
-    casilla que el titular registró) y, si todos los códigos caen en el mismo
-    chat, cualquier asistente ve el de cualquiera. Solo para demo.
+    Se utiliza únicamente para demostraciones.
+
+    Las fallas de Telegram no deben interrumpir
+    el flujo de OTP.
+
+    Los errores se registran sin exponer
+    el token del bot.
     """
 
     def __init__(self, token: str, chat_id: str):
-        self._url = f"https://api.telegram.org/bot{token}/sendMessage"
+        self._url = (
+            f"https://api.telegram.org/"
+            f"bot{token}/sendMessage"
+        )
         self._chat_id = chat_id
 
-    async def send(self, destination: str, code: str, purpose: str) -> None:
+    async def send(
+        self, destination: str, code: str, purpose: str
+    ) -> None:
+
         texto = (
             f"CuyCash · código de verificación\n"
             f"{code}\n\n"
-            f"Destino real: {destination}\nMotivo: {purpose}"
+            f"Destino real: {destination}\n"
+            f"Motivo: {purpose}"
         )
+
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                await client.post(
-                    self._url, json={"chat_id": self._chat_id, "text": texto}
+
+                respuesta = await client.post(
+                    self._url,
+                    json={
+                        "chat_id": self._chat_id,
+                        "text": texto,
+                    },
                 )
-        except httpx.HTTPError as error:
-            # Que falle el aviso no debe tumbar el flujo: el reto ya existe y
-            # el usuario puede pedir un reenvío.
-            logger.error("No se pudo enviar el OTP por Telegram: %s", error)
+
+                # Detecta respuestas HTTP 4xx y 5xx.
+                respuesta.raise_for_status()
+
+        except httpx.HTTPStatusError as error:
+            # No imprimir la URL ni el token del bot.
+            logger.error(
+                "No se pudo enviar el OTP por Telegram: HTTP %s",
+                error.response.status_code,
+            )
+
+        except httpx.RequestError as error:
+            # No imprimir el mensaje completo de la excepción.
+            # Podría contener la URL con el token.
+            logger.error(
+                "No se pudo enviar el OTP por Telegram: %s",
+                type(error).__name__,
+            )
+
+        # El flujo OTP continúa aunque Telegram falle.
 
 
 def build_notifier() -> OtpNotifier:
+    """
+    Construye el notificador según la configuración.
+
+    Si Telegram no está configurado correctamente,
+    se utiliza LogNotifier.
+    """
+
     if settings.OTP_NOTIFIER == "telegram":
+
         token: Optional[str] = settings.TELEGRAM_BOT_TOKEN
         chat_id: Optional[str] = settings.TELEGRAM_CHAT_ID
+
         if token and chat_id:
-            return TelegramNotifier(token, chat_id)
-        logger.error("OTP_NOTIFIER=telegram sin token/chat_id; se usa el log")
+            return TelegramNotifier(
+                token,
+                chat_id,
+            )
+
+        logger.error(
+            "OTP_NOTIFIER=telegram sin token/chat_id; "
+            "se usa el log"
+        )
+
     return LogNotifier()
 
 
