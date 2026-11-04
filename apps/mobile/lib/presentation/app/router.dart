@@ -10,6 +10,7 @@ import '../../core/injection/modules/device_module.dart';
 import '../../core/injection/modules/kyc_module.dart';
 import '../../core/injection/modules/otp_module.dart';
 import '../../core/injection/modules/profile_module.dart';
+import '../../core/injection/modules/qr_module.dart';
 import '../../core/injection/modules/register_module.dart';
 import '../../core/injection/modules/security_module.dart';
 import '../../core/injection/modules/transfer_module.dart';
@@ -48,6 +49,11 @@ import '../profile/devices/linked_devices_screen.dart';
 import '../profile/personal_data/bloc/personal_data_bloc.dart';
 import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
+import '../qr/bloc/qr_charge_bloc.dart';
+import '../qr/bloc/qr_pay_bloc.dart';
+import '../qr/qr_charge_screen.dart';
+import '../qr/qr_hub_screen.dart';
+import '../qr/qr_pay_screen.dart';
 import '../lockout/access_blocked_screen.dart';
 import '../lockout/blocked_args.dart';
 import '../quick_access/bloc/quick_access_bloc.dart';
@@ -307,6 +313,38 @@ GoRouter createAppRouter(AppDependencies deps, AuthBloc authBloc) {
             builder: (context, state) => const ReceiptScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.qr,
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) =>
+            QrHubScreen(cuenta: state.extra as Account),
+      ),
+      GoRoute(
+        path: AppRoutes.qrCobrar,
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) => BlocProvider(
+          create: (_) => QrChargeBloc(QrModule.create(deps)),
+          child: QrChargeScreen(cuenta: state.extra as Account),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.qrPagar,
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) => BlocProvider(
+          create: (_) => QrPayBloc(
+            actions: QrModule.create(deps),
+            cuentaOrigen: state.extra as Account,
+            userId: switch (authBloc.state) {
+              AuthAuthenticated(:final session) => session.userId,
+              AuthUnauthenticated() => '',
+            },
+          ),
+          child: QrPayScreen(cuentaOrigen: state.extra as Account),
+        ),
       ),
       GoRoute(
         path: AppRoutes.movimientos,

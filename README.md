@@ -28,6 +28,12 @@ cuentas y libro mayor**; el resto de módulos está planificado por sprints (ver
   cuentas propias, confirmado con PIN y con constancia compartible.
 - **Depósito simulado**: cash-in desde una cuenta de sistema, sin PIN. No es
   un medio de pago real.
+- **QR (app)**: generar un cobro con monto y concepto (QR firmado en memoria
+  con caducidad, compartible) y pagar escaneando con la cámara o pegando el
+  código; antes de confirmar se muestra el nombre enmascarado, el monto, el
+  concepto y el vencimiento, y el pago pide PIN. La API real de QR (#77) aún no
+  está desplegada: en `local`/`production` la app responde "no disponible" en
+  vez de mover dinero falso; el flujo completo corre en `mock`.
 - Frecuentes por cuenta: implementados y **ocultos** por ahora
   (`FeatureToggles.frecuentesEnEnvio`).
 
@@ -37,9 +43,10 @@ documentación en `/docs`) contra Postgres gestionado en Neon. Se despliega
 al fusionar en `main`, y un workflow de rollback a cualquier versión anterior.
 Ver [`docs/despliegue.md`](docs/despliegue.md).
 
-**No existe todavía:** transferencia interbancaria y CCI, pagos QR, préstamos,
-antifraude, conciliación, cumplimiento PLDFT, conversión entre monedas y el
-dashboard web.
+**No existe todavía:** transferencia interbancaria y CCI, pagos QR contra el
+backend (la app ya tiene el flujo contra `Memory*`; falta la API #77),
+préstamos, antifraude, conciliación, cumplimiento PLDFT, conversión entre
+monedas y el dashboard web.
 
 **Estado de la verificación.** 1 178 pruebas automatizadas en verde (305 del
 backend por HTTP, todas contra PostgreSQL en el CI, 838 de la app, 35 de los paquetes), incluidas pruebas de
