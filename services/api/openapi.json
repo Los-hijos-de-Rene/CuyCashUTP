@@ -2342,6 +2342,26 @@
         ]
       }
     },
+    "/v1/kyc/warmup": {
+      "post": {
+        "description": "Despierta el KYC sin hacer esperar a la app.\n\nLa app lo llama al abrir el registro: mientras la persona llena sus datos y\nfotografía el DNI (más de un minuto), el servicio arranca en frío. Responde\n202 al instante y el toque al KYC corre en segundo plano. Sin KYC\nconfigurado no hace nada: precalentar es una cortesía, nunca un error.",
+        "operationId": "warmup_v1_kyc_warmup_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Warmup",
+        "tags": [
+          "KYC"
+        ]
+      }
+    },
     "/v1/loans/applications/{application_id}/disbursement": {
       "post": {
         "operationId": "disbursement_v1_loans_applications__application_id__disbursement_post",
