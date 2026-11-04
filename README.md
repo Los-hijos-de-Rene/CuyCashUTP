@@ -81,6 +81,8 @@ Levanta primero `services/api` (puerto 8001). Sin instalar nada, con SQLite:
 cd services/api
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
+  .venv/bin/python -m alembic upgrade head
+DATABASE_URL="sqlite+aiosqlite:///./cuycash.db" \
   .venv/bin/python -m uvicorn app.main:app --reload --port 8001
 ```
 

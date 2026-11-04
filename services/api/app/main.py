@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.api.v1.routers import accounts, admin, auth, dev, directory, kyc, loans, otp, profile, transfers
@@ -51,10 +52,15 @@ async def cabeceras_de_seguridad(request: Request, call_next):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
 
-# Sin CORSMiddleware: el panel web aún no está integrado. La app nativa no
-# aplica CORS. Sin la cabecera Access-Control-Allow-Origin, un navegador
-# bloquea cualquier lectura desde otro origen. El día que exista el dashboard
-# web se añade con una lista blanca de orígenes exactos, nunca "*".
+# Solo el panel configurado recibe CORS; no sustituye la autorización RBAC.
+if settings.admin_cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.admin_cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
 
 @app.exception_handler(ApiError)

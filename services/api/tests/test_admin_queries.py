@@ -163,3 +163,22 @@ async def test_reconciliation_detects_offsetting_unbalanced_transactions(
     assert response.json()["cuadra"] is False
     assert response.json()["diferencias"] == []
     assert len(response.json()["transacciones_descuadradas"]) == 2
+
+
+async def test_reconciliation_pagination_cannot_hide_imbalance(client, registrado, db_de_client):
+    await grant(db_de_client, registrado.user_id)
+    row = (await db_de_client.execute(select(Account).where(Account.user_id == registrado.user_id))).scalars().first()
+    row.saldo_contable = 100
+    await db_de_client.commit()
+    response = await client.get("/v1/admin/reconciliation?offset=1&limit=1", headers=registrado.auth)
+    assert response.status_code == 200
+    assert response.json()["diferencias"] == []
+    assert response.json()["total_cuentas_descuadradas"] == 1
+    assert response.json()["cuadra"] is False
+
+
+@pytest.mark.parametrize("path", PATHS)
+@pytest.mark.parametrize("query", ["limit=101", "offset=-1", "limit=0"])
+async def test_all_admin_pages_are_bounded(client, registrado, db_de_client, path, query):
+    await grant(db_de_client, registrado.user_id)
+    assert (await client.get(path+"?"+query, headers=registrado.auth)).status_code == 422

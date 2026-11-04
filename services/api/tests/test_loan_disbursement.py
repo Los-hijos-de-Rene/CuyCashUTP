@@ -218,3 +218,17 @@ async def test_concurrent_disbursement_only_credits_once(db_engine, same_key):
         assert await db.scalar(select(func.count()).select_from(Loan)) == 1
         assert await db.scalar(select(func.count()).select_from(LedgerEntry)) == 2
         assert await db.scalar(select(func.count()).select_from(LoanInstallment)) == 3
+
+
+async def test_key_of_another_application_cannot_move_money(client, registrado, db_de_client):
+    first = await application(db_de_client, registrado.user_id)
+    second = await application(db_de_client, registrado.user_id)
+    c = await account(db_de_client, registrado.user_id)
+    response = await client.post(f"/v1/loans/applications/{first.id}/disbursement", headers=registrado.auth, json=body(c.id))
+    assert response.status_code == 201
+    response = await client.post(f"/v1/loans/applications/{second.id}/disbursement", headers=registrado.auth, json=body(c.id))
+    assert response.status_code == 409
+    await db_de_client.refresh(c)
+    assert c.saldo_disponible == 10001
+    assert await db_de_client.scalar(select(func.count()).select_from(Loan)) == 1
+    assert await db_de_client.scalar(select(func.count()).select_from(LoanInstallment)) == 3

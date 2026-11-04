@@ -63,3 +63,18 @@ no se añade un comodín. La configuración del origen del panel web y el resto
 del alcance de #81 requieren integrarse con su responsable. #89 (web) no se
 implementa aquí. HU28 sigue siendo propuesta pendiente del PO, fuera de la línea
 base de 26 HU; no se aumenta la métrica X por estas consultas.
+
+
+## Actualización de integración (2026-11-04 UTC)
+
+PR #94 ya está fusionado. PR #95 tiene base `main` y conserva el historial,
+con `main` integrado mediante merge (sin reescritura). #80/#81 son ahora
+responsabilidad de Andersson. CORS admite únicamente orígenes exactos definidos
+en `ADMIN_CORS_ORIGINS` (separados por coma); vacío deniega todos. Solo GET,
+sin credenciales de cookie; Authorization se permite en el preflight. RBAC sigue
+siendo obligatorio incluso para el origen autorizado. No se inventa ni habilita
+un dominio de panel que el equipo no haya publicado.
+
+El job de contrato app/API aplica Alembic sobre su SQLite desechable antes de
+arrancar: el arranque ya no crea tablas. Producción requiere el procedimiento
+de adopción con respaldo de `migraciones.md`, todavía sin ejecutar.

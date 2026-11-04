@@ -122,14 +122,18 @@ async def operations(
 
 
 @router.get("/reconciliation")
-async def reconciliation(session: AsyncSession = Depends(get_session)):
+async def reconciliation(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
     # Cuadre histórico por moneda, más comprobación del saldo de CADA cuenta:
     # dos errores opuestos no pueden cancelarse entre cuentas.
     signed = case(
         (LedgerEntry.direccion == "credito", LedgerEntry.monto),
         else_=-LedgerEntry.monto,
     )
-    rows = await session.execute(
+    account_totals = (
         select(
             Account.id,
             Account.numero,
@@ -146,7 +150,11 @@ async def reconciliation(session: AsyncSession = Depends(get_session)):
             Account.saldo_disponible,
             Account.saldo_contable,
         )
+        .having((Account.saldo_disponible != func.coalesce(func.sum(signed), 0))
+                | (Account.saldo_contable != func.coalesce(func.sum(signed), 0)))
     )
+    difference_count = await session.scalar(select(func.count()).select_from(account_totals.subquery()))
+    rows = await session.execute(account_totals.order_by(Account.id).offset(offset).limit(limit))
     differences = []
     for _, number, currency, available, book, entries in rows:
         if available != entries or book != entries:
@@ -179,19 +187,24 @@ async def reconciliation(session: AsyncSession = Depends(get_session)):
         }
         for currency, debit, credit in totals
     ]
-    broken = await session.execute(
+    broken_query = (
         select(LedgerEntry.transaction_id, LedgerEntry.moneda, func.sum(signed))
         .group_by(LedgerEntry.transaction_id, LedgerEntry.moneda)
         .having(func.sum(signed) != 0)
     )
+    broken_count = await session.scalar(select(func.count()).select_from(broken_query.subquery()))
+    broken = await session.execute(broken_query.order_by(LedgerEntry.transaction_id, LedgerEntry.moneda).offset(offset).limit(limit))
     transactions = [
         {"transaction_id": tx, "moneda": currency, "diferencia_centimos": delta}
         for tx, currency, delta in broken
     ]
     return {
-        "cuadra": not differences
-        and not transactions
+        "cuadra": difference_count == 0
+        and broken_count == 0
         and all(c["cuadra"] for c in currencies),
+        "total_cuentas_descuadradas": difference_count,
+        "total_transacciones_descuadradas": broken_count,
+        "offset": offset, "limit": limit,
         "monedas": currencies,
         "diferencias": differences,
         "transacciones_descuadradas": transactions,
