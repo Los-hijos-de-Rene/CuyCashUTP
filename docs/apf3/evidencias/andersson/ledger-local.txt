@@ -1,10 +1,9 @@
- transacciones_descuadradas 
+ transacciones_descuadradas
 ----------------------------
                           0
 (1 row)
 
- cuentas_descuadradas 
+ cuentas_descuadradas
 ----------------------
                     0
 (1 row)
-
