@@ -78,3 +78,88 @@ un dominio de panel que el equipo no haya publicado.
 El job de contrato app/API aplica Alembic sobre su SQLite desechable antes de
 arrancar: el arranque ya no crea tablas. Producción requiere el procedimiento
 de adopción con respaldo de `migraciones.md`, todavía sin ejecutar.
+
+
+## Inventario de responsabilidades (auditoría 2026-11-04 UTC)
+
+Autor local configurado: AnderssonEspinoza, correo del commit #94 reconocido
+por la API de GitHub como AnderssonEspinoza. Árbol inicial limpio; dos rutas
+locales son el mismo directorio mediante enlace. Cuenta gh correcta. No se
+reescribe historial ni se fusiona ningún PR desde esta sesión.
+
+| Issue / título | Estado real y CA | Código existente / faltante | Responsable / revisor | Pruebas y dependencia | Rama / PR / evidencia |
+|---|---|---|---|---|---|
+| #40 Migraciones Alembic | Implementado para revisión; falta aprobación y adopción operativa | 0001 legado, 0002 rol/préstamos, adopción exacta, arranque valida revisión; no migración productiva ejecutada | Andersson / Jeremy | `test_migrations.py`: subida, conservación usuario/saldos/asientos, esquema desconocido rechazado; PostgreSQL real y SQLite | `feat/40-85-88-backend`, #95; `migraciones.md` |
+| #79 Cuota/TCEA/cronograma | Fusionado #94, issue abierta; sin revisión independiente registrada | `loan_schedule.py` ya cumple enteros, HALF_UP, residuo final, conservación capital y TCEA sobre flujos; no duplicado | Andersson / Gian Piero | `test_cronograma.py`; casos 1 mes, medio céntimo, capital total y negativos; incluido en suite focal 130/130 | `feat/79-calculo-cronograma`, #94 en main; no cerrar sin regularizar revisión de DoD |
+| #80 Modelo préstamos | Implementado para revisión | `LoanApplication`, `Loan`, `LoanInstallment`, FK/CHECK/UNIQUE/índices y schema.sql; falta acuerdo de contrato con #84 | Andersson / Jeremy | `test_consistencia_ddl.py`, migraciones; depende #40 y contrato Jeremy | #95; `modelo-datos.md`, `schema.sql` |
+| #81 RBAC/CORS | Implementado para revisión | `current_admin` por petición, titular por defecto, CORS exacto sin comodines; dominio real del panel aún no publicado, vacío deniega | Andersson / Gian Piero | `test_sesion_requerida.py`, `test_admin_cors.py`, revocación rol y parámetros maliciosos; AC-15 actualizado | #95, `catalogo-controles.md` |
+| #85 Desembolso | Implementado y probado como componente; pendiente #84 para recorrido integral | Aprobación/contrato/PIN/titularidad, ledger.post atómico, UNIQUE y bloqueo de solicitud, cuotas persistidas; no existe API evaluadora #84 | Andersson / Jeremy | HTTP positivos/negativos, rollback y dos carreras PostgreSQL con claves iguales/distintas, clave de otra solicitud rechazada | #95; `test_loan_disbursement.py`, contrato arriba |
+| #88 Consultas admin | Implementado para revisión | Altas/KYC/operaciones/cuadre/bloqueos, enmascarado, solo GET; cuadre con totales y páginas acotadas sin ocultar errores | Andersson / Gian Piero | `test_admin_queries.py`; autorización, fechas, negativos, descuadres que se cancelan y paginación | #95 |
+| #102 Validación nube | Parcial y bloqueada para cierre | Humo, validación HTTP, captura, UAT seguro y capítulo E; faltan UAT nube con KYC válido, SQL Neon y Android | Andersson / Jeremy | Humo productivo 0 fallos; UAT productivo 403 KYC_REQUIRED; UAT local aprobado; sin Neon ni teléfono | `feat/102-validacion-cloud-apf3`, PR #122; `apf3/evidencias/andersson/` |
+| #103 Coexistencia | Implementado, CI verde; pendiente aprobación/integración | USER app, dockerignore, límite512MiB, pool configurable, script secuencial | Andersson / Jeremy | Imagen construida; uid999, health/db200, 4 pruebas pool; suite SQLite433 aprobadas/3 omitidas; no despliegue | `feat/103-coexistencia-contenedores`, #121; `apf3/evidencias/andersson/coexistencia/` |
+
+### Revisiones a cargo de Andersson
+
+La consulta de todos los PR y ramas remotos no encuentra PR de implementación
+para #77 (Jeremy, QR), #84 (Jeremy, evaluación/solicitud de préstamo) ni #87
+(Jair C., cierre diario). No se aprueba código inexistente ni se modifican sus
+funciones. #120 contiene oráculos de aceptación, no esas implementaciones.
+Revisión pendiente del responsable; el contrato mínimo de #84 se documenta
+arriba para coordinar antes de crear tablas/API incompatibles. El cuadre GET de
+#88 no se presenta como sustituto del cierre diario con registro de #87.
+
+### Entorno y límites verificados
+
+Linux Mint 22.3 x86_64; CPU Ryzen5 5500U (12 hilos), RAM5,6GiB, inicialmente
+935MiB disponibles, 3,1GiB libres en disco. Git2.43, gh2.45, Docker29.1.3,
+Compose5.1.2 y Python3.12.3. PostgreSQL16 aislado; loopback55432, API8001,
+base desarrollo `cuycash_dev`, bases desechables `cuycash_andersson_test` y
+`cuycash_rbac_test`. Solo contenedores propios; KYC no levantado.
+Flutter/Dart ausentes; ADB34 disponible sin dispositivos; Android SDK incompleto.
+No se descarga Flutter con el disco al 98%: no hay margen seguro para SDK,
+artefactos Android y build. La compilación y UI no se declaran probadas.
+El contrato app/API se ejecuta en CI; revisar el run de cada PR.
+
+Projects no accesible con la credencial inicial (falta scope project). El push
+de #95 requiere scope workflow por actualizar el arranque del job de contrato.
+No se omite esa corrección ni se afirma CI verde para el último commit si no
+ha sido aceptado por GitHub. Los PR #102/#103 son independientes desde main.
+
+
+### Verificación final del código local
+
+- PostgreSQL16: **486 aprobadas, cero omitidas**, 96% de cobertura de líneas
+  (2119 sentencias,75 sin cubrir); `pytest-postgres-final.txt` y
+  `coverage-final.xml`. Suite completa del código final, incluidos los nuevos
+  negativos de registro, límites del cuadre y conflicto entre solicitudes.
+- SQLite: **481 aprobadas y5 omitidas**, exclusivamente las cinco carreras que
+  requieren PostgreSQL. No se interpreta una omisión como aprobación.
+- Suite focal PostgreSQL:130 aprobadas; `alembic current`0002,
+  `alembic check` sin diferencias; `schema.sql` idéntico al dump regenerado.
+- Ruff, pip check y git diff --check correctos. pip-audit: sin vulnerabilidades
+  conocidas en las dependencias auditadas. Permanecen22 avisos de deprecación
+  (Pydantic/Starlette/pytest-asyncio); no son fallos nuevos de negocio.
+- Imagen final #95 reconstruida; health/db200 contra la base local preservada.
+- CI #121: **SUCCESS**, run41755843542;436 pruebas PostgreSQL, cobertura96%,
+  diez pruebas de contrato app/API. No sustituye Android ni aprueba #95.
+- #95 remoto conserva07d0afa, cuyo último CI terminó cancelado/fallido.
+  El código final local y los reportes están listos para publicar cuando la
+  credencial disponga de workflow. No se pretende que el PR remoto ya los tenga.
+
+Evidencia local versionada en `apf3/evidencias/andersson/backend/`.
+Las ramas #102/#103 están subidas con PR #122/#121; revisión Jeremy solicitada.
+
+### Continuación exacta tras habilitar permisos
+
+1. `gh auth refresh -h github.com -s project,workflow` en la terminal del dueño.
+2. Desde este checkout: `git -c credential.helper= -c
+   'credential.helper=!gh auth git-credential' push origin feat/40-85-88-backend`.
+   No hacer force push ni cambiar main.
+3. Esperar CI del nuevo head de #95 (incluye backend, Flutter y contrato);
+   comprobar el job de contrato con Alembic y corregir solo fallos reproducibles.
+4. Actualizar cuerpo de #95 quitando únicamente la advertencia de código local
+   cuando el SHA publicado lo confirme. Revisores Jeremy y Gian Piero.
+5. Consultar Projects1, contrastar WIP y mover las tareas cuyo PR está listo a
+   In review; #102 sigue parcial/bloqueada. No marcar Done sin aprobación.
+6. Resolver con Jeremy KYC de ensayo/Neon y revisión #84. No producir datos
+   biométricos ni desplegar sin autorización explícita.

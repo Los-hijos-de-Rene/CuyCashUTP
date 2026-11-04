@@ -40,7 +40,9 @@ notan. **Postgres es lo que va a producción.**
 
 ```sh
 cp .env.example .env
-docker compose up --build          # API en :8001, Postgres en :5432
+docker compose up -d db
+docker compose run --rm --build auth python -m alembic upgrade head  # solo base nueva
+docker compose up -d --build auth   # API en :8001, Postgres en :5432
 ```
 
 Con el KYC facial real (Postgres + API + KYC), con el repo `CuyCashKYC`
@@ -194,3 +196,8 @@ Las pruebas del desembolso parten de condiciones aprobadas sembradas por fixture
 no acreditan el flujo completo de solicitud/evaluación/contrato de HU10–HU12.
 El conteo histórico de completitud de la línea base no se modifica: faltan esa
 integración y las pruebas integrales; HU28 sigue fuera de la línea base.
+
+
+Para datos existentes, no aplicar el comando de base nueva a ciegas: seguir
+`docs/migraciones.md` (respaldo/restauración, adopción exacta y upgrade).
+El arranque verifica la revisión y nunca aplica migraciones por su cuenta.
