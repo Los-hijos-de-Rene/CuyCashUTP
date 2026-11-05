@@ -67,8 +67,9 @@ los tests usan `MemoryBiometricGate`.
 desplegado y la app lo simula, así que no hay ticket (ver "KYC facial").
 
 **Concurrencia: probada en CI.** Los tests marcados `postgres` (envíos
-cruzados, misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`,
-aperturas simultáneas de sueldo) corren contra Postgres 18 real en el job
+cruzados y misma clave en paralelo en `test_motor_de_asientos.py`, aperturas
+simultáneas de sueldo en `test_concurrencia_multicuenta.py` y desembolso
+concurrente en `test_loan_disbursement.py`) corren contra Postgres 18 real en el job
 *Backend (PostgreSQL 18)* de `ci.yml` (pasos en `.github/actions/pruebas-backend`),
 que corre TODA la suite contra
 Postgres (en local, sin `TEST_POSTGRES_URL`, la misma suite usa SQLite). Ojo:
