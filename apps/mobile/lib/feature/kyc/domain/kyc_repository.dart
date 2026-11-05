@@ -14,6 +14,11 @@ import 'liveness_step.dart';
 /// análisis que cuenta (documento, pose, parpadeo, match facial) corre en el
 /// servidor, que además impone qué gestos se piden y en qué orden.
 abstract interface class KycRepository {
+  /// Avisa al servidor que pronto habrá una verificación, para que despierte el
+  /// servicio de KYC (arranca en frío) mientras la persona llena el registro.
+  /// Es una cortesía: no devuelve nada, no bloquea y nunca lanza.
+  Future<void> warmUp();
+
   /// Revisa el FRENTE del DNI recién fotografiado: nitidez, luz, resolución,
   /// que se vea el rostro y que lleve impreso [expectedDni]. Eso último ata el
   /// frente (la cara que se compara) con el reverso (el número que se coteja).

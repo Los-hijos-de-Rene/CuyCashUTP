@@ -95,6 +95,7 @@
   "notReadable": "No legible",
   "documentError": "No pudimos leer tu DNI",
   "documentChecking": "Revisando…",
+  "kycWakingUp": "Estamos despertando el servicio de verificación. Puede tardar hasta 1 minuto, no cierres la app.",
   "documentIssueLowResolution": "La foto salió con poca resolución. Acerca un poco el teléfono al DNI.",
   "documentIssueBlurry": "La foto salió borrosa. Apoya el DNI y mantén el teléfono quieto.",
   "documentIssueTooDark": "Está muy oscura. Busca un lugar con más luz.",

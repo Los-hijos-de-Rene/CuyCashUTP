@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../feature/kyc/domain/document_check.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../kyc/widgets/slow_wait_hint.dart';
 import '../bloc/register_bloc.dart';
 
 /// Card de captura de un lado del DNI.
@@ -121,6 +122,13 @@ class DocumentCaptureCard extends StatelessWidget {
               ),
             ),
           ),
+          if (checking) ...[
+            const SizedBox(height: CuyCashSpacing.stackMd),
+            SlowWaitHint(
+              message: l10n.kycWakingUp,
+              color: CuyCashColors.secondaryText,
+            ),
+          ],
           if (unreadable) ...[
             const SizedBox(height: CuyCashSpacing.stackMd),
             Text(

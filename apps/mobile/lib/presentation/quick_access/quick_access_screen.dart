@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import '../lockout/blocked_args.dart';
 import '../lockout/lockout_duration_text.dart';
+import '../session/session_lock.dart';
 import 'bloc/quick_access_bloc.dart';
 import 'widgets/switch_user_dialog.dart';
 
@@ -38,8 +39,15 @@ class QuickAccessScreen extends StatelessWidget {
           child: BlocConsumer<QuickAccessBloc, QuickAccessState>(
             listenWhen: (p, c) =>
                 (p.lockedUntil != c.lockedUntil && c.lockedUntil != null) ||
-                (!p.needsDeviceVerification && c.needsDeviceVerification),
+                (!p.needsDeviceVerification && c.needsDeviceVerification) ||
+                (!p.unlocked && c.unlocked),
             listener: (context, state) {
+              if (state.unlocked) {
+                // Con la sesión ya abierta (bloqueo por inactividad) AuthBloc
+                // no emite nada: se libera aquí para que el router salga.
+                context.read<SessionLock>().unlock();
+                return;
+              }
               if (state.needsDeviceVerification) {
                 // PIN correcto en un teléfono que ya no es de confianza: el
                 // login, con el DNI puesto, corre el OTP de dispositivo.

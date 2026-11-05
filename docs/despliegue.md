@@ -211,6 +211,7 @@ Actions ~4 min (el botón de Render, segundos).
 | Situación | Qué pasa | Qué hacer |
 |---|---|---|
 | El servicio duerme (plan Free de Render, 15 min sin tráfico) | La primera petición tarda ~1 min | Abrir `/health` antes de una demostración |
+| El KYC (`cuycash-kyc`, plan Free) duerme tras 15 min | Arranca en frío (~1 min). La app avisa con `POST /v1/kyc/warmup` al abrir el registro (202 inmediato; el backend toca `{KYC_BASE_URL}/health`, como máximo una vez por minuto) y, si la espera pasa de 8 s, explica el motivo en pantalla. El proxy sigue reintentando hasta `KYC_WAKE_TIMEOUT_SECONDS` | Antes de una demostración, abrir el registro (o el `/health` del KYC) unos minutos antes; mantenerlo despierto exige un cron o un plan de pago |
 | Neon suspende el cómputo (5 min sin uso) | La primera consulta lo despierta (~1 s) | Nada: `pool_pre_ping` descarta las conexiones muertas |
 | Despliegue fallido | Render mantiene la versión anterior | Ver *Events* y *Logs* en Render |
 | Volver a una versión anterior | — | §5 (Actions o botón de Render) |

@@ -299,6 +299,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get documentChecking => 'Revisando…';
 
   @override
+  String get kycWakingUp =>
+      'Estamos despertando el servicio de verificación. Puede tardar hasta 1 minuto, no cierres la app.';
+
+  @override
   String get documentIssueLowResolution =>
       'La foto salió con poca resolución. Acerca un poco el teléfono al DNI.';
 

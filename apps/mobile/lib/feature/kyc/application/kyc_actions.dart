@@ -15,6 +15,8 @@ class KycActions {
 
   final KycRepository _repo;
 
+  Future<void> warmUp() => _repo.warmUp();
+
   FutureResult<KycFailure, DocumentCheck> checkDocumentFront(
     Uint8List image, {
     required String expectedDni,

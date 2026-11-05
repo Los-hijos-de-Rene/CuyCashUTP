@@ -58,6 +58,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       _biometric = biometric,
       _kyc = kyc,
       super(const RegisterState()) {
+    // El KYC arranca en frío: se le avisa desde que se abre el registro para
+    // que, al fotografiar el DNI, ya esté despierto.
+    unawaited(_kyc.warmUp());
     on<RegisterFieldChanged>(_onFieldChanged);
     on<RegisterCaptured>(_onCaptured);
     on<RegisterCaptureFailed>(
