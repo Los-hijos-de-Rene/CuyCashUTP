@@ -137,7 +137,7 @@ Qué crea, cómo configurarlo y por qué no puede tocar producción:
 
 Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
 con `TEST_POSTGRES_URL`; la base debe terminar en `_test`) y se omiten sin él.
-En GitHub Actions corren solos contra un Postgres 16 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).
+En GitHub Actions corren solos contra un Postgres 18 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 `services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato

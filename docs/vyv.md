@@ -15,7 +15,7 @@ Corte: 2026-10-23, rama `feat/idoneidad-funcional-iso25010`.
 | Nivel de especificación | Artefacto del proyecto | Nivel de prueba | Evidencia hoy |
 |---|---|---|---|
 | Necesidad del negocio | 26 HU y 96 CA ([`idoneidad-funcional.md`](idoneidad-funcional.md) §1) | **Aceptación (UAT)** | §4: 3 escenarios, API automatizada; pantallas pendientes |
-| Arquitectura | ADR 0001/0002, contrato `/v1`, libro mayor ([`modelo-datos.md`](modelo-datos.md)) | **Integración** | 363 pruebas de API contra HTTP y base real (Postgres 16 en CI); contrato `Memory*` ↔ `Http*` en la app |
+| Arquitectura | ADR 0001/0002, contrato `/v1`, libro mayor ([`modelo-datos.md`](modelo-datos.md)) | **Integración** | 363 pruebas de API contra HTTP y base real (Postgres 18 en CI); contrato `Memory*` ↔ `Http*` en la app |
 | Diseño modular | `feature/<x>/{domain,application,infrastructure}`, `Money`, `ledger.py` | **Unitarias** | 901 de la app (incl. bloc y widgets) + 35 de paquetes |
 | Código | Dart y Python | **Verificación estática** | §3 |
 
@@ -42,7 +42,7 @@ Reglas acordadas y quién las hace cumplir:
 | Regla | Herramienta | Dónde corre | Bloquea el merge |
 |---|---|---|---|
 | Cero issues de análisis (`strict-casts`, `strict-raw-types`, `flutter_lints`) | `flutter analyze` | CI, job *App (Flutter)* | Sí (vía *CI listo*) |
-| Toda la suite en verde | `flutter test`, `pytest` | CI (backend sobre PostgreSQL 16) | Sí |
+| Toda la suite en verde | `flutter test`, `pytest` | CI (backend sobre PostgreSQL 18) | Sí |
 | Esquema ↔ modelo (`schema.sql` regenerado) | `test_consistencia_ddl.py` | CI | Sí |
 | Sin dependencias con avisos publicados | `pip-audit` | CI y CD | Sí |
 | Rutas `/v1` sin token devuelven 401 | `test_sesion_requerida.py` | CI | Sí |

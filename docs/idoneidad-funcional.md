@@ -136,7 +136,7 @@ Todo pasa por `app/services/ledger.py · post`.
 |---|---|---|---|
 | CA1 | Validar saldo antes de ejecutar | ✅ | `test_sin_saldo_no_escribe_nada`, `test_dos_debitos_sobre_la_misma_cuenta_se_validan_sumados` |
 | CA2 | Bloquear fondos hasta la confirmación final | 🟡 | Bloqueo de fila (`with_for_update`) dentro de la transacción atómica: `test_una_cuenta_ya_cargada_se_relee_tras_el_bloqueo`. No hay retención de fondos separada |
-| CA3 | Ninguna transacción dos veces | ✅ | Idempotencia: `test_repetir_la_clave_devuelve_la_original_sin_cobrar_de_nuevo`, `test_la_misma_clave_en_paralelo_cobra_una_sola_vez` (Postgres 16 en CI) |
+| CA3 | Ninguna transacción dos veces | ✅ | Idempotencia: `test_repetir_la_clave_devuelve_la_original_sin_cobrar_de_nuevo`, `test_la_misma_clave_en_paralelo_cobra_una_sola_vez` (Postgres 18 en CI) |
 | CA4 | < 200 ms por transacción | ❌ | Sin medición automatizada |
 
 ### HU18 · Libro mayor de partida doble (13 SP)

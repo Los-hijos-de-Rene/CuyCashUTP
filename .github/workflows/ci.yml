@@ -52,13 +52,13 @@ jobs:
               - ".github/workflows/ci.yml"
 
   backend:
-    name: Backend (PostgreSQL 16)
+    name: Backend (PostgreSQL 18)
     needs: cambios
     if: needs.cambios.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     services:
       postgres:
-        image: postgres:16
+        image: postgres:18
         env:
           POSTGRES_USER: cuycash
           POSTGRES_PASSWORD: cuycash

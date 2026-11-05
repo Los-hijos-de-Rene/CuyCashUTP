@@ -13,7 +13,7 @@ solo que el producto entregue toda la función solicitada.
 | Capa | Framework | Justificación técnica |
 |---|---|---|
 | API | `pytest 8.3.3`, `pytest-asyncio` y `httpx` | Permiten probar servicios asíncronos y contratos HTTP completos, incluyendo código, cuerpo y efectos en base. Los fixtures aíslan cada caso y hacen repetible la preparación de titulares, cuentas y sesiones. |
-| Persistencia | SQLAlchemy asíncrono con SQLite local y PostgreSQL 16 en CI | SQLite da realimentación rápida; PostgreSQL 16 valida restricciones, bloqueo de filas y concurrencia con el mismo motor previsto para producción. Una prueba local verde no sustituye el job PostgreSQL. |
+| Persistencia | SQLAlchemy asíncrono con SQLite local y PostgreSQL 18 en CI | SQLite da realimentación rápida; PostgreSQL 18 valida restricciones, bloqueo de filas y concurrencia con el mismo motor previsto para producción. Una prueba local verde no sustituye el job PostgreSQL. |
 | App | `flutter_test` y `bloc_test` | `flutter_test` valida widgets, navegación y accesibilidad; `bloc_test` comprueba estados, transiciones y errores sin depender del renderizado. Los contratos de repositorio comparan implementaciones `Memory*` y `Http*`. |
 | Cobertura | `pytest-cov`/`coverage.py` y `flutter test --coverage` | Miden líneas ejecutadas y detectan módulos sin ejercicio. La cobertura se interpreta junto con aserciones y RTM; no equivale a ausencia de defectos. |
 | Evidencia | JUnit XML y Cobertura XML | Son formatos reproducibles y consumibles por CI. Conservan caso, duración, estado y cobertura sin transcribir resultados manualmente. |
@@ -132,7 +132,7 @@ archivo para que CI o un visor LCOV puedan reproducir el porcentaje.
 ### Observaciones y limitaciones
 
 1. La ejecución local usa SQLite; bloqueo de fila e idempotencia concurrente
-   deben reconfirmarse en PostgreSQL 16 mediante CI.
+   deben reconfirmarse en PostgreSQL 18 mediante CI.
 2. La suite Flutter se ejecuta en el host de pruebas y sustituye sensores con
    dobles controlados; no demuestra cámara, huella ni rendimiento en Android.
 3. El SLA transaccional de 200 ms y el ingreso de 1.5 s no se midieron con una

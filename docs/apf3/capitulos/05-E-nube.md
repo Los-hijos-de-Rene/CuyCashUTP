@@ -38,7 +38,7 @@ existente ni suplanta a su titular. No se deshabilitó KYC ni se usó biometría
 La primera alta fue rechazada; no hubo depósito ni envío en producción.
 
 Como verificación adicional, ambos UAT se ejecutaron por HTTP contra Docker y
-PostgreSQL 16 **local**, con base de desarrollo separada de las bases pytest.
+PostgreSQL 18 **local**, con base de desarrollo separada de las bases pytest.
 Resultado `uat-local.json`: aprobado. UAT-2 primero: depósito de 5000 céntimos,
 dos intentos de 50000 rechazados, saldos y movimientos conservados. Luego se
 completa el saldo a 50000 y UAT-1 envía 12550: saldos finales 37450/12550;

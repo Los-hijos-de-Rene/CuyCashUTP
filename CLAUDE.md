@@ -68,8 +68,8 @@ desplegado y la app lo simula, así que no hay ticket (ver "KYC facial").
 
 **Concurrencia: probada en CI.** Los tests marcados `postgres` (envíos
 cruzados, misma clave en paralelo y, en `tests/test_concurrencia_multicuenta.py`,
-aperturas simultáneas de sueldo) corren contra Postgres 16 real en el job
-*Backend (PostgreSQL 16)* de `ci.yml` (pasos en `.github/actions/pruebas-backend`),
+aperturas simultáneas de sueldo) corren contra Postgres 18 real en el job
+*Backend (PostgreSQL 18)* de `ci.yml` (pasos en `.github/actions/pruebas-backend`),
 que corre TODA la suite contra
 Postgres (en local, sin `TEST_POSTGRES_URL`, la misma suite usa SQLite). Ojo:
 SQLite no hace cumplir el largo de `VARCHAR`; valida en la entrada todo texto

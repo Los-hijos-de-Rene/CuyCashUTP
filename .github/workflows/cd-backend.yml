@@ -31,11 +31,11 @@ env:
 
 jobs:
   ci:
-    name: Pruebas (PostgreSQL 16)
+    name: Pruebas (PostgreSQL 18)
     runs-on: ubuntu-24.04
     services:
       postgres:
-        image: postgres:16
+        image: postgres:18
         env:
           POSTGRES_USER: cuycash
           POSTGRES_PASSWORD: cuycash
