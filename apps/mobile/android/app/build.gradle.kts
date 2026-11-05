@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+fun requiredEnv(name: String): String =
+    System.getenv(name) ?: error("Falta $name: va junto con ANDROID_KEYSTORE_PATH")
+
 android {
     namespace = "pe.cuycash.cuycash"
     compileSdk = flutter.compileSdkVersion
@@ -30,11 +33,23 @@ android {
         versionName = flutter.versionName
     }
 
+    // CI firma con la clave propia (secretos en docs/despliegue.md): todo APK
+    // publicado debe llevar la misma, o no actualiza al ya instalado. Sin esas
+    // variables, un release local usa la de depuración, que es de cada máquina.
+    val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    if (keystorePath != null) {
+        signingConfigs.create("release") {
+            storeFile = file(keystorePath)
+            storePassword = requiredEnv("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias = requiredEnv("ANDROID_KEY_ALIAS")
+            keyPassword = requiredEnv("ANDROID_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig =
+                signingConfigs.getByName(if (keystorePath != null) "release" else "debug")
         }
     }
 

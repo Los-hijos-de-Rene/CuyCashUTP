@@ -123,7 +123,7 @@ PR ──▶ CI: qué cambió ─▶ Backend (Postgres) ─┐
 
 merge a main ──▶ CD backend: CI ─▶ aprobación ─▶ deploy hook ?ref=<sha> ─▶ esperar /health = <sha> ─▶ smoke
                                    (environment production)
-tag v* ─────────▶ Build APK ─▶ Release con el APK
+tag v* ─────────▶ Build APK ─▶ firma con la clave propia ─▶ Release + Firebase App Distribution
 a mano ─────────▶ Rollback backend: validar commit ─▶ aprobación ─▶ deploy hook ?ref=<estable> ─▶ esperar ─▶ smoke
 ```
 
@@ -133,7 +133,42 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 | Pasos compartidos | `.github/actions/pruebas-backend`, `pruebas-app` | — | Acciones compuestas: el CI y el CD prueban exactamente igual. En local la misma suite del backend corre sobre SQLite |
 | CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
-| Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` (firmado con la clave de depuración) adjunto a un Release |
+| Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` firmado con la clave propia; adjunto a un Release (solo con tag) y enviado al grupo `equipo` de Firebase App Distribution |
+
+### Distribución del APK (alta única)
+
+Sin la clave, Build APK falla: la de depuración cambia en cada runner y el APK
+nuevo no actualizaría al instalado. Sin Firebase, el paso se omite y el APK
+queda en el Release o en los artefactos de la corrida.
+
+**1. Clave de firma.** Se crea una sola vez, fuera del repo. Si se pierde, los
+APK nuevos no actualizan a los instalados: hay que guardarla (y su contraseña)
+en un gestor de contraseñas.
+
+```sh
+keytool -genkeypair -v -keystore cuycash-release.jks -alias cuycash \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -i cuycash-release.jks | gh secret set ANDROID_KEYSTORE_BASE64
+gh secret set ANDROID_KEYSTORE_PASSWORD
+gh secret set ANDROID_KEY_ALIAS --body cuycash
+gh secret set ANDROID_KEY_PASSWORD   # la misma, si keytool no pidió otra
+```
+
+**2. Firebase.** En la consola de Firebase:
+
+1. Crear un proyecto y agregar una app Android con el paquete `pe.cuycash.cuycash`.
+2. En *App Distribution*, crear el grupo con alias `equipo` y agregar los correos.
+3. En Google Cloud, crear una cuenta de servicio con el rol
+   *Firebase App Distribution Admin* y descargar su clave JSON.
+4. Guardar los secretos; después, borrar el JSON local:
+
+```sh
+gh secret set FIREBASE_APP_ID            # 1:…:android:…, en Configuración del proyecto
+gh secret set FIREBASE_SERVICE_ACCOUNT < clave-de-servicio.json
+```
+
+**Primera instalación:** los APK anteriores llevan otra firma, así que hay que
+desinstalarlos antes; se pierde la sesión del teléfono, no los datos del servidor.
 
 **App y backend en el mismo repositorio no chocan**: cada CI se filtra por
 carpeta, y un PR que toca ambos corre los dos. La app no tiene rollback remoto
