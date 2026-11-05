@@ -39,7 +39,10 @@ h2 { font-size: 14pt; color: #1a6b4a; margin-top: 18px; } h3 { font-size: 11.5pt
 section.capitulo { page-break-before: always; } section.capitulo:first-of-type { page-break-before: avoid; }
 table { border-collapse: collapse; width: 100%; font-size: 8.8pt; margin: 8px 0; page-break-inside: auto; }
 th, td { border: 1px solid #c9d1d9; padding: 3px 5px; vertical-align: top; } th { background: #eef4f1; }
-tr { page-break-inside: avoid; } code { font: 8.8pt Menlo, monospace; background: #f3f4f6; padding: 0 2px; }
+tr { page-break-inside: avoid; } code { font: 8pt Menlo, monospace; background: #f3f4f6; padding: 0 2px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+table { table-layout: auto; } td { overflow-wrap: break-word; } td code { font-size: 6.8pt; } pre code { white-space: pre-wrap; }
+.caratula { text-align: center; padding-top: 20mm; font-size: 12pt; } .caratula p { margin: 6px 0; } .caratula img.logo { width: 92mm; border: 0; margin-bottom: 8mm; } .caratula .u { font-weight: 600; font-size: 13pt; } .caratula .t { font-size: 27pt; font-weight: 700; margin: 24mm 0 4mm; } .caratula .s { font-size: 15pt; color: #c8102e; font-weight: 600; } .caratula .c { margin-top: 10mm; line-height: 1.6; } .caratula .i { margin-top: 18mm; font-weight: 700; } .caratula .n { line-height: 1.7; } .caratula .a { margin-top: 18mm; }
+.galeria { display: flex; flex-wrap: wrap; gap: 6px; } .galeria img { width: 23.5%; } h2 { page-break-after: avoid; }
 pre { background: #f3f4f6; padding: 6px; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 8.5pt; }
 img { max-width: 100%; border: 1px solid #d0d7de; } blockquote { border-left: 3px solid #1a6b4a; margin-left: 0; padding-left: 10px; color: #444; }
 """

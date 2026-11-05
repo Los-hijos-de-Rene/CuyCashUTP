@@ -1,66 +1,79 @@
-# E. Validación en la plataforma Cloud (Andersson #102)
+# E. Validación en la plataforma Cloud
 
-Ensayo del 2026-11-04 01:36–01:39 UTC (03/11 en Lima). URL:
-<https://cuycashutp.onrender.com>. Evidencias reales en
-[`../evidencias/andersson/`](../evidencias/andersson/).
+**Responsable:** Andersson Espinoza (#102, #127) · **URL:** <https://cuycashutp.onrender.com>
+· **Plataforma:** Render + Neon (PostgreSQL) · **Corte:** 04/11/2026 19:24 (Lima).
 
-## Resultado contra Render + Neon
+## E.1 Versión desplegada
 
-| Verificación | Esperado | Obtenido |
+`GET /health` devuelve `f9db8cdcb583e38085aec741692cc2f4e67097bd`. La v2 se publica
+solo por GitHub Actions (`cd-backend.yml`), con aprobación en el environment
+`production`; el 03/11 producción aún corría `d74d663` (v1). Al 05/11 `/health` devuelve
+`e226dd5`, sin cambios en el código del backend respecto de `f9db8cd`.
+
+## E.2 Pruebas automatizadas contra producción
+
+![Humo contra producción](../evidencias/jair-conislla/smoke-prod.png)
+
+| Verificación | Esperado | Obtenido | Fecha |
+|---|---|---|---|
+| `/health` | HTTP 200 y commit | ✅ 200, `f9db8cd` | 04/11 |
+| `/health/db` | PostgreSQL disponible | ✅ `ok`, 321.8 ms | 04/11 |
+| HTTP → HTTPS | 301 | ✅ 301 | 04/11 |
+| Ruta protegida sin token | 401 | ✅ 401 | 04/11 |
+| Token inventado | 401 | ✅ 401 | 04/11 |
+| HSTS, `nosniff`, `X-Frame-Options` | Presentes | ✅ Presentes | 04/11 |
+| CORS | Sin abrir | ✅ Sin abrir | 04/11 |
+| DNI de 7 dígitos | 422 | ✅ 422 | 03/11 (v1) |
+
+Cumplimiento del humo: **0 fallos**. Latencia de `/health` en caliente: 193 ms,
+muestra puntual con red. No equivale a un p95 ni al SLA del motor transaccional.
+El primer `/health` del 04/11 tardó 21 s: el plan gratuito de Render tiene arranque
+en frío, y por eso el servicio se precalienta antes de la demostración.
+
+## E.3 UAT funcional
+
+| Escenario | Entorno | Resultado |
 |---|---|---|
-| `/health` | HTTP 200 y commit | 200; `d74d66326ee264f7e68ef550b741d107916b6076` (merge PR #64) |
-| `/health/db` | PostgreSQL disponible | 200, `status=ok`; latencia interna 340,9 ms en segunda muestra |
-| Humo existente | 0 fallos | 0 fallos; `smoke-production.txt` |
-| HTTP → HTTPS | 301 | 301 |
-| Sesión ausente / token inventado | 401 | 401 en ambos casos |
-| Cabeceras | HSTS, nosniff, DENY, no-store en API | Presentes; `production-readonly.json` |
-| DNI de 7 dígitos | 422 | 422 en `/v1/auth/authenticate`, sin autenticar ni registrar usuario |
-| Alta UAT ficticia | 201 | **403 KYC_REQUIRED**, ensayo detenido |
-| UAT-1/UAT-2 en nube | Envío y rechazo sin saldo | **Bloqueados por KYC**; no se declararon aprobados |
-| Cuadre SQL en Neon | Cero diferencias | **No ejecutado**: no hay conexión/credencial Neon disponible |
-| APK de producción → nube | Recorrido y constancia | **No ejecutado**: no hay Flutter, SDK Android completo ni teléfono autorizado conectado |
-| CD de main actual | Commit actual desplegado | Último CD consultado pendiente; no coincide con commit servido |
+| UAT-2: rechazo sin saldo | Docker + PostgreSQL 16 local | ✅ Dos intentos rechazados; saldos intactos |
+| UAT-1: envío de S/ 125.50 | Docker + PostgreSQL 16 local | ✅ Saldos finales 37450/12550; reintento idempotente |
+| Cuadre del libro mayor | PostgreSQL local | ✅ Cero transacciones y cuentas descuadradas |
+| UAT-1 y UAT-2 contra Render | Producción | ⏳ No completado: el alta ficticia del 03/11 sobre la v1 recibió `403 KYC_REQUIRED` |
+| Cuadre de débitos y créditos en Neon | Producción | ✅ La consulta de descuadres no devolvió filas (04/11, 19:31) |
+| Recorrido APK → nube | Producción | ⏳ Programado |
 
-`/health` en caliente tomó 270,554 ms (humo); segunda muestra HTTP 295,53 ms.
-Son muestras puntuales con latencia de red; no equivalen a p95 ni al SLA del
-motor transaccional. No se midió un arranque en frío porque el servicio ya estaba
-respondiendo. Los JSON incluyen tiempos y estados exactos de cada petición.
+El rechazo del alta es correcto: el control de KYC no se desactivó para el ensayo.
+`scripts/uat_prod.py` exige `--allow-writes` y `--production-approved`, nunca imprime
+PIN ni tokens y usa solo identificadores sintéticos. La evidencia local no sustituye
+a la validación en la nube. El detalle está en `docs/apf3/evidencias/andersson/`.
 
-## Ensayo funcional y límites
+La consulta de integridad de `services/api/scripts/monitoreo.sql` lista toda transacción
+cuyos débitos difieran de sus créditos; se ejecutó en el SQL Editor de Neon:
 
-El usuario autorizó explícitamente crear dos usuarios ficticios y operaciones
-simuladas en producción. `scripts/uat_prod.py` requiere `--allow-writes` y,
-para el host de Render, `--production-approved`. Nunca imprime PIN ni tokens.
-Reserva **solo dentro del proyecto** los identificadores sintéticos 00001021 y
-00001022, nombres de ensayo y correos bajo example.org. No son documentos
-validados por RENIEC. Si ya existen, el script se detiene; no toma una cuenta
-existente ni suplanta a su titular. No se deshabilitó KYC ni se usó biometría.
-La primera alta fue rechazada; no hubo depósito ni envío en producción.
+![Cuadre en Neon](../evidencias/capturas-manuales/neon-cuadre.png)
 
-Como verificación adicional, ambos UAT se ejecutaron por HTTP contra Docker y
-PostgreSQL 18 **local**, con base de desarrollo separada de las bases pytest.
-Resultado `uat-local.json`: aprobado. UAT-2 primero: depósito de 5000 céntimos,
-dos intentos de 50000 rechazados, saldos y movimientos conservados. Luego se
-completa el saldo a 50000 y UAT-1 envía 12550: saldos finales 37450/12550;
-reintento 200 con el mismo ID de transacción. Las dos sesiones se revocaron.
-**Esta evidencia local no sustituye UAT de nube ni prueba Android.**
+## E.4 Observaciones
 
-## Pendientes de entrega
+1. La validación de lectura y seguridad de borde está completa sobre la v2.
+2. La validación funcional con escritura en la nube está programada con cuentas que
+   superen el KYC real, sin desactivar controles (Anexos).
+3. El PR #132 y el paso a PostgreSQL 18 ya están en `main`, pero su despliegue espera
+   aprobación; después se repetirá el humo.
 
-#102 sigue parcial: requiere acordar con Jeremy una forma de ejecutar UAT con
-identidades ficticias y KYC válido sin eludir controles (o una rama Neon de
-ensayo aprobada); obtener acceso de solo lectura para el cuadre SQL; completar
-el recorrido Android y disponer de la versión v2 efectivamente desplegada.
-Desplegar requiere autorización explícita y el procedimiento de migración y
-respaldo de PR #95. No se aprobó ni ejecutó un despliegue desde esta sesión.
-El capítulo se incluye mediante el generador PDF existente, ejecutado con éxito
-en esta sesión. Se adjunta `APF3-validacion.pdf` como borrador de validación;
-conserva 12 marcas PENDIENTE de otros capítulos. El PDF oficial `apf3/APF3.pdf`
-queda pendiente de actualización por el responsable tras revisión.
+## E.5 Distribución del APK de la v2
 
-Captura real del navegador (headless, sin editar):
+El workflow `build-apk.yml` compila el APK de producción al crear un tag `v*`. Lo firma
+con una clave propia guardada en GitHub Secrets, usa el número de corrida como
+`versionCode` y lo publica en GitHub Releases y en Firebase App Distribution, sin
+pasar por una tienda pública. Antes se firmaba con la clave de depuración, distinta
+en cada runner, por lo que un APK nuevo no actualizaba al instalado.
 
-![Respuesta de health en Render](../evidencias/andersson/production-health.png)
+| Verificación | Resultado | Fecha |
+|---|---|---|
+| Cambios integrados en `main` (PR #136) | ✅ Integrado | 05/11 |
+| Compilación local con clave temporal | ✅ `apksigner` confirma la firma; `versionCode` 4 | 05/11 |
+| Secretos de firma y de Firebase | ✅ 6 cargados | 05/11 |
+| Primera corrida automática, tag `v0.3.0` | ❌ Falló al firmar: `keystore password was incorrect`. No se publicó el Release ni se envió a Firebase | 05/11 |
+| Instalación desde Firebase en un teléfono | ⏳ Programado | — |
 
-`ledger-local.txt` registra cero transacciones y cero cuentas descuadradas
-**en PostgreSQL local** después de UAT; no es una consulta a Neon.
+La falla no es del workflow: la contraseña guardada en los secretos no abre la clave.
+Corrida: <https://github.com/Los-hijos-de-Rene/CuyCashUTP/actions/runs/42086158351>.
