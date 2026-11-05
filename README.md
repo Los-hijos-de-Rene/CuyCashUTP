@@ -51,7 +51,7 @@ monedas y el dashboard web.
 **Estado de la verificación.** 1 178 pruebas automatizadas en verde (305 del
 backend por HTTP, todas contra PostgreSQL en el CI, 838 de la app, 35 de los paquetes), incluidas pruebas de
 seguridad web (SQLi, XSS, CORS) y de consistencia del DDL. Plan completo en
-[`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). Las 3 pruebas de
+[`docs/plan-de-pruebas.md`](docs/plan-de-pruebas.md). Las 5 pruebas de
 concurrencia corren contra Postgres real en el CI. **Sin ejecutar**: el
 recorrido de la app real contra el backend en un emulador
 ([`docs/verificacion-manual.md`](docs/verificacion-manual.md)); el SLA de 200 ms por operación no
@@ -137,7 +137,7 @@ Qué crea, cómo configurarlo y por qué no puede tocar producción:
 
 Los tests de concurrencia del libro exigen Postgres real (`pytest -m postgres`
 con `TEST_POSTGRES_URL`; la base debe terminar en `_test`) y se omiten sin él.
-En GitHub Actions corren solos contra un Postgres 16 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).
+En GitHub Actions corren solos contra un Postgres 18 de servicio. Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 `services/api` está fuera del workspace de Flutter: `flutter analyze` y
 `flutter test` lo ignoran. Vive en este repo para poder cambiar app y contrato

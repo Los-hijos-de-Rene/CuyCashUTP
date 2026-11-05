@@ -10,11 +10,13 @@ dnspython>=2.9.0,<3
 pydantic-settings==2.5.2
 
 # Base de datos
-SQLAlchemy==2.0.35
+SQLAlchemy==2.0.57
 alembic==1.20.1
 # SQLAlchemy async lo necesita en tiempo de ejecución
 greenlet==3.1.1
-asyncpg==0.29.0
+# 0.29 solo declara soporte hasta PostgreSQL 16; 0.30 añadió PG17 y 0.32
+# llega a PG19, así que cubre el PG18 de CI, compose y producción.
+asyncpg==0.32.0
 # Alternativa sin infraestructura: permite levantar el servicio con
 # DATABASE_URL=sqlite+aiosqlite:///./cuycash.db, sin Postgres ni Docker.
 aiosqlite==0.20.0

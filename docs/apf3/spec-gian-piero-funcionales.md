@@ -58,6 +58,6 @@ con material que **ya existe**; lo nuevo es ejecutarlo, capturarlo y medirlo.
 - [ ] Sección «Observaciones» con al menos 3 limitaciones reales.
 
 ## Te van a preguntar
-- ¿Por qué `pytest` sobre PostgreSQL 16 y no solo SQLite? (el bloqueo de fila no se prueba en SQLite)
+- ¿Por qué `pytest` sobre PostgreSQL 18 y no solo SQLite? (el bloqueo de fila no se prueba en SQLite)
 - ¿Qué diferencia hay entre completitud y corrección?
 - ¿Un 96 % de cobertura significa que no hay errores? (no: mide líneas ejecutadas, no calidad de las aserciones)

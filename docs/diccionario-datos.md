@@ -1,7 +1,7 @@
 # Diccionario de datos — CuyCash
 
 Descripción de cada columna de las **14 tablas que existen hoy** en la base de
-producción (PostgreSQL 16 en Neon, esquema `public`). Los tipos salen de
+producción (PostgreSQL 18 en Neon, esquema `public`). Los tipos salen de
 `services/api/app/db/models.py`, que es también lo que genera
 `services/api/schema.sql` y lo que el servicio usa para crear las tablas, así
 que este documento describe la base real. Las tablas diseñadas y no creadas

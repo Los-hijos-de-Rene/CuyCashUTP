@@ -29,10 +29,10 @@ antifraude, conciliación) y el dashboard web.
 | **Bloc / estado** | Flujos de pantalla sin UI: carga, errores, paginación, carreras | `bloc_test` | `apps/mobile/test/presentation/**/bloc*` | Incluido en 838 |
 | **Widgets** | Pantallas: qué se ve, qué se habilita, a dónde navega | `flutter_test` | `apps/mobile/test/presentation` | 54 archivos |
 | **Flujo por el router real** | Recorridos completos con el grafo `mock` (ingresar, enviar, depositar, abrir cuenta) | `flutter_test` + `createAppRouter` | `…/send_flow_test.dart`, `topup_flow_test.dart`, `open_account_flow_test.dart` | 4 archivos |
-| **API (integración)** | Cada endpoint por HTTP contra una base real: **PostgreSQL 16 en el CI** (el motor de producción), SQLite en memoria en local | `pytest` + `httpx` | `services/api/tests` | 305 |
+| **API (integración)** | Cada endpoint por HTTP contra una base real: **PostgreSQL 18 en el CI** (el motor de producción), SQLite en memoria en local | `pytest` + `httpx` | `services/api/tests` | 305 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
 | **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
-| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 16 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_transferencias.py` | 3 (corren en el job *Backend (PostgreSQL 16)* del workflow *CI*) |
+| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 18 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_motor_de_asientos.py`, `test_loan_disbursement.py` | 5 (corren en el job *Backend (PostgreSQL 18)* del workflow *CI*) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
 
@@ -53,7 +53,7 @@ antifraude, conciliación) y el dashboard web.
 | Base de datos y operación | `test_consistencia_ddl.py`, `test_reset_schema.py` | 7 |
 
 **Cobertura de líneas** (`pytest --cov`, la imprime el job *Backend (PostgreSQL
-16)* al final de su log): **96 %** del backend (1588 sentencias, 62 sin
+18)* al final de su log): **96 %** del backend (1588 sentencias, 62 sin
 ejecutar), medida el 07/10/2026 en macOS sobre SQLite. Módulos críticos:
 `services/ledger.py` 99 %, `core/security.py` 98 %, `services/lockout.py` 97 %,
 `services/otp.py` 96 %, `routers/auth.py` 94 %. Hace falta
@@ -115,7 +115,7 @@ Resultado más reciente en [`despliegue.md`](despliegue.md#8-evidencia-de-prueba
 |---|---|---|---|---|
 | Local / CI | flavor `mock` (repos en memoria) | — | — | Suite de la app |
 | Local | — | `pytest` | SQLite en memoria, una base nueva por prueba | Suite del backend (rápida, sin Docker) |
-| CI | — | `pytest` | PostgreSQL 16 de servicio, esquema recreado por prueba | La misma suite, con el motor de producción |
+| CI | — | `pytest` | PostgreSQL 18 de servicio, esquema recreado por prueba | La misma suite, con el motor de producción |
 | Local integrado | flavor `local` | uvicorn :8001 | SQLite en archivo | Guion manual |
 | Concurrencia | — | `pytest -m postgres` | Postgres cuyo nombre termina en `_test` | Bloqueo de fila |
 | Producción | flavor `production` | Render | Neon | Humo y demostración |

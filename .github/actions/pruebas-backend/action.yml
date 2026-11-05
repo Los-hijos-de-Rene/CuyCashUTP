@@ -1,7 +1,7 @@
 # Pasos de las pruebas del backend. Los usan `ci.yml` (en cada PR) y
 # `cd-backend.yml` (antes de desplegar), así ambos prueban exactamente igual.
 #
-# El job que la llame debe levantar el servicio `postgres` (Postgres 16, base
+# El job que la llame debe levantar el servicio `postgres` (Postgres 18, base
 # `cuycash_test`) y definir TEST_POSTGRES_URL: toda la suite corre contra el
 # motor de producción. Sin la variable caería a SQLite, que no hace cumplir el
 # largo de VARCHAR ni el bloqueo de fila.

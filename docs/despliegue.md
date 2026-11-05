@@ -50,7 +50,7 @@ tiempo sin configurar respaldos.
 
 ### Paso 1 · Crear la base en Neon
 
-1. Neon → *New project* → nombre `cuycash`, Postgres 16, la región más cercana
+1. Neon → *New project* → nombre `cuycash`, Postgres 18, la región más cercana
    a Render (US West, Oregón).
 2. En *Connection details* copiar la cadena **con** `?sslmode=require`:
    `postgresql://<usuario>:<clave>@<host>.neon.tech/<base>?sslmode=require`.
@@ -129,7 +129,7 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 
 | Workflow | Archivo | Se dispara | Qué hace |
 |---|---|---|---|
-| **CI** (puerta) | `.github/workflows/ci.yml` | **Todo** PR y cada push a `main` | Detecta qué cambió y corre lo necesario: **Backend** (toda la suite `pytest` contra PostgreSQL 16, el motor de producción, concurrencia incluida) y/o **App** (`flutter analyze` + tests de la app y los paquetes). Termina con **`CI listo`**, el único check que exige la regla de `main` |
+| **CI** (puerta) | `.github/workflows/ci.yml` | **Todo** PR y cada push a `main` | Detecta qué cambió y corre lo necesario: **Backend** (toda la suite `pytest` contra PostgreSQL 18, el motor de producción, concurrencia incluida) y/o **App** (`flutter analyze` + tests de la app y los paquetes). Termina con **`CI listo`**, el único check que exige la regla de `main` |
 | Pasos compartidos | `.github/actions/pruebas-backend`, `pruebas-app` | — | Acciones compuestas: el CI y el CD prueban exactamente igual. En local la misma suite del backend corre sobre SQLite |
 | CD backend | `.github/workflows/cd-backend.yml` | Push a `main` que toca el backend o `render.yaml`; o a mano | CI → **aprobación** → despliega **el commit probado** → espera a que `/health` lo reporte → `smoke_prod.sh` |
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |

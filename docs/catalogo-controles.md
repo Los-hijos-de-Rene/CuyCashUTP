@@ -34,7 +34,7 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | DT-01 | Dinero en céntimos enteros (`BIGINT`, `Money`) | I | P | `db/models.py`; `core_kernel · Money` | `test_consistencia_ddl.py` | ✅ |
 | DT-02 | Partida doble atómica (débito y crédito en la misma transacción) | I | P | `app/services/ledger.py` | `test_libro_mayor.py`, `test_motor_de_asientos.py` | ✅ |
 | DT-03 | Saldo no negativo y monto positivo forzados por el motor (`CHECK`) | I | P | `db/models.py` → `schema.sql` | `test_consistencia_ddl.py` | ✅ |
-| DT-04 | Bloqueo de fila (`FOR UPDATE`) contra doble gasto | I | P | `app/services/ledger.py` | `test_concurrencia_multicuenta.py`, `test_transferencias.py` (marca `postgres`, en CI contra Postgres 16) | ✅ |
+| DT-04 | Bloqueo de fila (`FOR UPDATE`) contra doble gasto | I | P | `app/services/ledger.py` | `test_concurrencia_multicuenta.py`, `test_motor_de_asientos.py`, `test_loan_disbursement.py` (marca `postgres`, 5 pruebas en CI contra Postgres 18) | ✅ |
 | DT-05 | Idempotencia por `UNIQUE (idempotency_key)` | I | P | `db/models.py`, `ledger.py` | `test_transferencias.py`, `test_libro_mayor.py` | ✅ |
 | DT-06 | DDL consistente con el modelo | I | D | `scripts/dump_schema.py` | `test_consistencia_ddl.py` | ✅ |
 | DT-07 | Nombre del destinatario enmascarado | C | P | `routers/directory.py · enmascarar` | `test_directorio_y_frecuentes.py` | ✅ |
@@ -58,7 +58,7 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | WB-07 | Errores con `code` estable, sin trazas internas | C | P | `app/core/errors.py`, `app/main.py` | `test_seguridad_web.py` | ✅ |
 | WB-08 | Conexión cifrada a la base (TLS) | C | P | `app/db/base.py` | Configuración de Neon | ✅ |
 | WB-09 | Límite de peticiones por IP / WAF | D | P | Cloudflare delante de Render (sin reglas propias) | — | ⏳ |
-| WB-10 | Dependencias sin vulnerabilidades conocidas (`pip-audit`, bloquea CI y CD) | C I D | P | `.github/actions/pruebas-backend` | Paso `pip-audit` del job *Backend (PostgreSQL 16)*. Encontró 7 avisos en starlette 0.38.6 (vía FastAPI 0.115); se subió a FastAPI 0.142.4 y starlette ≥ 1.3.1: 0 avisos | ✅ |
+| WB-10 | Dependencias sin vulnerabilidades conocidas (`pip-audit`, bloquea CI y CD) | C I D | P | `.github/actions/pruebas-backend` | Paso `pip-audit` del job *Backend (PostgreSQL 18)*. Encontró 7 avisos en starlette 0.38.6 (vía FastAPI 0.115); se subió a FastAPI 0.142.4 y starlette ≥ 1.3.1: 0 avisos | ✅ |
 | WB-11 | Escaneo DAST con OWASP ZAP: activo sobre una copia efímera (con y sin sesión) y pasivo sobre producción | C I | D | `.github/workflows/seguridad.yml` (a mano y cada lunes) | Reportes HTML/JSON como artefactos del run | ⏳ |
 
 ## Operación y secretos

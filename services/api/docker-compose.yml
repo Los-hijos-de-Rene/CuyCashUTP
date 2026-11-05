@@ -8,7 +8,12 @@
 # está en otro sitio, KYC_REPO_DIR en `.env` apunta a él.
 services:
   db:
-    image: postgres:16-alpine
+    # PostgreSQL 18, la versión de producción (Neon). Si ya existía el volumen
+    # `cuycash_pgdata` creado con PG16, bórralo con `docker compose down -v`:
+    # los archivos de datos no son compatibles entre versiones mayores.
+    # En PG18 la imagen oficial movió PGDATA a `/var/lib/postgresql/18/docker`,
+    # así que el volumen se monta en el directorio padre.
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: cuycash
       POSTGRES_PASSWORD: cuycash
@@ -16,7 +21,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - cuycash_pgdata:/var/lib/postgresql/data
+      - cuycash_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cuycash"]
       interval: 5s

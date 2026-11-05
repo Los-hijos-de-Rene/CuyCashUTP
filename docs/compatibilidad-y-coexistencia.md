@@ -72,7 +72,7 @@ Ver la prueba de §4.
 | # | Lo que pide la clase | Veredicto | Evidencia / brecha |
 |---|---|---|---|
 | 1 | Empaquetar con contenedor | ✅ | `services/api/Dockerfile` (`python:3.10-slim`) y `docker-compose.yml` |
-| 2 | Mismo entorno en dev y producción | 🟡 | Imagen y CI en Python 3.10, y CI corre la suite contra PostgreSQL 16 como producción. Local usa 3.9 y SQLite (`CLAUDE.md` lo declara) |
+| 2 | Mismo entorno en dev y producción | 🟡 | Imagen y CI en Python 3.10, y CI corre la suite contra PostgreSQL 18 como producción. Local usa 3.9 y SQLite (`CLAUDE.md` lo declara) |
 | 3 | No ejecutar como root | ❌ | El `Dockerfile` no declara `USER`: el proceso corre como root dentro del contenedor |
 | 4 | Límites de recursos | 🟡 | KYC con `mem_limit: 512m`; la API no tiene tope en compose (en Render lo da el plan) |
 | 5 | Pool de conexiones | 🟡 | Existe, con valores por defecto y `pool_pre_ping`; sin ajustar al límite de conexiones de Neon ni al número de instancias |

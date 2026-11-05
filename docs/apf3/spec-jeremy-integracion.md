@@ -10,7 +10,7 @@ sus sistemas externos aun cuando estos fallan. El docente exige 6 artefactos:
 | # | Artefacto | Qué entregas |
 |---|---|---|
 | 1 | Sistemas externos | Tabla de [`compatibilidad-y-coexistencia.md`](../compatibilidad-y-coexistencia.md) §1 (KYC, Neon, Render, Telegram, ML Kit/`local_auth`, GitHub Actions), con el protocolo de cada uno |
-| 2 | Frameworks | `pytest` + `pytest-asyncio` + `httpx.MockTransport` (servicio externo simulado) + PostgreSQL 16 real en CI. Justifica: determinista, sin red, sin gastar el KYC gratuito |
+| 2 | Frameworks | `pytest` + `pytest-asyncio` + `httpx.MockTransport` (servicio externo simulado) + PostgreSQL 18 real en CI. Justifica: determinista, sin red, sin gastar el KYC gratuito |
 | 3 | Casos de prueba | Tabla (plantilla del [README](README.md)) con ≥ 20 casos |
 | 4 | Capturas | Terminal de `pytest -v` de los archivos de integración |
 | 5 | Reportes | `--junitxml` en `evidencias/jeremy/` |
@@ -59,7 +59,7 @@ Patrón: copia el `upstream`/`MockTransport` de `test_proxy_kyc.py`.
 3. Fija `info.version` (hoy `0.1.0`) y escribe en el README de la API la política: «/v1 no se rompe; cambios incompatibles → /v2».
 
 ## Hecho cuando
-- [ ] `tests/test_integracion_notificador.py` y ≥ 4 casos nuevos de KYC/DB en verde en CI (job Postgres 16).
+- [ ] `tests/test_integracion_notificador.py` y ≥ 4 casos nuevos de KYC/DB en verde en CI (job Postgres 18).
 - [ ] `openapi.json` versionado y la prueba de contrato.
 - [ ] Capturas, `junit.xml` y tabla de ≥ 20 casos (9 existentes + nuevos) con métricas.
 - [ ] Observaciones honestas: lo que **no** se prueba contra el KYC real (solo simulado).

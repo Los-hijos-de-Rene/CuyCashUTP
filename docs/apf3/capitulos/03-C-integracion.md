@@ -13,7 +13,7 @@
 Fuente: `docs/compatibilidad-y-coexistencia.md` §1.
 
 ## C.2 Frameworks
-`pytest` + `pytest-asyncio` + `httpx.MockTransport` (servicio externo simulado); PostgreSQL 16 real en CI; `flutter test` con los repositorios `Http*` reales contra la API levantada (contrato).
+`pytest` + `pytest-asyncio` + `httpx.MockTransport` (servicio externo simulado); PostgreSQL 18 real en CI; `flutter test` con los repositorios `Http*` reales contra la API levantada (contrato).
 
 ## C.3 Casos de prueba de interoperabilidad
 - Proxy KYC: 9 casos existentes en `services/api/tests/test_proxy_kyc.py`.
