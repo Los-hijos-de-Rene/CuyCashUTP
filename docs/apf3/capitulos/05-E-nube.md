@@ -73,7 +73,12 @@ en cada runner, por lo que un APK nuevo no actualizaba al instalado.
 | Compilación local con clave temporal | ✅ `apksigner` confirma la firma; `versionCode` 4 | 05/11 |
 | Secretos de firma y de Firebase | ✅ 6 cargados | 05/11 |
 | Primera corrida automática, tag `v0.3.0` | ❌ Falló al firmar: `keystore password was incorrect`. No se publicó el Release ni se envió a Firebase | 05/11 |
+| Segunda corrida, tras corregir el secreto | ✅ Build, Release y Firebase en verde | 05/11 |
+| Firma del APK publicado | ✅ `apksigner` muestra `CN=Jair` y no la clave de depuración; `versionCode` 4 | 05/11 |
+| Envío a Firebase App Distribution | ✅ Release 0.1.0 (4) distribuido a los testers y grupos | 05/11 |
 | Instalación desde Firebase en un teléfono | ⏳ Programado | — |
 
-La falla no es del workflow: la contraseña guardada en los secretos no abre la clave.
-Corrida: <https://github.com/Los-hijos-de-Rene/CuyCashUTP/actions/runs/42086158351>.
+La primera falla no fue del workflow: la contraseña guardada en los secretos no abría
+la clave. Corregido el secreto, la misma corrida pasó en su segundo intento:
+<https://github.com/Los-hijos-de-Rene/CuyCashUTP/actions/runs/42086158351>.
+Release: <https://github.com/Los-hijos-de-Rene/CuyCashUTP/releases/tag/v0.3.0>.
