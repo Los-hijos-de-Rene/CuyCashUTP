@@ -236,7 +236,7 @@ GoRouter createAppRouter(
                     biometric: SecurityModule.biometricSignIn(deps),
                     user: user,
                   )..add(const QuickAccessEvent.started()),
-                  child: const QuickAccessScreen(),
+                  child: QuickAccessScreen(onUnlocked: lock.unlock),
                 ),
               );
             },

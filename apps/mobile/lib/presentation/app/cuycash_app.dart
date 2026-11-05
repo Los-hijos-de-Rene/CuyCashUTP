@@ -16,20 +16,24 @@ import 'router.dart';
 /// MaterialApp.router con theme + l10n. Crea el router una sola vez con el
 /// AuthBloc del árbol.
 class CuyCashApp extends StatefulWidget {
-  const CuyCashApp({required this.dependencies, super.key});
+  const CuyCashApp({
+    required this.dependencies,
+    required this.sessionLock,
+    super.key,
+  });
 
   final AppDependencies dependencies;
+  final SessionLock sessionLock;
 
   @override
   State<CuyCashApp> createState() => _CuyCashAppState();
 }
 
 class _CuyCashAppState extends State<CuyCashApp> {
-  late final SessionLock _sessionLock = context.read<SessionLock>();
   late final router = createAppRouter(
     widget.dependencies,
     context.read<AuthBloc>(),
-    sessionLock: _sessionLock,
+    sessionLock: widget.sessionLock,
   );
 
   /// Tras vaciar la base local desde el menú de desarrollo: lo que el teléfono
@@ -48,8 +52,8 @@ class _CuyCashAppState extends State<CuyCashApp> {
   /// Se agotó el tiempo sin uso: se tapa la app con el acceso rápido. La
   /// sesión no se cierra; el PIN o la huella la liberan.
   void _lockSession() {
-    if (_sessionLock.isLocked) return;
-    _sessionLock.lock();
+    if (widget.sessionLock.isLocked) return;
+    widget.sessionLock.lock();
     router.go(AppRoutes.quickAccess);
   }
 
@@ -80,9 +84,9 @@ class _CuyCashAppState extends State<CuyCashApp> {
     return BlocSelector<AuthBloc, AuthState, bool>(
       selector: (state) => state is AuthAuthenticated,
       builder: (context, authenticated) => ListenableBuilder(
-        listenable: _sessionLock,
+        listenable: widget.sessionLock,
         builder: (context, _) => InactivityWatcher(
-          enabled: authenticated && !_sessionLock.isLocked,
+          enabled: authenticated && !widget.sessionLock.isLocked,
           timeout: SessionConfig.inactivityTimeout,
           onTimeout: _lockSession,
           child: app,

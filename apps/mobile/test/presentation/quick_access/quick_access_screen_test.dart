@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-import 'package:provider/provider.dart' show Provider;
 import 'package:cuycash/feature/auth/application/auth_actions.dart';
 import 'package:cuycash/feature/auth/infrastructure/memory_auth_repository.dart';
 import 'package:cuycash/feature/biometric/domain/biometric_gate.dart';
@@ -41,8 +39,6 @@ void main() {
   });
 
   final sessionLock = SessionLock();
-  // Como en AppRoot: SessionLock se comparte con RepositoryProvider.
-  setUpAll(() => Provider.debugCheckInvalidValueType = null);
 
   Future<QuickAccessBloc> pumpQuickAccess(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
@@ -58,16 +54,13 @@ void main() {
     )..add(const QuickAccessEvent.started());
     addTearDown(bloc.close);
     await tester.pumpWidget(
-      RepositoryProvider<SessionLock>.value(
-        value: sessionLock,
-        child: BlocProvider.value(
-          value: bloc,
-          child: MaterialApp(
-            theme: CuyCashTheme.light(),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: const QuickAccessScreen(),
-          ),
+      BlocProvider.value(
+        value: bloc,
+        child: MaterialApp(
+          theme: CuyCashTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: QuickAccessScreen(onUnlocked: sessionLock.unlock),
         ),
       ),
     );
@@ -167,7 +160,7 @@ void main() {
             path: AppRoutes.quickAccess,
             builder: (_, _) => BlocProvider.value(
               value: bloc,
-              child: const QuickAccessScreen(),
+              child: QuickAccessScreen(onUnlocked: sessionLock.unlock),
             ),
           ),
           GoRoute(

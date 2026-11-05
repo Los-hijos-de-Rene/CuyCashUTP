@@ -10,13 +10,15 @@ import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import '../lockout/blocked_args.dart';
 import '../lockout/lockout_duration_text.dart';
-import '../session/session_lock.dart';
 import 'bloc/quick_access_bloc.dart';
 import 'widgets/switch_user_dialog.dart';
 
 /// Acceso rápido para el usuario recordado en este dispositivo.
 class QuickAccessScreen extends StatelessWidget {
-  const QuickAccessScreen({super.key});
+  const QuickAccessScreen({required this.onUnlocked, super.key});
+
+  /// El PIN o la huella fueron correctos: libera el bloqueo por inactividad.
+  final VoidCallback onUnlocked;
 
   Future<void> _switchUser(BuildContext context, String name) async {
     final auth = context.read<AuthActions>();
@@ -45,7 +47,7 @@ class QuickAccessScreen extends StatelessWidget {
               if (state.unlocked) {
                 // Con la sesión ya abierta (bloqueo por inactividad) AuthBloc
                 // no emite nada: se libera aquí para que el router salga.
-                context.read<SessionLock>().unlock();
+                onUnlocked();
                 return;
               }
               if (state.needsDeviceVerification) {
