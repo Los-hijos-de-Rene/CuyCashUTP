@@ -25,7 +25,8 @@ class AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<AppRoot> {
   /// Vive en la raíz porque lo comparten el router (gate) y el vigilante de
-  /// inactividad. Se libera al desmontar la app.
+  /// inactividad. Va por constructor porque `Provider` rechaza un `Listenable`.
+  /// Se libera al desmontar la app.
   final _sessionLock = SessionLock();
 
   @override
@@ -37,43 +38,43 @@ class _AppRootState extends State<AppRoot> {
   @override
   Widget build(BuildContext context) {
     final dependencies = widget.dependencies;
-    return RepositoryProvider<SessionLock>.value(
-      value: _sessionLock,
-      child: MultiRepositoryProvider(
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AppFlavor>.value(value: dependencies.flavor),
+        RepositoryProvider<AuthActions>.value(
+            value: AuthActions(dependencies.authRepository)),
+        RepositoryProvider<DeviceActions>.value(
+            value: DeviceModule.create(dependencies)),
+      ],
+      child: MultiBlocProvider(
         providers: [
-          RepositoryProvider<AppFlavor>.value(value: dependencies.flavor),
-          RepositoryProvider<AuthActions>.value(
-              value: AuthActions(dependencies.authRepository)),
-          RepositoryProvider<DeviceActions>.value(
-              value: DeviceModule.create(dependencies)),
+          ...AuthModule.blocProviders(dependencies),
         ],
-        child: MultiBlocProvider(
-          providers: [
-            ...AuthModule.blocProviders(dependencies),
-          ],
-          child: BlocListener<AuthBloc, AuthState>(
-            listenWhen: (p, c) => c is AuthAuthenticated,
-            listener: (context, state) async {
-              if (state is! AuthAuthenticated) return;
-              // Un login o un acceso rápido correcto libera el bloqueo por
-              // inactividad; el router entonces sale de /acceso-rapido.
-              context.read<SessionLock>().unlock();
-              final s = state.session;
-              final device = context.read<DeviceActions>();
-              final existing = await device.readUser();
-              final sameUser = existing != null && existing.dni == s.identifier;
-              final fullName = (s.fullName != null && s.fullName!.isNotEmpty)
-                  ? s.fullName!
-                  : (sameUser ? existing.fullName : '');
-              final alias =
-                  s.alias ?? (sameUser ? existing.alias : '@${s.identifier}');
-              await device.saveUser(RememberedUser(
-                dni: s.identifier,
-                fullName: fullName,
-                alias: alias,
-              ));
-            },
-            child: CuyCashApp(dependencies: dependencies),
+        child: BlocListener<AuthBloc, AuthState>(
+          listenWhen: (p, c) => c is AuthAuthenticated,
+          listener: (context, state) async {
+            if (state is! AuthAuthenticated) return;
+            // Un login o un acceso rápido correcto libera el bloqueo por
+            // inactividad; el router entonces sale de /acceso-rapido.
+            _sessionLock.unlock();
+            final s = state.session;
+            final device = context.read<DeviceActions>();
+            final existing = await device.readUser();
+            final sameUser = existing != null && existing.dni == s.identifier;
+            final fullName = (s.fullName != null && s.fullName!.isNotEmpty)
+                ? s.fullName!
+                : (sameUser ? existing.fullName : '');
+            final alias =
+                s.alias ?? (sameUser ? existing.alias : '@${s.identifier}');
+            await device.saveUser(RememberedUser(
+              dni: s.identifier,
+              fullName: fullName,
+              alias: alias,
+            ));
+          },
+          child: CuyCashApp(
+            dependencies: dependencies,
+            sessionLock: _sessionLock,
           ),
         ),
       ),
