@@ -143,6 +143,189 @@ async def test_si_no_despierta_a_tiempo_responde_503(client, kyc_dormido, monkey
 
     assert r.status_code == 503
     assert r.json()["code"] == "SERVICE_UNAVAILABLE"
+@pytest.fixture
+def kyc_controlado(monkeypatch, kyc_configurado):
+    """
+    Simula el microservicio KYC mediante MockTransport.
+    Permite controlar errores y contar solicitudes.
+    """
+    estado = {
+        "modo": "correcto",
+        "llamadas": 0,
+    }
+
+    async def manejar(request: httpx.Request):
+        estado["llamadas"] += 1
+
+        if estado["modo"] == "read_timeout":
+            raise httpx.ReadTimeout(
+                "Tiempo de lectura agotado",
+                request=request,
+            )
+
+        if estado["modo"] == "json_invalido":
+            return httpx.Response(
+                200,
+                content=b'{"token":',
+                headers={"content-type": "application/json"},
+            )
+
+        return httpx.Response(
+            200,
+            json={
+                "token": "token-de-prueba",
+                "steps": ["izquierda", "derecha"],
+                "expires_in": 180,
+            },
+        )
+
+    cliente_original = httpx.AsyncClient
+
+    def cliente_simulado(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(manejar)
+        return cliente_original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        cliente_simulado,
+    )
+
+    return estado
+
+
+async def test_int_k1_read_timeout_no_reintenta(
+    client,
+    kyc_controlado,
+):
+    """
+    INT-K1: ReadTimeout no debe provocar otro intento.
+
+    La solicitud pudo haber sido procesada por KYC;
+    repetirla podria consumir dos veces el desafio.
+    """
+    kyc_controlado["modo"] = "read_timeout"
+
+    respuesta = await client.post(
+        "/v1/kyc/liveness/challenge"
+    )
+
+    assert respuesta.status_code == 503
+    assert respuesta.json()["code"] == "SERVICE_UNAVAILABLE"
+    assert kyc_controlado["llamadas"] == 1
+
+
+async def test_int_k3_json_invalido_error_controlado(
+    client,
+    kyc_controlado,
+):
+    """
+    INT-K3: el proxy no debe devolver HTTP 200
+    cuando KYC responde un JSON malformado.
+    """
+    kyc_controlado["modo"] = "json_invalido"
+
+    respuesta = await client.post(
+        "/v1/kyc/liveness/challenge"
+    )
+
+    assert respuesta.status_code in (502, 503)
+    assert kyc_controlado["llamadas"] == 1
+    assert "Traceback" not in respuesta.text
+
+
+async def test_int_k4_contrato_challenge(
+    client,
+    kyc_controlado,
+):
+    """
+    INT-K4: el challenge debe mantener los campos
+    token, steps y expires_in.
+    """
+    respuesta = await client.post(
+        "/v1/kyc/liveness/challenge"
+    )
+
+    assert respuesta.status_code == 200
+    assert kyc_controlado["llamadas"] == 1
+
+    datos = respuesta.json()
+
+    assert isinstance(datos["token"], str)
+    assert datos["token"]
+
+    assert isinstance(datos["steps"], list)
+    assert len(datos["steps"]) > 0
+
+    assert isinstance(datos["expires_in"], int)
+    assert datos["expires_in"] > 0
+
+@pytest.mark.parametrize(
+    "aprobado,documento_valido,dni_coincide,device_id,espera_ticket",
+    [
+        (True, True, True, "dispositivo-01", True),
+        (False, True, True, "dispositivo-01", False),
+        (True, False, True, "dispositivo-01", False),
+        (True, True, False, "dispositivo-01", False),
+        (True, True, True, "", False),
+    ],
+)
+async def test_int_k2_ticket_solo_con_aprobacion(
+    client,
+    kyc_configurado,
+    upstream,
+    aprobado,
+    documento_valido,
+    dni_coincide,
+    device_id,
+    espera_ticket,
+):
+    """
+    INT-K2: emitir el ticket solo con aprobacion
+    completa, DNI valido y dispositivo identificado.
+    """
+
+    _, respuesta = upstream
+
+    respuesta["json"] = {
+        "overall_result": aprobado,
+        "document_data": {
+            "dni": "12345678",
+            "valid": documento_valido,
+            "matches_expected": dni_coincide,
+        },
+        "document_validation": {
+            "is_valid": documento_valido,
+        },
+        "liveness": {
+            "is_live": True,
+        },
+        "face_match": {
+            "is_match": True,
+            "distance": 0.1,
+        },
+    }
+
+    headers = {}
+
+    if device_id:
+        headers["X-Device-Id"] = device_id
+
+    resultado = await client.post(
+        "/v1/kyc/identity/verify-full",
+        headers=headers,
+        json={},
+    )
+
+    assert resultado.status_code == 200
+
+    datos = resultado.json()
+
+    if espera_ticket:
+        assert isinstance(datos.get("kyc_ticket"), str)
+        assert datos["kyc_ticket"]
+    else:
+        assert "kyc_ticket" not in datos
 
 
 async def test_warmup_responde_202_y_toca_el_health_del_kyc(client, kyc_configurado, upstream, monkeypatch):
