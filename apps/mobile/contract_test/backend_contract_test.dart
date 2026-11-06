@@ -25,7 +25,9 @@ import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/http_account_repository.dart';
 import 'package:cuycash/feature/auth/domain/auth_failure.dart';
 import 'package:cuycash/feature/auth/infrastructure/http_auth_repository.dart';
+import 'package:cuycash/feature/qr/domain/qr_charge.dart';
 import 'package:cuycash/feature/qr/domain/qr_failure.dart';
+import 'package:cuycash/feature/qr/domain/qr_payload.dart';
 import 'package:cuycash/feature/qr/domain/qr_receipt.dart';
 import 'package:cuycash/feature/qr/infrastructure/http_qr_repository.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
@@ -257,6 +259,29 @@ void main() {
       expect(previa.expira.isUtc, isTrue);
       final despues = _ok(await ana.accounts.cuentas()).first;
       expect(despues.saldoDisponible, antes.saldoDisponible);
+    });
+
+    test('INT-CT-16 el mensaje compartido se lee y vence en 15 min', () async {
+      final inicio = DateTime.now().toUtc();
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(300),
+          concepto: 'Compartido',
+          idempotencyKey: _clave(),
+        ),
+      );
+      expect(
+        cobro.expira.difference(inicio).inMinutes,
+        inInclusiveRange(
+          QrCharge.vigencia.inMinutes - 1,
+          QrCharge.vigencia.inMinutes,
+        ),
+      );
+      final mensaje = 'Cóbralo con CuyCash: S/ 3.00 por «Compartido».\n'
+          '${cobro.payload}';
+      final previa = _ok(await ana.qr.leer(extraerCodigoQr(mensaje)));
+      expect(previa.monto, const Money.soles(300));
     });
 
     test('INT-CT-12 pagar un QR mueve ambos saldos y sale como pago QR', () async {

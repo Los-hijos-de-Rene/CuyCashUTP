@@ -28,6 +28,8 @@ QrPayBloc _bloc(FakeQrRepository repo) => QrPayBloc(
     );
 
 void main() {
+  String? leido;
+
   blocTest<QrPayBloc, QrPayState>(
     'leer un QR muestra nombre y monto antes de confirmar',
     build: () => _bloc(FakeQrRepository()),
@@ -40,6 +42,24 @@ void main() {
           .having((s) => s.preview?.nombreEnmascarado, 'nombre', 'J*** M*** R***')
           .having((s) => s.preview?.monto, 'monto', const Money.soles(1000)),
     ],
+  );
+
+  blocTest<QrPayBloc, QrPayState>(
+    'pegar el mensaje compartido lee solo el código',
+    build: () => _bloc(
+      FakeQrRepository(
+        alLeer: (payload) async {
+          leido = payload;
+          return left(GlobalFailure.server(const QrFailure.expired()));
+        },
+      ),
+    ),
+    act: (bloc) => bloc.add(
+      const QrPayloadDetected(
+        'Cóbralo con CuyCash: S/ 5.00 por «Taxi».\ncuycash://qr?demo=1',
+      ),
+    ),
+    verify: (_) => expect(leido, 'cuycash://qr?demo=1'),
   );
 
   blocTest<QrPayBloc, QrPayState>(

@@ -3251,13 +3251,13 @@ abstract class AppLocalizations {
   /// No description provided for @qrPayScanHint.
   ///
   /// In es, this message translates to:
-  /// **'Apunta la cámara al QR o pega el código.'**
+  /// **'Apunta la cámara al QR o pega el mensaje que te enviaron.'**
   String get qrPayScanHint;
 
   /// No description provided for @qrPayPasteLabel.
   ///
   /// In es, this message translates to:
-  /// **'Código del QR'**
+  /// **'Código o mensaje del QR'**
   String get qrPayPasteLabel;
 
   /// No description provided for @qrPayRead.
