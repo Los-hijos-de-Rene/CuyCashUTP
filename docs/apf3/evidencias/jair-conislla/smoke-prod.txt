@@ -1,0 +1,14 @@
+== https://cuycashutp.onrender.com  2026-11-05T00:24:34Z
+OK    API viva (/health) (200)
+      versión desplegada: f9db8cdcb583e38085aec741692cc2f4e67097bd
+OK    Base de datos responde (/health/db) (ok)
+      {"status":"ok","database":"postgresql","latency_ms":321.8}
+OK    HTTP redirige a HTTPS (301)
+OK    Ruta protegida sin token (401)
+OK    Token inventado (401)
+OK    cabecera strict-transport-security
+OK    cabecera x-content-type-options
+OK    cabecera x-frame-options
+OK    sin CORS abierto
+INFO  latencia de /health en caliente: 0.193129s
+== 0 fallo(s)
