@@ -135,6 +135,18 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 | Rollback backend | `.github/workflows/rollback-backend.yml` | A mano, con el commit estable y el motivo | Valida que el commit estuvo en `main` → **aprobación** → lo despliega → espera → humo |
 | Build APK | `.github/workflows/build-apk.yml` | Tag `v*` o a mano | APK `production` firmado con la clave propia; adjunto a un Release (solo con tag) y enviado al grupo `equipo` de Firebase App Distribution |
 
+### Pago con QR
+
+Render necesita dos secretos; sin ellos, `/v1/qr` responde 503 y la app muestra
+que el servicio no está disponible.
+
+| Variable | Valor |
+|---|---|
+| `QR_SIGNING_SECRET` | Al menos 32 bytes aleatorios (`openssl rand -hex 32`). Rotarlo invalida los QR vigentes, no los pagos hechos |
+| `QR_MONTO_BASE_CENTIMOS` | Monto, en céntimos, sobre el que la API exige PIN. La app lo pide siempre |
+
+Cargarlos antes de publicar un APK que use QR. No requiere migración.
+
 ### Distribución del APK (alta única)
 
 Sin la clave, Build APK falla: la de depuración cambia en cada runner y el APK

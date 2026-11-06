@@ -49,6 +49,9 @@ services:
       # sin el perfil `kyc`, o con la app en KYC simulado, pon KYC_REQUIRED=false
       # en `.env` o el registro responderá KYC_REQUIRED.
       KYC_REQUIRED: ${KYC_REQUIRED:-true}
+      # Valores solo para local: en Render van como secretos.
+      QR_SIGNING_SECRET: ${QR_SIGNING_SECRET:-solo-local-firma-qr-no-usar-en-produccion}
+      QR_MONTO_BASE_CENTIMOS: ${QR_MONTO_BASE_CENTIMOS:-10000}
       # Los PIN errados del DNI caducan a los 10 min (en prod, 24 h): probando
       # en local no quieres arrastrar fallos de ayer.
       IDENTIFIER_WINDOW_SECONDS: ${IDENTIFIER_WINDOW_SECONDS:-600}

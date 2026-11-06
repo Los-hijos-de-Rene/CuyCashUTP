@@ -7,7 +7,7 @@ enum MovementDirection { debito, credito }
 
 /// Clase de operación. Los tipos que el backend añada después (pago QR,
 /// cuota…) caen en [otro] en lugar de romper el parseo.
-enum MovementKind { transferencia, recarga, otro }
+enum MovementKind { transferencia, pagoQr, recarga, otro }
 
 /// La cuenta propia a la que pertenece una fila del historial combinado: lo
 /// justo para nombrarla ("Ahorros · ••••4521"). El número llega enmascarado.

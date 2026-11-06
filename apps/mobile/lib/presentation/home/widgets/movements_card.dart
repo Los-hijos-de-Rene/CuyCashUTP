@@ -97,6 +97,7 @@ class _MovementRow extends StatelessWidget {
     final icon = switch (movement.tipo) {
       _ when propias => Icons.sync_alt,
       MovementKind.recarga => Icons.add_circle_outline,
+      MovementKind.pagoQr => Icons.qr_code_2,
       MovementKind.transferencia ||
       MovementKind.otro => isIncome ? Icons.south_west : Icons.north_east,
     };

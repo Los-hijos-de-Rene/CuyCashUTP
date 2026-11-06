@@ -17,7 +17,7 @@ import '../domain/qr_repository.dart';
 /// El pago es un envío más: delega en `TransferActions.enviar`, así que mueve
 /// el mismo libro mayor y respeta la idempotencia. La firma es un SHA-256 con
 /// un secreto de demo; sirve para detectar alteraciones, no es la firma del
-/// servidor (esa llega con la API #77).
+/// servidor.
 class MemoryQrRepository implements QrRepository {
   MemoryQrRepository({
     required TransferActions transfer,
@@ -36,6 +36,10 @@ class MemoryQrRepository implements QrRepository {
   static const _secret = 'cuycash-demo-qr-v1';
 
   static const _nombreDemo = 'J*** M*** R***';
+
+  /// QR ya pagados, con la clave con que se pagaron: como en el backend, un
+  /// reintento con la misma clave pasa y otra clave es un segundo pago.
+  final _pagados = <String, String>{};
 
   @override
   FutureResult<QrFailure, QrCharge> emitir({
@@ -73,6 +77,13 @@ class MemoryQrRepository implements QrRepository {
 
   @override
   FutureResult<QrFailure, QrPaymentPreview> leer(String payload) async {
+    if (_pagados.containsKey(payload)) {
+      return left(const GlobalFailure.server(QrFailure.alreadyPaid()));
+    }
+    return _validar(payload);
+  }
+
+  FutureResult<QrFailure, QrPaymentPreview> _validar(String payload) async {
     final uri = Uri.tryParse(payload);
     if (uri == null || uri.scheme != 'cuycash' || uri.host != 'qr') {
       return left(const GlobalFailure.server(QrFailure.tampered()));
@@ -124,7 +135,11 @@ class MemoryQrRepository implements QrRepository {
     required String pin,
     required String idempotencyKey,
   }) async {
-    final lectura = await leer(payload);
+    final pagadoCon = _pagados[payload];
+    if (pagadoCon != null && pagadoCon != idempotencyKey) {
+      return left(const GlobalFailure.server(QrFailure.alreadyPaid()));
+    }
+    final lectura = await _validar(payload);
     return lectura.match(
       (failure) async => left(failure),
       (preview) async {
@@ -138,13 +153,16 @@ class MemoryQrRepository implements QrRepository {
         );
         return result.match(
           (failure) => left(GlobalFailure.server(_mapTransfer(failure))),
-          (receipt) => right(
-            QrReceipt(
-              transactionId: receipt.transactionId,
-              monto: receipt.monto,
-              fecha: receipt.fecha,
-            ),
-          ),
+          (receipt) {
+            _pagados[payload] = idempotencyKey;
+            return right(
+              QrReceipt(
+                transactionId: receipt.transactionId,
+                monto: receipt.monto,
+                fecha: receipt.fecha,
+              ),
+            );
+          },
         );
       },
     );
@@ -167,34 +185,4 @@ class MemoryQrRepository implements QrRepository {
     final digest = sha256.convert(utf8.encode('$datos|$_secret'));
     return base64Url.encode(digest.bytes);
   }
-}
-
-/// Implementación para `local` y `production` mientras no exista la API #77:
-/// devuelve un fallo explícito en vez de mover dinero falso.
-class QrUnavailableRepository implements QrRepository {
-  const QrUnavailableRepository();
-
-  static const _failure = GlobalFailure<QrFailure>.server(QrFailure.unavailable());
-
-  @override
-  FutureResult<QrFailure, QrCharge> emitir({
-    required String cuentaId,
-    required Money monto,
-    required String concepto,
-    required String idempotencyKey,
-  }) async =>
-      left(_failure);
-
-  @override
-  FutureResult<QrFailure, QrPaymentPreview> leer(String payload) async =>
-      left(_failure);
-
-  @override
-  FutureResult<QrFailure, QrReceipt> pagar({
-    required String payload,
-    required String cuentaOrigenId,
-    required String pin,
-    required String idempotencyKey,
-  }) async =>
-      left(_failure);
 }

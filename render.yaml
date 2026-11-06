@@ -46,3 +46,10 @@ services:
       # sin poder registrarse.
       - key: KYC_REQUIRED
         value: "false"
+      # Sin estas dos, /v1/qr responde 503. La firma debe tener 32 bytes o más y
+      # no cambiar: rotarla invalida los QR vigentes. El límite sin PIN, en
+      # céntimos, lo define el equipo.
+      - key: QR_SIGNING_SECRET
+        sync: false
+      - key: QR_MONTO_BASE_CENTIMOS
+        sync: false

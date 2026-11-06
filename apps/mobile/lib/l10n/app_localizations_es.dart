@@ -1425,6 +1425,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get movementHeadlineTopUp => 'Depósito simulado';
 
   @override
+  String get movementHeadlineQrPaid => 'Pagaste con QR';
+
+  @override
+  String get movementHeadlineQrCharged => 'Cobraste con QR';
+
+  @override
   String get movementHeadlineOther => 'Movimiento';
 
   @override
@@ -1956,12 +1962,35 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get qrErrorAlreadyPaid => 'Este QR ya fue pagado. Pide uno nuevo.';
+
+  @override
+  String get qrErrorSameAccount =>
+      'No puedes pagar a la misma cuenta que cobra. Elige otra.';
+
+  @override
+  String get qrErrorCurrencyMismatch =>
+      'Este cobro está en otra moneda. Elige una cuenta de la misma moneda.';
+
+  @override
+  String get qrErrorAmountOutOfRange =>
+      'El monto está fuera del rango permitido. Prueba con otro monto.';
+
+  @override
+  String get qrErrorAccountUnavailable =>
+      'Esa cuenta no está disponible. Elige otra o pide un QR nuevo.';
+
+  @override
+  String get qrErrorLocked =>
+      'Demasiados intentos. Espera un momento e inténtalo de nuevo.';
+
+  @override
   String get qrErrorNetwork =>
       'No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.';
 
   @override
   String get qrErrorUnavailable =>
-      'El pago con QR estará disponible cuando se despliegue la API.';
+      'El pago con QR no está disponible por ahora. Inténtalo más tarde.';
 
   @override
   String get qrErrorUnexpected => 'Algo salió mal. Inténtalo de nuevo.';

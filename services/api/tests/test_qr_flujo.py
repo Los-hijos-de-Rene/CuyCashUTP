@@ -3,6 +3,9 @@
 Solo utiliza la base de pruebas de conftest.py. Nunca apunta a cuentas reales.
 """
 
+import asyncio
+import os
+
 import pytest
 from sqlalchemy import func, select
 
@@ -164,7 +167,7 @@ async def test_qr_04_qr_vencido_se_rechaza_sin_descontar(
     )
     assert consulta.status_code == 400, consulta.text
     assert pago.status_code == 400, pago.text
-    assert pago.json()["code"] == "QR_INVALID"
+    assert pago.json()["code"] == "QR_EXPIRED"
     assert await _saldo(client, registrado) == 60_000
     assert await _saldo(client, otro_registrado) == 0
 
@@ -218,9 +221,11 @@ async def test_qr_06_idempotencia_no_cobra_dos_veces(
     assert cantidad == 1
 
 
-async def test_qr_07_no_reutiliza_clave_en_qr_distinto(
+async def test_qr_07_cada_qr_es_su_propia_operacion_aunque_repita_clave(
     client, otp_codes, registrado, otro_registrado
 ):
+    # La unicidad la da el QR, no la clave del cliente: repetirla en otro QR no
+    # devuelve el pago anterior como si fuera este.
     origen = await _recargar(client, registrado)
     qr_a = await _emitir(client, otro_registrado, monto=2_000)
     qr_b = await _emitir(client, otro_registrado, monto=2_000)
@@ -237,10 +242,10 @@ async def test_qr_07_no_reutiliza_clave_en_qr_distinto(
         json=_pago(qr_b, origen, "pago-qr-conf-001"),
     )
     assert primero.status_code == 201, primero.text
-    assert segundo.status_code == 409, segundo.text
-    assert segundo.json()["code"] == "IDEMPOTENCY_KEY_REUSED"
-    assert await _saldo(client, registrado) == 58_000
-    assert await _saldo(client, otro_registrado) == 2_000
+    assert segundo.status_code == 201, segundo.text
+    assert segundo.json()["transaction_id"] != primero.json()["transaction_id"]
+    assert await _saldo(client, registrado) == 56_000
+    assert await _saldo(client, otro_registrado) == 4_000
 
 
 async def test_qr_08_no_se_puede_emitir_para_cuenta_ajena(
@@ -275,3 +280,114 @@ async def test_qr_09_saldo_insuficiente_no_genera_movimiento(
     assert await _saldo(client, otro_registrado) == 0
     cantidad = (await db_de_client.execute(select(func.count()).select_from(Transfer))).scalar_one()
     assert cantidad == 0
+
+
+async def test_qr_10_mismo_qr_con_otra_clave_no_cobra_dos_veces(
+    client, otp_codes, registrado, otro_registrado
+):
+    origen = await _recargar(client, registrado)
+    qr = await _emitir(client, otro_registrado, monto=2_000)
+    primero = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(qr, origen, "pago-qr-unico-01"),
+    )
+    segundo = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(qr, origen, "pago-qr-unico-02"),
+    )
+    assert primero.status_code == 201, primero.text
+    assert segundo.status_code == 409, segundo.text
+    assert segundo.json()["code"] == "QR_ALREADY_PAID"
+    assert await _saldo(client, registrado) == 58_000
+    assert await _saldo(client, otro_registrado) == 2_000
+
+
+async def test_qr_11_la_consulta_avisa_que_ya_fue_pagado(
+    client, otp_codes, registrado, otro_registrado
+):
+    origen = await _recargar(client, registrado)
+    qr = await _emitir(client, otro_registrado, monto=2_000)
+    r = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(qr, origen, "pago-qr-unico-03"),
+    )
+    assert r.status_code == 201, r.text
+
+    # Avisa antes de pedir el PIN, no al confirmar.
+    consulta = await client.post(
+        "/v1/qr/validar", headers=registrado.auth, json={"qr": qr}
+    )
+    assert consulta.status_code == 409, consulta.text
+    assert consulta.json()["code"] == "QR_ALREADY_PAID"
+
+
+async def test_qr_12_vencido_y_alterado_se_distinguen(
+    client, otp_codes, registrado, otro_registrado
+):
+    origen = await _recargar(client, registrado)
+    cuenta = await _cuenta(client, otro_registrado)
+    vencido = emitir_qr(
+        secreto=SECRETO_QR_PRUEBAS,
+        cuenta_id=cuenta,
+        monto_centimos=500,
+        concepto="Vencido",
+        ttl_segundos=30,
+        ahora=1_000,
+    )
+    r = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(vencido, origen, "pago-qr-vencido-1"),
+    )
+    assert r.status_code == 400, r.text
+    assert r.json()["code"] == "QR_EXPIRED"
+
+    vigente = await _emitir(client, otro_registrado, monto=500)
+    alterado = vigente[:-4] + ("0000" if vigente[-4:] != "0000" else "1111")
+    r = await client.post(
+        "/v1/qr/validar", headers=registrado.auth, json={"qr": alterado}
+    )
+    assert r.status_code == 400, r.text
+    assert r.json()["code"] == "QR_INVALID"
+
+
+async def test_qr_14_bajo_el_limite_un_pin_errado_tampoco_paga(
+    client, otp_codes, registrado, otro_registrado
+):
+    origen = await _recargar(client, registrado)
+    qr = await _emitir(client, otro_registrado, monto=500)
+    r = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(qr, origen, "pago-qr-pin-errado", pin="000000"),
+    )
+    assert r.status_code == 403, r.text
+    assert r.json()["code"] == "INVALID_CREDENTIALS"
+    assert await _saldo(client, registrado) == 60_000
+    assert await _saldo(client, otro_registrado) == 0
+
+
+@pytest.mark.postgres
+async def test_qr_13_dos_pagos_a_la_vez_del_mismo_qr_cobran_una_vez(
+    client, otp_codes, registrado, otro_registrado
+):
+    if not os.environ.get("TEST_POSTGRES_URL"):
+        pytest.skip("Define TEST_POSTGRES_URL (Postgres desechable) para correr este test.")
+    origen = await _recargar(client, registrado)
+    qr = await _emitir(client, otro_registrado, monto=2_000)
+    respuestas = await asyncio.gather(
+        *(
+            client.post(
+                "/v1/qr/pagar",
+                headers=registrado.auth,
+                json=_pago(qr, origen, f"pago-qr-paralelo-{n}"),
+            )
+            for n in range(2)
+        )
+    )
+    assert sorted(r.status_code for r in respuestas) == [201, 409]
+    assert await _saldo(client, registrado) == 58_000
+    assert await _saldo(client, otro_registrado) == 2_000

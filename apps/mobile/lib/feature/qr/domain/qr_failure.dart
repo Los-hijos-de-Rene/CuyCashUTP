@@ -18,8 +18,26 @@ sealed class QrFailure {
   /// Sin red o timeout.
   const factory QrFailure.network() = QrNetworkFailure;
 
-  /// La API de QR todavía no está desplegada en este entorno.
+  /// El servicio de QR no está configurado en este entorno.
   const factory QrFailure.unavailable() = QrUnavailable;
+
+  /// El QR ya se pagó: cada cobro admite un solo pago.
+  const factory QrFailure.alreadyPaid() = QrAlreadyPaid;
+
+  /// La cuenta que paga es la misma que cobra.
+  const factory QrFailure.sameAccount() = QrSameAccount;
+
+  /// La cuenta que paga y el cobro están en monedas distintas.
+  const factory QrFailure.currencyMismatch() = QrCurrencyMismatch;
+
+  /// El monto está fuera del rango permitido.
+  const factory QrFailure.amountOutOfRange() = QrAmountOutOfRange;
+
+  /// La cuenta de cobro o de pago no está disponible.
+  const factory QrFailure.accountUnavailable() = QrAccountUnavailable;
+
+  /// Demasiados intentos: el servidor bloqueó el acceso por un tiempo.
+  const factory QrFailure.locked() = QrLocked;
 
   /// Respuesta que la app no sabe interpretar.
   const factory QrFailure.unexpected() = QrUnexpectedFailure;
@@ -54,4 +72,28 @@ final class QrUnavailable extends QrFailure {
 
 final class QrUnexpectedFailure extends QrFailure {
   const QrUnexpectedFailure();
+}
+
+final class QrAlreadyPaid extends QrFailure {
+  const QrAlreadyPaid();
+}
+
+final class QrSameAccount extends QrFailure {
+  const QrSameAccount();
+}
+
+final class QrCurrencyMismatch extends QrFailure {
+  const QrCurrencyMismatch();
+}
+
+final class QrAmountOutOfRange extends QrFailure {
+  const QrAmountOutOfRange();
+}
+
+final class QrAccountUnavailable extends QrFailure {
+  const QrAccountUnavailable();
+}
+
+final class QrLocked extends QrFailure {
+  const QrLocked();
 }

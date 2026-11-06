@@ -48,8 +48,14 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
   `plataforma|modelo` (p. ej. `android|Samsung SM-A546E`), saneado a ASCII
   imprimible (`formatDeviceName`, `core/env/device_name.dart`).
 
+- Cobro y pago con QR: el servidor firma el cobro (`/v1/qr/emitir`, HMAC-SHA256)
+  y cada QR admite un solo pago: la clave del libro mayor es el hash del QR.
+  Repetir la `idempotency_key` devuelve el pago original y otra clave da 409
+  `QR_ALREADY_PAID`. La app siempre pide PIN y un PIN enviado siempre se valida.
+  Requiere `QR_SIGNING_SECRET` y `QR_MONTO_BASE_CENTIMOS`; sin ellas, 503.
+
 **Sigue sin existir** (no asumas que hay código de esto): transferencia
-interbancaria y CCI, pagos y cobro por QR, préstamos, antifraude, conciliación
+interbancaria y CCI, préstamos, antifraude, conciliación
 y cumplimiento (PLDFT). Tampoco hay conversión entre monedas (un envío solo va
 entre cuentas de la misma moneda). El dashboard web está diferido.
 

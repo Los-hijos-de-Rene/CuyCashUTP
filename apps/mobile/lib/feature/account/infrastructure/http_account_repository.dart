@@ -212,6 +212,7 @@ class HttpAccountRepository implements AccountRepository {
   MovementKind _tipo(String tipo) => switch (tipo) {
     'transferencia' => MovementKind.transferencia,
     'recarga' => MovementKind.recarga,
+    'pago_qr' => MovementKind.pagoQr,
     _ => MovementKind.otro,
   };
 
