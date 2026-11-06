@@ -311,6 +311,95 @@
         "title": "NombreIn",
         "type": "object"
       },
+      "QREmitirIn": {
+        "properties": {
+          "caducidad_segundos": {
+            "default": 300,
+            "maximum": 86400.0,
+            "minimum": 30.0,
+            "title": "Caducidad Segundos",
+            "type": "integer"
+          },
+          "concepto": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Concepto",
+            "type": "string"
+          },
+          "cuenta_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cuenta Id",
+            "type": "string"
+          },
+          "monto_centimos": {
+            "title": "Monto Centimos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cuenta_id",
+          "monto_centimos"
+        ],
+        "title": "QREmitirIn",
+        "type": "object"
+      },
+      "QRPagarIn": {
+        "properties": {
+          "cuenta_origen_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cuenta Origen Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "pin": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pin"
+          },
+          "qr": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Qr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "qr",
+          "cuenta_origen_id",
+          "idempotency_key"
+        ],
+        "title": "QRPagarIn",
+        "type": "object"
+      },
+      "QRValidarIn": {
+        "properties": {
+          "qr": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Qr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "qr"
+        ],
+        "title": "QRValidarIn",
+        "type": "object"
+      },
       "RegisterIn": {
         "properties": {
           "apellidos": {
@@ -553,7 +642,6 @@
   "paths": {
     "/health": {
       "get": {
-        "description": "Vida del proceso. Es el health check de Render: no toca la base para\nque un Neon dormido (scale to zero) no haga reiniciar el servicio.\n\n`version` es el commit que corre (Render lo pone en `RENDER_GIT_COMMIT`).\nEl pipeline de CD lo espera para saber que el despliegue terminó, y tras\nun rollback dice a qué versión se volvió. El repositorio es público: el\ncommit no revela nada que no esté ya en GitHub.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -573,7 +661,6 @@
     },
     "/health/db": {
       "get": {
-        "description": "Disponibilidad de la base: un `SELECT 1` y cuánto tardó. Para el\nmonitoreo externo; 503 si la base no responde, sin el detalle del error\n(la cadena de conexión no debe salir nunca en una respuesta).",
         "operationId": "health_db_health_db_get",
         "responses": {
           "200": {
@@ -2793,6 +2880,177 @@
         "summary": "Verify Challenge",
         "tags": [
           "OTP"
+        ]
+      }
+    },
+    "/v1/qr/emitir": {
+      "post": {
+        "operationId": "emitir_v1_qr_emitir_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QREmitirIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Emitir",
+        "tags": [
+          "QR"
+        ]
+      }
+    },
+    "/v1/qr/pagar": {
+      "post": {
+        "operationId": "pagar_v1_qr_pagar_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QRPagarIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pagar",
+        "tags": [
+          "QR"
+        ]
+      }
+    },
+    "/v1/qr/validar": {
+      "post": {
+        "operationId": "consultar_v1_qr_validar_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QRValidarIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar",
+        "tags": [
+          "QR"
         ]
       }
     },
