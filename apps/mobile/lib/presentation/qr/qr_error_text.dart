@@ -8,6 +8,12 @@ String qrErrorText(AppLocalizations l10n, QrFailure failure) => switch (failure)
       QrInsufficientFunds() => l10n.qrErrorInsufficientFunds,
       QrWrongPin(:final intentosRestantes) =>
         l10n.qrErrorWrongPin(intentosRestantes),
+      QrAlreadyPaid() => l10n.qrErrorAlreadyPaid,
+      QrSameAccount() => l10n.qrErrorSameAccount,
+      QrCurrencyMismatch() => l10n.qrErrorCurrencyMismatch,
+      QrAmountOutOfRange() => l10n.qrErrorAmountOutOfRange,
+      QrAccountUnavailable() => l10n.qrErrorAccountUnavailable,
+      QrLocked() => l10n.qrErrorLocked,
       QrNetworkFailure() => l10n.qrErrorNetwork,
       QrUnavailable() => l10n.qrErrorUnavailable,
       QrUnexpectedFailure() => l10n.qrErrorUnexpected,

@@ -2474,6 +2474,18 @@ abstract class AppLocalizations {
   /// **'Depósito simulado'**
   String get movementHeadlineTopUp;
 
+  /// No description provided for @movementHeadlineQrPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagaste con QR'**
+  String get movementHeadlineQrPaid;
+
+  /// No description provided for @movementHeadlineQrCharged.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobraste con QR'**
+  String get movementHeadlineQrCharged;
+
   /// No description provided for @movementHeadlineOther.
   ///
   /// In es, this message translates to:
@@ -3368,6 +3380,42 @@ abstract class AppLocalizations {
   /// **'PIN incorrecto. Te quedan {n} intentos.'**
   String qrErrorWrongPin(int n);
 
+  /// No description provided for @qrErrorAlreadyPaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Este QR ya fue pagado. Pide uno nuevo.'**
+  String get qrErrorAlreadyPaid;
+
+  /// No description provided for @qrErrorSameAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'No puedes pagar a la misma cuenta que cobra. Elige otra.'**
+  String get qrErrorSameAccount;
+
+  /// No description provided for @qrErrorCurrencyMismatch.
+  ///
+  /// In es, this message translates to:
+  /// **'Este cobro está en otra moneda. Elige una cuenta de la misma moneda.'**
+  String get qrErrorCurrencyMismatch;
+
+  /// No description provided for @qrErrorAmountOutOfRange.
+  ///
+  /// In es, this message translates to:
+  /// **'El monto está fuera del rango permitido. Prueba con otro monto.'**
+  String get qrErrorAmountOutOfRange;
+
+  /// No description provided for @qrErrorAccountUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Esa cuenta no está disponible. Elige otra o pide un QR nuevo.'**
+  String get qrErrorAccountUnavailable;
+
+  /// No description provided for @qrErrorLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Demasiados intentos. Espera un momento e inténtalo de nuevo.'**
+  String get qrErrorLocked;
+
   /// No description provided for @qrErrorNetwork.
   ///
   /// In es, this message translates to:
@@ -3377,7 +3425,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrErrorUnavailable.
   ///
   /// In es, this message translates to:
-  /// **'El pago con QR estará disponible cuando se despliegue la API.'**
+  /// **'El pago con QR no está disponible por ahora. Inténtalo más tarde.'**
   String get qrErrorUnavailable;
 
   /// No description provided for @qrErrorUnexpected.

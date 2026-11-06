@@ -8,7 +8,8 @@
 // NO corre con `flutter test` a secas (está fuera de `test/`, así no hay
 // pruebas omitidas ni dependencia de un servidor en la suite normal):
 //
-//   cd services/api && DATABASE_URL="sqlite+aiosqlite:///./contrato.db" \
+//   cd services/api && QR_SIGNING_SECRET=<32+ bytes> QR_MONTO_BASE_CENTIMOS=10000 \
+//     DATABASE_URL="sqlite+aiosqlite:///./contrato.db" \
 //     .venv/bin/python -m uvicorn app.main:app --port 8001
 //   cd apps/mobile && flutter test contract_test \
 //     --dart-define=CONTRACT_API_URL=http://127.0.0.1:8001
@@ -20,9 +21,13 @@ import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
 import 'package:cuycash/core/http/session_token_holder.dart';
 import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/movement.dart';
 import 'package:cuycash/feature/account/infrastructure/http_account_repository.dart';
 import 'package:cuycash/feature/auth/domain/auth_failure.dart';
 import 'package:cuycash/feature/auth/infrastructure/http_auth_repository.dart';
+import 'package:cuycash/feature/qr/domain/qr_failure.dart';
+import 'package:cuycash/feature/qr/domain/qr_receipt.dart';
+import 'package:cuycash/feature/qr/infrastructure/http_qr_repository.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
 import 'package:cuycash/feature/transfer/infrastructure/http_transfer_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +59,7 @@ class _Phone {
     );
     accounts = HttpAccountRepository(dio: dio);
     transfers = HttpTransferRepository(dio: dio);
+    qr = HttpQrRepository(dio: dio);
   }
 
   final String dni;
@@ -62,6 +68,7 @@ class _Phone {
   late final HttpAuthRepository auth;
   late final HttpAccountRepository accounts;
   late final HttpTransferRepository transfers;
+  late final HttpQrRepository qr;
 }
 
 String _dniAleatorio() => (10000000 + _rng.nextInt(89999999)).toString();
@@ -231,6 +238,132 @@ void main() {
     test('INT-CT-10 destinatario inexistente: RecipientNotFound', () async {
       final r = await ana.transfers.resolverDestinatario('99999999');
       expect(_servidor<TransferFailure, dynamic>(r), isA<RecipientNotFound>());
+    });
+
+    test('INT-CT-11 cobrar con QR: consulta previa sin mover dinero', () async {
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(1250),
+          concepto: 'Almuerzo',
+          idempotencyKey: _clave(),
+        ),
+      );
+      final antes = _ok(await ana.accounts.cuentas()).first;
+      final previa = _ok(await ana.qr.leer(cobro.payload));
+      expect(previa.monto, const Money.soles(1250));
+      expect(previa.concepto, 'Almuerzo');
+      expect(previa.cuentaDestinoId, destino.id);
+      expect(previa.expira.isUtc, isTrue);
+      final despues = _ok(await ana.accounts.cuentas()).first;
+      expect(despues.saldoDisponible, antes.saldoDisponible);
+    });
+
+    test('INT-CT-12 pagar un QR mueve ambos saldos y sale como pago QR', () async {
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(1250),
+          concepto: 'Almuerzo',
+          idempotencyKey: _clave(),
+        ),
+      );
+      final origenAntes = _ok(await ana.accounts.cuentas()).first;
+      final destinoAntes = _ok(await luis.accounts.cuentas()).first;
+      final recibo = _ok(
+        await ana.qr.pagar(
+          payload: cobro.payload,
+          cuentaOrigenId: origen.id,
+          pin: _pin,
+          idempotencyKey: _clave(),
+        ),
+      );
+      expect(recibo.monto, const Money.soles(1250));
+      final origenDespues = _ok(await ana.accounts.cuentas()).first;
+      final destinoDespues = _ok(await luis.accounts.cuentas()).first;
+      expect(
+        origenDespues.saldoDisponible.centimos,
+        origenAntes.saldoDisponible.centimos - 1250,
+      );
+      expect(
+        destinoDespues.saldoDisponible.centimos,
+        destinoAntes.saldoDisponible.centimos + 1250,
+      );
+      final movimientos = _ok(await ana.accounts.movimientos(origen.id));
+      expect(movimientos.items.first.tipo, MovementKind.pagoQr);
+    });
+
+    test('INT-CT-13 un QR pagado no se paga otra vez: QrAlreadyPaid', () async {
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(500),
+          concepto: 'Unico',
+          idempotencyKey: _clave(),
+        ),
+      );
+      FutureResult<QrFailure, QrReceipt> pagar(String clave) => ana.qr.pagar(
+        payload: cobro.payload,
+        cuentaOrigenId: origen.id,
+        pin: _pin,
+        idempotencyKey: clave,
+      );
+      final clave = _clave();
+      _ok(await pagar(clave));
+      final antes = _ok(await ana.accounts.cuentas()).first;
+      // Misma clave: reintento, devuelve el pago original.
+      _ok(await pagar(clave));
+      expect(
+        _servidor<QrFailure, dynamic>(await pagar(_clave())),
+        isA<QrAlreadyPaid>(),
+      );
+      expect(
+        _servidor<QrFailure, dynamic>(await ana.qr.leer(cobro.payload)),
+        isA<QrAlreadyPaid>(),
+      );
+      final despues = _ok(await ana.accounts.cuentas()).first;
+      expect(despues.saldoDisponible, antes.saldoDisponible);
+    });
+
+    test('INT-CT-14 QR alterado: QrTampered', () async {
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(500),
+          concepto: 'Alterado',
+          idempotencyKey: _clave(),
+        ),
+      );
+      final alterado = cobro.payload.replaceRange(
+        cobro.payload.length - 4,
+        cobro.payload.length,
+        '0000',
+      );
+      expect(
+        _servidor<QrFailure, dynamic>(await ana.qr.leer(alterado)),
+        isA<QrTampered>(),
+      );
+    });
+
+    test('INT-CT-15 PIN errado al pagar: QrWrongPin y nada se mueve', () async {
+      final cobro = _ok(
+        await luis.qr.emitir(
+          cuentaId: destino.id,
+          monto: const Money.soles(500),
+          concepto: 'Pin',
+          idempotencyKey: _clave(),
+        ),
+      );
+      final antes = _ok(await ana.accounts.cuentas()).first;
+      final r = await ana.qr.pagar(
+        payload: cobro.payload,
+        cuentaOrigenId: origen.id,
+        pin: '000000',
+        idempotencyKey: _clave(),
+      );
+      expect(_servidor<QrFailure, dynamic>(r), isA<QrWrongPin>());
+      final despues = _ok(await ana.accounts.cuentas()).first;
+      expect(despues.saldoDisponible, antes.saldoDisponible);
     });
   });
 }

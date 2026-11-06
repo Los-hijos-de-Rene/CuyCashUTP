@@ -110,4 +110,19 @@ void main() {
 
     expect(failureOf(result), isA<QrInsufficientFunds>());
   });
+
+  test('un QR pagado no se paga otra vez, pero el reintento sí pasa', () async {
+    final charge = await emitir(cuentaId: MemoryTransferRepository.cuentaDestinoId);
+    Future<Result<QrFailure, Object?>> pagar(String clave) => qr.pagar(
+      payload: charge.payload,
+      cuentaOrigenId: MemoryLedger.cuentaId,
+      pin: '000000',
+      idempotencyKey: clave,
+    );
+
+    expect((await pagar('pago-1')).isRight(), isTrue);
+    expect((await pagar('pago-1')).isRight(), isTrue);
+    expect(failureOf(await pagar('pago-2')), isA<QrAlreadyPaid>());
+    expect(failureOf(await qr.leer(charge.payload)), isA<QrAlreadyPaid>());
+  });
 }

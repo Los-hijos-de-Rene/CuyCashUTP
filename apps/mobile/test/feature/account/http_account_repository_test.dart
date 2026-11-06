@@ -527,7 +527,7 @@ void main() {
           'movimientos': [
             {
               'transaction_id': 't',
-              'tipo': 'pago_qr',
+              'tipo': 'desembolso',
               'estado': 'confirmada',
               'direccion': 'debito',
               'monto': 1,

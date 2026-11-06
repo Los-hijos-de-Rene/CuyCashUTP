@@ -58,6 +58,9 @@ class _Ready extends StatelessWidget {
       l10n.movementHeadlineSent,
     (MovementKind.transferencia, MovementDirection.credito) =>
       l10n.movementHeadlineReceived,
+    (MovementKind.pagoQr, MovementDirection.debito) => l10n.movementHeadlineQrPaid,
+    (MovementKind.pagoQr, MovementDirection.credito) =>
+      l10n.movementHeadlineQrCharged,
     (MovementKind.otro, _) => l10n.movementHeadlineOther,
   };
 
@@ -65,9 +68,9 @@ class _Ready extends StatelessWidget {
     detalle.tipo,
     detalle.direccion,
   )) {
-    (MovementKind.transferencia, MovementDirection.debito) =>
+    (MovementKind.transferencia || MovementKind.pagoQr, MovementDirection.debito) =>
       l10n.transferReceiptTo,
-    (MovementKind.transferencia, MovementDirection.credito) =>
+    (MovementKind.transferencia || MovementKind.pagoQr, MovementDirection.credito) =>
       l10n.movementDetailReceivedFrom,
     (MovementKind.recarga, _) || (MovementKind.otro, _) => null,
   };

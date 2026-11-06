@@ -6,7 +6,7 @@ import 'qr_payment_preview.dart';
 import 'qr_receipt.dart';
 
 /// Contrato del cobro y pago con QR. La implementación `Memory*` es la que
-/// usan el flavor `mock` y las pruebas; la real llegará con la API #77.
+/// usan el flavor `mock` y las pruebas; la real es `HttpQrRepository`.
 abstract interface class QrRepository {
   /// Publica un cobro firmado con caducidad.
   FutureResult<QrFailure, QrCharge> emitir({
@@ -19,8 +19,8 @@ abstract interface class QrRepository {
   /// Lee y valida un QR. No mueve dinero.
   FutureResult<QrFailure, QrPaymentPreview> leer(String payload);
 
-  /// Paga el QR. Vuelve a validar el payload antes de mover dinero y usa una
-  /// `idempotencyKey` para que un reintento no cobre dos veces.
+  /// Paga el QR, que admite un solo pago. Vuelve a validar el payload antes de
+  /// mover dinero; repetir la `idempotencyKey` devuelve el pago original.
   FutureResult<QrFailure, QrReceipt> pagar({
     required String payload,
     required String cuentaOrigenId,

@@ -15,11 +15,11 @@ from app.api.v1.routers.transfers import MONTO_MAXIMO, _buscar_cuenta_propia, _v
 from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
-from app.db.models import Account, Transfer, User
+from app.db.models import Account, Transaction, Transfer, User
 from app.db.models import Session as SessionRow
 from app.services.autorizacion import exigir_pin_de_operacion
 from app.services.ledger import Asiento, post
-from app.services.qr_firmado import emitir_qr, validar_qr
+from app.services.qr_firmado import QrVencido, emitir_qr, validar_qr
 
 router = APIRouter(prefix="/v1/qr", tags=["QR"])
 
@@ -71,12 +71,30 @@ def _limite_sin_pin() -> int:
 def _datos_qr(token: str) -> dict:
     try:
         return validar_qr(token, secreto=_secreto_firma())
+    except QrVencido as exc:
+        raise ApiError(
+            "QR_EXPIRED",
+            "El QR ha vencido.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        ) from exc
     except ValueError as exc:
         raise ApiError(
             "QR_INVALID",
             "El QR es inválido o ha vencido.",
             status_code=status.HTTP_400_BAD_REQUEST,
         ) from exc
+
+
+def _huella_qr(token: str) -> str:
+    return hashlib.sha256(token.encode("ascii")).hexdigest()
+
+
+def _qr_ya_pagado() -> ApiError:
+    return ApiError(
+        "QR_ALREADY_PAID",
+        "Este QR ya fue pagado.",
+        status_code=status.HTTP_409_CONFLICT,
+    )
 
 
 def _ocultar_nombre(texto: str) -> str:
@@ -111,6 +129,7 @@ def _resumen(datos: dict, destino: Account, titular: User) -> dict:
     monto = datos["monto_centimos"]
     _validar_monto(monto, destino.moneda)
     return {
+        "cuenta_destino_id": destino.id,
         "nombre_enmascarado": (
             f"{_ocultar_nombre(titular.nombres)} {_ocultar_nombre(titular.apellidos)}"
         ),
@@ -147,6 +166,7 @@ async def emitir(
     )
     datos = _datos_qr(token)
     return {
+        "id": datos["nonce"],
         "qr": token,
         "monto_centimos": payload.monto_centimos,
         "moneda": cuenta.moneda,
@@ -163,7 +183,13 @@ async def consultar(
 ):
     datos = _datos_qr(payload.qr)
     destino, titular = await _destino_visible(session, datos["cuenta_id"])
-    return _resumen(datos, destino, titular)
+    resumen = _resumen(datos, destino, titular)
+    pagado = await session.scalar(
+        select(Transaction.id).where(Transaction.idempotency_key == _huella_qr(payload.qr))
+    )
+    if pagado is not None:
+        raise _qr_ya_pagado()
+    return resumen
 
 
 @router.post("/pagar")
@@ -189,28 +215,36 @@ async def pagar(
             "Solo puedes pagar entre cuentas de la misma moneda.",
         )
     monto = datos["monto_centimos"]
-    if monto > _limite_sin_pin():
-        if not payload.pin:
-            raise ApiError(
-                "QR_AUTH_REQUIRED",
-                "Este monto requiere autorización con PIN.",
-                status_code=status.HTTP_403_FORBIDDEN,
-            )
+    if monto > _limite_sin_pin() and not payload.pin:
+        raise ApiError(
+            "QR_AUTH_REQUIRED",
+            "Este monto requiere autorización con PIN.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    # Un PIN enviado siempre se comprueba: si no, bajo el límite cualquier PIN
+    # aprobaría el pago y el usuario creería que el suyo fue validado.
+    if payload.pin:
         await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
 
-    # La huella impide reutilizar la misma clave para otro QR, aunque coincidan
-    # el destinatario y el monto. El libro mayor incorpora además ambos asientos.
-    huella_qr = hashlib.sha256(payload.qr.encode("ascii")).hexdigest()
-    tx, reutilizada = await post(
-        session,
-        tipo="pago_qr",
-        asientos=[
-            Asiento(origen.id, "debito", monto),
-            Asiento(destino.id, "credito", monto),
-        ],
-        idempotency_key=payload.idempotency_key,
-        fingerprint=f"qr={huella_qr}",
-    )
+    # La clave del libro mayor es la huella del QR: su UNIQUE deja un solo pago,
+    # incluso con dos a la vez. La clave del cliente va en la huella de la
+    # petición: repetirla es un reintento y devuelve el pago original; otra
+    # clave u otra cuenta es un segundo pago del mismo QR y se rechaza.
+    try:
+        tx, reutilizada = await post(
+            session,
+            tipo="pago_qr",
+            asientos=[
+                Asiento(origen.id, "debito", monto),
+                Asiento(destino.id, "credito", monto),
+            ],
+            idempotency_key=_huella_qr(payload.qr),
+            fingerprint=f"clave={payload.idempotency_key}",
+        )
+    except ApiError as exc:
+        if exc.detail["code"] == ErrorCode.IDEMPOTENCY_KEY_REUSED:
+            raise _qr_ya_pagado() from exc
+        raise
     if not reutilizada:
         session.add(
             Transfer(
@@ -226,6 +260,7 @@ async def pagar(
         "transaction_id": tx.id,
         "estado": tx.estado,
         "monto_centimos": monto,
+        "moneda": origen.moneda,
         "created_at": _iso(tx.created_at),
     }
     await session.commit()

@@ -14,6 +14,10 @@ import secrets
 import time
 
 
+class QrVencido(ValueError):
+    """El QR es auténtico pero ya venció: la firma se comprueba antes."""
+
+
 def _clave_segura(secreto: str) -> bytes:
     if not isinstance(secreto, str):
         raise ValueError("La clave de firma no es valida.")
@@ -164,9 +168,12 @@ def validar_qr(
         instante = int(time.time()) if ahora is None else ahora
 
         if instante >= datos["exp"]:
-            raise ValueError("QR vencido.")
+            raise QrVencido("QR vencido.")
 
         return datos
+
+    except QrVencido:
+        raise
 
     except (ValueError, TypeError, UnicodeError) as error:
         raise ValueError("QR invalido o vencido.") from error
