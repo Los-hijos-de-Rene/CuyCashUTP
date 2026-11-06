@@ -5,8 +5,8 @@
 | Actividad | Criterio | Responsable | Tarjeta |
 |---|---|---|---|
 | Asignar #2, #83, #90 y #104; revisión cruzada de PR | 4 | Jair Conislla y equipo | #105 |
-| Aprobar el despliegue pendiente (PR #132 y PostgreSQL 18) y repetir el humo | 2, 5 | Andersson Espinoza | #127 |
-| Instalar `v0.3.0` desde Firebase y probarlo en un teléfono | 5 | Jair Conislla | — |
+| Aprobar el despliegue pendiente (PostgreSQL 18) y repetir el humo | 5 | Andersson Espinoza | #127 |
+| Adjuntar captura de la operación en `v0.3.0` y su fila en Neon | 5 | Jair Conislla | — |
 | Sesión con 5 usuarios, SUS y tiempos de tarea | 3 | Jair Abdel Linares | #104 |
 | UAT-1..3 en emulador y acta firmada | 1 | Gian Piero Gonzales | #97 |
 | UAT en la nube con cuentas con KYC real | 5 | Andersson Espinoza | #102 |

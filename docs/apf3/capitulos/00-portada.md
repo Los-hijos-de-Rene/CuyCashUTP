@@ -7,7 +7,7 @@
 | Repositorio | <https://github.com/Los-hijos-de-Rene/CuyCashUTP> |
 | Producción (API) | <https://cuycashutp.onrender.com> · `GET /health` devuelve el commit desplegado |
 | Tablero de trabajo | <https://github.com/orgs/Los-hijos-de-Rene/projects/1> |
-| Commit en producción | `e226dd5` (verificado en `/health` el 05/11/2026); resultados de humo sobre `f9db8cd` |
+| Commit en producción | `7e3d3ea` (verificado en `/health` el 05/11/2026; humo con 0 fallos) |
 | Corte y sustentación | 04/11/2026 · viernes 06/11/2026 |
 
 ## Equipo

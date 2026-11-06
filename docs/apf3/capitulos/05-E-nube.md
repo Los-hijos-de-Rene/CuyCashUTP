@@ -8,7 +8,8 @@
 `GET /health` devuelve `f9db8cdcb583e38085aec741692cc2f4e67097bd`. La v2 se publica
 solo por GitHub Actions (`cd-backend.yml`), con aprobación en el environment
 `production`; el 03/11 producción aún corría `d74d663` (v1). Al 05/11 `/health` devuelve
-`e226dd5`, sin cambios en el código del backend respecto de `f9db8cd`.
+`7e3d3ea`, que incluye el PR #132. La tabla siguiente corresponde a la corrida del 04/11;
+el humo repetido sobre `7e3d3ea` también dio 0 fallos (`smoke-prod-7e3d3ea.txt`).
 
 ## E.2 Pruebas automatizadas contra producción
 
@@ -39,7 +40,7 @@ en frío, y por eso el servicio se precalienta antes de la demostración.
 | Cuadre del libro mayor | PostgreSQL local | ✅ Cero transacciones y cuentas descuadradas |
 | UAT-1 y UAT-2 contra Render | Producción | ⏳ No completado: el alta ficticia del 03/11 sobre la v1 recibió `403 KYC_REQUIRED` |
 | Cuadre de débitos y créditos en Neon | Producción | ✅ La consulta de descuadres no devolvió filas (04/11, 19:31) |
-| Recorrido APK → nube | Producción | ⏳ Programado |
+| Recorrido APK → nube | Producción | 🟡 El equipo reporta un depósito entre cuentas desde la v0.3.0 (05/11); falta adjuntar captura y su fila en Neon |
 
 El rechazo del alta es correcto: el control de KYC no se desactivó para el ensayo.
 `scripts/uat_prod.py` exige `--allow-writes` y `--production-approved`, nunca imprime
@@ -56,8 +57,8 @@ cuyos débitos difieran de sus créditos; se ejecutó en el SQL Editor de Neon:
 1. La validación de lectura y seguridad de borde está completa sobre la v2.
 2. La validación funcional con escritura en la nube está programada con cuentas que
    superen el KYC real, sin desactivar controles (Anexos).
-3. El PR #132 y el paso a PostgreSQL 18 ya están en `main`, pero su despliegue espera
-   aprobación; después se repetirá el humo.
+3. El PR #132 ya corre en producción y el humo se repitió. El paso a PostgreSQL 18 está en
+   `main`, pero su despliegue espera aprobación.
 
 ## E.5 Distribución del APK de la v2
 
@@ -76,7 +77,7 @@ en cada runner, por lo que un APK nuevo no actualizaba al instalado.
 | Segunda corrida, tras corregir el secreto | ✅ Build, Release y Firebase en verde | 05/11 |
 | Firma del APK publicado | ✅ `apksigner` muestra `CN=Jair` y no la clave de depuración; `versionCode` 4 | 05/11 |
 | Envío a Firebase App Distribution | ✅ Release 0.1.0 (4) distribuido a los testers y grupos | 05/11 |
-| Instalación desde Firebase en un teléfono | ⏳ Programado | — |
+| Instalación en un teléfono | ✅ Reportada por el equipo, con una operación probada | 05/11 |
 
 La primera falla no fue del workflow: la contraseña guardada en los secretos no abría
 la clave. Corregido el secreto, la misma corrida pasó en su segundo intento:

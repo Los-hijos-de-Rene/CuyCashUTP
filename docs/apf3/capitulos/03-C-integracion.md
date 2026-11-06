@@ -131,8 +131,8 @@ omitidas, cobertura 97.31 %.
 1. Las pruebas de Telegram y KYC usan servicios simulados: detectan regresiones de
    nuestro lado, no un cambio del proveedor ni el arranque en frío real.
 2. El PostgreSQL de CI no es Neon: no hay prueba automatizada directa contra Neon.
-3. La suite y sus dos correcciones se integraron en `main` con el PR #132 (`7e3d3ea`).
-   Al 05/11 ese despliegue espera aprobación, así que aún no corren en producción.
+3. La suite y sus dos correcciones se integraron con el PR #132 (`7e3d3ea`) y ese commit
+   corre en producción desde el 05/11.
 4. ML Kit y `local_auth` están detrás de dobles; no se probaron en un teléfono.
 
 ## C.7 Coexistencia de la API — Andersson #103
