@@ -2,6 +2,10 @@ import 'package:core_kernel/core_kernel.dart';
 
 /// Un cobro publicado como QR: monto, concepto y caducidad.
 class QrCharge {
+  /// Cuánto vale un cobro. La app la promete en `qrChargeBody`: si cambia,
+  /// cambia también ese texto.
+  static const vigencia = Duration(minutes: 15);
+
   const QrCharge({
     required this.id,
     required this.payload,

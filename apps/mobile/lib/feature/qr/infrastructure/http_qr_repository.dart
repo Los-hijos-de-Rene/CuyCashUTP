@@ -33,6 +33,7 @@ class HttpQrRepository implements QrRepository {
         'cuenta_id': cuentaId,
         'monto_centimos': monto.centimos,
         'concepto': concepto,
+        'caducidad_segundos': QrCharge.vigencia.inSeconds,
       },
     );
     if (_failureFor(response) case final f?) {

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../feature/account/domain/account.dart';
 import '../../../feature/qr/application/qr_actions.dart';
 import '../../../feature/qr/domain/qr_failure.dart';
+import '../../../feature/qr/domain/qr_payload.dart';
 import '../../../feature/qr/domain/qr_payment_preview.dart';
 import '../../../feature/qr/domain/qr_receipt.dart';
 
@@ -128,7 +129,7 @@ class QrPayBloc extends Bloc<QrPayEvent, QrPayState> {
       return;
     }
     emit(const QrPayState.reading());
-    final result = await _actions.leer(event.payload);
+    final result = await _actions.leer(extraerCodigoQr(event.payload));
     result.match(
       (failure) => emit(QrPayState.error(_businessFailure(failure))),
       (preview) => emit(

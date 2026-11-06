@@ -1888,10 +1888,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get qrPayTitle => 'Pagar con QR';
 
   @override
-  String get qrPayScanHint => 'Apunta la cámara al QR o pega el código.';
+  String get qrPayScanHint =>
+      'Apunta la cámara al QR o pega el mensaje que te enviaron.';
 
   @override
-  String get qrPayPasteLabel => 'Código del QR';
+  String get qrPayPasteLabel => 'Código o mensaje del QR';
 
   @override
   String get qrPayRead => 'Leer código';

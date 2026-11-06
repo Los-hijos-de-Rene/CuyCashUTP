@@ -22,7 +22,7 @@ class MemoryQrRepository implements QrRepository {
   MemoryQrRepository({
     required TransferActions transfer,
     DateTime Function()? clock,
-    Duration ttl = const Duration(minutes: 15),
+    Duration ttl = QrCharge.vigencia,
   })  : _transfer = transfer,
         _now = clock ?? DateTime.now,
         _ttl = ttl;

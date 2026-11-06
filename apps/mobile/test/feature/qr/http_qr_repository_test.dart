@@ -98,6 +98,7 @@ void main() {
       'cuenta_id': 'acc-2',
       'monto_centimos': 1250,
       'concepto': 'Almuerzo',
+      'caducidad_segundos': 900,
     });
   });
 
