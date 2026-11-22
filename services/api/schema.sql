@@ -238,6 +238,20 @@ CREATE TABLE loan_applications (
 CREATE INDEX ix_loan_applications_user_id ON loan_applications (user_id);
 
 
+CREATE TABLE qr_consumo_diario (
+	user_id VARCHAR(36) NOT NULL,
+	moneda VARCHAR(3) NOT NULL,
+	fecha DATE NOT NULL,
+	consumido BIGINT NOT NULL,
+	PRIMARY KEY (user_id, moneda, fecha),
+	CONSTRAINT ck_qr_consumo_diario_no_negativo CHECK (consumido >= 0),
+	CONSTRAINT ck_qr_consumo_diario_moneda CHECK (moneda IN ('PEN','USD')),
+	FOREIGN KEY(user_id) REFERENCES users (id)
+)
+
+;
+
+
 CREATE TABLE sessions (
 	id VARCHAR(36) NOT NULL,
 	user_id VARCHAR(36) NOT NULL,

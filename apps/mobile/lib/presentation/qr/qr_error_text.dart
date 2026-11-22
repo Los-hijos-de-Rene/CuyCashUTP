@@ -1,3 +1,4 @@
+import '../../../core/format/money_format.dart';
 import '../../../feature/qr/domain/qr_failure.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -14,6 +15,9 @@ String qrErrorText(AppLocalizations l10n, QrFailure failure) => switch (failure)
       QrSameAccount() => l10n.qrErrorSameAccount,
       QrCurrencyMismatch() => l10n.qrErrorCurrencyMismatch,
       QrAmountOutOfRange() => l10n.qrErrorAmountOutOfRange,
+      QrDailyLimit(:final disponible) => disponible.centimos > 0
+          ? l10n.qrErrorDailyLimit(formatMoney(disponible))
+          : l10n.qrErrorDailyLimitReached,
       QrAccountUnavailable() => l10n.qrErrorAccountUnavailable,
       QrLocked() => l10n.qrErrorLocked,
       QrNetworkFailure() => l10n.qrErrorNetwork,

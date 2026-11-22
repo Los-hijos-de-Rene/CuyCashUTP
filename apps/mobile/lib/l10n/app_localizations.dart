@@ -3428,6 +3428,18 @@ abstract class AppLocalizations {
   /// **'El monto está fuera del rango permitido. Prueba con otro monto.'**
   String get qrErrorAmountOutOfRange;
 
+  /// No description provided for @qrErrorDailyLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Superas tu límite diario de pagos con QR. Hoy aún puedes pagar {monto}.'**
+  String qrErrorDailyLimit(String monto);
+
+  /// No description provided for @qrErrorDailyLimitReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaste a tu límite diario de pagos con QR. Podrás pagar de nuevo mañana.'**
+  String get qrErrorDailyLimitReached;
+
   /// No description provided for @qrErrorAccountUnavailable.
   ///
   /// In es, this message translates to:

@@ -44,6 +44,8 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | DT-11 | Correo enmascarado | C | P | `app/services/otp.py · mask_email` | `test_perfil.py` | ✅ |
 | DT-12 | Del KYC se guarda el veredicto, nunca las imágenes | C | P | `db/models.py · kyc_verifications` | Revisión del modelo | ✅ |
 | DT-13 | Nombre del dispositivo saneado a ASCII imprimible | I | P | app `core/env/device_name.dart`; `services/devices.py` | `test_nombre_de_dispositivo.py` | ✅ |
+| DT-14 | Pago con QR siempre con PIN (sin umbral sin PIN) | C I | P | `routers/qr.py · pagar` | `test_qr_flujo.py · qr_02`, `test_qr_estatico.py` | ✅ |
+| DT-15 | Límite diario de pagos con QR por titular y moneda (S/ 5,000 · US$ 1,500), con bloqueo de fila | I | P | `app/services/limite_diario.py`, tabla `qr_consumo_diario` | `test_qr_limite_diario.py` (concurrencia: marca `postgres`, en CI) | ✅ |
 
 ## Aplicación web y transporte
 
@@ -76,6 +78,6 @@ Tipo: **P** preventivo, **D** detectivo, **R** correctivo.
 | OP-09 | Logs estructurados con correlación | C D | D | — | — | ⏳ |
 | OP-10 | Migraciones versionadas | I D | P | — | — | ⏳ |
 
-**Resumen**: 49 controles; 43 implementados (✅), 1 parcial (⚠️) y 5
+**Resumen**: 51 controles; 45 implementados (✅), 1 parcial (⚠️) y 5
 pendientes (⏳). Los pendientes y parciales están detallados con su
 mitigación en [`seguridad.md`](seguridad.md#7-riesgos-abiertos).

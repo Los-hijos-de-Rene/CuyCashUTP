@@ -286,6 +286,19 @@ tipo `pago_qr` con `referencia = 'qr:<id>'`.
 | `created_at` | TIMESTAMPTZ | No | | | Emisión. |
 | `revocado_at` | TIMESTAMPTZ | Sí | | Presente si y solo si está revocado | Momento de la revocación. |
 
+### `qr_consumo_diario` — límite diario de pagos con QR
+
+Lo que un titular pagó con QR en un día y una moneda, para el límite diario
+(S/ 5,000 · US$ 1,500). Suma estático y dinámico de todas sus cuentas: el tope
+es del titular, no de la cuenta. El día es el calendario de Lima (UTC-5).
+
+| Columna | Tipo | Nulo | Clave | Restricción / defecto | Descripción |
+|---|---|---|---|---|---|
+| `user_id` | VARCHAR(36) | No | PK, FK → `users.id` | | Titular que paga. |
+| `moneda` | VARCHAR(3) | No | PK | `PEN`, `USD` | Las monedas no se suman entre sí. |
+| `fecha` | DATE | No | PK | | Día calendario de Lima. |
+| `consumido` | BIGINT | No | | `>= 0` | Céntimos pagados con QR ese día. Se bloquea la fila antes del pago y se suma solo si el pago es nuevo (un reintento no suma). |
+
 ### `beneficiaries` — frecuentes
 
 Una cuenta de destino guardada por un cliente, con un apodo.

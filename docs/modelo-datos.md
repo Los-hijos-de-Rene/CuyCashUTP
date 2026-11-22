@@ -20,7 +20,7 @@ las demás escriben: definirlo sin saber quién lo va a usar obliga a rehacerlo.
 | 2 · Cuentas y libro mayor | 2 | 3 | Implementada |
 | 3 · Transferencias y antifraude | 3 | 3 | Parcial |
 | 4 · Préstamos digitales | 4 | 3 implementadas de 4 diseñadas | Parcial: solicitud, préstamo y cuotas (#95); contrato pendiente |
-| 5 · Billetera y QR | 5 | 1 | Parcial: `qr_codigos` (QR estático y dinámico, #77) |
+| 5 · Billetera y QR | 5 | 2 | Parcial: `qr_codigos` (QR estático y dinámico, #77) y `qr_consumo_diario` (límite diario) |
 | 6 · Conciliación y cumplimiento | 6 | 4 | Diseñada |
 
 Épica 3, parcial: están implementadas `transfers` (solo entre cuentas CuyCash,
@@ -57,6 +57,7 @@ erDiagram
     transactions ||--o{ reconciliation_items : "concilia"
 
     qr_codigos ||--o{ transactions : "referencia = qr:id"
+    users ||--o{ qr_consumo_diario : "paga con QR"
     loans ||--|{ loan_installments : "se paga en"
     loans ||--|| loan_contracts : "formaliza"
     loan_applications ||--o| loans : "origina"
@@ -148,6 +149,13 @@ erDiagram
         timestamptz expires_at "nulo en estático"
         varchar estado "activo | revocado"
         timestamptz revocado_at
+    }
+
+    qr_consumo_diario {
+        uuid user_id PK
+        varchar moneda PK "PEN | USD"
+        date fecha PK "día de Lima"
+        bigint consumido
     }
 
     loans {
@@ -308,6 +316,7 @@ la aplicación, y las fechas son `timestamptz`.
 | `ledger_entries` | `id`, `transaction_id` (FK), `account_id` (FK), `direccion`, `monto`, `moneda`, `saldo_posterior`, `created_at` | `monto > 0`; `direccion` en (`debito`, `credito`); índice `(account_id, created_at, id)` para paginar el historial |
 | `transfers` | `id`, `transaction_id` (FK), `cuenta_origen` (FK `accounts`), `cuenta_destino` (FK `accounts`), `monto`, `motivo` (40, nulo), `estado` (12, por defecto `confirmada`) | `transaction_id` único (una transferencia por transacción) |
 | `qr_codigos` | `id` (22, aleatorio), `cuenta_id` (FK `accounts`), `tipo`, `monto` (nulo), `concepto` (40), `expires_at` (nulo), `estado`, `created_at`, `revocado_at` (nulo) | `CHECK` de `tipo` (`estatico`, `dinamico`) y `estado` (`activo`, `revocado`); `ck_qr_codigos_forma`: el estático no tiene monto ni caducidad y el dinámico tiene ambos; `revocado_at` presente si y solo si está revocado; índice único parcial `ux_qr_codigos_un_estatico_activo (cuenta_id) WHERE tipo = 'estatico' AND estado = 'activo'` |
+| `qr_consumo_diario` | `user_id` (FK `users`), `moneda` (3), `fecha` (`date`, día de Lima), `consumido` | PK `(user_id, moneda, fecha)`; `consumido >= 0`; `CHECK` de `moneda` (`PEN`, `USD`). Acumulado de `pago_qr` del pagador para el límite diario: se bloquea (`FOR UPDATE`) antes del pago y se suma solo si el libro mayor registró uno nuevo. No es fuente de verdad: se reconstruye desde `transactions` |
 | `beneficiaries` | `id`, `user_id` (FK `users`), `beneficiario_dni` (8), `cuenta_destino_id` (FK `accounts`, NOT NULL), `apodo` (40), `created_at` | `uq_beneficiaries_user_cuenta (user_id, cuenta_destino_id)`. Un frecuente apunta a una cuenta concreta del destinatario, no solo a su DNI; el nombre se resuelve al usarlo |
 
 **Reglas de `accounts` que no son restricción de base.** Tope de 5 cuentas por

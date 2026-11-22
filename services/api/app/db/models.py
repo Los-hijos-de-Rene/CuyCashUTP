@@ -1,11 +1,12 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -529,6 +530,28 @@ class QrCodigo(Base):
             sqlite_where=text("tipo = 'estatico' AND estado = 'activo'"),
             postgresql_where=text("tipo = 'estatico' AND estado = 'activo'"),
         ),
+    )
+
+
+class QrConsumoDiario(Base):
+    """
+    Lo que un titular pagó con QR en un día (calendario de Lima) y una moneda.
+    La regla y su concurrencia viven en `app/services/limite_diario.py`.
+
+    Es un acumulado, no la fuente de verdad: los pagos están en `transactions`
+    (`tipo = 'pago_qr'`). Si alguna vez se desalinea, se reconstruye desde ahí.
+    """
+
+    __tablename__ = "qr_consumo_diario"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    moneda: Mapped[str] = mapped_column(String(3), primary_key=True)
+    fecha: Mapped[date] = mapped_column(Date, primary_key=True)
+    consumido: Mapped[int] = mapped_column(BigInteger, default=0)
+
+    __table_args__ = (
+        CheckConstraint("consumido >= 0", name="ck_qr_consumo_diario_no_negativo"),
+        CheckConstraint("moneda IN ('PEN','USD')", name="ck_qr_consumo_diario_moneda"),
     )
 
 

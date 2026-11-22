@@ -59,7 +59,12 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
   - **Dinámico / cobro** (`/v1/qr/emitir`): monto fijo, caduca y admite un solo
     pago (la clave del libro mayor es la huella del QR). Otra clave da 409
     `QR_ALREADY_PAID`; un monto distinto, 400 `QR_AMOUNT_FIXED`.
-  El servidor exige PIN SIEMPRE (403 `QR_AUTH_REQUIRED`). Reintentar un pago
+  El servidor exige PIN SIEMPRE (403 `QR_AUTH_REQUIRED`). **Límite diario**
+  por titular y moneda, sumando estático y dinámico de todas sus cuentas
+  (S/ 5,000 · US$ 1,500, día de Lima; `app/services/limite_diario.py`, tabla
+  `qr_consumo_diario` con bloqueo de fila): 400 `QR_DAILY_LIMIT` con
+  `disponible_centimos`; `/validar` devuelve `disponible_hoy_centimos`.
+  Envíos y recargas NO cuentan. Reintentar un pago
   ya hecho devuelve el original aunque el QR haya vencido o se haya revocado.
   Requiere `QR_SIGNING_SECRET`; sin ella, 503. La **app** aún no tiene "Mi QR".
 
