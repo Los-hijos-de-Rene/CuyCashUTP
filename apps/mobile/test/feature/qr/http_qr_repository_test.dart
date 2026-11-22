@@ -110,7 +110,7 @@ void main() {
       'moneda': 'USD',
       'concepto': 'Taller',
       'caduca_en': '2026-11-06T22:58:04+00:00',
-      'requiere_pin': false,
+      'requiere_pin': true,
     });
     final previa = (await _repo(
       backend,
@@ -142,6 +142,12 @@ void main() {
   final casos = <String, ({int status, Map<String, Object?> body, Type tipo})>{
     'vencido': (status: 400, body: {'code': 'QR_EXPIRED'}, tipo: QrExpired),
     'alterado': (status: 400, body: {'code': 'QR_INVALID'}, tipo: QrTampered),
+    'revocado': (status: 400, body: {'code': 'QR_REVOKED'}, tipo: QrRevoked),
+    'monto libre en app vieja': (
+      status: 400,
+      body: {'code': 'QR_UPDATE_REQUIRED'},
+      tipo: QrUpdateRequired,
+    ),
     'ya pagado': (
       status: 409,
       body: {'code': 'QR_ALREADY_PAID'},

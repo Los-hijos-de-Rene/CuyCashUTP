@@ -1,8 +1,21 @@
-"""Cobros con QR firmados, consulta previa y pago en libro mayor (issue #77)."""
+"""
+Cobros y pagos con QR (issue #77).
 
-import hashlib
+Dos tipos de QR, como en el estándar EMVCo (estático/dinámico):
+- Estático ("Mi QR"): identifica la cuenta que recibe; el pagador elige el
+  monto. Permanente, admite muchos pagos, se revoca al regenerarlo.
+- Dinámico (cobro): monto fijo, caduca y admite un solo pago.
+
+El token del QR es una referencia firmada a una fila de `qr_codigos`
+(`app/services/qr_firmado.py`): lo que el QR vale lo decide el servidor.
+
+El PIN se exige SIEMPRE para pagar. Con un umbral sin PIN, quien robara una
+sesión vaciaría la cuenta en pagos chicos: con monto libre, el pagador decide
+cuánto, y con cobros dinámicos el atacante puede emitirlos él mismo.
+"""
+
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Response, status
@@ -11,15 +24,21 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.routers.accounts import _iso
-from app.api.v1.routers.transfers import MONTO_MAXIMO, _buscar_cuenta_propia, _validar_monto
+from app.api.v1.routers.transfers import _buscar_cuenta_propia, _validar_monto
 from app.core.deps import current_session_row, current_user
 from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
-from app.db.models import Account, Transaction, Transfer, User
+from app.db.models import Account, QrCodigo, Transaction, Transfer, User, utcnow
 from app.db.models import Session as SessionRow
 from app.services.autorizacion import exigir_pin_de_operacion
 from app.services.ledger import Asiento, post
-from app.services.qr_firmado import QrVencido, emitir_qr, validar_qr
+from app.services.qr_firmado import (
+    clave_de_pago_libre,
+    huella_de_pago,
+    leer_token,
+    nuevo_id,
+    token_de,
+)
 
 router = APIRouter(prefix="/v1/qr", tags=["QR"])
 
@@ -31,14 +50,28 @@ class QREmitirIn(BaseModel):
     caducidad_segundos: StrictInt = Field(default=300, ge=30, le=86400)
 
 
+class QREstaticoIn(BaseModel):
+    cuenta_id: str = Field(min_length=1, max_length=36)
+
+
 class QRValidarIn(BaseModel):
     qr: str = Field(min_length=1, max_length=2048)
+    # Una app que no lo manda no sabe pedir un monto: ante un QR estático se le
+    # responde `QR_UPDATE_REQUIRED` en vez de un `monto_centimos` null que la
+    # haría fallar al leerlo.
+    acepta_monto_libre: bool = False
 
 
-class QRPagarIn(QRValidarIn):
+class QRPagarIn(BaseModel):
+    qr: str = Field(min_length=1, max_length=2048)
     cuenta_origen_id: str = Field(min_length=1, max_length=36)
     idempotency_key: str = Field(min_length=8, max_length=64)
     pin: Optional[str] = Field(default=None, max_length=64)
+    # Obligatorio para un QR estático. En uno dinámico es opcional y, si llega,
+    # debe ser el del cobro.
+    monto_centimos: Optional[StrictInt] = None
+    # Nota del pagador en un QR estático. `transfers.motivo` es VARCHAR(40).
+    mensaje: Optional[str] = Field(default=None, max_length=40)
 
 
 def _secreto_firma() -> str:
@@ -52,49 +85,42 @@ def _secreto_firma() -> str:
     return secreto
 
 
-def _limite_sin_pin() -> int:
-    # El límite debe acordarse con el equipo; no se presume uno en producción.
-    raw = os.environ.get("QR_MONTO_BASE_CENTIMOS", "")
-    try:
-        limite = int(raw)
-    except ValueError:
-        limite = -1
-    if not 1 <= limite <= MONTO_MAXIMO:
-        raise ApiError(
-            "QR_NOT_CONFIGURED",
-            "El servicio QR no está disponible.",
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
-    return limite
+def _error(codigo: str, mensaje: str, http: int = status.HTTP_400_BAD_REQUEST) -> ApiError:
+    return ApiError(codigo, mensaje, status_code=http)
 
 
-def _datos_qr(token: str) -> dict:
-    try:
-        return validar_qr(token, secreto=_secreto_firma())
-    except QrVencido as exc:
-        raise ApiError(
-            "QR_EXPIRED",
-            "El QR ha vencido.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        ) from exc
-    except ValueError as exc:
-        raise ApiError(
-            "QR_INVALID",
-            "El QR es inválido o ha vencido.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        ) from exc
-
-
-def _huella_qr(token: str) -> str:
-    return hashlib.sha256(token.encode("ascii")).hexdigest()
+def _qr_invalido() -> ApiError:
+    # Firma mala, forma mala o id que no existe responden igual: distinguirlos
+    # le diría a quien prueba tokens cuáles existen.
+    return _error("QR_INVALID", "El QR es inválido o ha vencido.")
 
 
 def _qr_ya_pagado() -> ApiError:
-    return ApiError(
-        "QR_ALREADY_PAID",
-        "Este QR ya fue pagado.",
-        status_code=status.HTTP_409_CONFLICT,
-    )
+    return _error("QR_ALREADY_PAID", "Este QR ya fue pagado.", status.HTTP_409_CONFLICT)
+
+
+def _aware(momento: datetime) -> datetime:
+    # SQLite devuelve fechas sin zona aunque se guarden con ella.
+    return momento if momento.tzinfo else momento.replace(tzinfo=timezone.utc)
+
+
+async def _fila_qr(session: AsyncSession, token: str) -> QrCodigo:
+    """Resuelve el token a su fila SIN mirar vigencia: eso depende del caso."""
+    try:
+        qr_id = leer_token(token, secreto=_secreto_firma())
+    except ValueError as exc:
+        raise _qr_invalido() from exc
+    fila = await session.get(QrCodigo, qr_id)
+    if fila is None:
+        raise _qr_invalido()
+    return fila
+
+
+def _exigir_vigente(fila: QrCodigo) -> None:
+    if fila.estado != "activo":
+        raise _error("QR_REVOKED", "Este QR ya no está activo. Pide uno nuevo.")
+    if fila.expires_at is not None and utcnow() >= _aware(fila.expires_at):
+        raise _error("QR_EXPIRED", "El QR ha vencido.")
 
 
 def _ocultar_nombre(texto: str) -> str:
@@ -125,20 +151,125 @@ async def _destino_visible(session: AsyncSession, cuenta_id: str) -> tuple[Accou
     return encontrado[0], encontrado[1]
 
 
-def _resumen(datos: dict, destino: Account, titular: User) -> dict:
-    monto = datos["monto_centimos"]
-    _validar_monto(monto, destino.moneda)
+def _es_libre(fila: QrCodigo) -> bool:
+    return fila.tipo == "estatico"
+
+
+def _resumen(fila: QrCodigo, destino: Account, titular: User) -> dict:
+    libre = _es_libre(fila)
+    if not libre:
+        _validar_monto(fila.monto, destino.moneda)
     return {
+        "tipo": "libre" if libre else "fijo",
         "cuenta_destino_id": destino.id,
         "nombre_enmascarado": (
             f"{_ocultar_nombre(titular.nombres)} {_ocultar_nombre(titular.apellidos)}"
         ),
-        "monto_centimos": monto,
+        "monto_centimos": None if libre else fila.monto,
         "moneda": destino.moneda,
-        "concepto": datos["concepto"],
-        "caduca_en": datetime.fromtimestamp(datos["exp"], timezone.utc).isoformat(),
-        "requiere_pin": monto > _limite_sin_pin(),
+        "concepto": fila.concepto,
+        "caduca_en": None if libre else _aware(fila.expires_at).isoformat(),
+        # Siempre: el campo queda porque los APK publicados lo leen.
+        "requiere_pin": True,
     }
+
+
+async def _cuenta_para_cobrar(session: AsyncSession, user: User, cuenta_id: str) -> Account:
+    cuenta = await _buscar_cuenta_propia(session, user, cuenta_id)
+    if cuenta.tipo == "sistema" or cuenta.estado != "activa":
+        raise ApiError(
+            ErrorCode.ACCOUNT_BLOCKED,
+            "Esa cuenta no está disponible.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    return cuenta
+
+
+def _qr_estatico_respuesta(fila: QrCodigo, cuenta: Account, secreto: str) -> dict:
+    return {
+        "id": fila.id,
+        "qr": token_de(fila.id, secreto=secreto),
+        "tipo": "libre",
+        "cuenta_id": cuenta.id,
+        "moneda": cuenta.moneda,
+        "created_at": _iso(fila.created_at),
+    }
+
+
+async def _bloquear_cuenta(session: AsyncSession, cuenta_id: str) -> None:
+    # Serializa "Mi QR" por cuenta: dos pedidos a la vez verían "no hay" y el
+    # segundo chocaría contra el índice parcial. En SQLite no hace nada (la
+    # base entera se serializa sola).
+    await session.execute(
+        select(Account.id).where(Account.id == cuenta_id).with_for_update()
+    )
+
+
+async def _estatico_activo(session: AsyncSession, cuenta_id: str) -> Optional[QrCodigo]:
+    return (
+        await session.execute(
+            select(QrCodigo).where(
+                QrCodigo.cuenta_id == cuenta_id,
+                QrCodigo.tipo == "estatico",
+                QrCodigo.estado == "activo",
+            )
+        )
+    ).scalar_one_or_none()
+
+
+def _nuevo_estatico(cuenta_id: str) -> QrCodigo:
+    return QrCodigo(
+        id=nuevo_id(), cuenta_id=cuenta_id, tipo="estatico", estado="activo",
+        concepto="", created_at=utcnow(),
+    )
+
+
+@router.post("/estatico")
+async def mi_qr(
+    payload: QREstaticoIn,
+    response: Response,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """El QR permanente de una cuenta: lo devuelve si existe y si no, lo crea."""
+    cuenta = await _cuenta_para_cobrar(session, user, payload.cuenta_id)
+    secreto = _secreto_firma()
+    await _bloquear_cuenta(session, cuenta.id)
+    fila = await _estatico_activo(session, cuenta.id)
+    creado = fila is None
+    if creado:
+        fila = _nuevo_estatico(cuenta.id)
+        session.add(fila)
+        await session.flush()
+    cuerpo = _qr_estatico_respuesta(fila, cuenta, secreto)
+    await session.commit()
+    response.status_code = status.HTTP_201_CREATED if creado else status.HTTP_200_OK
+    return cuerpo
+
+
+@router.post("/estatico/regenerar", status_code=status.HTTP_201_CREATED)
+async def regenerar_mi_qr(
+    payload: QREstaticoIn,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Revoca el QR permanente vigente (si hay) y emite otro, en una transacción."""
+    cuenta = await _cuenta_para_cobrar(session, user, payload.cuenta_id)
+    secreto = _secreto_firma()
+    await _bloquear_cuenta(session, cuenta.id)
+    anterior = await _estatico_activo(session, cuenta.id)
+    if anterior is not None:
+        anterior.estado = "revocado"
+        anterior.revocado_at = utcnow()
+        # El índice parcial exige que el viejo deje de estar activo ANTES de
+        # insertar el nuevo.
+        await session.flush()
+    fila = _nuevo_estatico(cuenta.id)
+    session.add(fila)
+    await session.flush()
+    cuerpo = _qr_estatico_respuesta(fila, cuenta, secreto)
+    await session.commit()
+    return cuerpo
 
 
 @router.post("/emitir", status_code=status.HTTP_201_CREATED)
@@ -147,32 +278,32 @@ async def emitir(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    cuenta = await _buscar_cuenta_propia(session, user, payload.cuenta_id)
-    if cuenta.tipo == "sistema" or cuenta.estado != "activa":
-        raise ApiError(
-            ErrorCode.ACCOUNT_BLOCKED,
-            "Esa cuenta no está disponible.",
-            status_code=status.HTTP_409_CONFLICT,
-        )
+    """Cobro dinámico: monto fijo, un solo pago y caducidad."""
+    cuenta = await _cuenta_para_cobrar(session, user, payload.cuenta_id)
     _validar_monto(payload.monto_centimos, cuenta.moneda)
     secreto = _secreto_firma()
-    _limite_sin_pin()  # comprobar configuración antes de emitir
-    token = emitir_qr(
-        secreto=secreto,
+    expira = utcnow() + timedelta(seconds=payload.caducidad_segundos)
+    fila = QrCodigo(
+        id=nuevo_id(),
         cuenta_id=cuenta.id,
-        monto_centimos=payload.monto_centimos,
-        concepto=payload.concepto,
-        ttl_segundos=payload.caducidad_segundos,
+        tipo="dinamico",
+        monto=payload.monto_centimos,
+        concepto=payload.concepto.strip(),
+        expires_at=expira,
+        estado="activo",
+        created_at=utcnow(),
     )
-    datos = _datos_qr(token)
-    return {
-        "id": datos["nonce"],
-        "qr": token,
+    session.add(fila)
+    cuerpo = {
+        "id": fila.id,
+        "qr": token_de(fila.id, secreto=secreto),
         "monto_centimos": payload.monto_centimos,
         "moneda": cuenta.moneda,
-        "concepto": datos["concepto"],
-        "caduca_en": datetime.fromtimestamp(datos["exp"], timezone.utc).isoformat(),
+        "concepto": fila.concepto,
+        "caduca_en": expira.isoformat(),
     }
+    await session.commit()
+    return cuerpo
 
 
 @router.post("/validar")
@@ -181,14 +312,23 @@ async def consultar(
     user: User = Depends(current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    datos = _datos_qr(payload.qr)
-    destino, titular = await _destino_visible(session, datos["cuenta_id"])
-    resumen = _resumen(datos, destino, titular)
-    pagado = await session.scalar(
-        select(Transaction.id).where(Transaction.idempotency_key == _huella_qr(payload.qr))
-    )
-    if pagado is not None:
-        raise _qr_ya_pagado()
+    """Lo que el pagador ve antes de confirmar. No mueve dinero."""
+    fila = await _fila_qr(session, payload.qr)
+    _exigir_vigente(fila)
+    if _es_libre(fila) and not payload.acepta_monto_libre:
+        raise _error(
+            "QR_UPDATE_REQUIRED",
+            "Actualiza CuyCash para pagar este QR.",
+        )
+    destino, titular = await _destino_visible(session, fila.cuenta_id)
+    resumen = _resumen(fila, destino, titular)
+    if not _es_libre(fila):
+        # Avisa antes de pedir el PIN, no al confirmar.
+        pagado = await session.scalar(
+            select(Transaction.id).where(Transaction.idempotency_key == huella_de_pago(fila.id))
+        )
+        if pagado is not None:
+            raise _qr_ya_pagado()
     return resumen
 
 
@@ -200,36 +340,63 @@ async def pagar(
     sesion: SessionRow = Depends(current_session_row),
     session: AsyncSession = Depends(get_session),
 ):
-    datos = _datos_qr(payload.qr)
+    fila = await _fila_qr(session, payload.qr)
+    libre = _es_libre(fila)
     origen = await _buscar_cuenta_propia(session, user, payload.cuenta_origen_id)
-    if origen.id == datos["cuenta_id"]:
+    if origen.id == fila.cuenta_id:
         raise ApiError(
             ErrorCode.SAME_ACCOUNT,
             "Elige una cuenta distinta a la de destino.",
         )
-    destino, titular = await _destino_visible(session, datos["cuenta_id"])
-    _resumen(datos, destino, titular)
+
+    if libre:
+        # La clave del cliente, acotada a su titular: el mismo QR admite muchos
+        # pagos y cada uno es su propia operación.
+        clave = clave_de_pago_libre(user.id, payload.idempotency_key)
+        mensaje = (payload.mensaje or "").strip() or None
+        huella = f"qr={fila.id}|mensaje={mensaje or ''}"
+    else:
+        # La clave es el QR: su UNIQUE deja un solo pago, incluso con dos a la
+        # vez. La del cliente va en la huella: repetirla es un reintento y
+        # devuelve el pago original; otra clave es un segundo pago y se rechaza.
+        clave = huella_de_pago(fila.id)
+        mensaje = fila.concepto or None
+        huella = f"clave={payload.idempotency_key}"
+
+    # Un pago que ya entró se puede volver a preguntar aunque el QR haya
+    # vencido o se haya revocado después: un QR_EXPIRED le haría creer al
+    # usuario que no pagó. Decide el libro mayor (misma huella o 409).
+    ya_registrado = await session.scalar(
+        select(Transaction.id).where(Transaction.idempotency_key == clave)
+    )
+    if ya_registrado is None:
+        _exigir_vigente(fila)
+
+    if libre:
+        if payload.monto_centimos is None:
+            raise _error("QR_AMOUNT_REQUIRED", "Ingresa el monto que vas a pagar.")
+        monto = payload.monto_centimos
+    else:
+        if payload.monto_centimos is not None and payload.monto_centimos != fila.monto:
+            raise _error("QR_AMOUNT_FIXED", "El monto de este cobro no se puede cambiar.")
+        monto = fila.monto
+
+    destino, titular = await _destino_visible(session, fila.cuenta_id)
     if origen.moneda != destino.moneda:
         raise ApiError(
             ErrorCode.CURRENCY_MISMATCH,
             "Solo puedes pagar entre cuentas de la misma moneda.",
         )
-    monto = datos["monto_centimos"]
-    if monto > _limite_sin_pin() and not payload.pin:
-        raise ApiError(
-            "QR_AUTH_REQUIRED",
-            "Este monto requiere autorización con PIN.",
-            status_code=status.HTTP_403_FORBIDDEN,
-        )
-    # Un PIN enviado siempre se comprueba: si no, bajo el límite cualquier PIN
-    # aprobaría el pago y el usuario creería que el suyo fue validado.
-    if payload.pin:
-        await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
+    _validar_monto(monto, destino.moneda)
 
-    # La clave del libro mayor es la huella del QR: su UNIQUE deja un solo pago,
-    # incluso con dos a la vez. La clave del cliente va en la huella de la
-    # petición: repetirla es un reintento y devuelve el pago original; otra
-    # clave u otra cuenta es un segundo pago del mismo QR y se rechaza.
+    if not payload.pin:
+        raise _error(
+            "QR_AUTH_REQUIRED",
+            "Confirma el pago con tu PIN.",
+            status.HTTP_403_FORBIDDEN,
+        )
+    await exigir_pin_de_operacion(session, user, sesion.device_id, payload.pin)
+
     try:
         tx, reutilizada = await post(
             session,
@@ -238,11 +405,12 @@ async def pagar(
                 Asiento(origen.id, "debito", monto),
                 Asiento(destino.id, "credito", monto),
             ],
-            idempotency_key=_huella_qr(payload.qr),
-            fingerprint=f"clave={payload.idempotency_key}",
+            idempotency_key=clave,
+            fingerprint=huella,
+            referencia=f"qr:{fila.id}",
         )
     except ApiError as exc:
-        if exc.detail["code"] == ErrorCode.IDEMPOTENCY_KEY_REUSED:
+        if not libre and exc.detail["code"] == ErrorCode.IDEMPOTENCY_KEY_REUSED:
             raise _qr_ya_pagado() from exc
         raise
     if not reutilizada:
@@ -252,7 +420,7 @@ async def pagar(
                 cuenta_origen=origen.id,
                 cuenta_destino=destino.id,
                 monto=monto,
-                motivo=datos["concepto"] or None,
+                motivo=mensaje,
                 estado="confirmada",
             )
         )

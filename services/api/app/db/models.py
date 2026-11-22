@@ -475,6 +475,63 @@ class Transfer(Base):
     estado: Mapped[str] = mapped_column(String(12), default="confirmada")
 
 
+class QrCodigo(Base):
+    """
+    Un QR de cobro. El token que se dibuja solo lleva `id` + firma
+    (`app/services/qr_firmado.py`); lo que el QR vale está aquí.
+
+    - `estatico` ("Mi QR"): identifica la cuenta que recibe, el pagador pone el
+      monto, admite muchos pagos y no caduca. Se revoca al regenerarlo.
+    - `dinamico` (cobro): monto fijo, un solo pago y caducidad. Lo de "un solo
+      pago" no es esta fila: es el UNIQUE de la clave del libro mayor.
+
+    `id` es aleatorio (128 bits), no un UUID: es lo que va en el QR.
+    """
+
+    __tablename__ = "qr_codigos"
+
+    id: Mapped[str] = mapped_column(String(22), primary_key=True)
+    cuenta_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    tipo: Mapped[str] = mapped_column(String(10))
+    monto: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    concepto: Mapped[str] = mapped_column(String(40), default="")
+    expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    estado: Mapped[str] = mapped_column(String(10), default="activo")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    revocado_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint("tipo IN ('estatico','dinamico')", name="ck_qr_codigos_tipo"),
+        CheckConstraint("estado IN ('activo','revocado')", name="ck_qr_codigos_estado"),
+        # Lo que distingue a los dos tipos lo hace cumplir el motor: un estático
+        # con monto sería un cobro fijo que no caduca y admite muchos pagos.
+        CheckConstraint(
+            "(tipo = 'estatico' AND monto IS NULL AND expires_at IS NULL)"
+            " OR (tipo = 'dinamico' AND monto > 0 AND expires_at IS NOT NULL)",
+            name="ck_qr_codigos_forma",
+        ),
+        CheckConstraint(
+            "(estado = 'revocado') = (revocado_at IS NOT NULL)",
+            name="ck_qr_codigos_revocado_at",
+        ),
+        # Un "Mi QR" vigente por cuenta. Índice parcial y no regla del servicio:
+        # dos pedidos simultáneos verían "no hay" y crearían dos.
+        Index(
+            "ux_qr_codigos_un_estatico_activo",
+            "cuenta_id",
+            unique=True,
+            sqlite_where=text("tipo = 'estatico' AND estado = 'activo'"),
+            postgresql_where=text("tipo = 'estatico' AND estado = 'activo'"),
+        ),
+    )
+
+
 class LoanApplication(Base):
     """Contrato de integración #80/#84: solo el evaluador aprueba condiciones.
 

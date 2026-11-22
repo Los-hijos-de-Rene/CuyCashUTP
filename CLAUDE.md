@@ -48,11 +48,20 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
   `plataforma|modelo` (p. ej. `android|Samsung SM-A546E`), saneado a ASCII
   imprimible (`formatDeviceName`, `core/env/device_name.dart`).
 
-- Cobro y pago con QR: el servidor firma el cobro (`/v1/qr/emitir`, HMAC-SHA256)
-  y cada QR admite un solo pago: la clave del libro mayor es el hash del QR.
-  Repetir la `idempotency_key` devuelve el pago original y otra clave da 409
-  `QR_ALREADY_PAID`. La app siempre pide PIN y un PIN enviado siempre se valida.
-  Requiere `QR_SIGNING_SECRET` y `QR_MONTO_BASE_CENTIMOS`; sin ellas, 503.
+- Cobro y pago con QR, de dos tipos. El token del QR (45 caracteres) es solo
+  una referencia firmada (HMAC truncado) a una fila de `qr_codigos`; monto,
+  cuenta y caducidad viven en el servidor (`app/services/qr_firmado.py`).
+  - **Estático / "Mi QR"** (`POST /v1/qr/estatico`, `/estatico/regenerar`):
+    uno vigente por cuenta, el pagador elige el monto, admite muchos pagos y
+    se revoca al regenerarlo (400 `QR_REVOKED`). La clave del libro mayor es la
+    `idempotency_key` del cliente acotada a su titular. `/validar` exige
+    `acepta_monto_libre: true`; sin eso, 400 `QR_UPDATE_REQUIRED` (APK viejos).
+  - **Dinámico / cobro** (`/v1/qr/emitir`): monto fijo, caduca y admite un solo
+    pago (la clave del libro mayor es la huella del QR). Otra clave da 409
+    `QR_ALREADY_PAID`; un monto distinto, 400 `QR_AMOUNT_FIXED`.
+  El servidor exige PIN SIEMPRE (403 `QR_AUTH_REQUIRED`). Reintentar un pago
+  ya hecho devuelve el original aunque el QR haya vencido o se haya revocado.
+  Requiere `QR_SIGNING_SECRET`; sin ella, 503. La **app** aún no tiene "Mi QR".
 
 **Sigue sin existir** (no asumas que hay código de esto): transferencia
 interbancaria y CCI, préstamos, antifraude, conciliación

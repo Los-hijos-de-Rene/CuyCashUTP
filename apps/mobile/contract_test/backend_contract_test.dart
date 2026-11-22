@@ -8,7 +8,7 @@
 // NO corre con `flutter test` a secas (está fuera de `test/`, así no hay
 // pruebas omitidas ni dependencia de un servidor en la suite normal):
 //
-//   cd services/api && QR_SIGNING_SECRET=<32+ bytes> QR_MONTO_BASE_CENTIMOS=10000 \
+//   cd services/api && QR_SIGNING_SECRET=<32+ bytes> \
 //     DATABASE_URL="sqlite+aiosqlite:///./contrato.db" \
 //     .venv/bin/python -m uvicorn app.main:app --port 8001
 //   cd apps/mobile && flutter test contract_test \
@@ -278,6 +278,8 @@ void main() {
           QrCharge.vigencia.inMinutes,
         ),
       );
+      // Token corto y opaco: un QR que se lee bien aun comprimido por WhatsApp.
+      expect(cobro.payload.length, 45);
       final mensaje = 'Cóbralo con CuyCash: S/ 3.00 por «Compartido».\n'
           '${cobro.payload}';
       final previa = _ok(await ana.qr.leer(extraerCodigoQr(mensaje)));

@@ -20,7 +20,7 @@ las demás escriben: definirlo sin saber quién lo va a usar obliga a rehacerlo.
 | 2 · Cuentas y libro mayor | 2 | 3 | Implementada |
 | 3 · Transferencias y antifraude | 3 | 3 | Parcial |
 | 4 · Préstamos digitales | 4 | 3 implementadas de 4 diseñadas | Parcial: solicitud, préstamo y cuotas (#95); contrato pendiente |
-| 5 · Billetera y QR | 5 | 2 | Diseñada |
+| 5 · Billetera y QR | 5 | 1 | Parcial: `qr_codigos` (QR estático y dinámico, #77) |
 | 6 · Conciliación y cumplimiento | 6 | 4 | Diseñada |
 
 Épica 3, parcial: están implementadas `transfers` (solo entre cuentas CuyCash,
@@ -47,17 +47,16 @@ erDiagram
     accounts ||--o{ ledger_entries : "afectada por"
     accounts ||--o{ transfers : "origen de"
     accounts ||--o{ transfers : "destino de"
-    accounts ||--o{ qr_codes : "cobra en"
+    accounts ||--o{ qr_codigos : "cobra con"
     accounts ||--o{ loans : "desembolsa en"
 
     transactions ||--|{ ledger_entries : "se compone de"
     transactions ||--o| transfers : "materializa"
-    transactions ||--o| qr_payments : "materializa"
     transactions ||--o| loan_installments : "paga"
     transactions ||--o{ fraud_alerts : "dispara"
     transactions ||--o{ reconciliation_items : "concilia"
 
-    qr_codes ||--o{ qr_payments : "es cobrado por"
+    qr_codigos ||--o{ transactions : "referencia = qr:id"
     loans ||--|{ loan_installments : "se paga en"
     loans ||--|| loan_contracts : "formaliza"
     loan_applications ||--o| loans : "origina"
@@ -140,21 +139,15 @@ erDiagram
         timestamptz created_at
     }
 
-    qr_codes {
-        uuid id PK
-        uuid account_id FK
+    qr_codigos {
+        varchar id PK "22, aleatorio: va en el QR"
+        uuid cuenta_id FK
         varchar tipo "estatico | dinamico"
         bigint monto "nulo en estático"
-        varchar payload_hash
-        timestamptz expires_at
-        varchar estado "vigente | usado | vencido"
-    }
-
-    qr_payments {
-        uuid id PK
-        uuid qr_id FK
-        uuid transaction_id FK
-        timestamptz created_at
+        varchar concepto
+        timestamptz expires_at "nulo en estático"
+        varchar estado "activo | revocado"
+        timestamptz revocado_at
     }
 
     loans {
@@ -184,8 +177,9 @@ erDiagram
 > columnas `destino_externo` (CCI o celular) y `canal` (propia | terceros |
 > interbancaria) y un `cuenta_destino` nulo para destinos externos están
 > **diseñadas pero no existen**: llegan con la transferencia interbancaria. Hoy
-> `cuenta_destino` es obligatoria. `fraud_alerts`, `qr_codes`, `qr_payments`,
-> todavía no existen. Los campos de préstamos de este diagrama representan el
+> `cuenta_destino` es obligatoria. `fraud_alerts` todavía no existe. La tabla
+> `qr_payments` diseñada no hizo falta: un pago QR es una `transaction` de tipo
+> `pago_qr` con `referencia = 'qr:<id>'` más su fila en `transfers`. Los campos de préstamos de este diagrama representan el
 > diseño original; las tres tablas reales de #95 se detallan en el diagrama
 > físico y la tabla de integración al final de este documento.
 >
@@ -251,7 +245,9 @@ la restricción y se devuelve la transacción original en lugar de crear otra.
 
 Esto es lo que cumple el "una sola autorización por pago" de la HU16. Se delega
 en la base y no en código porque es la única capa que ve todos los intentos
-simultáneos. Hoy lo usan el envío y la recarga; el pago QR no existe aún.
+simultáneos. Lo usan el envío, la recarga y el pago QR. En un cobro dinámico la
+clave es la huella del QR (un solo pago); en uno estático, la clave del cliente
+acotada a su titular (`sha256('qr-libre|' + user_id + '|' + clave)`).
 
 Repetir una clave con **otros** parámetros no es un reintento: la columna
 `request_fingerprint` guarda una huella de la petición, y una clave reutilizada
@@ -311,6 +307,7 @@ la aplicación, y las fechas son `timestamptz`.
 | `transactions` | `id`, `tipo`, `estado`, `idempotency_key` (64), `referencia` (60, nulo), `request_fingerprint` (64), `created_at` | `idempotency_key` única; `CHECK` de `tipo` (`transferencia`, `recarga`, `pago_qr`, `desembolso`, `cuota`, `ajuste`) y `estado` (`pendiente`, `confirmada`, `revertida`) |
 | `ledger_entries` | `id`, `transaction_id` (FK), `account_id` (FK), `direccion`, `monto`, `moneda`, `saldo_posterior`, `created_at` | `monto > 0`; `direccion` en (`debito`, `credito`); índice `(account_id, created_at, id)` para paginar el historial |
 | `transfers` | `id`, `transaction_id` (FK), `cuenta_origen` (FK `accounts`), `cuenta_destino` (FK `accounts`), `monto`, `motivo` (40, nulo), `estado` (12, por defecto `confirmada`) | `transaction_id` único (una transferencia por transacción) |
+| `qr_codigos` | `id` (22, aleatorio), `cuenta_id` (FK `accounts`), `tipo`, `monto` (nulo), `concepto` (40), `expires_at` (nulo), `estado`, `created_at`, `revocado_at` (nulo) | `CHECK` de `tipo` (`estatico`, `dinamico`) y `estado` (`activo`, `revocado`); `ck_qr_codigos_forma`: el estático no tiene monto ni caducidad y el dinámico tiene ambos; `revocado_at` presente si y solo si está revocado; índice único parcial `ux_qr_codigos_un_estatico_activo (cuenta_id) WHERE tipo = 'estatico' AND estado = 'activo'` |
 | `beneficiaries` | `id`, `user_id` (FK `users`), `beneficiario_dni` (8), `cuenta_destino_id` (FK `accounts`, NOT NULL), `apodo` (40), `created_at` | `uq_beneficiaries_user_cuenta (user_id, cuenta_destino_id)`. Un frecuente apunta a una cuenta concreta del destinatario, no solo a su DNI; el nombre se resuelve al usarlo |
 
 **Reglas de `accounts` que no son restricción de base.** Tope de 5 cuentas por

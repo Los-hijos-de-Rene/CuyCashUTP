@@ -137,15 +137,18 @@ a mano ─────────▶ Rollback backend: validar commit ─▶ ap
 
 ### Pago con QR
 
-Render necesita dos secretos; sin ellos, `/v1/qr` responde 503 y la app muestra
+Render necesita un secreto; sin él, `/v1/qr` responde 503 y la app muestra
 que el servicio no está disponible.
 
 | Variable | Valor |
 |---|---|
-| `QR_SIGNING_SECRET` | Al menos 32 bytes aleatorios (`openssl rand -hex 32`). Rotarlo invalida los QR vigentes, no los pagos hechos |
-| `QR_MONTO_BASE_CENTIMOS` | Monto, en céntimos, sobre el que la API exige PIN. La app lo pide siempre |
+| `QR_SIGNING_SECRET` | Al menos 32 bytes aleatorios (`openssl rand -hex 32`). Rotarlo invalida **todos** los QR, incluidos los "Mi QR" impresos (no los pagos hechos): rotarlo solo si se filtra |
 
-Cargarlos antes de publicar un APK que use QR. No requiere migración.
+El PIN se exige siempre para pagar con QR; ya no hay umbral sin PIN
+(`QR_MONTO_BASE_CENTIMOS` se retiró y puede borrarse de Render).
+
+Requiere la migración `0003` (tabla `qr_codigos`). Los cobros emitidos con el
+token anterior (caducaban en minutos) dejan de aceptarse al desplegar.
 
 ### Distribución del APK (alta única)
 

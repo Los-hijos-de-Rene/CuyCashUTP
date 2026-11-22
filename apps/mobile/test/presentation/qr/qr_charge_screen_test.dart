@@ -64,4 +64,41 @@ void main() {
     expect(find.text('Almuerzo'), findsOneWidget);
     expect(find.text('Tu QR está listo'), findsOneWidget);
   });
+
+  testWidgets('el concepto se corta en 40, como lo acepta el backend', (
+    t,
+  ) async {
+    await pump(t);
+    final concepto = find.byType(TextField).at(1);
+    await t.enterText(concepto, 'x' * 60);
+    await t.pump();
+
+    expect(t.widget<TextField>(concepto).controller?.text.length, 40);
+  });
+
+  testWidgets('la tarjeta que se comparte es una imagen autosuficiente', (
+    t,
+  ) async {
+    await pump(t);
+    final fields = find.byType(TextField);
+    await t.enterText(fields.at(0), '10');
+    await t.enterText(fields.at(1), 'Almuerzo');
+    await t.tap(find.text('Generar QR'));
+    await t.pumpAndSettle();
+
+    // Lo que va en la imagen: marca, QR, monto y concepto dentro del mismo
+    // RepaintBoundary. El token no aparece como texto en ninguna parte.
+    final tarjeta = find.ancestor(
+      of: find.byType(QrImageView),
+      matching: find.byType(RepaintBoundary),
+    );
+    expect(tarjeta, findsWidgets);
+    final enTarjeta = find.descendant(
+      of: tarjeta.first,
+      matching: find.text('Paga con CuyCash'),
+    );
+    expect(enTarjeta, findsOneWidget);
+    expect(find.text('Compartir'), findsOneWidget);
+    expect(find.textContaining('cuycash://'), findsNothing);
+  });
 }

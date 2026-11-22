@@ -33,6 +33,7 @@ dependencies:
   image: ^4.10.1
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.5.0
+  image_picker: ^1.2.1
   crypto: ^3.0.8
 
 dev_dependencies:

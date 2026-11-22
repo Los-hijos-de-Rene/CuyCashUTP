@@ -1,6 +1,9 @@
+import 'dart:ui' as ui;
+
 import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -111,7 +114,9 @@ class _ChargeFormState extends State<_ChargeForm> {
           label: l10n.qrChargeConceptLabel,
           hint: l10n.qrChargeConceptHint,
           controller: _concepto,
-          maxLength: 60,
+          // El backend acepta 40 (`QREmitirIn.concepto`): con 60, de 41 a 60
+          // caracteres el cobro fallaba con 422.
+          maxLength: QrCharge.conceptoMaximo,
           onSubmitted: (_) => _generar(),
         ),
         if (_error case final error?) ...[
@@ -132,14 +137,69 @@ class _ChargeFormState extends State<_ChargeForm> {
   }
 }
 
-class _ChargeReady extends StatelessWidget {
+class _ChargeReady extends StatefulWidget {
   const _ChargeReady({required this.charge});
 
   final QrCharge charge;
 
   @override
+  State<_ChargeReady> createState() => _ChargeReadyState();
+}
+
+class _ChargeReadyState extends State<_ChargeReady> {
+  /// La tarjeta que se comparte como imagen: QR + monto + concepto + vence.
+  final _tarjeta = GlobalKey();
+  bool _compartiendo = false;
+
+  /// Comparte una IMAGEN, no el texto del token: es lo que se puede escanear
+  /// desde otra pantalla o subir desde la galería, y el token no es algo que
+  /// el usuario deba ver ni copiar.
+  Future<void> _compartir() async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final origen = _origenDelMenu();
+    final render = _tarjeta.currentContext?.findRenderObject();
+    if (render is! RenderRepaintBoundary) return;
+    setState(() => _compartiendo = true);
+    try {
+      // x3: nítida en cualquier pantalla y legible si WhatsApp la comprime.
+      final imagen = await render.toImage(pixelRatio: 3);
+      final png = await imagen.toByteData(format: ui.ImageByteFormat.png);
+      imagen.dispose();
+      if (png == null) throw StateError('Sin bytes PNG');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile.fromData(png.buffer.asUint8List(), mimeType: 'image/png'),
+          ],
+          // El nombre de `XFile.fromData` se ignora en casi todas las
+          // plataformas; este es el que se usa.
+          fileNameOverrides: const ['cobro-cuycash.png'],
+          text: l10n.qrChargeShareText(
+            formatMoney(widget.charge.monto),
+            widget.charge.concepto,
+          ),
+          sharePositionOrigin: origen,
+        ),
+      );
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.qrChargeShareError)));
+    } finally {
+      if (mounted) setState(() => _compartiendo = false);
+    }
+  }
+
+  /// En iPad la hoja de compartir necesita un ancla.
+  Rect? _origenDelMenu() {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final charge = widget.charge;
     final vence = DateFormat('dd/MM HH:mm').format(charge.expira.toLocal());
     return ListView(
       padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
@@ -153,46 +213,56 @@ class _ChargeReady extends StatelessWidget {
         ),
         const SizedBox(height: CuyCashSpacing.stackLg),
         SurfaceCard(
-          child: Column(
-            children: [
-              QrImageView(
-                data: charge.payload,
-                version: QrVersions.auto,
-                size: 220,
-                backgroundColor: CuyCashColors.surfaceContainerLowest,
+          child: RepaintBoundary(
+            key: _tarjeta,
+            // Fondo opaco: sin él, la imagen compartida sale con el fondo
+            // transparente y en modo oscuro el QR no se lee.
+            child: ColoredBox(
+              color: CuyCashColors.surfaceContainerLowest,
+              child: Padding(
+                padding: const EdgeInsets.all(CuyCashSpacing.stackSm),
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.qrChargeCardBrand,
+                      style: CuyCashTypography.labelMd
+                          .copyWith(color: CuyCashColors.secondaryText),
+                    ),
+                    const SizedBox(height: CuyCashSpacing.stackSm),
+                    QrImageView(
+                      data: charge.payload,
+                      version: QrVersions.auto,
+                      size: 220,
+                      backgroundColor: CuyCashColors.surfaceContainerLowest,
+                    ),
+                    const SizedBox(height: CuyCashSpacing.stackMd),
+                    Text(
+                      formatMoney(charge.monto),
+                      style: CuyCashTypography.headlineSm,
+                    ),
+                    const SizedBox(height: CuyCashSpacing.stackXs),
+                    Text(
+                      charge.concepto,
+                      textAlign: TextAlign.center,
+                      style: CuyCashTypography.bodyLg,
+                    ),
+                    const SizedBox(height: CuyCashSpacing.stackXs),
+                    Text(
+                      l10n.qrChargeExpires(vence),
+                      style: CuyCashTypography.labelMd
+                          .copyWith(color: CuyCashColors.secondaryText),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: CuyCashSpacing.stackMd),
-              Text(
-                formatMoney(charge.monto),
-                style: CuyCashTypography.headlineSm,
-              ),
-              const SizedBox(height: CuyCashSpacing.stackXs),
-              Text(
-                charge.concepto,
-                textAlign: TextAlign.center,
-                style: CuyCashTypography.bodyLg,
-              ),
-              const SizedBox(height: CuyCashSpacing.stackXs),
-              Text(
-                l10n.qrChargeExpires(vence),
-                style: CuyCashTypography.labelMd
-                    .copyWith(color: CuyCashColors.secondaryText),
-              ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: CuyCashSpacing.stackLg),
         PrimaryButton(
           label: l10n.qrChargeShare,
-          onPressed: () => SharePlus.instance.share(
-            ShareParams(
-              text: l10n.qrChargeShareText(
-                formatMoney(charge.monto),
-                charge.concepto,
-                charge.payload,
-              ),
-            ),
-          ),
+          loading: _compartiendo,
+          onPressed: _compartiendo ? null : _compartir,
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
         SecondaryButton(
