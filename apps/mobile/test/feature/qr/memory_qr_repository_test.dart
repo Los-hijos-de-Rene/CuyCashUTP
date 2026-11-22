@@ -1,7 +1,11 @@
 import 'package:core_kernel/core_kernel.dart';
+import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/account/infrastructure/memory_ledger.dart';
 import 'package:cuycash/feature/qr/domain/qr_charge.dart';
 import 'package:cuycash/feature/qr/domain/qr_failure.dart';
+import 'package:cuycash/feature/qr/domain/qr_payment_preview.dart';
+import 'package:cuycash/feature/qr/domain/qr_receipt.dart';
 import 'package:cuycash/feature/qr/infrastructure/memory_qr_repository.dart';
 import 'package:cuycash/feature/transfer/application/transfer_actions.dart';
 import 'package:cuycash/feature/transfer/infrastructure/memory_transfer_repository.dart';
@@ -44,14 +48,118 @@ void main() {
         (_) => fail('Se esperaba fallo'),
       );
 
+  const cuentaQueCobra = Account(
+    id: MemoryTransferRepository.cuentaDestinoId,
+    numero: '19100000009999',
+    tipo: AccountType.ahorro,
+    moneda: Currency.pen,
+    estado: 'activa',
+    saldoDisponible: Money.soles(0),
+    saldoContable: Money.soles(0),
+  );
+
+  Future<String> miQr() async =>
+      (await qr.miQr(cuentaQueCobra)).getOrElse((f) => fail('$f')).payload;
+
+  Future<Result<QrFailure, QrReceipt>> pagarLibre(
+    String payload,
+    String clave, {
+    Money? monto = const Money.soles(1000),
+  }) => qr.pagar(
+    payload: payload,
+    cuentaOrigenId: MemoryLedger.cuentaId,
+    pin: '000000',
+    idempotencyKey: clave,
+    monto: monto,
+    mensaje: 'Menú',
+  );
+
+  test('"Mi QR" es el mismo cada vez y se lee como monto libre', () async {
+    final payload = await miQr();
+    expect(await miQr(), payload);
+    final preview = (await qr.leer(payload)).getOrElse((f) => fail('$f'));
+    expect(preview.cobro, isA<QrCobroLibre>());
+    expect(preview.disponibleHoy, const Money.soles(500000));
+  });
+
+  test('"Mi QR" admite muchos pagos con el monto del pagador', () async {
+    final payload = await miQr();
+    final antes = ledger.saldoDe(MemoryLedger.cuentaId);
+    expect((await pagarLibre(payload, 'libre-1')).isRight(), isTrue);
+    expect(
+      (await pagarLibre(payload, 'libre-2', monto: const Money.soles(500)))
+          .isRight(),
+      isTrue,
+    );
+    expect(ledger.saldoDe(MemoryLedger.cuentaId), antes - const Money.soles(1500));
+  });
+
+  test('"Mi QR" sin monto no paga', () async {
+    final payload = await miQr();
+    expect(
+      failureOf(await pagarLibre(payload, 'libre-sin', monto: null)),
+      isA<QrAmountOutOfRange>(),
+    );
+  });
+
+  test('regenerar revoca el QR anterior', () async {
+    final viejo = await miQr();
+    final nuevo = (await qr.regenerarMiQr(cuentaQueCobra))
+        .getOrElse((f) => fail('$f'))
+        .payload;
+    expect(nuevo, isNot(viejo));
+    expect(failureOf(await qr.leer(viejo)), isA<QrRevoked>());
+    expect((await qr.leer(nuevo)).isRight(), isTrue);
+  });
+
+  test('el límite diario frena y dice cuánto queda; un reintento no suma',
+      () async {
+    // S/ 30.00 al día: el saldo de demo no alcanza para el límite real.
+    qr = MemoryQrRepository(
+      transfer: TransferActions(
+        MemoryTransferRepository(clock: () => now, ledger: ledger),
+      ),
+      clock: () => now,
+      limiteDiario: (moneda) => Money(3000, moneda),
+    );
+    final payload = await miQr();
+    expect(
+      (await pagarLibre(payload, 'lim-1', monto: const Money.soles(2000)))
+          .isRight(),
+      isTrue,
+    );
+    // Reintento con la misma clave: no vuelve a sumar.
+    expect(
+      (await pagarLibre(payload, 'lim-1', monto: const Money.soles(2000)))
+          .isRight(),
+      isTrue,
+    );
+    final fallo = failureOf(
+      await pagarLibre(payload, 'lim-2', monto: const Money.soles(1500)),
+    );
+    expect(switch (fallo) {
+      QrDailyLimit(:final disponible) => disponible,
+      _ => null,
+    }, const Money.soles(1000));
+    // Al día siguiente (en Lima) el cupo vuelve.
+    now = now.add(const Duration(days: 1));
+    expect(
+      (await pagarLibre(payload, 'lim-3', monto: const Money.soles(1500)))
+          .isRight(),
+      isTrue,
+    );
+  });
+
   test('emitir y leer devuelve nombre enmascarado y monto', () async {
     final charge = await emitir();
     final result = await qr.leer(charge.payload);
     final preview = result.fold((failure) => fail('$failure'), (p) => p);
 
     expect(preview.nombreEnmascarado, 'J*** M*** R***');
-    expect(preview.monto, const Money.soles(5000));
-    expect(preview.concepto, 'Almuerzo');
+    expect(switch (preview.cobro) {
+      QrCobroFijo(:final monto, :final concepto) => (monto, concepto),
+      QrCobroLibre() => null,
+    }, (const Money.soles(5000), 'Almuerzo'));
     expect(preview.cuentaDestinoId, MemoryLedger.cuentaId);
   });
 

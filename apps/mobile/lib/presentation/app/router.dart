@@ -49,8 +49,10 @@ import '../profile/devices/linked_devices_screen.dart';
 import '../profile/personal_data/bloc/personal_data_bloc.dart';
 import '../profile/personal_data/personal_data_screen.dart';
 import '../profile/profile_screen.dart';
+import '../qr/bloc/my_qr_bloc.dart';
 import '../qr/bloc/qr_charge_bloc.dart';
 import '../qr/bloc/qr_pay_bloc.dart';
+import '../qr/my_qr_screen.dart';
 import '../qr/qr_charge_screen.dart';
 import '../qr/qr_hub_screen.dart';
 import '../qr/qr_pay_screen.dart';
@@ -337,6 +339,18 @@ GoRouter createAppRouter(
             state.extra is Account ? null : AppRoutes.home,
         builder: (context, state) =>
             QrHubScreen(cuenta: state.extra as Account),
+      ),
+      GoRoute(
+        path: AppRoutes.qrMiQr,
+        redirect: (context, state) =>
+            state.extra is Account ? null : AppRoutes.home,
+        builder: (context, state) => BlocProvider(
+          create: (_) => MyQrBloc(
+            actions: QrModule.create(deps),
+            cuenta: state.extra as Account,
+          )..add(const MyQrRequested()),
+          child: MyQrScreen(cuenta: state.extra as Account),
+        ),
       ),
       GoRoute(
         path: AppRoutes.qrCobrar,

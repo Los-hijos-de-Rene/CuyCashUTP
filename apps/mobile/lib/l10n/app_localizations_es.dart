@@ -1818,7 +1818,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get qrHubSubtitle =>
-      'Genera un código para que te paguen o escanea el de otra persona.';
+      'Comparte tu QR para que te paguen o escanea el de otra persona.';
 
   @override
   String get qrHubChargeTitle => 'Cobrar con QR';
@@ -1827,11 +1827,96 @@ class AppLocalizationsEs extends AppLocalizations {
   String get qrHubChargeBody => 'Elige monto y concepto, y comparte el código.';
 
   @override
+  String get qrHubMyQrTitle => 'Mi QR';
+
+  @override
+  String get qrHubMyQrBody =>
+      'Tu QR de siempre: quien te paga elige cuánto. Imprímelo o compártelo.';
+
+  @override
   String get qrHubPayTitle => 'Pagar con QR';
 
   @override
   String get qrHubPayBody =>
       'Escanea el código de quien cobra y confirma el pago.';
+
+  @override
+  String get qrMyTitle => 'Mi QR';
+
+  @override
+  String get qrMyHeadline => 'Cobra con tu QR';
+
+  @override
+  String get qrMyBody =>
+      'Quien lo escanee verá tu nombre y elegirá cuánto pagarte. Sirve hasta que lo cambies.';
+
+  @override
+  String get qrMyCardHint => 'Escanea y elige cuánto pagar';
+
+  @override
+  String qrMyCardAccount(String numero, String moneda) {
+    return 'Cuenta $numero · $moneda';
+  }
+
+  @override
+  String get qrMyShare => 'Compartir mi QR';
+
+  @override
+  String get qrMyShareText =>
+      'Págame con CuyCash: escanea mi QR o súbelo desde Pagar con QR.';
+
+  @override
+  String get qrMyRegenerate => 'Cambiar mi QR';
+
+  @override
+  String get qrMyRegenerateTitle => '¿Cambiar tu QR?';
+
+  @override
+  String get qrMyRegenerateBody =>
+      'Tu QR actual dejará de funcionar, también si lo imprimiste o compartiste. Hazlo si crees que alguien lo está usando mal.';
+
+  @override
+  String get qrMyRegenerateConfirm => 'Cambiar QR';
+
+  @override
+  String get qrMyRegenerateCancel => 'Cancelar';
+
+  @override
+  String get qrMyRegenerated =>
+      'Listo: tu QR nuevo ya está activo. El anterior ya no recibe pagos.';
+
+  @override
+  String get qrPayAmountHeadline => '¿Cuánto vas a pagar?';
+
+  @override
+  String get qrPayAmountBody => 'Revisa a quién le pagas antes de continuar.';
+
+  @override
+  String get qrPayAmountLabel => 'Monto';
+
+  @override
+  String get qrPayMessageLabel => 'Mensaje (opcional)';
+
+  @override
+  String get qrPayMessageHint => 'Ej. Menú del día';
+
+  @override
+  String qrPayAvailableToday(String monto) {
+    return 'Hoy puedes pagar con QR hasta $monto.';
+  }
+
+  @override
+  String get qrPayAmountInvalid => 'Escribe un monto mayor a cero.';
+
+  @override
+  String qrPayAmountAboveMax(String monto) {
+    return 'El máximo por pago es $monto.';
+  }
+
+  @override
+  String qrPayAmountAboveDaily(String monto) {
+    return 'Hoy solo puedes pagar con QR hasta $monto.';
+  }
 
   @override
   String get qrChargeTitle => 'Cobrar con QR';

@@ -1,3 +1,4 @@
+import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,9 @@ import 'package:intl/intl.dart';
 
 import '../../core/format/money_format.dart';
 import '../../feature/account/domain/account.dart';
+import '../../feature/qr/domain/qr_limits.dart';
 import '../../feature/qr/domain/qr_payment_preview.dart';
+import '../../feature/transfer/domain/transfer_limits.dart';
 import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import '../pin/pin_entry_view.dart';
@@ -15,8 +18,11 @@ import 'qr_error_text.dart';
 import 'widgets/qr_camera_view.dart';
 import 'widgets/qr_gallery_reader.dart';
 
-/// Paso de pago: cámara o imagen → vista previa (nombre + monto) → PIN →
-/// constancia.
+/// Paso de pago: cámara o imagen → vista previa → PIN → constancia.
+///
+/// La vista previa depende del QR: un cobro dinámico muestra monto, concepto
+/// y vencimiento fijos; un "Mi QR" pide al pagador el monto (y un mensaje
+/// opcional) y avisa cuánto puede pagar hoy antes de pedir el PIN.
 ///
 /// No hay campo para pegar el código: el QR se comparte como imagen y el
 /// token no es algo que el usuario deba ver, copiar ni dictar (es lo que pide
@@ -54,7 +60,13 @@ class QrPayScreen extends StatelessWidget {
         QrPayStatus.reading ||
         QrPayStatus.paying =>
           const Center(child: CircularProgressIndicator()),
-        QrPayStatus.preview => _PreviewBody(preview: state.preview!),
+        QrPayStatus.preview => switch (state.preview) {
+            QrPaymentPreview(cobro: final QrCobroFijo cobro) && final preview =>
+              _PreviewBody(preview: preview, cobro: cobro),
+            QrPaymentPreview(cobro: QrCobroLibre()) && final preview =>
+              _AmountBody(preview: preview, error: state.amountError),
+            null => const SizedBox.shrink(),
+          },
         QrPayStatus.pin => _PinBody(state: state),
         QrPayStatus.done => _DoneBody(state: state),
         QrPayStatus.error => _ErrorBody(state: state),
@@ -142,14 +154,15 @@ class _ScanBodyState extends State<_ScanBody> {
 }
 
 class _PreviewBody extends StatelessWidget {
-  const _PreviewBody({required this.preview});
+  const _PreviewBody({required this.preview, required this.cobro});
 
   final QrPaymentPreview preview;
+  final QrCobroFijo cobro;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final vence = DateFormat('dd/MM HH:mm').format(preview.expira.toLocal());
+    final vence = DateFormat('dd/MM HH:mm').format(cobro.expira.toLocal());
     return ListView(
       padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
       children: [
@@ -168,11 +181,11 @@ class _PreviewBody extends StatelessWidget {
               const Divider(height: 24),
               _PreviewRow(
                 label: l10n.qrPayAmount,
-                value: formatMoney(preview.monto),
+                value: formatMoney(cobro.monto),
                 emphasize: true,
               ),
               const Divider(height: 24),
-              _PreviewRow(label: l10n.qrPayConcept, value: preview.concepto),
+              _PreviewRow(label: l10n.qrPayConcept, value: cobro.concepto),
               const Divider(height: 24),
               _PreviewRow(label: l10n.qrPayExpires, value: vence),
             ],
@@ -183,6 +196,122 @@ class _PreviewBody extends StatelessWidget {
           label: l10n.qrPayContinue,
           onPressed: () =>
               context.read<QrPayBloc>().add(const QrPaySubmitted()),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackSm),
+        SecondaryButton(
+          label: l10n.qrPayCancel,
+          onPressed: () => context.read<QrPayBloc>().add(const QrPayReset()),
+        ),
+      ],
+    );
+  }
+}
+
+class _AmountBody extends StatefulWidget {
+  const _AmountBody({required this.preview, this.error});
+
+  final QrPaymentPreview preview;
+  final QrAmountError? error;
+
+  @override
+  State<_AmountBody> createState() => _AmountBodyState();
+}
+
+class _AmountBodyState extends State<_AmountBody> {
+  final _monto = TextEditingController();
+  final _mensaje = TextEditingController();
+
+  @override
+  void dispose() {
+    _monto.dispose();
+    _mensaje.dispose();
+    super.dispose();
+  }
+
+  void _continuar() => context.read<QrPayBloc>().add(
+        QrPayAmountSubmitted(monto: _monto.text, mensaje: _mensaje.text),
+      );
+
+  /// Lo más que puede pagar ahora: el menor entre el máximo por operación y
+  /// lo que le queda hoy.
+  Money _tope() {
+    final maximo = TransferLimits.montoMaximo(widget.preview.moneda);
+    return switch (widget.preview.disponibleHoy) {
+      final disponible? when disponible < maximo => disponible,
+      _ => maximo,
+    };
+  }
+
+  String? _textoError(AppLocalizations l10n) => switch (widget.error) {
+        null => null,
+        QrAmountInvalid() => l10n.qrPayAmountInvalid,
+        QrAmountAboveMax(:final maximo) =>
+          l10n.qrPayAmountAboveMax(formatMoney(maximo)),
+        QrAmountAboveDaily(:final disponible) => disponible.centimos > 0
+            ? l10n.qrPayAmountAboveDaily(formatMoney(disponible))
+            : l10n.qrErrorDailyLimitReached,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final error = _textoError(l10n);
+    final tope = _tope();
+    final agotado = tope.centimos == 0;
+    return ListView(
+      padding: const EdgeInsets.all(CuyCashSpacing.marginMobile),
+      children: [
+        Text(l10n.qrPayAmountHeadline, style: CuyCashTypography.headlineSm),
+        const SizedBox(height: CuyCashSpacing.stackXs),
+        Text(
+          l10n.qrPayAmountBody,
+          style: CuyCashTypography.bodyMd
+              .copyWith(color: CuyCashColors.secondaryText),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackLg),
+        SurfaceCard(
+          child: _PreviewRow(
+            label: l10n.qrPayTo,
+            value: widget.preview.nombreEnmascarado,
+          ),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackLg),
+        CuyCashTextField(
+          label: l10n.qrPayAmountLabel,
+          controller: _monto,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          prefixText: widget.preview.moneda.symbol,
+          enabled: !agotado,
+          onSubmitted: (_) => _continuar(),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackXs),
+        Text(
+          agotado
+              ? l10n.qrErrorDailyLimitReached
+              : l10n.qrPayAvailableToday(formatMoney(tope)),
+          style: CuyCashTypography.labelMd
+              .copyWith(color: CuyCashColors.secondaryText),
+        ),
+        const SizedBox(height: CuyCashSpacing.stackMd),
+        CuyCashTextField(
+          label: l10n.qrPayMessageLabel,
+          hint: l10n.qrPayMessageHint,
+          controller: _mensaje,
+          maxLength: QrLimits.mensajeMaximo,
+          enabled: !agotado,
+          onSubmitted: (_) => _continuar(),
+        ),
+        if (error case final texto?) ...[
+          const SizedBox(height: CuyCashSpacing.stackSm),
+          Text(
+            texto,
+            style: CuyCashTypography.bodyMd.copyWith(color: CuyCashColors.error),
+          ),
+        ],
+        const SizedBox(height: CuyCashSpacing.stackLg),
+        PrimaryButton(
+          label: l10n.qrPayContinue,
+          onPressed: agotado ? null : _continuar,
         ),
         const SizedBox(height: CuyCashSpacing.stackSm),
         SecondaryButton(
@@ -238,14 +367,16 @@ class _PinBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final preview = state.preview!;
     final failure = state.failure;
     return PinEntryView(
       headline: l10n.qrPayPinHeadline,
-      subtitle: l10n.qrPayPinSubtitle(
-        preview.nombreEnmascarado,
-        formatMoney(preview.monto),
-      ),
+      subtitle: switch ((state.preview, state.monto)) {
+        (final preview?, final monto?) => l10n.qrPayPinSubtitle(
+            preview.nombreEnmascarado,
+            formatMoney(monto),
+          ),
+        _ => '',
+      },
       pin: state.pin,
       hasError: failure != null,
       errorText: failure == null ? null : qrErrorText(l10n, failure),

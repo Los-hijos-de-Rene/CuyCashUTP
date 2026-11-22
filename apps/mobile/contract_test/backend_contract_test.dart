@@ -28,6 +28,7 @@ import 'package:cuycash/feature/auth/infrastructure/http_auth_repository.dart';
 import 'package:cuycash/feature/qr/domain/qr_charge.dart';
 import 'package:cuycash/feature/qr/domain/qr_failure.dart';
 import 'package:cuycash/feature/qr/domain/qr_payload.dart';
+import 'package:cuycash/feature/qr/domain/qr_payment_preview.dart';
 import 'package:cuycash/feature/qr/domain/qr_receipt.dart';
 import 'package:cuycash/feature/qr/infrastructure/http_qr_repository.dart';
 import 'package:cuycash/feature/transfer/domain/transfer_failure.dart';
@@ -253,10 +254,15 @@ void main() {
       );
       final antes = _ok(await ana.accounts.cuentas()).first;
       final previa = _ok(await ana.qr.leer(cobro.payload));
-      expect(previa.monto, const Money.soles(1250));
-      expect(previa.concepto, 'Almuerzo');
+      final cobroLeido = switch (previa.cobro) {
+        final QrCobroFijo fijo => fijo,
+        QrCobroLibre() => fail('Un cobro dinámico se leyó como libre'),
+      };
+      expect(cobroLeido.monto, const Money.soles(1250));
+      expect(cobroLeido.concepto, 'Almuerzo');
       expect(previa.cuentaDestinoId, destino.id);
-      expect(previa.expira.isUtc, isTrue);
+      expect(cobroLeido.expira.isUtc, isTrue);
+      expect(previa.disponibleHoy, isNotNull);
       final despues = _ok(await ana.accounts.cuentas()).first;
       expect(despues.saldoDisponible, antes.saldoDisponible);
     });
@@ -283,7 +289,10 @@ void main() {
       final mensaje = 'Cóbralo con CuyCash: S/ 3.00 por «Compartido».\n'
           '${cobro.payload}';
       final previa = _ok(await ana.qr.leer(extraerCodigoQr(mensaje)));
-      expect(previa.monto, const Money.soles(300));
+      expect(switch (previa.cobro) {
+        QrCobroFijo(:final monto) => monto,
+        QrCobroLibre() => null,
+      }, const Money.soles(300));
     });
 
     test('INT-CT-12 pagar un QR mueve ambos saldos y sale como pago QR', () async {
@@ -391,6 +400,58 @@ void main() {
       expect(_servidor<QrFailure, dynamic>(r), isA<QrWrongPin>());
       final despues = _ok(await ana.accounts.cuentas()).first;
       expect(despues.saldoDisponible, antes.saldoDisponible);
+    });
+      test('INT-CT-17 "Mi QR": el mismo cada vez y se lee como monto libre',
+        () async {
+      final miQr = _ok(await luis.qr.miQr(destino));
+      expect(miQr.payload.length, 45);
+      expect(_ok(await luis.qr.miQr(destino)).payload, miQr.payload);
+      final previa = _ok(await ana.qr.leer(miQr.payload));
+      expect(previa.cobro, isA<QrCobroLibre>());
+      expect(previa.moneda, Currency.pen);
+      expect(previa.cuentaDestinoId, destino.id);
+      expect(previa.disponibleHoy, isNotNull);
+    });
+
+    test('INT-CT-18 pagar "Mi QR" con el monto del pagador mueve ambos saldos',
+        () async {
+      final miQr = _ok(await luis.qr.miQr(destino));
+      final origenAntes = _ok(await ana.accounts.cuentas()).first;
+      final disponibleAntes = _ok(await ana.qr.leer(miQr.payload)).disponibleHoy;
+      final recibo = _ok(
+        await ana.qr.pagar(
+          payload: miQr.payload,
+          cuentaOrigenId: origen.id,
+          pin: _pin,
+          idempotencyKey: _clave(),
+          monto: const Money.soles(777),
+          mensaje: 'Menú',
+        ),
+      );
+      expect(recibo.monto, const Money.soles(777));
+      final origenDespues = _ok(await ana.accounts.cuentas()).first;
+      expect(
+        origenDespues.saldoDisponible.centimos,
+        origenAntes.saldoDisponible.centimos - 777,
+      );
+      // El pago descuenta del límite diario que informa `/validar`.
+      final disponibleDespues =
+          _ok(await ana.qr.leer(miQr.payload)).disponibleHoy;
+      expect(
+        disponibleDespues?.centimos,
+        (disponibleAntes?.centimos ?? 0) - 777,
+      );
+    });
+
+    test('INT-CT-19 cambiar "Mi QR" revoca el anterior: QrRevoked', () async {
+      final viejo = _ok(await luis.qr.miQr(destino));
+      final nuevo = _ok(await luis.qr.regenerarMiQr(destino));
+      expect(nuevo.payload, isNot(viejo.payload));
+      expect(
+        _servidor<QrFailure, dynamic>(await ana.qr.leer(viejo.payload)),
+        isA<QrRevoked>(),
+      );
+      expect(_ok(await ana.qr.leer(nuevo.payload)).cobro, isA<QrCobroLibre>());
     });
   });
 }

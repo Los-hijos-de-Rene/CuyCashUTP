@@ -29,6 +29,13 @@ class QrHubScreen extends StatelessWidget {
           ),
           const SizedBox(height: CuyCashSpacing.stackLg),
           _QrOption(
+            icon: Icons.qr_code,
+            title: l10n.qrHubMyQrTitle,
+            body: l10n.qrHubMyQrBody,
+            onTap: () => context.push(AppRoutes.qrMiQr, extra: cuenta),
+          ),
+          const SizedBox(height: CuyCashSpacing.stackMd),
+          _QrOption(
             icon: Icons.qr_code_2,
             title: l10n.qrHubChargeTitle,
             body: l10n.qrHubChargeBody,
