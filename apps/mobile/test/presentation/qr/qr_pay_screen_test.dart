@@ -10,6 +10,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 
 import 'qr_test_support.dart';
 
@@ -27,9 +28,10 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     QrGalleryResult galeria = const QrGalleryCancelled(),
+    FakeQrRepository? repo,
   }) async {
     final bloc = QrPayBloc(
-      actions: QrActions(FakeQrRepository()),
+      actions: QrActions(repo ?? FakeQrRepository()),
       cuentaOrigen: _cuenta,
       userId: 'u1',
       clock: () => DateTime.utc(2026, 11, 4, 12),
@@ -125,5 +127,55 @@ void main() {
 
     expect(find.byType(SnackBar), findsNothing);
     expect(find.text('SIMULAR ESCANEO'), findsOneWidget);
+  });
+
+  group('"Mi QR" (monto libre)', () {
+    Future<FakeQrRepository> escanearLibre(WidgetTester t) async {
+      final repo = FakeQrRepository(
+        alLeer: (_) async => right(previewLibreDePrueba),
+      );
+      await pump(t, repo: repo);
+      await t.tap(find.text('SIMULAR ESCANEO'));
+      await t.pumpAndSettle();
+      return repo;
+    }
+
+    testWidgets('pide el monto y dice cuánto se puede pagar hoy', (t) async {
+      await escanearLibre(t);
+      expect(find.text('¿Cuánto vas a pagar?'), findsOneWidget);
+      expect(find.text('L*** Q***'), findsOneWidget);
+      expect(
+        find.text('Hoy puedes pagar con QR hasta S/ 30.00.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('más de lo que queda hoy se avisa sin pedir el PIN', (t) async {
+      await escanearLibre(t);
+      await t.enterText(find.byType(TextField).first, '45');
+      await t.tap(find.text('Pagar'));
+      await t.pumpAndSettle();
+      expect(
+        find.text('Hoy solo puedes pagar con QR hasta S/ 30.00.'),
+        findsOneWidget,
+      );
+      expect(find.text('¿Cuánto vas a pagar?'), findsOneWidget);
+    });
+
+    testWidgets('con monto válido pide el PIN y paga lo escrito', (t) async {
+      final repo = await escanearLibre(t);
+      await t.enterText(find.byType(TextField).first, '12.50');
+      await t.enterText(find.byType(TextField).last, 'Menú');
+      await t.tap(find.text('Pagar'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('S/ 12.50'), findsOneWidget);
+      for (var i = 0; i < 6; i++) {
+        await t.tap(find.text('0'));
+        await t.pump();
+      }
+      await t.pumpAndSettle();
+      expect(repo.montoPagado, const Money.soles(1250));
+      expect(repo.mensajePagado, 'Menú');
+    });
   });
 }

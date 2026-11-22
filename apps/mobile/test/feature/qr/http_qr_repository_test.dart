@@ -3,7 +3,10 @@ import 'dart:typed_data';
 
 import 'package:core_kernel/core_kernel.dart';
 import 'package:cuycash/core/http/authenticated_dio.dart';
+import 'package:cuycash/feature/account/domain/account.dart';
+import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/qr/domain/qr_failure.dart';
+import 'package:cuycash/feature/qr/domain/qr_payment_preview.dart';
 import 'package:cuycash/feature/qr/infrastructure/http_qr_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +51,16 @@ HttpQrRepository _repo(_Backend backend) {
   )..httpClientAdapter = backend;
   return HttpQrRepository(dio: dio);
 }
+
+const _cuenta = Account(
+  id: 'acc-1',
+  numero: '19100000008830',
+  tipo: AccountType.ahorro,
+  moneda: Currency.pen,
+  estado: 'activa',
+  saldoDisponible: Money.soles(0),
+  saldoContable: Money.soles(0),
+);
 
 QrFailure _fallo<T>(Result<QrFailure, T> r) => r.fold(
   (l) => switch (l) {
@@ -104,6 +117,7 @@ void main() {
 
   test('leer arma la vista previa del pagador', () async {
     final backend = _Backend(200, {
+      'tipo': 'fijo',
       'cuenta_destino_id': 'acc-2',
       'nombre_enmascarado': 'L*** Q***',
       'monto_centimos': 900,
@@ -117,8 +131,94 @@ void main() {
     ).leer('abc.def')).getOrElse((l) => fail('$l'));
     expect(previa.payload, 'abc.def');
     expect(previa.nombreEnmascarado, 'L*** Q***');
-    expect(previa.monto, const Money(900, Currency.usd));
+    expect(previa.moneda, Currency.usd);
+    expect(switch (previa.cobro) {
+      QrCobroFijo(:final monto, :final concepto) => (monto, concepto),
+      QrCobroLibre() => null,
+    }, (const Money(900, Currency.usd), 'Taller'));
     expect(previa.cuentaDestinoId, 'acc-2');
+    // Sin esto el servidor contesta QR_UPDATE_REQUIRED a un "Mi QR".
+    expect(backend.pedido?.data, {'qr': 'abc.def', 'acepta_monto_libre': true});
+  });
+
+  test('leer un "Mi QR" no trae monto y sí lo que queda hoy', () async {
+    final backend = _Backend(200, {
+      'tipo': 'libre',
+      'cuenta_destino_id': 'acc-2',
+      'nombre_enmascarado': 'L*** Q***',
+      'monto_centimos': null,
+      'moneda': 'PEN',
+      'concepto': '',
+      'caduca_en': null,
+      'requiere_pin': true,
+      'disponible_hoy_centimos': 125000,
+    });
+    final previa = (await _repo(
+      backend,
+    ).leer('abc.def')).getOrElse((l) => fail('$l'));
+    expect(previa.cobro, isA<QrCobroLibre>());
+    expect(previa.disponibleHoy, const Money.soles(125000));
+  });
+
+  test('un tipo de QR desconocido no revienta: es un fallo', () async {
+    final backend = _Backend(200, {
+      'tipo': 'otro',
+      'cuenta_destino_id': 'acc-2',
+      'nombre_enmascarado': 'L*** Q***',
+      'moneda': 'PEN',
+    });
+    expect((await _repo(backend).leer('abc.def')).isLeft(), isTrue);
+  });
+
+  for (final (nombre, ruta, llamar) in [
+    ('mi QR', '/v1/qr/estatico', (HttpQrRepository r) => r.miQr(_cuenta)),
+    (
+      'regenerar',
+      '/v1/qr/estatico/regenerar',
+      (HttpQrRepository r) => r.regenerarMiQr(_cuenta),
+    ),
+  ]) {
+    test('$nombre pide por la cuenta y devuelve el QR', () async {
+      final backend = _Backend(201, {
+        'id': 'n1',
+        'qr': 'abc.def',
+        'tipo': 'libre',
+        'cuenta_id': 'acc-1',
+        'moneda': 'USD',
+        'created_at': '2026-11-06T22:53:04Z',
+      });
+      final qr = (await llamar(_repo(backend))).getOrElse((l) => fail('$l'));
+      expect(backend.pedido?.path, ruta);
+      expect(backend.pedido?.data, {'cuenta_id': 'acc-1'});
+      expect(qr.payload, 'abc.def');
+      expect(qr.moneda, Currency.usd);
+    });
+  }
+
+  test('pagar un "Mi QR" manda el monto y el mensaje', () async {
+    final backend = _Backend(201, {
+      'transaction_id': 'tx-1',
+      'estado': 'confirmada',
+      'monto_centimos': 1234,
+      'moneda': 'PEN',
+      'created_at': '2026-11-06T22:53:04.307679Z',
+    });
+    await _repo(backend).pagar(
+      payload: 'abc.def',
+      cuentaOrigenId: 'acc-1',
+      pin: '258036',
+      idempotencyKey: 'qr-pay-0002',
+      monto: const Money.soles(1234),
+      mensaje: '  Menú  ',
+    );
+    expect(backend.pedido?.data, {
+      'qr': 'abc.def',
+      'cuenta_origen_id': 'acc-1',
+      'pin': '258036',
+      'idempotency_key': 'qr-pay-0002',
+      'monto_centimos': 1234,
+      'mensaje': 'Menú',
+    });
   });
 
   test('pagar siempre manda el PIN y la clave', () async {

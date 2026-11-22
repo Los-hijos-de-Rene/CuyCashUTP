@@ -26,6 +26,7 @@ abstract final class AppRoutes {
   static const qr = '/qr';
   static const qrCobrar = '/qr/cobrar';
   static const qrPagar = '/qr/pagar';
+  static const qrMiQr = '/qr/mi-qr';
 
   // Historial completo: de la cuenta que viaja como `extra`, o de todas.
   static const movimientos = '/movimientos';

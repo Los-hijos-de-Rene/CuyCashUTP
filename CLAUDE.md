@@ -66,7 +66,12 @@ antifraude, préstamos digitales, billetera/QR, conciliación y cumplimiento.
   `disponible_centimos`; `/validar` devuelve `disponible_hoy_centimos`.
   Envíos y recargas NO cuentan. Reintentar un pago
   ya hecho devuelve el original aunque el QR haya vencido o se haya revocado.
-  Requiere `QR_SIGNING_SECRET`; sin ella, 503. La **app** aún no tiene "Mi QR".
+  Requiere `QR_SIGNING_SECRET`; sin ella, 503. En la app, el hub de QR
+  (`presentation/qr/`) tiene "Mi QR" (`MyQrScreen`: mostrar, compartir como
+  imagen y cambiar), cobrar y pagar; al pagar un "Mi QR" el pagador escribe
+  monto y mensaje, y el bloc valida el máximo por operación y lo que queda hoy
+  ANTES de pedir el PIN. El límite diario de la app (`QrLimits`) espeja el del
+  backend. El token nunca se muestra ni se copia: se comparte la imagen.
 
 **Sigue sin existir** (no asumas que hay código de esto): transferencia
 interbancaria y CCI, préstamos, antifraude, conciliación

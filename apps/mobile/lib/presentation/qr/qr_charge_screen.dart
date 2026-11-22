@@ -1,14 +1,10 @@
-import 'dart:ui' as ui;
-
 import 'package:core_kernel/core_kernel.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/format/money_format.dart';
 import '../../feature/account/domain/account.dart';
@@ -18,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../app/app_routes.dart';
 import 'bloc/qr_charge_bloc.dart';
 import 'qr_error_text.dart';
+import 'widgets/qr_share.dart';
 
 /// Paso de cobro: monto + concepto → QR firmado con caducidad.
 class QrChargeScreen extends StatelessWidget {
@@ -151,49 +148,24 @@ class _ChargeReadyState extends State<_ChargeReady> {
   final _tarjeta = GlobalKey();
   bool _compartiendo = false;
 
-  /// Comparte una IMAGEN, no el texto del token: es lo que se puede escanear
-  /// desde otra pantalla o subir desde la galería, y el token no es algo que
-  /// el usuario deba ver ni copiar.
   Future<void> _compartir() async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final origen = _origenDelMenu();
-    final render = _tarjeta.currentContext?.findRenderObject();
-    if (render is! RenderRepaintBoundary) return;
     setState(() => _compartiendo = true);
-    try {
-      // x3: nítida en cualquier pantalla y legible si WhatsApp la comprime.
-      final imagen = await render.toImage(pixelRatio: 3);
-      final png = await imagen.toByteData(format: ui.ImageByteFormat.png);
-      imagen.dispose();
-      if (png == null) throw StateError('Sin bytes PNG');
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [
-            XFile.fromData(png.buffer.asUint8List(), mimeType: 'image/png'),
-          ],
-          // El nombre de `XFile.fromData` se ignora en casi todas las
-          // plataformas; este es el que se usa.
-          fileNameOverrides: const ['cobro-cuycash.png'],
-          text: l10n.qrChargeShareText(
-            formatMoney(widget.charge.monto),
-            widget.charge.concepto,
-          ),
-          sharePositionOrigin: origen,
-        ),
-      );
-    } on Object {
+    final ok = await compartirTarjetaQr(
+      tarjeta: _tarjeta,
+      texto: l10n.qrChargeShareText(
+        formatMoney(widget.charge.monto),
+        widget.charge.concepto,
+      ),
+      archivo: 'cobro-cuycash.png',
+      origen: origenDeCompartir(context),
+    );
+    if (!mounted) return;
+    setState(() => _compartiendo = false);
+    if (!ok) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.qrChargeShareError)));
-    } finally {
-      if (mounted) setState(() => _compartiendo = false);
     }
-  }
-
-  /// En iPad la hoja de compartir necesita un ancla.
-  Rect? _origenDelMenu() {
-    final box = context.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return null;
-    return box.localToGlobal(Offset.zero) & box.size;
   }
 
   @override

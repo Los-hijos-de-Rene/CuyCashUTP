@@ -4,6 +4,7 @@ import 'package:cuycash/feature/account/domain/account.dart';
 import 'package:cuycash/feature/account/domain/account_type.dart';
 import 'package:cuycash/feature/qr/application/qr_actions.dart';
 import 'package:cuycash/feature/qr/domain/qr_failure.dart';
+import 'package:cuycash/feature/qr/domain/qr_payment_preview.dart';
 import 'package:cuycash/presentation/qr/bloc/qr_pay_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -40,7 +41,14 @@ void main() {
       isA<QrPayState>()
           .having((s) => s.status, 'status', QrPayStatus.preview)
           .having((s) => s.preview?.nombreEnmascarado, 'nombre', 'J*** M*** R***')
-          .having((s) => s.preview?.monto, 'monto', const Money.soles(1000)),
+          .having(
+            (s) => switch (s.preview?.cobro) {
+              QrCobroFijo(:final monto) => monto,
+              _ => null,
+            },
+            'monto',
+            const Money.soles(1000),
+          ),
     ],
   );
 
@@ -167,4 +175,119 @@ void main() {
       expect(bloc.state.failure, isA<QrWrongPin>());
     },
   );
+
+  group('"Mi QR" (monto libre)', () {
+    FakeQrRepository libre() =>
+        FakeQrRepository(alLeer: (_) async => right(previewLibreDePrueba));
+
+    Future<void> leerYEscribir(QrPayBloc bloc, String monto,
+        {String mensaje = ''}) async {
+      bloc.add(const QrPayloadDetected('cuycash://qr?tipo=libre&demo=1'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(QrPayAmountSubmitted(monto: monto, mensaje: mensaje));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    blocTest<QrPayBloc, QrPayState>(
+      'continuar sin monto no pasa al PIN',
+      build: () => _bloc(libre()),
+      act: (bloc) async {
+        bloc.add(const QrPayloadDetected('cuycash://qr?tipo=libre&demo=1'));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        bloc.add(const QrPaySubmitted());
+      },
+      wait: const Duration(milliseconds: 30),
+      verify: (bloc) => expect(bloc.state.status, QrPayStatus.preview),
+    );
+
+    for (final (texto, tipo) in [
+      ('', QrAmountInvalid),
+      ('0', QrAmountInvalid),
+      ('abc', QrAmountInvalid),
+      ('2000.01', QrAmountAboveMax),
+    ]) {
+      blocTest<QrPayBloc, QrPayState>(
+        'el monto "$texto" se rechaza antes del PIN ($tipo)',
+        build: () => _bloc(
+          FakeQrRepository(
+            alLeer: (_) async => right(
+              const QrPaymentPreview(
+                payload: 'p',
+                nombreEnmascarado: 'L*** Q***',
+                cuentaDestinoId: 'acc-demo-1',
+                moneda: Currency.pen,
+                cobro: QrCobroLibre(),
+              ),
+            ),
+          ),
+        ),
+        act: (bloc) => leerYEscribir(bloc, texto),
+        wait: const Duration(milliseconds: 30),
+        verify: (bloc) {
+          expect(bloc.state.status, QrPayStatus.preview);
+          expect(bloc.state.amountError.runtimeType, tipo);
+        },
+      );
+    }
+
+    blocTest<QrPayBloc, QrPayState>(
+      'más de lo que queda hoy se avisa antes del PIN, con lo que queda',
+      build: () => _bloc(libre()),
+      act: (bloc) => leerYEscribir(bloc, '30.01'),
+      wait: const Duration(milliseconds: 30),
+      verify: (bloc) => expect(switch (bloc.state.amountError) {
+        QrAmountAboveDaily(:final disponible) => disponible,
+        _ => null,
+      }, const Money.soles(3000)),
+    );
+
+    blocTest<QrPayBloc, QrPayState>(
+      'con monto válido pide el PIN y paga lo escrito, con el mensaje',
+      build: () => _bloc(libre()),
+      act: (bloc) async {
+        await leerYEscribir(bloc, '12.50', mensaje: '  Menú del día ');
+        expect(bloc.state.status, QrPayStatus.pin);
+        expect(bloc.state.monto, const Money.soles(1250));
+        for (var i = 0; i < 6; i++) {
+          bloc.add(const QrPayPinDigit(0));
+        }
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) => expect(bloc.state.status, QrPayStatus.done),
+    );
+  });
+
+  test('el pago libre manda monto y mensaje; el fijo, ninguno', () async {
+    final libre = FakeQrRepository(alLeer: (_) async => right(previewLibreDePrueba));
+    final blocLibre = _bloc(libre);
+    blocLibre.add(const QrPayloadDetected('libre'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    blocLibre.add(const QrPayAmountSubmitted(monto: '12.50', mensaje: ' Menú '));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    for (var i = 0; i < 6; i++) {
+      blocLibre.add(const QrPayPinDigit(0));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(blocLibre.state.status, QrPayStatus.done);
+    expect(libre.montoPagado, const Money.soles(1250));
+    expect(libre.mensajePagado, 'Menú');
+
+    final fijo = FakeQrRepository();
+    final blocFijo = _bloc(fijo);
+    blocFijo.add(const QrPayloadDetected('fijo'));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    // En un cobro fijo el monto escrito se ignora: no hay campo.
+    blocFijo.add(const QrPayAmountSubmitted(monto: '99'));
+    blocFijo.add(const QrPaySubmitted());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    for (var i = 0; i < 6; i++) {
+      blocFijo.add(const QrPayPinDigit(0));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(blocFijo.state.status, QrPayStatus.done);
+    expect(fijo.montoPagado, isNull);
+    expect(fijo.mensajePagado, isNull);
+    await blocLibre.close();
+    await blocFijo.close();
+  });
 }
