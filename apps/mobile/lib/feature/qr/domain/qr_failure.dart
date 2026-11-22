@@ -21,6 +21,12 @@ sealed class QrFailure {
   /// El servicio de QR no está configurado en este entorno.
   const factory QrFailure.unavailable() = QrUnavailable;
 
+  /// Quien cobra regeneró su QR: el que se escaneó ya no está activo.
+  const factory QrFailure.revoked() = QrRevoked;
+
+  /// El QR es de monto libre ("Mi QR") y esta versión aún no sabe pagarlo.
+  const factory QrFailure.updateRequired() = QrUpdateRequired;
+
   /// El QR ya se pagó: cada cobro admite un solo pago.
   const factory QrFailure.alreadyPaid() = QrAlreadyPaid;
 
@@ -72,6 +78,14 @@ final class QrUnavailable extends QrFailure {
 
 final class QrUnexpectedFailure extends QrFailure {
   const QrUnexpectedFailure();
+}
+
+final class QrRevoked extends QrFailure {
+  const QrRevoked();
+}
+
+final class QrUpdateRequired extends QrFailure {
+  const QrUpdateRequired();
 }
 
 final class QrAlreadyPaid extends QrFailure {

@@ -3221,8 +3221,20 @@ abstract class AppLocalizations {
   /// No description provided for @qrChargeShareText.
   ///
   /// In es, this message translates to:
-  /// **'Cóbralo con CuyCash: {monto} por «{concepto}».\n{payload}'**
-  String qrChargeShareText(String monto, String concepto, String payload);
+  /// **'Págame {monto} por «{concepto}» con CuyCash: escanea el QR o súbelo desde Pagar con QR.'**
+  String qrChargeShareText(String monto, String concepto);
+
+  /// No description provided for @qrChargeShareError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos preparar la imagen. Inténtalo de nuevo.'**
+  String get qrChargeShareError;
+
+  /// No description provided for @qrChargeCardBrand.
+  ///
+  /// In es, this message translates to:
+  /// **'Paga con CuyCash'**
+  String get qrChargeCardBrand;
 
   /// No description provided for @qrChargeDone.
   ///
@@ -3251,20 +3263,20 @@ abstract class AppLocalizations {
   /// No description provided for @qrPayScanHint.
   ///
   /// In es, this message translates to:
-  /// **'Apunta la cámara al QR o pega el mensaje que te enviaron.'**
+  /// **'Apunta la cámara al QR. Si te lo enviaron como imagen, súbela.'**
   String get qrPayScanHint;
 
-  /// No description provided for @qrPayPasteLabel.
+  /// No description provided for @qrPayFromImage.
   ///
   /// In es, this message translates to:
-  /// **'Código o mensaje del QR'**
-  String get qrPayPasteLabel;
+  /// **'Subir imagen del QR'**
+  String get qrPayFromImage;
 
-  /// No description provided for @qrPayRead.
+  /// No description provided for @qrPayImageNoQr.
   ///
   /// In es, this message translates to:
-  /// **'Leer código'**
-  String get qrPayRead;
+  /// **'No encontramos un QR en esa imagen. Prueba con otra.'**
+  String get qrPayImageNoQr;
 
   /// No description provided for @qrPayPreviewHeadline.
   ///
@@ -3380,6 +3392,18 @@ abstract class AppLocalizations {
   /// **'PIN incorrecto. Te quedan {n} intentos.'**
   String qrErrorWrongPin(int n);
 
+  /// No description provided for @qrErrorRevoked.
+  ///
+  /// In es, this message translates to:
+  /// **'Este QR ya no está activo. Pide a quien cobra su QR nuevo.'**
+  String get qrErrorRevoked;
+
+  /// No description provided for @qrErrorUpdateRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Para pagar este QR necesitas la versión más reciente de CuyCash.'**
+  String get qrErrorUpdateRequired;
+
   /// No description provided for @qrErrorAlreadyPaid.
   ///
   /// In es, this message translates to:
@@ -3449,7 +3473,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrCameraUnavailable.
   ///
   /// In es, this message translates to:
-  /// **'No pudimos abrir la cámara. Pega el código del QR para continuar.'**
+  /// **'No pudimos abrir la cámara. Sube una imagen del QR para continuar.'**
   String get qrCameraUnavailable;
 }
 

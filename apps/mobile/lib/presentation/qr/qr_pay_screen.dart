@@ -13,12 +13,20 @@ import '../pin/pin_entry_view.dart';
 import 'bloc/qr_pay_bloc.dart';
 import 'qr_error_text.dart';
 import 'widgets/qr_camera_view.dart';
+import 'widgets/qr_gallery_reader.dart';
 
-/// Paso de pago: cámara → vista previa (nombre + monto) → PIN → constancia.
+/// Paso de pago: cámara o imagen → vista previa (nombre + monto) → PIN →
+/// constancia.
+///
+/// No hay campo para pegar el código: el QR se comparte como imagen y el
+/// token no es algo que el usuario deba ver, copiar ni dictar (es lo que pide
+/// un estafador: "pásame el código"). Quien recibe el QR en el mismo teléfono
+/// lo sube desde la galería.
 class QrPayScreen extends StatelessWidget {
   const QrPayScreen({
     required this.cuentaOrigen,
     this.cameraBuilder,
+    this.galleryReader,
     super.key,
   });
 
@@ -26,6 +34,9 @@ class QrPayScreen extends StatelessWidget {
 
   /// Inyectable en pruebas para no abrir la cámara real.
   final Widget Function(ValueChanged<String> onDetected)? cameraBuilder;
+
+  /// Inyectable en pruebas para no abrir la galería real.
+  final Future<QrGalleryResult> Function()? galleryReader;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +49,7 @@ class QrPayScreen extends StatelessWidget {
             onDetected: (payload) =>
                 context.read<QrPayBloc>().add(QrPayloadDetected(payload)),
             cameraBuilder: cameraBuilder,
+            galleryReader: galleryReader ?? leerQrDeGaleria,
           ),
         QrPayStatus.reading ||
         QrPayStatus.paying =>
@@ -52,9 +64,14 @@ class QrPayScreen extends StatelessWidget {
 }
 
 class _ScanBody extends StatefulWidget {
-  const _ScanBody({required this.onDetected, this.cameraBuilder});
+  const _ScanBody({
+    required this.onDetected,
+    required this.galleryReader,
+    this.cameraBuilder,
+  });
 
   final ValueChanged<String> onDetected;
+  final Future<QrGalleryResult> Function() galleryReader;
   final Widget Function(ValueChanged<String> onDetected)? cameraBuilder;
 
   @override
@@ -62,18 +79,25 @@ class _ScanBody extends StatefulWidget {
 }
 
 class _ScanBodyState extends State<_ScanBody> {
-  final _payload = TextEditingController();
+  bool _leyendo = false;
 
-  @override
-  void dispose() {
-    _payload.dispose();
-    super.dispose();
-  }
-
-  void _leerPegado() {
-    final value = _payload.text.trim();
-    if (value.isEmpty) return;
-    widget.onDetected(value);
+  Future<void> _subirImagen() async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _leyendo = true);
+    final resultado = await widget.galleryReader();
+    if (!mounted) return;
+    setState(() => _leyendo = false);
+    switch (resultado) {
+      case QrGalleryCancelled():
+        break;
+      case QrGalleryNotFound():
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.qrPayImageNoQr)),
+        );
+      case QrGalleryFound(:final codigo):
+        widget.onDetected(codigo);
+    }
   }
 
   @override
@@ -95,22 +119,16 @@ class _ScanBodyState extends State<_ScanBody> {
               child: SurfaceCard(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       l10n.qrPayScanHint,
                       style: CuyCashTypography.bodyLg,
                     ),
                     const SizedBox(height: CuyCashSpacing.stackSm),
-                    CuyCashTextField(
-                      label: l10n.qrPayPasteLabel,
-                      controller: _payload,
-                      onSubmitted: (_) => _leerPegado(),
-                    ),
-                    const SizedBox(height: CuyCashSpacing.stackSm),
-                    PrimaryButton(
-                      label: l10n.qrPayRead,
-                      onPressed: _leerPegado,
+                    SecondaryButton(
+                      label: l10n.qrPayFromImage,
+                      onPressed: _leyendo ? null : _subirImagen,
                     ),
                   ],
                 ),

@@ -223,7 +223,7 @@ Una operación de dinero (un envío, una recarga). Agrupa sus asientos.
 | Columna | Tipo | Nulo | Clave | Restricción / defecto | Descripción |
 |---|---|---|---|---|---|
 | `id` | VARCHAR(36) | No | PK | UUID | Identificador de la operación; es el número de constancia. |
-| `tipo` | VARCHAR(20) | No | | `transferencia`, `recarga`, `pago_qr`, `desembolso`, `cuota`, `ajuste` | Clase de operación. Hoy solo se usan `transferencia` y `recarga`; el resto queda listo para los sprints siguientes. |
+| `tipo` | VARCHAR(20) | No | | `transferencia`, `recarga`, `pago_qr`, `desembolso`, `cuota`, `ajuste` | Clase de operación. Hoy se usan `transferencia`, `recarga`, `pago_qr` y `desembolso`; el resto queda listo para los sprints siguientes. |
 | `estado` | VARCHAR(12) | No | | `pendiente`, `confirmada`, `revertida`; defecto `confirmada` | Estado de la operación. |
 | `idempotency_key` | VARCHAR(64) | No | UK, IX | | Clave que genera la app y repite al reintentar. Un reintento devuelve la operación original en lugar de cobrar dos veces. |
 | `referencia` | VARCHAR(60) | Sí | | | Texto de referencia de la operación. |
@@ -266,6 +266,25 @@ Lo que un asiento no dice: desde dónde, hacia quién y por qué. El dinero est�
 | `monto` | BIGINT | No | | | Importe en céntimos. |
 | `motivo` | VARCHAR(40) | Sí | | | Concepto opcional que escribe quien envía. |
 | `estado` | VARCHAR(12) | No | | Defecto `confirmada` | Estado del envío. |
+
+### `qr_codigos` — QR de cobro (estático y dinámico)
+
+Lo que un QR vale. El código que se dibuja solo lleva `id` y una firma HMAC
+truncada (45 caracteres): cuenta, monto y caducidad se leen aquí, así que un QR
+se puede revocar sin tocar los de nadie más. Un pago QR es una `transaction` de
+tipo `pago_qr` con `referencia = 'qr:<id>'`.
+
+| Columna | Tipo | Nulo | Clave | Restricción / defecto | Descripción |
+|---|---|---|---|---|---|
+| `id` | VARCHAR(22) | No | PK | 16 bytes aleatorios en base64url | Referencia que va dentro del QR. No es un UUID: no se puede adivinar. |
+| `cuenta_id` | VARCHAR(36) | No | FK → `accounts.id`, IX | | Cuenta que recibe el dinero. |
+| `tipo` | VARCHAR(10) | No | | `estatico`, `dinamico` | Estático ("Mi QR"): el pagador elige el monto y admite muchos pagos. Dinámico: monto fijo, un solo pago, caduca. |
+| `monto` | BIGINT | Sí | | Nulo si y solo si es estático | Importe del cobro dinámico, en céntimos. |
+| `concepto` | VARCHAR(40) | No | | Defecto `''` | Concepto del cobro dinámico. |
+| `expires_at` | TIMESTAMPTZ | Sí | | Nulo si y solo si es estático | Instante en que el cobro deja de aceptarse. |
+| `estado` | VARCHAR(10) | No | | `activo`, `revocado` | Un "Mi QR" se revoca al regenerarlo. Índice único parcial: un estático activo por cuenta. |
+| `created_at` | TIMESTAMPTZ | No | | | Emisión. |
+| `revocado_at` | TIMESTAMPTZ | Sí | | Presente si y solo si está revocado | Momento de la revocación. |
 
 ### `beneficiaries` — frecuentes
 

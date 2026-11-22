@@ -6,6 +6,10 @@ class QrCharge {
   /// cambia también ese texto.
   static const vigencia = Duration(minutes: 15);
 
+  /// Largo máximo del concepto. Debe coincidir con `QREmitirIn.concepto` del
+  /// backend (y con `qr_codigos.concepto`, VARCHAR(40)).
+  static const conceptoMaximo = 40;
+
   const QrCharge({
     required this.id,
     required this.payload,

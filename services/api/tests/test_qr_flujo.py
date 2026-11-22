@@ -5,12 +5,12 @@ Solo utiliza la base de pruebas de conftest.py. Nunca apunta a cuentas reales.
 
 import asyncio
 import os
+from datetime import timedelta
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
-from app.db.models import Transaction, Transfer
-from app.services.qr_firmado import emitir_qr
+from app.db.models import QrCodigo, Transaction, Transfer, utcnow
 from tests.conftest import PIN_DE_PRUEBA
 
 pytestmark = pytest.mark.asyncio
@@ -22,8 +22,6 @@ SECRETO_QR_PRUEBAS = "secreto-exclusivo-para-tests-qr-2026-abcdefghijk"
 @pytest.fixture(autouse=True)
 def _configuracion_qr_de_prueba(monkeypatch):
     monkeypatch.setenv("QR_SIGNING_SECRET", SECRETO_QR_PRUEBAS)
-    # S/ 100 para las pruebas. No es una decisión sobre el límite de producción.
-    monkeypatch.setenv("QR_MONTO_BASE_CENTIMOS", "10000")
 
 
 async def _cuenta(client, titular):
@@ -70,7 +68,7 @@ async def _emitir(client, receptor, monto=1_500, concepto="Compra de prueba"):
     return r.json()["qr"]
 
 
-def _pago(qr, cuenta_origen_id, clave, pin=None):
+def _pago(qr, cuenta_origen_id, clave, pin=PIN_DE_PRUEBA, monto=None):
     cuerpo = {
         "qr": qr,
         "cuenta_origen_id": cuenta_origen_id,
@@ -78,7 +76,19 @@ def _pago(qr, cuenta_origen_id, clave, pin=None):
     }
     if pin is not None:
         cuerpo["pin"] = pin
+    if monto is not None:
+        cuerpo["monto_centimos"] = monto
     return cuerpo
+
+
+async def _vencer(db, qr):
+    """Lleva la caducidad al pasado sin esperar ni tocar el reloj."""
+    await db.execute(
+        update(QrCodigo)
+        .where(QrCodigo.id == qr.split(".")[0])
+        .values(expires_at=utcnow() - timedelta(seconds=1))
+    )
+    await db.commit()
 
 
 async def test_qr_01_emitir_y_consultar_nombre_enmascarado(
@@ -91,17 +101,31 @@ async def test_qr_01_emitir_y_consultar_nombre_enmascarado(
     assert datos["monto_centimos"] == 1_500
     assert datos["moneda"] == "PEN"
     assert datos["concepto"] == "Compra de prueba"
+    assert datos["tipo"] == "fijo"
     assert "*" in datos["nombre_enmascarado"]
-    assert datos["requiere_pin"] is False
+    # El PIN se pide siempre: el campo queda por compatibilidad con APK viejos.
+    assert datos["requiere_pin"] is True
+    # Corto y opaco: 45 caracteres en vez de ~260, y sin datos del cobro.
+    assert len(qr) == 45
+    assert "Compra" not in qr
     assert await _saldo(client, registrado) == 0
     assert await _saldo(client, otro_registrado) == 0
 
 
-async def test_qr_02_pago_pequeno_sin_pin_mueve_ambos_saldos(
+async def test_qr_02_el_pin_se_exige_siempre_y_con_el_mueve_ambos_saldos(
     client, otp_codes, registrado, otro_registrado, db_de_client
 ):
     origen = await _recargar(client, registrado, monto=60_000)
     qr = await _emitir(client, otro_registrado, monto=1_500, concepto="Café")
+    sin_pin = await client.post(
+        "/v1/qr/pagar",
+        headers=registrado.auth,
+        json=_pago(qr, origen, "pago-qr-peq-001", pin=None),
+    )
+    assert sin_pin.status_code == 403, sin_pin.text
+    assert sin_pin.json()["code"] == "QR_AUTH_REQUIRED"
+    assert await _saldo(client, registrado) == 60_000
+
     r = await client.post(
         "/v1/qr/pagar",
         headers=registrado.auth,
@@ -144,19 +168,11 @@ async def test_qr_03_qr_alterado_se_rechaza_sin_descontar(
 
 
 async def test_qr_04_qr_vencido_se_rechaza_sin_descontar(
-    client, otp_codes, registrado, otro_registrado
+    client, otp_codes, registrado, otro_registrado, db_de_client
 ):
     origen = await _recargar(client, registrado)
-    cuenta_receptor = await _cuenta(client, otro_registrado)
-    # Expiró décadas atrás; no hay que esperar ni cambiar el reloj del sistema.
-    vencido = emitir_qr(
-        secreto=SECRETO_QR_PRUEBAS,
-        cuenta_id=cuenta_receptor,
-        monto_centimos=1_500,
-        concepto="Vencido",
-        ttl_segundos=30,
-        ahora=1,
-    )
+    vencido = await _emitir(client, otro_registrado, monto=1_500, concepto="Vencido")
+    await _vencer(db_de_client, vencido)
     consulta = await client.post(
         "/v1/qr/validar", headers=registrado.auth, json={"qr": vencido}
     )
@@ -172,33 +188,28 @@ async def test_qr_04_qr_vencido_se_rechaza_sin_descontar(
     assert await _saldo(client, otro_registrado) == 0
 
 
-async def test_qr_05_supera_limite_y_exige_pin(
+async def test_qr_05_el_monto_de_un_cobro_fijo_no_lo_cambia_el_pagador(
     client, otp_codes, registrado, otro_registrado
 ):
     origen = await _recargar(client, registrado)
     qr = await _emitir(client, otro_registrado, monto=15_000)
-    previo = await client.post(
-        "/v1/qr/validar", headers=registrado.auth, json={"qr": qr}
-    )
-    assert previo.status_code == 200, previo.text
-    assert previo.json()["requiere_pin"] is True
 
-    sin_pin = await client.post(
+    otro_monto = await client.post(
         "/v1/qr/pagar",
         headers=registrado.auth,
-        json=_pago(qr, origen, "pago-qr-alto-001"),
+        json=_pago(qr, origen, "pago-qr-fijo-001", monto=100),
     )
-    assert sin_pin.status_code == 403, sin_pin.text
-    assert sin_pin.json()["code"] == "QR_AUTH_REQUIRED"
+    assert otro_monto.status_code == 400, otro_monto.text
+    assert otro_monto.json()["code"] == "QR_AMOUNT_FIXED"
     assert await _saldo(client, registrado) == 60_000
-    assert await _saldo(client, otro_registrado) == 0
 
-    con_pin = await client.post(
+    # Mandar el mismo monto del cobro es válido (la app nueva lo hace).
+    mismo = await client.post(
         "/v1/qr/pagar",
         headers=registrado.auth,
-        json=_pago(qr, origen, "pago-qr-alto-001", pin=PIN_DE_PRUEBA),
+        json=_pago(qr, origen, "pago-qr-fijo-001", monto=15_000),
     )
-    assert con_pin.status_code == 201, con_pin.text
+    assert mismo.status_code == 201, mismo.text
     assert await _saldo(client, registrado) == 45_000
     assert await _saldo(client, otro_registrado) == 15_000
 
@@ -325,18 +336,11 @@ async def test_qr_11_la_consulta_avisa_que_ya_fue_pagado(
 
 
 async def test_qr_12_vencido_y_alterado_se_distinguen(
-    client, otp_codes, registrado, otro_registrado
+    client, otp_codes, registrado, otro_registrado, db_de_client
 ):
     origen = await _recargar(client, registrado)
-    cuenta = await _cuenta(client, otro_registrado)
-    vencido = emitir_qr(
-        secreto=SECRETO_QR_PRUEBAS,
-        cuenta_id=cuenta,
-        monto_centimos=500,
-        concepto="Vencido",
-        ttl_segundos=30,
-        ahora=1_000,
-    )
+    vencido = await _emitir(client, otro_registrado, monto=500, concepto="Vencido")
+    await _vencer(db_de_client, vencido)
     r = await client.post(
         "/v1/qr/pagar",
         headers=registrado.auth,
@@ -354,7 +358,7 @@ async def test_qr_12_vencido_y_alterado_se_distinguen(
     assert r.json()["code"] == "QR_INVALID"
 
 
-async def test_qr_14_bajo_el_limite_un_pin_errado_tampoco_paga(
+async def test_qr_14_un_pin_errado_no_paga(
     client, otp_codes, registrado, otro_registrado
 ):
     origen = await _recargar(client, registrado)
@@ -391,3 +395,32 @@ async def test_qr_13_dos_pagos_a_la_vez_del_mismo_qr_cobran_una_vez(
     assert sorted(r.status_code for r in respuestas) == [201, 409]
     assert await _saldo(client, registrado) == 58_000
     assert await _saldo(client, otro_registrado) == 2_000
+
+
+async def test_qr_15_reintentar_un_pago_hecho_devuelve_el_original_aunque_ya_vencio(
+    client, otp_codes, registrado, otro_registrado, db_de_client
+):
+    # Quien no supo si su pago entró debe poder preguntarlo: un QR_EXPIRED
+    # le haría creer que no pagó.
+    origen = await _recargar(client, registrado)
+    qr = await _emitir(client, otro_registrado, monto=2_000)
+    cuerpo = _pago(qr, origen, "pago-qr-reint-001")
+    primero = await client.post("/v1/qr/pagar", headers=registrado.auth, json=cuerpo)
+    assert primero.status_code == 201, primero.text
+
+    await _vencer(db_de_client, qr)
+    reintento = await client.post("/v1/qr/pagar", headers=registrado.auth, json=cuerpo)
+    assert reintento.status_code == 200, reintento.text
+    assert reintento.json()["transaction_id"] == primero.json()["transaction_id"]
+    assert await _saldo(client, registrado) == 58_000
+
+
+async def test_qr_16_un_token_inexistente_firmado_no_revela_nada(
+    client, otp_codes, registrado
+):
+    from app.services.qr_firmado import nuevo_id, token_de
+
+    fantasma = token_de(nuevo_id(), secreto=SECRETO_QR_PRUEBAS)
+    r = await client.post("/v1/qr/validar", headers=registrado.auth, json={"qr": fantasma})
+    assert r.status_code == 400, r.text
+    assert r.json()["code"] == "QR_INVALID"

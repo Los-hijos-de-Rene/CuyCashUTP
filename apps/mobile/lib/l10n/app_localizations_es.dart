@@ -1871,9 +1871,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get qrChargeShare => 'Compartir';
 
   @override
-  String qrChargeShareText(String monto, String concepto, String payload) {
-    return 'Cóbralo con CuyCash: $monto por «$concepto».\n$payload';
+  String qrChargeShareText(String monto, String concepto) {
+    return 'Págame $monto por «$concepto» con CuyCash: escanea el QR o súbelo desde Pagar con QR.';
   }
+
+  @override
+  String get qrChargeShareError =>
+      'No pudimos preparar la imagen. Inténtalo de nuevo.';
+
+  @override
+  String get qrChargeCardBrand => 'Paga con CuyCash';
 
   @override
   String get qrChargeDone => 'Listo';
@@ -1889,13 +1896,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get qrPayScanHint =>
-      'Apunta la cámara al QR o pega el mensaje que te enviaron.';
+      'Apunta la cámara al QR. Si te lo enviaron como imagen, súbela.';
 
   @override
-  String get qrPayPasteLabel => 'Código o mensaje del QR';
+  String get qrPayFromImage => 'Subir imagen del QR';
 
   @override
-  String get qrPayRead => 'Leer código';
+  String get qrPayImageNoQr =>
+      'No encontramos un QR en esa imagen. Prueba con otra.';
 
   @override
   String get qrPayPreviewHeadline => 'Revisa antes de pagar';
@@ -1963,6 +1971,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get qrErrorRevoked =>
+      'Este QR ya no está activo. Pide a quien cobra su QR nuevo.';
+
+  @override
+  String get qrErrorUpdateRequired =>
+      'Para pagar este QR necesitas la versión más reciente de CuyCash.';
+
+  @override
   String get qrErrorAlreadyPaid => 'Este QR ya fue pagado. Pide uno nuevo.';
 
   @override
@@ -2004,5 +2020,5 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get qrCameraUnavailable =>
-      'No pudimos abrir la cámara. Pega el código del QR para continuar.';
+      'No pudimos abrir la cámara. Sube una imagen del QR para continuar.';
 }

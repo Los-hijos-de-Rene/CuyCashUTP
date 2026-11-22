@@ -12,8 +12,8 @@ import '../domain/qr_repository.dart';
 ///
 /// [dio] debe venir de `buildAuthenticatedDio`: el token y `X-Device-Id` los
 /// pone su interceptor. El contenido del QR es opaco: la firma la emite y la
-/// comprueba el servidor. La app siempre pide PIN, aunque el backend solo lo
-/// exija sobre su límite (`requiere_pin`), porque el flujo es uno solo.
+/// comprueba el servidor. El PIN se pide siempre: el backend también lo exige
+/// siempre (`QR_AUTH_REQUIRED`).
 class HttpQrRepository implements QrRepository {
   HttpQrRepository({required Dio dio}) : _dio = dio;
 
@@ -142,6 +142,8 @@ class HttpQrRepository implements QrRepository {
     return switch (body['code']) {
       'QR_EXPIRED' => const QrFailure.expired(),
       'QR_INVALID' => const QrFailure.tampered(),
+      'QR_REVOKED' => const QrFailure.revoked(),
+      'QR_UPDATE_REQUIRED' => const QrFailure.updateRequired(),
       'QR_ALREADY_PAID' => const QrFailure.alreadyPaid(),
       'QR_NOT_CONFIGURED' => const QrFailure.unavailable(),
       'INSUFFICIENT_FUNDS' => const QrFailure.insufficientFunds(),

@@ -5,6 +5,7 @@ import 'package:cuycash/feature/qr/application/qr_actions.dart';
 import 'package:cuycash/l10n/app_localizations.dart';
 import 'package:cuycash/presentation/qr/bloc/qr_pay_bloc.dart';
 import 'package:cuycash/presentation/qr/qr_pay_screen.dart';
+import 'package:cuycash/presentation/qr/widgets/qr_gallery_reader.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,7 +24,10 @@ const _cuenta = Account(
 );
 
 void main() {
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    QrGalleryResult galeria = const QrGalleryCancelled(),
+  }) async {
     final bloc = QrPayBloc(
       actions: QrActions(FakeQrRepository()),
       cuentaOrigen: _cuenta,
@@ -44,6 +48,7 @@ void main() {
               onPressed: () => onDetected('cuycash://qr?demo=1'),
               child: const Text('SIMULAR ESCANEO'),
             ),
+            galleryReader: () async => galeria,
           ),
         ),
       ),
@@ -82,5 +87,43 @@ void main() {
 
     expect(find.text('¡Pago realizado!'), findsOneWidget);
     expect(find.textContaining('tx-qr-1'), findsOneWidget);
+  });
+
+  testWidgets('no hay campo para pegar el código: se sube una imagen', (
+    t,
+  ) async {
+    await pump(t);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('Subir imagen del QR'), findsOneWidget);
+  });
+
+  testWidgets('un QR leído de la galería va a la vista previa', (t) async {
+    await pump(t, galeria: const QrGalleryFound('cuycash://qr?demo=1'));
+    await t.tap(find.text('Subir imagen del QR'));
+    await t.pumpAndSettle();
+
+    expect(find.text('Revisa antes de pagar'), findsOneWidget);
+    expect(find.text('S/ 10.00'), findsOneWidget);
+  });
+
+  testWidgets('una imagen sin QR avisa y se queda escaneando', (t) async {
+    await pump(t, galeria: const QrGalleryNotFound());
+    await t.tap(find.text('Subir imagen del QR'));
+    await t.pumpAndSettle();
+
+    expect(
+      find.text('No encontramos un QR en esa imagen. Prueba con otra.'),
+      findsOneWidget,
+    );
+    expect(find.text('SIMULAR ESCANEO'), findsOneWidget);
+  });
+
+  testWidgets('cerrar la galería sin elegir no muestra error', (t) async {
+    await pump(t);
+    await t.tap(find.text('Subir imagen del QR'));
+    await t.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('SIMULAR ESCANEO'), findsOneWidget);
   });
 }

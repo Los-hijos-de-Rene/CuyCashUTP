@@ -344,6 +344,21 @@
         "title": "QREmitirIn",
         "type": "object"
       },
+      "QREstaticoIn": {
+        "properties": {
+          "cuenta_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Cuenta Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cuenta_id"
+        ],
+        "title": "QREstaticoIn",
+        "type": "object"
+      },
       "QRPagarIn": {
         "properties": {
           "cuenta_origen_id": {
@@ -357,6 +372,29 @@
             "minLength": 8,
             "title": "Idempotency Key",
             "type": "string"
+          },
+          "mensaje": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mensaje"
+          },
+          "monto_centimos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto Centimos"
           },
           "pin": {
             "anyOf": [
@@ -387,6 +425,11 @@
       },
       "QRValidarIn": {
         "properties": {
+          "acepta_monto_libre": {
+            "default": false,
+            "title": "Acepta Monto Libre",
+            "type": "boolean"
+          },
           "qr": {
             "maxLength": 2048,
             "minLength": 1,
@@ -2885,6 +2928,7 @@
     },
     "/v1/qr/emitir": {
       "post": {
+        "description": "Cobro dinámico: monto fijo, un solo pago y caducidad.",
         "operationId": "emitir_v1_qr_emitir_post",
         "parameters": [
           {
@@ -2935,6 +2979,122 @@
           }
         },
         "summary": "Emitir",
+        "tags": [
+          "QR"
+        ]
+      }
+    },
+    "/v1/qr/estatico": {
+      "post": {
+        "description": "El QR permanente de una cuenta: lo devuelve si existe y si no, lo crea.",
+        "operationId": "mi_qr_v1_qr_estatico_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QREstaticoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mi Qr",
+        "tags": [
+          "QR"
+        ]
+      }
+    },
+    "/v1/qr/estatico/regenerar": {
+      "post": {
+        "description": "Revoca el QR permanente vigente (si hay) y emite otro, en una transacción.",
+        "operationId": "regenerar_mi_qr_v1_qr_estatico_regenerar_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QREstaticoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Regenerar Mi Qr",
         "tags": [
           "QR"
         ]
@@ -2999,6 +3159,7 @@
     },
     "/v1/qr/validar": {
       "post": {
+        "description": "Lo que el pagador ve antes de confirmar. No mueve dinero.",
         "operationId": "consultar_v1_qr_validar_post",
         "parameters": [
           {

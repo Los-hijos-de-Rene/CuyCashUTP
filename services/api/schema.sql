@@ -316,6 +316,29 @@ CREATE TABLE loans (
 CREATE INDEX ix_loans_account_id ON loans (account_id);
 
 
+CREATE TABLE qr_codigos (
+	id VARCHAR(22) NOT NULL,
+	cuenta_id VARCHAR(36) NOT NULL,
+	tipo VARCHAR(10) NOT NULL,
+	monto BIGINT,
+	concepto VARCHAR(40) NOT NULL,
+	expires_at TIMESTAMP WITH TIME ZONE,
+	estado VARCHAR(10) NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	revocado_at TIMESTAMP WITH TIME ZONE,
+	PRIMARY KEY (id),
+	CONSTRAINT ck_qr_codigos_tipo CHECK (tipo IN ('estatico','dinamico')),
+	CONSTRAINT ck_qr_codigos_estado CHECK (estado IN ('activo','revocado')),
+	CONSTRAINT ck_qr_codigos_forma CHECK ((tipo = 'estatico' AND monto IS NULL AND expires_at IS NULL) OR (tipo = 'dinamico' AND monto > 0 AND expires_at IS NOT NULL)),
+	CONSTRAINT ck_qr_codigos_revocado_at CHECK ((estado = 'revocado') = (revocado_at IS NOT NULL)),
+	FOREIGN KEY(cuenta_id) REFERENCES accounts (id)
+)
+
+;
+CREATE INDEX ix_qr_codigos_cuenta_id ON qr_codigos (cuenta_id);
+CREATE UNIQUE INDEX ux_qr_codigos_un_estatico_activo ON qr_codigos (cuenta_id) WHERE tipo = 'estatico' AND estado = 'activo';
+
+
 CREATE TABLE transfers (
 	id VARCHAR(36) NOT NULL,
 	transaction_id VARCHAR(36) NOT NULL,
