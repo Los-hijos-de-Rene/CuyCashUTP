@@ -147,7 +147,9 @@ que el servicio no está disponible.
 El PIN se exige siempre para pagar con QR; ya no hay umbral sin PIN
 (`QR_MONTO_BASE_CENTIMOS` se retiró y puede borrarse de Render).
 
-Requiere la migración `0003` (tabla `qr_codigos`). Los cobros emitidos con el
+Requiere las migraciones `0003` (tabla `qr_codigos`) y `0004`
+(`qr_consumo_diario`, límite diario de pagos QR; arranca vacía, así que el día
+del despliegue el consumo previo no cuenta). Los cobros emitidos con el
 token anterior (caducaban en minutos) dejan de aceptarse al desplegar.
 
 ### Distribución del APK (alta única)

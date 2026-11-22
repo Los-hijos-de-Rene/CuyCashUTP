@@ -150,6 +150,14 @@ class HttpQrRepository implements QrRepository {
       'SAME_ACCOUNT' => const QrFailure.sameAccount(),
       'CURRENCY_MISMATCH' => const QrFailure.currencyMismatch(),
       'AMOUNT_OUT_OF_RANGE' => const QrFailure.amountOutOfRange(),
+      'QR_DAILY_LIMIT' => switch ((
+        body['disponible_centimos'],
+        Currency.fromCode('${body['moneda']}'),
+      )) {
+        (final int centimos, final Currency moneda) =>
+          QrFailure.dailyLimit(Money(centimos, moneda)),
+        _ => const QrFailure.unexpected(),
+      },
       'RECIPIENT_NOT_FOUND' ||
       'ACCOUNT_NOT_FOUND' ||
       'ACCOUNT_BLOCKED' => const QrFailure.accountUnavailable(),

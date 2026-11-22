@@ -12,6 +12,9 @@ El token del QR es una referencia firmada a una fila de `qr_codigos`
 El PIN se exige SIEMPRE para pagar. Con un umbral sin PIN, quien robara una
 sesión vaciaría la cuenta en pagos chicos: con monto libre, el pagador decide
 cuánto, y con cobros dinámicos el atacante puede emitirlos él mismo.
+
+Además hay un límite diario por titular y moneda (`app/services/limite_diario.py`):
+el PIN frena a quien no lo sabe; el límite acota el daño de quien sí.
 """
 
 import os
@@ -30,6 +33,7 @@ from app.core.errors import ApiError, ErrorCode
 from app.db.base import get_session
 from app.db.models import Account, QrCodigo, Transaction, Transfer, User, utcnow
 from app.db.models import Session as SessionRow
+from app.services import limite_diario
 from app.services.autorizacion import exigir_pin_de_operacion
 from app.services.ledger import Asiento, post
 from app.services.qr_firmado import (
@@ -329,6 +333,11 @@ async def consultar(
         )
         if pagado is not None:
             raise _qr_ya_pagado()
+    # Para que la app avise antes de pedir el PIN. Informativo: el que decide
+    # es `/pagar`, con la fila bloqueada.
+    resumen["disponible_hoy_centimos"] = await limite_diario.disponible(
+        session, user.id, destino.moneda, limite_diario.hoy_en_lima()
+    )
     return resumen
 
 
@@ -389,6 +398,20 @@ async def pagar(
         )
     _validar_monto(monto, destino.moneda)
 
+    # El cupo del día se bloquea ANTES del PIN (no gastar intentos en un pago
+    # que iba a rechazarse) y se suma DESPUÉS del libro mayor, solo si el pago
+    # es nuevo. La clave se vuelve a mirar con la fila ya bloqueada: un
+    # reintento que esperó al pago original no debe chocar con el límite que
+    # ese mismo pago consumió.
+    hoy = limite_diario.hoy_en_lima()
+    ya_consumido = await limite_diario.bloquear(session, user.id, origen.moneda, hoy)
+    if ya_registrado is None:
+        ya_registrado = await session.scalar(
+            select(Transaction.id).where(Transaction.idempotency_key == clave)
+        )
+    if ya_registrado is None:
+        limite_diario.exigir_cupo(ya_consumido, monto, origen.moneda)
+
     if not payload.pin:
         raise _error(
             "QR_AUTH_REQUIRED",
@@ -414,6 +437,7 @@ async def pagar(
             raise _qr_ya_pagado() from exc
         raise
     if not reutilizada:
+        await limite_diario.sumar(session, user.id, origen.moneda, hoy, monto)
         session.add(
             Transfer(
                 transaction_id=tx.id,

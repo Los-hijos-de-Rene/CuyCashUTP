@@ -211,6 +211,28 @@ void main() {
     }, 2);
   });
 
+  test('límite diario trae lo que aún se puede pagar hoy', () async {
+    final r = await pagar(
+      _Backend(400, {
+        'code': 'QR_DAILY_LIMIT',
+        'disponible_centimos': 1000,
+        'limite_centimos': 500000,
+        'moneda': 'PEN',
+      }),
+    );
+    expect(switch (_fallo(r)) {
+      QrDailyLimit(:final disponible) => disponible,
+      _ => null,
+    }, const Money(1000, Currency.pen));
+  });
+
+  test('límite diario sin moneda conocida no revienta', () async {
+    final r = await pagar(
+      _Backend(400, {'code': 'QR_DAILY_LIMIT', 'disponible_centimos': 0}),
+    );
+    expect(_fallo(r), isA<QrUnexpectedFailure>());
+  });
+
   test('sin red es un fallo de red, no una excepción', () async {
     final backend = _Backend(200, {})
       ..throwIt = DioException(

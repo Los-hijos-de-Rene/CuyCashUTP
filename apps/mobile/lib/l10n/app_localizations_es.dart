@@ -1994,6 +1994,15 @@ class AppLocalizationsEs extends AppLocalizations {
       'El monto está fuera del rango permitido. Prueba con otro monto.';
 
   @override
+  String qrErrorDailyLimit(String monto) {
+    return 'Superas tu límite diario de pagos con QR. Hoy aún puedes pagar $monto.';
+  }
+
+  @override
+  String get qrErrorDailyLimitReached =>
+      'Llegaste a tu límite diario de pagos con QR. Podrás pagar de nuevo mañana.';
+
+  @override
   String get qrErrorAccountUnavailable =>
       'Esa cuenta no está disponible. Elige otra o pide un QR nuevo.';
 

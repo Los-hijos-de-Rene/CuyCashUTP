@@ -1,3 +1,5 @@
+import 'package:core_kernel/core_kernel.dart';
+
 /// Fallos del cobro y pago con QR. Se construyen por factory nombrado y se
 /// distinguen por subclase, igual que el resto de failures del repo.
 sealed class QrFailure {
@@ -38,6 +40,10 @@ sealed class QrFailure {
 
   /// El monto está fuera del rango permitido.
   const factory QrFailure.amountOutOfRange() = QrAmountOutOfRange;
+
+  /// El pago supera el límite diario de pagos con QR del titular.
+  /// [disponible] es lo que aún puede pagar hoy (cero si ya lo agotó).
+  const factory QrFailure.dailyLimit(Money disponible) = QrDailyLimit;
 
   /// La cuenta de cobro o de pago no está disponible.
   const factory QrFailure.accountUnavailable() = QrAccountUnavailable;
@@ -102,6 +108,12 @@ final class QrCurrencyMismatch extends QrFailure {
 
 final class QrAmountOutOfRange extends QrFailure {
   const QrAmountOutOfRange();
+}
+
+final class QrDailyLimit extends QrFailure {
+  const QrDailyLimit(this.disponible);
+
+  final Money disponible;
 }
 
 final class QrAccountUnavailable extends QrFailure {
