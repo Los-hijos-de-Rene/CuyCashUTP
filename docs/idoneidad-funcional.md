@@ -46,10 +46,12 @@ Rutas de prueba: `api/` = `services/api/tests/`, `app/` = `apps/mobile/test/`.
 Los oráculos acordados antes del código para los CA comprometidos de préstamos
 y QR están en [`casos-aceptacion-qr-prestamos.md`](casos-aceptacion-qr-prestamos.md).
 Su definición no cambia el veredicto de esta RTM: solo contarán como cumplidos
-cuando #91 los ejecute contra una implementación real.
+cuando #91 los ejecute contra una implementación real. Para HU14 y HU15 esa
+ejecución ya existe; la correspondencia escenario ↔ prueba está en su sección
+"Ejecución de HU14 y HU15".
 
-Solo las 11 historias del MVP que tienen código. Las otras 13 (HU08–HU16,
-HU19–HU21, HU25) no tienen ninguna porción ejecutable: sus 52 CA son ❌.
+Solo las 13 historias del MVP que tienen código. Las otras 11 (HU08–HU13,
+HU16, HU19–HU21, HU25) no tienen ninguna porción ejecutable: sus 44 CA son ❌.
 
 ### HU01 · Registro y KYC (8 SP)
 
@@ -128,6 +130,31 @@ Endpoints: `GET/POST /v1/beneficiaries`, `DELETE /v1/beneficiaries/{id}`.
 | CA3 | Límite pre-aprobado por beneficiario | ❌ | — |
 | CA4 | Editar o eliminar | 🟡 | Eliminar sí; editar no |
 
+### HU14 · Generación QR (5 SP)
+
+Endpoints: `POST /v1/qr/emitir` (cobro con monto fijo), `POST /v1/qr/estatico`
+y `/v1/qr/estatico/regenerar` ("Mi QR", monto libre). Cerrada el 2026-11-22
+(#142–#144).
+
+| CA | Requisito | Veredicto | Evidencia / brecha |
+|---|---|---|---|
+| CA1 | QR con monto y concepto específico por cobro | ✅ | `api/test_qr_flujo.py · test_qr_01_emitir_y_consultar_nombre_enmascarado`, `test_qr_08_no_se_puede_emitir_para_cuenta_ajena`; `app/presentation/qr/qr_charge_screen_test.dart` (con monto y concepto muestra el QR; sin monto no genera). Además, "Mi QR" sin monto: `api/test_qr_estatico.py · e01–e16` |
+| CA2 | Configurar la caducidad del QR | 🟡 | El servidor acepta `caducidad_segundos` (30 s–24 h) y rechaza el vencido: `test_qr_04_qr_vencido_se_rechaza_sin_descontar`. La app no deja elegirla: manda 15 min fijos (`QrCharge.vigencia`) y ninguna prueba cubre los bordes del rango |
+| CA3 | Interoperable con otras billeteras y bancos | ❌ | Requiere el switch del BCRP; el payload lleva versión para migrar a EMVCo después (`gestion-del-equipo.md`, fuera de alcance) |
+| CA4 | Push al comercio al recibir el abono | ❌ | No hay push (ver HU22) |
+
+### HU15 · Pago QR (5 SP)
+
+Endpoints: `POST /v1/qr/validar`, `POST /v1/qr/pagar`. El pago es un
+`pago_qr` por `ledger.post` con idempotencia.
+
+| CA | Requisito | Veredicto | Evidencia / brecha |
+|---|---|---|---|
+| CA1 | Leer el QR y mostrar nombre y monto antes de confirmar | ✅ | `app/presentation/qr/qr_pay_screen_test.dart · el escaneo muestra nombre y monto antes de confirmar`; `api/test_qr_estatico.py · e04_validar_muestra_a_quien_sin_monto_y_no_mueve_dinero`. En "Mi QR" el monto lo escribe el pagador y la app valida el máximo y el cupo del día antes del PIN (`qr_pay_bloc_test.dart`, grupo monto libre) |
+| CA2 | Pago en un solo toque dentro del límite base | 🟡 | El pago se completa (`test_qr_02_el_pin_se_exige_siempre_y_con_el_mueve_ambos_saldos`, `test_qr_06_idempotencia_no_cobra_dos_veces`), pero **siempre pide PIN**: no hay "un solo toque". Desviación a propósito (§8) |
+| CA3 | Validación adicional si excede el límite base | ✅ | Más estricto que lo pedido: el servidor exige PIN en **todo** pago (`test_qr_02`, `test_qr_estatico.py · e09_sin_pin_no_paga`, `test_qr_14_un_pin_errado_no_paga`), y además hay tope diario por titular y moneda (`test_qr_limite_diario.py`, DT-15). Es PIN, no huella: el oráculo HU15-CA4 de [`casos-aceptacion-qr-prestamos.md`](casos-aceptacion-qr-prestamos.md) acepta "huella o PIN" |
+| CA4 | Rechazar el QR vencido o alterado | ✅ | `test_qr_03_qr_alterado_se_rechaza_sin_descontar`, `test_qr_04_qr_vencido_se_rechaza_sin_descontar`, `test_qr_12_vencido_y_alterado_se_distinguen`, `api/test_qr_firmado.py · 03–07`; revocado: `test_qr_estatico.py · e10_regenerar_revoca_el_anterior`; app: `app/feature/qr/memory_qr_repository_test.dart` |
+
 ### HU17 · Motor transaccional (13 SP)
 
 Todo pasa por `app/services/ledger.py · post`.
@@ -165,11 +192,12 @@ Todo pasa por `app/services/ledger.py · post`.
 
 ### Regla "un positivo y un negativo por HU"
 
-Las 9 historias con al menos un CA ✅ o 🟡 respaldado por pruebas tienen ambos
+Las 11 historias con al menos un CA ✅ o 🟡 respaldado por pruebas tienen ambos
 casos. Ejemplos: HU01 (alta con ticket / sin ticket → 403), HU03 (huella /
 PIN errado → bloqueo), HU05 (cuentas propias / ajena → 404), HU06 (envío /
-sin fondos), HU17 (clave nueva / misma clave con otro monto → 409), HU18
-(cuadra / descuadrado → error). HU02 y HU22 no tienen comportamiento propio
+sin fondos), HU14 (cobro emitido / cuenta ajena → 404), HU15 (pago con PIN /
+QR alterado o vencido → rechazo sin descontar), HU17 (clave nueva / misma
+clave con otro monto → 409), HU18 (cuadra / descuadrado → error). HU02 y HU22 no tienen comportamiento propio
 que probar.
 
 ## 4. Auditoría de corrección numérica
@@ -250,38 +278,44 @@ confirmar cargos, seguros y convención temporal antes de exponerlo comercialmen
 **X = funciones implementadas y probadas ÷ funciones especificadas.** Meta del
 curso: X ≥ 0.95.
 
-Conteo de los 96 CA del MVP:
+Conteo de los 96 CA del MVP (actualizado el 2026-11-22 con HU14 y HU15):
 
 | Veredicto | CA | Dónde |
 |---|---|---|
-| ✅ Cumple | **13** | HU03 (2), HU04 (1), HU05 (2), HU06 (3), HU17 (2), HU18 (3) |
-| 🟡 Parcial | 14 | HU01 (4), HU02 (2), HU03 (1), HU04 (1), HU05 (1), HU07 (2), HU17 (1), HU24 (2) |
-| ❌ No cumple | 69 | 18 en las HU con código + 51 de las 13 HU sin código |
+| ✅ Cumple | **17** | HU03 (2), HU04 (1), HU05 (2), HU06 (3), HU14 (1), HU15 (3), HU17 (2), HU18 (3) |
+| 🟡 Parcial | 16 | HU01 (4), HU02 (2), HU03 (1), HU04 (1), HU05 (1), HU07 (2), HU14 (1), HU15 (1), HU17 (1), HU24 (2) |
+| ❌ No cumple | 63 | 19 en las HU con código + 44 de las 11 HU sin código |
 
 | Indicador | Cálculo | Valor |
 |---|---|---|
-| **X por CA (indicador oficial)** | 13 / 96 | **0.135** |
-| X por CA, contando parciales como ½ (referencia) | (13 + 7) / 96 | 0.208 |
+| **X por CA (indicador oficial)** | 17 / 96 | **0.177** |
+| X por CA, contando parciales como ½ (referencia) | (17 + 8) / 96 | 0.260 |
 | X por HU completa (todos sus CA ✅) | 0 / 24 | 0.000 |
-| X por puntos, ponderada por CA cumplidos | 28.5 / 160 SP | 0.178 |
+| X por puntos, ponderada por CA cumplidos | 33.5 / 160 SP | 0.209 |
 | Y = pruebas aprobadas / ejecutadas | backend 360 / 360 · app 914 / 914 · paquetes 35 / 35 | 1.00 |
 
-Ponderación por puntos: HU03 5·½ + HU04 5·¼ + HU05 5·½ + HU06 8·¾ + HU17 13·½ +
-HU18 13·¾ = 28.5 SP.
+Ponderación por puntos: HU03 5·½ + HU04 5·¼ + HU05 5·½ + HU06 8·¾ + HU14 5·¼ +
+HU15 5·¾ + HU17 13·½ + HU18 13·¾ = 33.5 SP.
+
+Conteo anterior (corte 2026-10-16): 13 ✅, 14 🟡, 69 ❌; X = 0.135. Ese corte
+repartía los ❌ como 18 + 51; la suma por historia da 17 + 52 (el total, 69,
+era correcto).
 
 **Lectura.**
 
-- La v1 está en **0.135** contra un alcance de fin de ciclo. Es la cifra
-  esperable a mitad del curso: las épicas de préstamos, QR, antifraude y
-  conciliación aún no empiezan. La meta de 0.95 es para la entrega final.
+- X subió de **0.135** a **0.177** con la épica de QR (HU14 y HU15). Préstamos,
+  antifraude y conciliación aún no suman CA. La meta de 0.95 es para la
+  entrega final.
 - **Y = 1.00 no es corrección funcional.** Que todas las pruebas pasen dice que
   lo que se probó funciona, no que se probó lo que se pidió. Por eso X se mide
   por CA y no por pruebas verdes.
-- Cuatro historias (HU05, HU06, HU17, HU18) concentran 10 de los 13 CA
+- Cuatro historias (HU05, HU06, HU17, HU18) concentran 10 de los 17 CA
   cumplidos: lo construido es el **núcleo
-  transaccional**, que es donde un error cuesta dinero.
-- Ninguna HU está completa. Las más cercanas (HU06 y HU18, 3/4 cada una) solo
-  necesitan una pieza: CCI/CCE y el cierre diario.
+  transaccional**, que es donde un error cuesta dinero. El pago QR (3 de 4)
+  se apoya en ese mismo núcleo.
+- Ninguna HU está completa. Las más cercanas (HU06, HU15 y HU18, 3/4 cada una)
+  solo necesitan una pieza: CCI/CCE, el pago en un toque (que hoy se descarta
+  a propósito, §8) y el cierre diario.
 
 ## 6. Idoneidad de la tarea
 
@@ -308,6 +342,9 @@ HU18 13·¾ = 28.5 SP.
 | Bloqueo por intentos (HU03 CA3) | 5.º intento | 3.er intento, escalonado | Más estricto a propósito; acordar con el docente o ajustar `IDENTIFIER_MAX_ATTEMPTS` |
 | Cierre por inactividad (HU03 CA4) | Tras un período configurado | 5 min por defecto (`SESSION_INACTIVITY_MINUTES`), pide PIN o huella | Ya no es brecha; el valor por defecto es una decisión de producto |
 | 200 ms por transacción (HU17 CA4) | < 200 ms | Sin medir | Medir con carga sobre el despliegue antes de afirmarlo |
+| Pago QR en un toque (HU15 CA2) | Sin autenticación bajo el límite base | PIN en todo pago, verificado en el servidor | Más estricto a propósito: con monto libre, un umbral sin PIN permite vaciar una cuenta robada con muchos pagos chicos. El riesgo de monto lo acota el tope diario (DT-15). Acordar con el docente |
+| Tope del pago QR (HU15 CA3) | "Límite base configurado" | Tope por operación S/ 2,000 (el de envíos) y tope diario S/ 5,000 · US$ 1,500 por titular | Los montos son decisión de producto (`LIMITE_DIARIO_QR`); la app los espeja en `QrLimits` solo para avisar |
+| Caducidad del cobro (HU14 CA2) | Configurable | 30 s–24 h en la API; la app fija 15 min | Exponer el selector en la app si el PO lo pide |
 | E2E app ↔ backend | — | `verificacion-manual.md` sin ejecutar | Es la V&V de la sesión 20: ver [`vyv.md`](vyv.md) |
 
 ## 9. Próximos pasos (por costo/beneficio)
