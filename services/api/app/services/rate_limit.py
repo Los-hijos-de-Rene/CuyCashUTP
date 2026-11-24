@@ -47,6 +47,18 @@ Las rutas que cubre son las tres de arriba, no "todas las del sistema":
 - `POST /v1/auth/authenticate` NO es oráculo y no debe "arreglarse": un DNI
   inexistente recibe el mismo 401 (e incluso el mismo 423 de bloqueo) que uno
   existente con PIN malo. Es una propiedad a conservar.
+- `POST /v1/qr/validar` tampoco es oráculo y NO debe descontar de aquí, aunque
+  devuelva el nombre enmascarado del titular. El token es un id aleatorio de
+  128 bits más un HMAC truncado a 128 (`app/services/qr_firmado.py`): sin el
+  secreto no se puede fabricar uno válido, y uno mal firmado o inexistente
+  recibe el mismo 400 `QR_INVALID` antes de tocar la base
+  (`test_qr_16_un_token_inexistente_firmado_no_revela_nada`). Para ver un
+  nombre hay que tener el QR real, que su dueño publicó para que le paguen.
+  Un DNI o un alias, en cambio, son un espacio chico que se puede recorrer.
+  Descontar de este cupo solo castigaría a quien paga varios QR seguidos
+  (se quedaría sin búsquedas para enviar dinero) sin frenar a nadie. Si algún
+  día el token deja de ser imposible de adivinar (p. ej. un formato EMVCo con
+  un identificador predecible), esta conclusión cambia.
 Para que proteja de verdad hace falta un contador compartido y durable: una
 tabla en Postgres (fila por usuario y ventana, `INSERT ... ON CONFLICT DO
 UPDATE` y comprobar el total en la misma sentencia) o Redis (`INCR` + `EXPIRE`
