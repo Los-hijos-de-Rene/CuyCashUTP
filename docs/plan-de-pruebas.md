@@ -17,7 +17,10 @@ envíos, depósito simulado, perfil) cumple su historia de usuario, sus reglas d
 negocio, los SLA de `docs/sla-kpi.md` que se pueden medir y los controles de
 `docs/catalogo-controles.md`.
 
-**Fuera de alcance**: lo que aún no existe (interbancarias, QR, préstamos,
+Desde noviembre también el cobro y pago con QR ("Mi QR", cobro con monto fijo
+y límite diario), en §3 y en la fila de concurrencia.
+
+**Fuera de alcance**: lo que aún no existe (interbancarias, préstamos completos,
 antifraude, conciliación) y el dashboard web.
 
 ## 2. Niveles de prueba
@@ -32,7 +35,7 @@ antifraude, conciliación) y el dashboard web.
 | **API (integración)** | Cada endpoint por HTTP contra una base real: **PostgreSQL 18 en el CI** (el motor de producción), SQLite en memoria en local | `pytest` + `httpx` | `services/api/tests` | 305 |
 | **Base de datos** | Consistencia DDL ↔ modelo, restricciones del motor, partida doble | `pytest` | `test_consistencia_ddl.py`, `test_libro_mayor.py`, `test_motor_de_asientos.py` | 29 |
 | **Seguridad web** | SQLi, XSS, CORS, cabeceras, fuga de errores, rutas sin sesión | `pytest` | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
-| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 18 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_motor_de_asientos.py`, `test_loan_disbursement.py` | 5 (corren en el job *Backend (PostgreSQL 18)* del workflow *CI*) |
+| **Concurrencia** | Bloqueo de fila e idempotencia con peticiones simultáneas | `pytest -m postgres` contra Postgres 18 en GitHub Actions | `test_concurrencia_multicuenta.py`, `test_motor_de_asientos.py`, `test_loan_disbursement.py`, `test_qr_flujo.py · qr_13`, `test_qr_estatico.py · e16`, `test_qr_limite_diario.py · limite_09` | 8 (corren en el job *Backend (PostgreSQL 18)* del workflow *CI*) |
 | **Despliegue (humo)** | Que producción responde, cifra y protege | `scripts/smoke_prod.sh` | Contra Render | 9 verificaciones |
 | **Manual E2E** | La app real contra el backend en un emulador | Guion | `docs/verificacion-manual.md` | ⚠️ sin ejecutar (§7) |
 
@@ -49,6 +52,7 @@ antifraude, conciliación) y el dashboard web.
 | Movimientos (por cuenta y combinados) | `test_cuentas_y_movimientos.py`, `test_movimientos_combinados.py` | 30 |
 | Envíos y depósito | `test_transferencias.py`, `test_envio_por_cuenta.py` | 44 |
 | Directorio y frecuentes | `test_directorio_y_frecuentes.py` | 44 |
+| Cobro y pago con QR (token, "Mi QR", cobro fijo, límite diario) | `test_qr_firmado.py`, `test_qr_flujo.py`, `test_qr_estatico.py`, `test_qr_limite_diario.py`, `test_qr_http.py` | 52 (3 solo en Postgres) |
 | Seguridad transversal | `test_seguridad_web.py`, `test_sesion_requerida.py` | 43 |
 | Base de datos y operación | `test_consistencia_ddl.py`, `test_reset_schema.py` | 7 |
 

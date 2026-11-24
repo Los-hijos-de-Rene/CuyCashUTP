@@ -104,4 +104,16 @@ Todos los pasos son [inferido] del código; ninguno se ha ejecutado. Requiere el
 5. [inferido] (Solo con `FeatureToggles.frecuentesEnEnvio = true`; hoy están ocultos.) Volver a Transferir y tocar el frecuente: va directo al monto, sin consultar el DNI. Si la cuenta guardada ya no recibe, el frecuente aparece sin cuenta; uno de otra moneda o igual a la de origen muestra un aviso y no navega.
 6. [inferido] Depositar en la cuenta en dólares: deslizar el carrusel a la cuenta US$, "Depósito simulado", monto, "Depositar". Esperado: saldo en US$ de esa cuenta; la de soles no cambia. Backend: `POST /v1/topups ... 201`.
 
+### Cobro y pago con QR (no ejecutado)
+
+Todos los pasos son [inferido] del código; ninguno se ha ejecutado. Requiere el backend con `QR_SIGNING_SECRET` (sin ella, 503), la migración `0004` y dos titulares (A con saldo, B; pasos 4 a 7). Para leer el QR de B con la cámara de A hacen falta dos teléfonos; con uno solo, compartir la imagen y usar "Subir imagen del QR".
+
+1. [inferido] Como B: QR → Mi QR. Esperado: tarjeta con el QR, "Escanea y elige cuánto pagar" y `••••NNNN · S/`. Salir y volver muestra el mismo QR. Backend: `POST /v1/qr/estatico ... 201` la primera vez y `200` después.
+2. [inferido] "Compartir mi QR": se abre la hoja de compartir con una imagen PNG; no debe haber ningún texto con el token.
+3. [inferido] Como A: QR → Pagar, escanear el QR de B. Esperado: "Para" con el nombre enmascarado de B, campo de monto y "Hoy puedes pagar con QR hasta S/ 2,000.00" (el menor entre el máximo por operación y lo que queda del día).
+4. [inferido] Escribir más de lo disponible: aviso inmediato y NO se pide el PIN. Escribir S/ 10.00 y un mensaje, confirmar con PIN. Esperado: constancia; el saldo de A baja S/ 10 y el de B sube S/ 10. Backend: `POST /v1/qr/pagar ... 201`.
+5. [inferido] Como B: "Cambiar mi QR" → confirmar. Como A, escanear la imagen ANTERIOR. Esperado: "Este QR ya no está activo" (backend: 400 `QR_REVOKED`).
+6. [inferido] Como B: QR → Cobrar S/ 5.00 con concepto. Como A, pagarlo: el monto viene fijo y no se puede cambiar. Pagarlo otra vez da "ya fue pagado" (409 `QR_ALREADY_PAID`).
+7. [inferido] Límite diario: con `LIMITE_DIARIO_QR` bajado a mano en `app/services/limite_diario.py` (p. ej. S/ 20; es una constante, no una variable de entorno, y no se commitea), pagar dos veces S/ 15. Esperado: el segundo se avisa antes del PIN; forzado por API, 400 `QR_DAILY_LIMIT` con `disponible_centimos`.
+
 Al terminar: Ctrl+C en el backend y `rm services/api/cuycash.db`.

@@ -70,6 +70,39 @@ positivo y uno negativo, y conserva la numeración acordada en las tarjetas
 | HU15-CA4-P | Positivo | El importe supera el límite base y el cliente valida huella o PIN | Confirma el pago | La autorización reforzada se verifica en servidor y el pago se contabiliza una sola vez | #77 |
 | HU15-CA4-N | Negativo | Falta la autenticación reforzada, es inválida o se reenvía la misma clave con otros datos | Se intenta pagar | Se rechaza; el reintento idéntico no duplica el cargo y un cambio de huella devuelve conflicto | #77 |
 
+## Ejecución de HU14 y HU15 (2026-11-22)
+
+La API y la app de QR ya existen (#142, #143, #144). Esta tabla registra qué
+prueba ejecuta cada escenario. Las filas de arriba **no se cambiaron**: son
+el acuerdo previo al código. Las diferencias con la implementación se
+declaran aquí y en la §8 de [`idoneidad-funcional.md`](idoneidad-funcional.md).
+Rutas: `api/` = `services/api/tests/`, `app/` = `apps/mobile/test/`.
+
+| Escenario | Estado | Prueba | Nota |
+|---|---|---|---|
+| HU14-CA1-P | ✅ | `api/test_qr_flujo.py · test_qr_01`, `app/presentation/qr/qr_charge_screen_test.dart` (con monto y concepto) | El token ya no lleva cuenta ni monto: es una referencia firmada a `qr_codigos`, donde viven monto, cuenta y expiración (`api/test_qr_firmado.py · test_qr_08_el_token_no_revela_nada_del_cobro`) |
+| HU14-CA1-N | 🟡 | `test_qr_08_no_se_puede_emitir_para_cuenta_ajena` (404); app: "sin monto no genera" | Sin prueba de API para monto inválido ni vigencia fuera de 30 s–24 h al emitir (Pydantic los rechaza, pero no hay oráculo) |
+| HU14-CA2-P | ✅ | `qr_charge_screen_test.dart · la tarjeta que se comparte es una imagen autosuficiente` | Se comparte una imagen con QR, monto, concepto y vencimiento; nunca el token en texto |
+| HU14-CA2-N | 🟡 | Reemplazado: `api/test_qr_estatico.py · e10_regenerar_revoca_el_anterior` | La app no marca como vencido un cobro que sigue en pantalla; lo rechaza el servidor al pagarlo (`test_qr_04`) |
+| HU15-CA1-P | ✅ | `qr_pay_screen_test.dart · el escaneo muestra nombre y monto antes de confirmar` | En "Mi QR" no hay monto que mostrar: el pagador lo escribe y ve el cupo del día (grupo monto libre) |
+| HU15-CA1-N | 🟡 | `qr_pay_screen_test.dart · una imagen sin QR avisa y se queda escaneando` | Sin prueba del permiso de cámara denegado |
+| HU15-CA2-P | ✅ | `test_qr_01`, `test_qr_estatico.py · e04_validar_muestra_a_quien_sin_monto_y_no_mueve_dinero` | — |
+| HU15-CA2-N | ✅ | `test_qr_03`, `test_qr_04`, `test_qr_12`, `test_qr_16_un_token_inexistente_firmado_no_revela_nada` | — |
+| HU15-CA3-P | ✅ | `test_qr_02_el_pin_se_exige_siempre_y_con_el_mueve_ambos_saldos`, `qr_pay_screen_test.dart · pagar pide PIN y termina en la constancia` | — |
+| HU15-CA3-N | 🟡 | `test_qr_09_saldo_insuficiente_no_genera_movimiento`, `e13_no_se_paga_a_si_mismo_con_la_misma_cuenta` | Sin prueba de QR para moneda incompatible ni cuenta bloqueada (los cubre `ledger.post`, probado en envíos) |
+| HU15-CA4-P | ✅ | `test_qr_02`, `e05_el_pagador_elige_el_monto_y_se_registra_como_pago_qr` | **Distinto de lo acordado:** el PIN se exige en todo pago, no solo sobre un límite base |
+| HU15-CA4-N | ✅ | `e09_sin_pin_no_paga`, `test_qr_14_un_pin_errado_no_paga`, `test_qr_06`, `e07_reintentar_con_la_misma_clave_no_cobra_dos_veces` (otra data con la misma clave → 409 `IDEMPOTENCY_KEY_REUSED`) | — |
+
+Resultado: 8 ✅ y 4 🟡 de 12. Los 🟡 son negativos sin oráculo propio, no
+comportamientos ausentes. Fuera de estos escenarios, el límite diario
+(DT-15) se ejecuta en `api/test_qr_limite_diario.py`, con concurrencia en
+Postgres (`test_limite_09`).
+
+La numeración de este documento no coincide con la del informe APF2: aquí
+HU15-CA2 es "validar" y HU15-CA4 la autenticación reforzada; en el informe,
+CA3 es la validación adicional y CA4 el rechazo de un QR vencido o alterado.
+La RTM usa la del informe.
+
 ## Criterio de salida
 
 - **28/28 escenarios definidos:** 14 positivos y 14 negativos.
